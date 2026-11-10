@@ -40,6 +40,7 @@ manager = 'connection/self/SelfLauncherManager.kt'
 legacy = 'connection/self/launchers/SelfLauncherLegacy.kt'
 for marker, file, declaration in [
     ('XYAUTO', 'aap/AapService.kt', 'private fun refreshXyAutoMediaPolicy('),
+    ('END_CAUSE', comm, 'enum class EndCause'),
     ('STATE', comm, 'class Disconnected('),
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
     ('START', manager, 'fun start(settingsRestart:'),

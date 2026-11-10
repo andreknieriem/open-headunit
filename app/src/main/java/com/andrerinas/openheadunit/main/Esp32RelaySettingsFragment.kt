@@ -83,7 +83,8 @@ class Esp32RelaySettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "esp32RelayEnabled",
             nameResId = R.string.esp32_relay_enabled,
-            descriptionResId = R.string.esp32_relay_enabled_description,
+            descriptionResId = R.string.esp32_relay_enabled_summary,
+            helpResId = R.string.esp32_relay_enabled_help,
             isChecked = enabled,
             onCheckedChanged = { checked ->
                 store.enabled = checked
@@ -146,7 +147,8 @@ class Esp32RelaySettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "esp32RelayEndAaOnDisconnect",
             nameResId = R.string.esp32_relay_end_aa_on_disconnect,
-            descriptionResId = R.string.esp32_relay_end_aa_on_disconnect_description,
+            descriptionResId = R.string.esp32_relay_end_aa_on_disconnect_summary,
+            helpResId = R.string.esp32_relay_end_aa_on_disconnect_description,
             isChecked = store.endAaOnDisconnect,
             isEnabled = enabled,
             onCheckedChanged = { checked ->

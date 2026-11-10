@@ -136,6 +136,13 @@ object WifiScanControl {
         }
     }
     fun enabled() = this::context.isInitialized && prefs.getBoolean("enabled", false)
+    fun reloadSettings() {
+        if (this::context.isInitialized) scope.launch {
+            yielded = false
+            if (!enabled()) cancelFytStartup() else startFytForConnection()
+            refresh()
+        }
+    }
     fun setEnabled(value: Boolean) {
         check(prefs.edit().putBoolean("enabled", value).commit())
         yielded = false

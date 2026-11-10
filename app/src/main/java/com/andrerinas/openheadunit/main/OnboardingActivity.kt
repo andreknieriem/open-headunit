@@ -1,10 +1,14 @@
 package com.andrerinas.openheadunit.main
 
+import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.Html
@@ -17,6 +21,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import android.widget.ViewFlipper
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
@@ -37,12 +42,16 @@ import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.utils.PermissionRowBinder
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.utils.SettingsBackupManager
+import com.andrerinas.openheadunit.utils.SettingsRestoreHandler
+import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy
 import com.andrerinas.openheadunit.utils.OnboardingDisplayPolicy
 import com.andrerinas.openheadunit.utils.OnboardingLauncherPolicy
 import com.andrerinas.openheadunit.utils.SystemOptimizer
 import com.andrerinas.openheadunit.view.VideoPreviewLayout
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
@@ -51,6 +60,7 @@ import androidx.core.view.MarginLayoutParamsCompat
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -64,6 +74,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
  * Intelligent, device-aware first-run wizard. Replaces the old
@@ -85,7 +96,11 @@ class OnboardingActivity : BaseActivity() {
     private lateinit var backBtn: MaterialButton
     private lateinit var nextBtn: MaterialButton
     private lateinit var skipBtn: MaterialButton
+    private lateinit var restoreBtn: MaterialButton
     private lateinit var stepper: LinearLayout
+    private val restoreModel: OnboardingRestoreViewModel by viewModels()
+    private val restoringSettings: Boolean
+        get() = restoreModel.state.value == OnboardingRestoreViewModel.State.Importing
 
     private var step = 0
     private var isBinding = false
@@ -116,6 +131,17 @@ class OnboardingActivity : BaseActivity() {
     private val homeRoleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { CarLauncherManager.onRoleRequestResult(this) }
+    private val restoreSettingsLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { restoreSettings(it) }
+    }
+    private val legacyRestoreSettingsLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { restoreSettings(it) }
+    }
+    private val restoreStorageLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) showLocalBackups(includeDownloads = true) else {
+            ToastUtils.showToast(this, getString(R.string.storage_permission_denied_backup), Toast.LENGTH_LONG, force = true)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,8 +166,8 @@ class OnboardingActivity : BaseActivity() {
         backBtn = findViewById(R.id.onb_back)
         nextBtn = findViewById(R.id.onb_next)
         skipBtn = findViewById(R.id.onb_skip)
+        restoreBtn = findViewById(R.id.onb_restore)
         stepper = findViewById(R.id.onb_stepper)
-        compactFooterOnShortScreens()
 
         applyCompactChrome()
 
@@ -165,11 +191,47 @@ class OnboardingActivity : BaseActivity() {
             finishOnboardingInto(R.id.micSettingsFragment)
         }
 
-        backBtn.setOnClickListener { if (step > 0) goBack() }
-        nextBtn.setOnClickListener { onNext() }
-        skipBtn.setOnClickListener { onDoItLater() }
+        backBtn.setOnClickListener { if (!restoringSettings && step > 0) goBack() }
+        nextBtn.setOnClickListener { if (!restoringSettings) onNext() }
+        skipBtn.setOnClickListener { if (!restoringSettings) onDoItLater() }
+        restoreBtn.setOnClickListener { onRestoreSettings() }
 
         render()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                restoreModel.state.collect { state ->
+                    skipBtn.isEnabled = !restoringSettings
+                    restoreBtn.isEnabled = !restoringSettings
+                    render()
+                    when (state) {
+                        is OnboardingRestoreViewModel.State.Restored -> {
+                            completeOnboarding()
+                            SettingsRestoreHandler.apply(this@OnboardingActivity, settings, state.before, state.result.changedKeys)
+                            restoreModel.acknowledge()
+                            ToastUtils.showToast(
+                                this@OnboardingActivity,
+                                getString(R.string.settings_imported, state.result.importedKeys, state.result.skippedKeys),
+                                Toast.LENGTH_LONG, force = true
+                            )
+                            sendBroadcast(Intent(MainActivity.ACTION_RECREATE_MAIN).setPackage(packageName))
+                            startActivity(Intent(this@OnboardingActivity, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                            finish()
+                        }
+                        is OnboardingRestoreViewModel.State.Failed -> {
+                            AppLog.e("Onboarding settings restore failed", state.error)
+                            ToastUtils.showToast(
+                                this@OnboardingActivity,
+                                getString(R.string.settings_import_failed, state.error.localizedMessage ?: ""),
+                                Toast.LENGTH_LONG, force = true
+                            )
+                            restoreModel.acknowledge()
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -201,8 +263,7 @@ class OnboardingActivity : BaseActivity() {
             stepper.layoutParams = indicator
         }
         findViewById<LinearLayout>(R.id.onb_footer).setPadding(dp(8), dp(2), dp(8), dp(4))
-        // "Do it later" is already on the Back/Next row: compactFooterOnShortScreens moves it on
-        // anything under 500 dp, and this only runs under 400.
+        // The welcome screen keeps both secondary actions together, even on short screens.
     }
 
     override fun onResume() {
@@ -395,10 +456,19 @@ class OnboardingActivity : BaseActivity() {
         }
         // USB-only auto-start toggles (also written to device storage, like AutoStartFragment).
         findViewById<SwitchMaterial>(R.id.onb_autostart_usb_switch).apply {
+            isChecked = settings.usbConnectOnPlugIn
+            setOnCheckedChangeListener { _, v ->
+                if (v != settings.usbConnectOnPlugIn) settings.usbConnectOnPlugIn = v
+                Settings.syncUsbConnectOnPlugInToDeviceStorage(this@OnboardingActivity, v)
+                applyAutomationVisibility()
+            }
+        }
+        findViewById<SwitchMaterial>(R.id.onb_autostart_usb_open_switch).apply {
             isChecked = settings.autoStartOnUsb
             setOnCheckedChangeListener { _, v ->
-                settings.autoStartOnUsb = v
+                if (v != settings.autoStartOnUsb) settings.autoStartOnUsb = v
                 Settings.syncAutoStartOnUsbToDeviceStorage(this@OnboardingActivity, v)
+                applyAutomationVisibility()
             }
         }
         findViewById<SwitchMaterial>(R.id.onb_reopen_switch).apply {
@@ -581,8 +651,10 @@ class OnboardingActivity : BaseActivity() {
         backBtn.visibility = if (step == 0) View.INVISIBLE else View.VISIBLE
         // GONE (not INVISIBLE) so its dedicated row collapses on the final step.
         skipBtn.visibility = if (step == STEP_COUNT - 1) View.GONE else View.VISIBLE
+        restoreBtn.visibility = if (step == 0) View.VISIBLE else View.GONE
+        compactFooterOnShortScreens()
         nextBtn.text = getString(if (step == STEP_COUNT - 1) R.string.onb_ready_finish else R.string.onb_next)
-        nextBtn.isEnabled = when (step) {
+        nextBtn.isEnabled = !restoringSettings && when (step) {
             STEP_SAFETY -> findViewById<MaterialCheckBox>(R.id.onb_safety_accept).isChecked
             STEP_CONNECTION -> settings.connectionModes.isNotEmpty()
             STEP_VIDEO -> videoJob?.isActive != true
@@ -618,13 +690,20 @@ class OnboardingActivity : BaseActivity() {
 
     /**
      * On short screens (800x480 head units) the "Do it later" row costs a whole row of step
-     * content, enough to push the last switch of the longer steps below the fold. There it moves
-     * into the navigation row, just before Next. Taller screens keep it on its own row.
+     * content, enough to push the last switch of the longer steps below the fold. After Welcome
+     * it moves into the navigation row, just before Next. Welcome keeps Restore beside it.
      */
     private fun compactFooterOnShortScreens() {
         if (resources.configuration.screenHeightDp >= SHORT_SCREEN_MAX_HEIGHT_DP) return
         val navRow = findViewById<LinearLayout>(R.id.onb_nav_row)
+        val actions = findViewById<LinearLayout>(R.id.onb_secondary_actions)
+        val target = if (step == 0) actions else navRow
+        if (skipBtn.parent === target) return
         (skipBtn.parent as? ViewGroup)?.removeView(skipBtn)
+        if (target === actions) {
+            actions.addView(skipBtn, 0, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            return
+        }
         val gap = (8 * resources.displayMetrics.density).toInt()
         val params = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
@@ -640,8 +719,19 @@ class OnboardingActivity : BaseActivity() {
     private fun applyAutomationVisibility() {
         val usbVis = if (settings.showsUsb()) View.VISIBLE else View.GONE
         findViewById<View>(R.id.onb_ac_single_row).visibility = usbVis
-        findViewById<View>(R.id.onb_as_usb_row).visibility = usbVis
-        findViewById<View>(R.id.onb_reopen_row).visibility = usbVis
+        // The same rows as the Auto-start screen. The launcher step carries its own Reopen note.
+        val listen = settings.listenForUsbDevices
+        val usbRows = UsbAutoStartRowsPolicy.rows(
+            showsUsb = settings.showsUsb(),
+            listen = listen,
+            connect = settings.usbConnectOnPlugIn,
+            autoStart = settings.autoStartOnUsb,
+            carLauncher = false,
+        )
+        findViewById<View>(R.id.onb_as_usb_row).visibility = if (usbRows.connect) View.VISIBLE else View.GONE
+        findViewById<SwitchMaterial>(R.id.onb_autostart_usb_switch).isEnabled = usbRows.connectEnabled
+        findViewById<View>(R.id.onb_as_usb_open_row).visibility = if (usbRows.open) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.onb_reopen_row).visibility = if (usbRows.reopen) View.VISIBLE else View.GONE
         // Auto-start on WiFi is a legacy path that only applies up to Android 12L (API 32).
         findViewById<View>(R.id.onb_as_wifi_row).visibility =
             if (settings.showsWifi() && Build.VERSION.SDK_INT <= 32) View.VISIBLE else View.GONE
@@ -667,7 +757,7 @@ class OnboardingActivity : BaseActivity() {
         val showNote = OnboardingLauncherPolicy.showsReopenNote(
             launcherSwitchOn = switchOn,
             reopenOn = findViewById<SwitchMaterial>(R.id.onb_reopen_switch).isChecked,
-            reopenOffered = settings.showsUsb()
+            reopenOffered = settings.showsUsb() && settings.effectiveAutoStartOnUsb
         )
         findViewById<View>(R.id.onb_launcher_reopen_note).visibility = if (showNote) View.VISIBLE else View.GONE
     }
@@ -752,8 +842,86 @@ class OnboardingActivity : BaseActivity() {
     }
 
     override fun onBackPressed() {
+        if (restoringSettings) return
         // Back walks the steps; from the first step it behaves like "Do it later".
         if (step > 0) goBack() else onDoItLater()
+    }
+
+    private fun onRestoreSettings() {
+        if (settings.hasAcceptedDisclaimer) {
+            showRestoreSettingsOptions()
+        } else {
+            MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+                .setTitle(R.string.disclaimer_title)
+                .setMessage(Html.fromHtml(getString(R.string.disclaimer_text)))
+                .setPositiveButton(R.string.disclaimer_accept) { _, _ ->
+                    findViewById<MaterialCheckBox>(R.id.onb_safety_accept).isChecked = true
+                    showRestoreSettingsOptions()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+    }
+
+    private fun showRestoreSettingsOptions() {
+        val options = mutableListOf<Pair<String, () -> Unit>>(
+            getString(R.string.import_settings_choose_file) to { launchRestoreSettingsPicker() },
+            getString(R.string.import_settings_app_folder) to { showLocalBackups() }
+        )
+        if (SettingsBackupManager.canAccessDownloadsDirectory()) {
+            options.add(getString(R.string.import_settings_downloads) to { showLocalBackups(includeDownloads = true) })
+        }
+        MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+            .setTitle(R.string.onb_restore_settings)
+            .setItems(options.map { it.first }.toTypedArray()) { _, which -> options[which].second() }
+            .show()
+    }
+
+    private fun launchRestoreSettingsPicker() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                restoreSettingsLauncher.launch(SettingsBackupManager.IMPORT_MIME_TYPES.copyOf())
+            } else {
+                legacyRestoreSettingsLauncher.launch(SettingsBackupManager.MIME_TYPE)
+            }
+        } catch (e: ActivityNotFoundException) {
+            MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+                .setTitle(R.string.no_file_picker_title)
+                .setMessage(R.string.no_file_picker_message)
+                .setPositiveButton(R.string.import_settings_app_folder) { _, _ -> showLocalBackups() }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+    }
+
+    private fun showLocalBackups(includeDownloads: Boolean = false) {
+        if (includeDownloads && Build.VERSION.SDK_INT in Build.VERSION_CODES.M..Build.VERSION_CODES.P &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            restoreStorageLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            return
+        }
+        val directories = if (includeDownloads) listOf(SettingsBackupManager.downloadsDirectory()) else
+            SettingsBackupManager.backupSearchDirectories(getExternalFilesDir(null), cacheDir, null)
+        val backups = SettingsBackupManager.findBackupFiles(directories)
+        if (backups.isEmpty()) {
+            MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+                .setTitle(R.string.no_settings_backups_title)
+                .setMessage(if (includeDownloads) R.string.no_settings_backups_downloads_message else R.string.no_settings_backups_message)
+                .setPositiveButton(R.string.close, null)
+                .show()
+            return
+        }
+        MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+            .setTitle(R.string.import_settings)
+            .setItems(backups.map { "${it.name}\n${it.parent ?: ""}" }.toTypedArray()) { _, which ->
+                restoreSettings(file = backups[which])
+            }
+            .show()
+    }
+
+    private fun restoreSettings(uri: Uri? = null, file: File? = null) {
+        restoreModel.restore(this, uri, file)
     }
 
     private fun finishOnboarding() {

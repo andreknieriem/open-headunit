@@ -129,47 +129,34 @@ object UpdateChecker {
                 return@withContext Result.failure(Exception("No releases found"))
             }
 
-            var newestVersion: AppVersion? = null
-            var newestRawTag = ""
-            var newestUrl = GITHUB_RELEASES_WEB
-            var newestApkUrl: String? = null
-
+            val releases = ArrayList<UpdateLinkPolicy.Release>(releasesJson.length())
             for (i in 0 until releasesJson.length()) {
                 val rel = releasesJson.getJSONObject(i)
-                val isDraft = rel.optBoolean("draft", false)
-                if (isDraft) continue
-
-                val tagName = rel.optString("tag_name", "")
-                val parsed = AppVersion.parse(tagName) ?: continue
-
-                if (newestVersion == null || parsed > newestVersion) {
-                    newestVersion = parsed
-                    newestRawTag = tagName.removePrefix("v.").removePrefix("v")
-                    newestUrl = rel.optString("html_url", GITHUB_RELEASES_WEB)
-                    newestApkUrl = UpdateLinkPolicy.pickApk(assetPairs(rel.optJSONArray("assets")))
-                }
+                if (rel.optBoolean("draft", false)) continue
+                releases.add(UpdateLinkPolicy.Release(
+                    tag = rel.optString("tag_name", ""),
+                    pageUrl = rel.optString("html_url", GITHUB_RELEASES_WEB),
+                    assets = assetPairs(rel.optJSONArray("assets"))
+                ))
             }
-
-            if (newestVersion == null) {
+            if (releases.none { AppVersion.parse(it.tag) != null }) {
                 return@withContext Result.failure(Exception("Could not parse any release versions"))
             }
 
+            val newest = UpdateLinkPolicy.newestInstallable(releases)
             val currentVersion = AppVersion.parse(BuildConfig.VERSION_NAME)
-            val isUpdateAvailable = if (currentVersion != null) {
-                newestVersion > currentVersion
-            } else {
-                false
-            }
+            val isUpdateAvailable = newest != null && currentVersion != null && newest.version > currentVersion
+            if (newest == null) AppLog.i("$TAG: no listed release has its APK uploaded yet")
 
             val isPlayStore = isPlayStoreInstallation(context)
 
             Result.success(
                 UpdateInfo(
                     isUpdateAvailable = isUpdateAvailable,
-                    latestVersionName = newestRawTag,
+                    latestVersionName = newest?.tag ?: BuildConfig.VERSION_NAME,
                     currentVersionName = BuildConfig.VERSION_NAME,
-                    releaseUrl = newestUrl,
-                    apkUrl = newestApkUrl,
+                    releaseUrl = newest?.pageUrl ?: GITHUB_RELEASES_WEB,
+                    apkUrl = newest?.apkUrl,
                     isPlayStore = isPlayStore
                 )
             )
@@ -184,6 +171,8 @@ object UpdateChecker {
         val pairs = ArrayList<Pair<String, String>>(assets.length())
         for (i in 0 until assets.length()) {
             val asset = assets.optJSONObject(i) ?: continue
+            // An asset is listed while it uploads; its URL answers only once the state is "uploaded".
+            if (asset.optString("state", "uploaded") != "uploaded") continue
             pairs.add(asset.optString("name", "") to asset.optString("browser_download_url", ""))
         }
         return pairs

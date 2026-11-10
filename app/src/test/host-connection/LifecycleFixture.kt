@@ -18,6 +18,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 private enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
+// PRODUCTION END_CAUSE
+private class ProjectionConnection { val type: Type? = null; enum class Type { USB, WIFI } }
 private sealed class ConnectionState {
     object Connecting : ConnectionState()
     object Connected : ConnectionState()
@@ -74,7 +76,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val queue = QueuedCleanup()
     private val _scope = CoroutineScope(SupervisorJob() + queue)
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Connected)
-    private var _connection: Any? = Any()
+    private var _connection: ProjectionConnection? = ProjectionConnection()
     private var _transport: AapTransport? = null
     @Volatile private var projectionVideoFocusSuppressed = false
     private var _disconnectJob: Job? = null
@@ -111,7 +113,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) {}
     fun nextConnection() {
         _transport?.aapAudio?.releaseAllFocus(); Handler.runAll()
-        _transport = null; disconnectRequested = false; _connection = Any(); _connectionState.value = ConnectionState.Connected
+        _transport = null; disconnectRequested = false; _connection = ProjectionConnection(); _connectionState.value = ConnectionState.Connected
     }
     fun close() { _transport?.aapAudio?.releaseAllFocus(); audioDecoder.stop(); Handler.runAll(); _scope.cancel() }
 }

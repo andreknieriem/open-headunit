@@ -57,6 +57,7 @@
         android:name="com.andrerinas.openheadunit.permission.NAVIGATION_UPDATE"
         android:protectionLevel="signature" />
 
+    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -278,6 +279,18 @@
             android:name=".main.FloatingButtonService"
             android:exported="false" />
 
+        <!-- Ends the permission record's entry when Android answers, even while AapService is
+             down. Only our own PendingIntents reach it, so it is not exported. -->
+        <receiver
+            android:name=".connection.usb.UsbPermissionResultReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.andrerinas.openheadunit.ACTION_USB_DEVICE_PERMISSION" />
+                <data android:scheme="ohu-usb-ask" />
+                <data android:scheme="ohu-usb-recovery" />
+            </intent-filter>
+        </receiver>
+
         <!-- AndroidX MediaButtonReceiver: Routes MEDIA_BUTTON intents to AapService
              on Android 8+ where implicit broadcasts to manifest-registered receivers
              are restricted. This is the standard Android mechanism used by HUR. -->
@@ -329,6 +342,22 @@
                 <action android:name="com.andrerinas.openheadunit.ACTION_STOP_LOG_CAPTURE" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_EXPORT_LOG" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_LOG_MARKER" />
+                <action android:name="com.andrerinas.openheadunit.ACTION_SCREEN_OFF" />
+                <action android:name="com.andrerinas.openheadunit.ACTION_SCREEN_ON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".app.ScreenOffAdminReceiver"
+            android:exported="true"
+            android:label="@string/screen_off_admin_label"
+            android:description="@string/screen_off_admin_description"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/screen_off_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
 

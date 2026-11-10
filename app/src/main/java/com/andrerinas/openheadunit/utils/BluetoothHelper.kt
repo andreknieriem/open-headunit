@@ -15,6 +15,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayProtocol
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NamedPhonePolicy
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
@@ -23,6 +24,12 @@ import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerInventory
 
 object BluetoothHelper {
 
+    /**
+     * Reads app settings, requiring an initialized app component and an unlocked caller.
+     * A configured custom service may fall back to [getDefaultAdapter] when lookup fails.
+     * Null means no exposed manager/radio, not a generic permission-error result;
+     * settings access and default lookup exceptions can still propagate.
+     */
     fun getBluetoothAdapter(context: Context): BluetoothAdapter? {
         val settings = App.provide(context).settings
         val serviceName = settings.bluetoothManagerServiceName
@@ -51,9 +58,14 @@ object BluetoothHelper {
         return getDefaultAdapter(context)
     }
 
+    /**
+     * Uses the optional system BluetoothManager on API 18+, or the legacy lookup on older platforms.
+     * Absence returns null so callers can keep the home screen and non-Bluetooth routes usable.
+     * Lookup exceptions propagate to the caller.
+     */
     private fun getDefaultAdapter(context: Context): BluetoothAdapter? {
         return if (Build.VERSION.SDK_INT >= 18) {
-            (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+            (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
         } else {
             @Suppress("DEPRECATION")
             BluetoothAdapter.getDefaultAdapter()
@@ -289,6 +301,18 @@ object BluetoothHelper {
         fun deviceFor(mac: String?): BluetoothDevice? =
             mac?.let { m -> all.firstOrNull { it.device.address.equals(m, ignoreCase = true) }?.device }
     }
+
+    /** The bonded devices as the name resolver reads them: the remote name and, from API 30, the alias. */
+    @SuppressLint("MissingPermission")
+    fun pairedForNaming(candidates: DriverCandidates): List<NamedPhonePolicy.Paired> =
+        candidates.all.map { c ->
+            val names = ArrayList<String>(2)
+            try { c.device.name?.let { names.add(it) } } catch (_: Exception) { }
+            if (Build.VERSION.SDK_INT >= 30) {
+                try { c.device.alias?.let { names.add(it) } } catch (_: Exception) { }
+            }
+            NamedPhonePolicy.Paired(c.device.address, names, c.verdict)
+        }
 
     @Volatile
     private var lastCandidateSummary: String? = null

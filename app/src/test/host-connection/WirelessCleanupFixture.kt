@@ -48,11 +48,19 @@ enum class WifiLauncherMode { NATIVE }
 enum class WifiLauncherStopSequence { LAST, BEFORE_HOTSPOT_DISABLE }
 enum class HotspotExitAction { NONE, DISABLE, WARN_LEFT_UP }
 object UserExitHotspotPolicy { fun onUserExit(a: Any,b: Any,c: Any,d: Any,e: Any) = HotspotExitAction.NONE }
+enum class WiredRearm { NOW, ON_POWER_BACK, DROP }
+object ExternalPowerDisconnectPolicy {
+    fun standDownHolds(powerBack: Boolean, pluggedNow: Boolean) = !powerBack || !pluggedNow
+    fun wiredRearm(holds: Boolean, endedByPower: Boolean) = WiredRearm.DROP
+}
+object ScreenPower { fun turnOff(s: Service) = true }
 object HotspotManager { fun restart(s: Service) = true }
 object Esp32RelaySession { fun hasSavedEsp32Relay(context: Any) = false; fun notifyProjection(up: Boolean) {} }
 class Settings {
     val wifiConnectionMode=WifiLauncherMode.NATIVE; val helperConnectionStrategy=0; val nativeApStrategy=0
     val autoEnableHotspot=false; var hotspotTeardownProvenUnsafe=false
+    var lastConnectionType=""
+    companion object { const val CONNECTION_TYPE_USB="usb" }
 }
 class WifiLauncherNative {
     val handshakeManager: WifiLauncherNative? = null
@@ -92,9 +100,17 @@ class Service {
     val wifiLauncherManager=WifiManager(this)
     val settings=Settings()
     val videoDecoder=VideoDecoder()
-    var sessionEndedByHand=false; var pendingBtStandDown: Any?=null; var wirelessQuiescedForWiredSession=false
+    var sessionEndedByHand=false; var pendingStandDown: Any?=null; var pendingStandDownLabel: String?=null; var wirelessQuiescedForWiredSession=false
     var exitTeardownDone: CompletableDeferred<Unit>?=null
+    var lastUncleanSessionEndAt=0L
     var exitTeardownState: CommManager.ConnectionState.Disconnected?=null
+    val externalPowerLock=Any(); var externalPowerEndReached=false; var externalPowerBackWhileEnding=false
+    var screenOffAfterStandDown=false; var externalPowerTurnedScreenOff=false; var powerEndsFinished=0
+    val EXTERNAL_POWER_STAND_DOWN="external-power disconnect"
+    fun finishExternalPowerEnd() { powerEndsFinished++ }
+    var wiredRearmHeldForStandDown=false; var wiredRearmOwedToPowerBack=false
+    fun isExternalPowerPresent()=false
+    fun launchWiredSessionRearm() {}
     var isDestroying=false; var userExitedAA=false; var userExitCooldownUntil=0L
     val USER_EXIT_COOLDOWN_MS=5000L
     val usbLauncherManager=UnitManager(); val nightModeManager: UnitManager?=UnitManager(); val carKeysManager=UnitManager()
@@ -114,7 +130,7 @@ class Service {
     fun updateMediaSessionState(active: Boolean) {}
     fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) { reconnects++ }
     suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {}
-    fun rearmWirelessAfterWiredSession(quiesced: Boolean)=false
+    fun rearmWirelessAfterWiredSession(quiesced: Boolean, standDownPending: Boolean=false)=false
     fun notifyEnd(state: CommManager.ConnectionState.Disconnected) { onDisconnected(state) }
     // CALLBACK
 }
@@ -214,10 +230,10 @@ fun main() {
     for (supersededAtCallback in listOf(true, false)) for (armed in listOf(false, true)) Service().apply {
         val ended=CommManager.ConnectionState.Disconnected(isUserExit=true)
         commManager.connectionState.value=ended
-        pendingBtStandDown=wifiLauncherManager.cleanupTicket()
+        pendingStandDown=wifiLauncherManager.cleanupTicket(); pendingStandDownLabel="Bluetooth auto-disconnect"
         if (supersededAtCallback) commManager.connectionState.value=CommManager.ConnectionState.Connecting
         notifyEnd(ended); main.drain()
-        check(pendingBtStandDown==null && gpsStops==1 && wifiReleases==1 && reconnectPlayback.records==1)
+        check(pendingStandDown==null && pendingStandDownLabel==null && gpsStops==1 && wifiReleases==1 && reconnectPlayback.records==1)
         check(wifiLauncherManager.stops==0) // Not before CommManager finishes ByeBye/close.
         if (!supersededAtCallback) commManager.connectionState.value=CommManager.ConnectionState.Connecting
         if (armed) {
@@ -234,7 +250,7 @@ fun main() {
     // StateFlow conflation). Explicit rearm revokes that pending intent before any new end.
     for (rearmed in listOf(false, true)) Service().apply {
         commManager.connectionState.value=CommManager.ConnectionState.Connecting
-        pendingBtStandDown=wifiLauncherManager.cleanupTicket()
+        pendingStandDown=wifiLauncherManager.cleanupTicket(); pendingStandDownLabel="Bluetooth auto-disconnect"
         val skipped=CommManager.ConnectionState.Disconnected(hadPhysicalConnection=false)
         commManager.connectionState.value=skipped
         if (rearmed) wifiLauncherManager.noteRearm()
@@ -242,7 +258,7 @@ fun main() {
         val ended=CommManager.ConnectionState.Disconnected(isUserExit=false)
         commManager.connectionState.value=ended
         notifyEnd(ended); commManager.gate.complete(Unit); main.drain()
-        check(pendingBtStandDown==null)
+        check(pendingStandDown==null && pendingStandDownLabel==null)
         check(wifiLauncherManager.stops==(if (rearmed) 0 else 1))
         check(userExitedAA==!rearmed)
         serviceScope.cancel()

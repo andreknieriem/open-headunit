@@ -11,7 +11,13 @@ import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
+class StandardUsbProjectionConnection(
+    usbMgr: UsbManager,
+    device: UsbDevice,
+    // Debug only: a one-shot fault armed through the automation receiver, never a visible setting.
+    private val readFaultArmed: () -> Boolean = { false },
+    private val disarmReadFault: () -> Unit = {},
+) :
     AbstractUsbProjectionConnection(usbMgr, device) {
 
     // @Volatile so isConnected / isDeviceRunning see the latest value without a lock.
@@ -233,11 +239,16 @@ class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
                 }
 
                 // 2. Internal buffer empty, read new 16KB chunk from USB
-                val read = try {
+                var read = try {
                     connection.bulkTransfer(ep, internalBuffer, internalBuffer.size, timeout)
                 } catch (e: Exception) {
                     AppLog.e("USB Read Error: ${e.message}")
                     -1
+                }
+                if (UsbReadFaultPolicy.shouldFault(readFaultArmed(), read)) {
+                    disarmReadFault()
+                    AppLog.w("StandardUsbProjectionConnection: debug fault, discarding a $read byte read as failed.")
+                    read = -1
                 }
 
                 if (read < 0) {

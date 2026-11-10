@@ -105,10 +105,10 @@ class PerformanceOverlaySettingsFragment : Fragment() {
         navigateBack()
     }
 
-    private fun fieldRow(field: PerformanceOverlayField, nameResId: Int) = SettingItem.ToggleSettingEntry(
+    private fun fieldRow(field: PerformanceOverlayField, nameResId: Int, summaryResId: Int? = null) = SettingItem.ToggleSettingEntry(
         stableId = "overlayField${field.name}",
         nameResId = nameResId,
-        descriptionResId = null,
+        descriptionResId = summaryResId,
         isChecked = field in pendingFields,
         isEnabled = pendingShow,
         onCheckedChanged = { isChecked ->
@@ -125,6 +125,7 @@ class PerformanceOverlaySettingsFragment : Fragment() {
             stableId = "showPerformanceOverlay",
             nameResId = R.string.show_performance_overlay,
             descriptionResId = R.string.show_performance_overlay_description,
+            helpResId = R.string.show_performance_overlay_help,
             isChecked = pendingShow,
             onCheckedChanged = { isChecked ->
                 pendingShow = isChecked
@@ -133,18 +134,19 @@ class PerformanceOverlaySettingsFragment : Fragment() {
             }
         ))
         items.add(fieldRow(PerformanceOverlayField.FPS, R.string.overlay_field_fps))
-        items.add(fieldRow(PerformanceOverlayField.CPU, R.string.overlay_field_cpu))
-        items.add(fieldRow(PerformanceOverlayField.TEMP, R.string.overlay_field_temperature))
-        items.add(fieldRow(PerformanceOverlayField.FRAME, R.string.overlay_field_frame_age))
-        items.add(fieldRow(PerformanceOverlayField.BATTERY, R.string.overlay_field_battery))
+        items.add(fieldRow(PerformanceOverlayField.CPU, R.string.overlay_field_cpu, R.string.overlay_field_cpu_summary))
+        items.add(fieldRow(PerformanceOverlayField.TEMP, R.string.overlay_field_temperature, R.string.overlay_field_temperature_summary))
+        items.add(fieldRow(PerformanceOverlayField.FRAME, R.string.overlay_field_frame_age, R.string.overlay_field_frame_age_summary))
+        items.add(fieldRow(PerformanceOverlayField.BATTERY, R.string.overlay_field_battery, R.string.overlay_field_battery_summary))
         items.add(fieldRow(PerformanceOverlayField.MEMORY, R.string.overlay_field_memory))
-        items.add(fieldRow(PerformanceOverlayField.WIFI, R.string.overlay_field_wifi_signal))
+        items.add(fieldRow(PerformanceOverlayField.WIFI, R.string.overlay_field_wifi_signal, R.string.overlay_field_wifi_signal_summary))
 
         // The overlay sits in a top corner, and on a panel with an OEM bar that corner is covered.
         val overlayPositions = arrayOf(getString(R.string.margin_left), getString(R.string.margin_right))
         items.add(SettingItem.SettingEntry(
             stableId = "overlayPosition",
             nameResId = R.string.overlay_position,
+            helpResId = R.string.overlay_position_help,
             value = overlayPositions.getOrElse(pendingPosition.value) { "" },
             isEnabled = pendingShow,
             onClick = { _ ->

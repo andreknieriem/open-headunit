@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctProjectionStage
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctOpening
@@ -219,7 +220,7 @@ class NativeAaHandshakeManager(
                 // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
                 ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
                     AppLog.w(it)
-                    AppLog.w("NativeAA: continuing anyway, because the Bluetooth compatibility check is switched off in Settings.")
+                    AppLog.w("NativeAA: continuing anyway, because Settings chooses this unit's own Bluetooth for the phone.")
                 }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -774,6 +775,10 @@ class NativeAaHandshakeManager(
     fun isHandshakeInFlight(): Boolean =
         NativeHandoffPolicy.isHandshaking(handshakeStartedAt, SystemClock.elapsedRealtime())
 
+    /** The phone whose handshake or join is under way, or null when none is. */
+    fun handoffPeerAddress(): String? =
+        if (isHandshakeInFlight() || isHandoffSettling()) activeHandshakeLink?.peerAddress?.takeIf { it.isNotEmpty() } else null
+
     /**
      * True between delivering the WiFi credentials (Type 3) and the phone's TCP session actually
      * landing — the window in which it is still associating, doing WPS and getting a DHCP lease.
@@ -1007,20 +1012,20 @@ class NativeAaHandshakeManager(
             ExternalBtTransportPolicy.Route.BLOCKED -> {
                 val fyt = BluetoothHelper.fytModuleEvidence
                 if (fyt != null) {
-                    notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Turn on " +
-                        "\"Connect through the FYT external Bluetooth module\", or use USB or a WiFi mode."
+                    notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Choose " +
+                        "\"Car Bluetooth module (FYT BLINK)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
                     AppLog.e("NativeAA: $notStartedReason")
                     return
                 }
                 externalBtDiagnostic(discovery)?.let { AppLog.e(it) }
                 notStartedReason = "this unit's Bluetooth is an external module with no route through it " +
-                    "(${discovery.decision.evidence}). Turn on \"Connect through the head unit's " +
-                    "Bluetooth module\", or use USB or a WiFi mode."
+                    "(${discovery.decision.evidence}). Choose \"Car Bluetooth " +
+                    "module (ZLink)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
                 return
             }
             // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
             ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
-                AppLog.w("$it\nNativeAA: starting anyway, because the Bluetooth compatibility check is switched off in Settings.")
+                AppLog.w("$it\nNativeAA: starting anyway, because Settings chooses this unit's own Bluetooth for the phone.")
             }
         }
 
@@ -1740,9 +1745,9 @@ class NativeAaHandshakeManager(
         try { socket.close() } catch (_: Exception) {}
     }
 
-    /** Closes a handshake link to a phone and records that the close was ours. */
-    private fun closePhoneLink(link: HandshakeLink) {
-        link.peerAddress?.takeIf { it.isNotEmpty() }?.let { ownSocketCloseAt[it.uppercase()] = SystemClock.elapsedRealtime() }
+    /** Closes a handshake link to a phone and, unless [ours] is false, records that the close was ours. */
+    private fun closePhoneLink(link: HandshakeLink, ours: Boolean = true) {
+        if (ours) link.peerAddress?.takeIf { it.isNotEmpty() }?.let { ownSocketCloseAt[it.uppercase()] = SystemClock.elapsedRealtime() }
         try { link.close() } catch (_: Exception) {}
     }
 
@@ -3373,6 +3378,9 @@ class NativeAaHandshakeManager(
         // the phone is associating and there is nothing to gain by being busy.
         var retiredSilentRecord = false
         var abortedLocally = false
+        // Whether the phone closed the held channel itself; closing our end after that is not a
+        // close of ours. See BtAutoDisconnectPolicy.closeIsOurs.
+        var phoneClosedChannel = false
         // The launcher's, not the setting's: what we tell the phone has to be the network we are
         // actually hosting, and a saved transport does not reach the running launcher until it is
         // re-armed.
@@ -3620,6 +3628,7 @@ class NativeAaHandshakeManager(
                     }
                     is WppAction.Release -> {
                         val heldS = (SystemClock.elapsedRealtime() - holdingSince) / 1000
+                        phoneClosedChannel = action.peerClosed
                         if (action.peerClosed) {
                             AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings; the Android Auto listeners reopen when this session ends.")
                         } else {
@@ -4031,7 +4040,7 @@ class NativeAaHandshakeManager(
             // point to cancel at — so its thread is stranded from here on.
             readerJob?.cancel()
             inbound.close()
-            closePhoneLink(link)
+            closePhoneLink(link, ours = BtAutoDisconnectPolicy.closeIsOurs(peerClosed = phoneClosedChannel))
             ConnectionArbiter.release(arbiterClaim, sessionFormed = commManager.isConnected)
             AppLog.i("NativeAA: BT Handshake link closed.")
         }

@@ -1,6 +1,9 @@
 package com.andrerinas.openheadunit.utils
 
+import com.andrerinas.openheadunit.connection.usb.UsbAutoStartPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbPlugInPolicy
 import android.annotation.SuppressLint
+import com.andrerinas.openheadunit.app.ExternalPowerDisconnectPolicy
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
@@ -9,6 +12,7 @@ import android.hardware.usb.UsbDevice
 import android.location.Location
 import android.media.AudioManager
 import android.os.Build
+import com.andrerinas.openheadunit.aap.DimPolicy
 import com.andrerinas.openheadunit.input.KeyCode
 import com.andrerinas.openheadunit.main.FavoriteAppsPolicy
 import com.andrerinas.openheadunit.main.FavoriteTarget
@@ -59,6 +63,11 @@ class Settings(private val context: Context) {
     var isAdvancedSettingsActive: Boolean
         get() = prefs.getBoolean("advanced-settings-active", false)
         set(value) { prefs.edit().putBoolean("advanced-settings-active", value).apply() }
+
+    /** The settings rail folded to its icons. A view choice, so it saves at once. */
+    var settingsRailCollapsed: Boolean
+        get() = prefs.getBoolean("settings-rail-collapsed", false)
+        set(value) { prefs.edit().putBoolean("settings-rail-collapsed", value).apply() }
 
     var allowedDevices: Set<String>
         @Synchronized get() = prefs.getStringSet("allow-devices", null)?.toSet() ?: emptySet()
@@ -550,15 +559,64 @@ class Settings(private val context: Context) {
             ?: GestureAction.TOGGLE_FULLSCREEN
         set(value) { prefs.edit().putInt("right-two-finger-gesture", value.value).apply() }
 
+    var longPressTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("long-press-two-finger-gesture", GestureAction.DISABLED.value))
+            ?: GestureAction.DISABLED
+        set(value) { prefs.edit().putInt("long-press-two-finger-gesture", value.value).apply() }
+
+    var leftTapTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("left-tap-two-finger-gesture", GestureAction.DIM_SCREEN.value))
+            ?: GestureAction.DIM_SCREEN
+        set(value) { prefs.edit().putInt("left-tap-two-finger-gesture", value.value).apply() }
+
+    var rightTapTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("right-tap-two-finger-gesture", GestureAction.NIGHT_OVERLAY.value))
+            ?: GestureAction.NIGHT_OVERLAY
+        set(value) { prefs.edit().putInt("right-tap-two-finger-gesture", value.value).apply() }
+
     var downTwoFingerGesture: GestureAction
         get() = GestureAction.fromInt(prefs.getInt("down-two-finger-gesture", GestureAction.DISABLED.value))
             ?: GestureAction.DISABLED
         set(value) { prefs.edit().putInt("down-two-finger-gesture", value.value).apply() }
 
-    var longPressTwoFingerGesture: GestureAction
-        get() = GestureAction.fromInt(prefs.getInt("long-press-two-finger-gesture", GestureAction.DISABLED.value))
-            ?: GestureAction.DISABLED
-        set(value) { prefs.edit().putInt("long-press-two-finger-gesture", value.value).apply() }
+    var gestureEdgeZone: GestureEdgeZone
+        get() = GestureEdgeZone.fromInt(prefs.getInt("gesture-edge-zone", GestureEdgeZone.NORMAL.value))
+            ?: GestureEdgeZone.NORMAL
+        set(value) { prefs.edit().putInt("gesture-edge-zone", value.value).apply() }
+
+    /** Removes the stored values so the defaults stay live. */
+    fun resetGestureSettings() {
+        prefs.edit().apply {
+            for (key in GESTURE_KEYS) remove(key)
+        }.apply()
+    }
+
+    var dimOpacityPercent: Int
+        get() = prefs.getInt("dim-opacity-percent", DimPolicy.DEFAULT_PERCENT)
+            .takeIf { it in DimPolicy.MIN_PERCENT..DimPolicy.MAX_PERCENT } ?: DimPolicy.DEFAULT_PERCENT
+        set(value) { prefs.edit().putInt("dim-opacity-percent", value).apply() }
+
+    var nightOverlayTextSize: NightOverlayTextSize
+        get() = NightOverlayTextSize.fromInt(prefs.getInt("night-overlay-text-size", NightOverlayTextSize.NORMAL.value))
+            ?: NightOverlayTextSize.NORMAL
+        set(value) { prefs.edit().putInt("night-overlay-text-size", value.value).apply() }
+
+    var nightOverlayShowClock: Boolean
+        get() = prefs.getBoolean("night-overlay-show-clock", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-clock", value).apply() }
+
+    var nightOverlayShowNavigation: Boolean
+        get() = prefs.getBoolean("night-overlay-show-navigation", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-navigation", value).apply() }
+
+    var nightOverlayShowTrack: Boolean
+        get() = prefs.getBoolean("night-overlay-show-track", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-track", value).apply() }
+
+    var nightOverlayBackground: NightOverlayBackground
+        get() = NightOverlayBackground.fromInt(prefs.getInt("night-overlay-background", NightOverlayBackground.BLACK.value))
+            ?: NightOverlayBackground.BLACK
+        set(value) { prefs.edit().putInt("night-overlay-background", value.value).apply() }
 
     @Deprecated("Use fullscreenMode instead")
     var startInFullscreenMode: Boolean
@@ -1038,6 +1096,11 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("debug-video-feed-hold-ms", 0)
         set(value) { prefs.edit().putInt("debug-video-feed-hold-ms", value.coerceIn(0, 250)).apply() }
 
+    /** One-shot: the next USB bulk read is discarded as failed. Set only by the automation receiver. */
+    var debugUsbReadFault: Boolean
+        get() = prefs.getBoolean("debug-usb-read-fault", false)
+        set(value) { prefs.edit().putBoolean("debug-usb-read-fault", value).apply() }
+
     /** One in this many of the targeted messages is faulted. See [debugVideoFaultInjection]. */
     var debugVideoFaultRate: Int
         get() = prefs.getInt("debug-video-fault-rate", VideoFaultInjector.DEFAULT_RATE)
@@ -1404,6 +1467,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("auto-start-on-boot", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-boot", value).apply() }
 
+    /** With [autoStartOnBoot], start only the service and leave the screen to the phone connecting. */
+    var autoStartOnBootInBackground: Boolean
+        get() = prefs.getBoolean("auto-start-on-boot-in-background", false)
+        set(value) { prefs.edit().putBoolean("auto-start-on-boot-in-background", value).apply() }
+
     var autoStartOnScreenOn: Boolean
         get() = prefs.getBoolean("auto-start-on-screen-on", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-screen-on", value).apply() }
@@ -1419,6 +1487,18 @@ class Settings(private val context: Context) {
     var listenForUsbDevices: Boolean
         get() = prefs.getBoolean("listen-for-usb-devices", true)
         set(value) { prefs.edit().putBoolean("listen-for-usb-devices", value).apply() }
+
+    /** "Connect when plugged in": whether a plug-in switches the phone. Off, the plug-in opens the app. */
+    var usbConnectOnPlugIn: Boolean
+        get() = prefs.getBoolean(KEY_USB_CONNECT_ON_PLUG_IN, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
+        set(value) { prefs.edit().putBoolean(KEY_USB_CONNECT_ON_PLUG_IN, value).apply() }
+
+    /** [autoStartOnUsb] as the automatic USB paths read it; the stored value and its mirror stay raw. */
+    val effectiveAutoStartOnUsb: Boolean
+        get() = UsbAutoStartPolicy.effective(autoStartOnUsb, usbConnectOnPlugIn, listenForUsbDevices)
+
+    val effectiveConnectOnPlugIn: Boolean
+        get() = UsbPlugInPolicy.connectsOnPlugIn(usbConnectOnPlugIn, listenForUsbDevices)
 
     var usbBlacklist: Set<String>
         @Synchronized get() = prefs.getStringSet(KEY_USB_BLACKLIST, null)?.toSet() ?: emptySet()
@@ -1575,6 +1655,20 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("auto-disconnect-bt-delay-seconds", 5)
         set(value) { prefs.edit().putInt("auto-disconnect-bt-delay-seconds", value).apply() }
 
+    /** Ends the session when external power is lost; see ExternalPowerDisconnectPolicy. */
+    var externalPowerDisconnect: Boolean
+        get() = prefs.getBoolean("external-power-disconnect", false)
+        set(value) { prefs.edit().putBoolean("external-power-disconnect", value).apply() }
+
+    var externalPowerDisconnectDelaySeconds: Int
+        get() = prefs.getInt("external-power-disconnect-delay-seconds", ExternalPowerDisconnectPolicy.DEFAULT_DELAY_SECONDS)
+        set(value) { prefs.edit().putInt("external-power-disconnect-delay-seconds", value).apply() }
+
+    /** Also turns the screen off after the disconnect; needs the force-lock device admin grant. */
+    var externalPowerScreenOff: Boolean
+        get() = prefs.getBoolean("external-power-screen-off", false)
+        set(value) { prefs.edit().putBoolean("external-power-screen-off", value).apply() }
+
     var appLanguage: String
         get() = prefs.getString("app-language", "")!!
         set(value) { prefs.edit().putString("app-language", value).apply() }
@@ -1716,6 +1810,7 @@ class Settings(private val context: Context) {
             syncAutoStartOnBootToDeviceStorage(context, false)
             syncAutoStartOnScreenOnToDeviceStorage(context, false)
             syncAutoStartOnUsbToDeviceStorage(context, false)
+            syncUsbConnectOnPlugInToDeviceStorage(context, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
             syncAutoStartOnWifiToDeviceStorage(context, false)
             syncListenForUsbDevicesToDeviceStorage(context, true)
             syncAutoStartBtMacToDeviceStorage(context, "")
@@ -1907,6 +2002,15 @@ class Settings(private val context: Context) {
 
     companion object {
         const val PREFS_NAME = "settings"
+
+        private val GESTURE_KEYS = listOf(
+            "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
+            "left-tap-two-finger-gesture", "right-tap-two-finger-gesture", "down-two-finger-gesture",
+            "gesture-edge-zone",
+            "dim-opacity-percent", "night-overlay-text-size",
+            "night-overlay-show-clock", "night-overlay-show-navigation", "night-overlay-show-track",
+            "night-overlay-background"
+        )
 
         const val CONNECTION_TYPE_WIFI = "wifi"
         const val CONNECTION_TYPE_USB = "usb"
@@ -2125,6 +2229,29 @@ class Settings(private val context: Context) {
             }
         }
 
+        private const val KEY_USB_CONNECT_ON_PLUG_IN = "usb-connect-on-plug-in"
+
+        /** Reads usb-connect-on-plug-in like [isAutoStartOnUsbEnabled]; safe during locked boot. */
+        fun isUsbConnectOnPlugInEnabled(context: Context): Boolean {
+            val prefs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val deviceContext = context.createDeviceProtectedStorageContext()
+                deviceContext.getSharedPreferences(DEVICE_PREFS_NAME, Context.MODE_PRIVATE)
+            } else {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            }
+            return prefs.getBoolean(KEY_USB_CONNECT_ON_PLUG_IN, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
+        }
+
+        fun syncUsbConnectOnPlugInToDeviceStorage(context: Context, enabled: Boolean) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val deviceContext = context.createDeviceProtectedStorageContext()
+                deviceContext.getSharedPreferences(DEVICE_PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(KEY_USB_CONNECT_ON_PLUG_IN, enabled)
+                    .apply()
+            }
+        }
+
         private const val KEY_AUTO_START_ON_WIFI = "auto-start-on-wifi"
         private const val KEY_AUTO_START_WIFI_SSID = "auto-start-wifi-ssid"
 
@@ -2324,10 +2451,44 @@ class Settings(private val context: Context) {
         DISABLED(0),
         EXIT_DIALOG(1),
         TOGGLE_FULLSCREEN(2),
-        NIGHT_OVERLAY(3);
+        NIGHT_OVERLAY(3),
+        DIM_SCREEN(4);
 
         companion object {
             private val map = values().associateBy(GestureAction::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    /** Width of the zone at each side where a two-finger gesture may start. */
+    enum class GestureEdgeZone(val value: Int, val dp: Float) {
+        NARROW(0, 48f),
+        NORMAL(1, 64f),
+        WIDE(2, 96f);
+
+        companion object {
+            private val map = values().associateBy(GestureEdgeZone::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    enum class NightOverlayTextSize(val value: Int) {
+        SMALL(0),
+        NORMAL(1),
+        LARGE(2);
+
+        companion object {
+            private val map = values().associateBy(NightOverlayTextSize::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    enum class NightOverlayBackground(val value: Int) {
+        BLACK(0),
+        DARK_GRAY(1);
+
+        companion object {
+            private val map = values().associateBy(NightOverlayBackground::value)
             fun fromInt(value: Int) = map[value]
         }
     }

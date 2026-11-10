@@ -21,55 +21,11 @@ class UsbDeviceIdentityPolicyTest {
 
     private fun evaluate(device: Device) = UsbDeviceIdentityPolicy.evaluate(device)
 
-    // A vendor-class interface with the accessory endpoint shape: bulk in, bulk out, one interrupt.
-    private fun vendorClass(name: String?) =
-        Interface(0xFF, 0xFF, 0x00, name = name, hasBulkIn = true, hasBulkOut = true)
-
-    /**
-     * ASIX AX88179A/B, 0B95:1790, the gigabit-ethernet controller inside a common USB-C dock, in
-     * its composite form: device class 0, all three configurations flattened into one list.
-     */
-    private val asixComposite = Device(
-        vendorId = 0x0B95, productId = 0x1790, deviceClass = 0x00,
-        interfaces = listOf(
-            vendorClass("Network_Interface"),
-            Interface(0x02, 0x0D, 0x00),                                  // CDC NCM control
-            Interface(0x0A, 0x00, 0x01),
-            Interface(0x0A, 0x00, 0x01, hasBulkIn = true, hasBulkOut = true),
-            Interface(0x02, 0x06, 0x00),                                  // CDC ECM control
-            Interface(0x0A, 0x00, 0x00),
-            Interface(0x0A, 0x00, 0x00, hasBulkIn = true, hasBulkOut = true),
-        ),
-    )
-
-    /**
-     * The same adapter's other form, seconds apart in the same capture: one vendor configuration,
-     * one unnamed interface, no CDC anywhere. Only the device class is left to judge it on.
-     */
-    private val asixVendorOnly = Device(
-        vendorId = 0x0B95, productId = 0x1790, deviceClass = 0xFF,
-        interfaces = listOf(vendorClass(null)),
-    )
-
-    /**
-     * A Samsung in file transfer, USB debugging off, round 3's `04E8:6860` capture. It ships a CDC
-     * ACM pair alongside MTP, and its data interface is byte-identical to the ethernet adapter's,
-     * so the network veto has to key on the control subclass or this phone is rejected.
-     */
-    private val samsungFileTransfer = Device(
-        vendorId = 0x04E8, productId = 0x6860, deviceClass = 0x00,
-        interfaces = listOf(
-            Interface(0x06, 0x01, 0x01, "MTP", hasBulkIn = true, hasBulkOut = true),
-            Interface(0x02, 0x02, 0x01, "CDC Abstract Control Model (ACM)"),
-            Interface(0x0A, 0x00, 0x00, "CDC ACM Data", hasBulkIn = true, hasBulkOut = true),
-        ),
-    )
-
-    /** motorola edge 30 neo in file-transfer mode. Charging only presents this same descriptor. */
-    private val phoneMtp = Device(
-        vendorId = 0x22B8, productId = 0x2E82, deviceClass = 0x00,
-        interfaces = listOf(vendorClass("MTP")),
-    )
+    private fun vendorClass(name: String?) = UsbDeviceFixtures.vendorClass(name)
+    private val asixComposite = UsbDeviceFixtures.asixComposite
+    private val asixVendorOnly = UsbDeviceFixtures.asixVendorOnly
+    private val samsungFileTransfer = UsbDeviceFixtures.samsungFileTransfer
+    private val phoneMtp = UsbDeviceFixtures.phoneMtp
 
     @Test
     fun `a USB ethernet adapter is not a phone, however much its control interface looks like one`() {
@@ -287,6 +243,51 @@ class UsbDeviceIdentityPolicyTest {
     fun `a device that has declared itself a hub or a printer is dropped on its device class`() {
         assertEquals("rejected: device class 0x09 is not a phone", evaluate(Device(0x1234, 0x1, 0x09, emptyList())).toString())
         assertEquals("rejected: device class 0x07 is not a phone", evaluate(Device(0x1234, 0x1, 0x07, emptyList())).toString())
+    }
+
+    @Test
+    fun `the stock Carlinkit CCPA is not a phone on either of its product ids`() {
+        for (pid in listOf(0x1520, 0x1521)) {
+            val box = UsbDeviceFixtures.carlinkitCcpa.copy(productId = pid)
+            assertEquals("rejected: no Android interface", evaluate(box).toString())
+        }
+    }
+
+    @Test
+    fun `the Carlinkit CCPM on its own protocol is not a phone`() {
+        assertEquals(
+            "rejected: Carlinkit box on its own protocol (bare bulk pair), not a phone",
+            evaluate(UsbDeviceFixtures.carlinkitCcpm).toString(),
+        )
+    }
+
+    @Test
+    fun `the CCPM shape on 1520 is rejected even when it names itself the accessory`() {
+        val named = UsbDeviceFixtures.carlinkitCcpm.copy(
+            interfaces = listOf(UsbDeviceFixtures.vendorClass("Android Accessory Interface")),
+        )
+        assertFalse(evaluate(named).accepted)
+    }
+
+    @Test
+    fun `the same bare bulk pair on 1521 is still a probe candidate, as the box posing as a phone`() {
+        // Pico identities 4 and 5: identity 5 answers AOA, so the shape alone must not reject it.
+        val posing = UsbDeviceFixtures.carlinkitCcpm.copy(productId = 0x1521)
+        assertEquals("accepted: AOAP (vendor interface named nothing)", evaluate(posing).toString())
+    }
+
+    @Test
+    fun `a box on 1520 with MTP's extra endpoint is still accepted`() {
+        val mtpPose = UsbDeviceFixtures.carlinkitCcpm.copy(
+            interfaces = listOf(UsbDeviceFixtures.vendorClass(null).copy(extraEndpoints = 1)),
+        )
+        assertTrue(evaluate(mtpPose).accepted)
+    }
+
+    @Test
+    fun `a phone with the CCPM's exact shape on another vendor is untouched`() {
+        val phone = UsbDeviceFixtures.carlinkitCcpm.copy(vendorId = 0x22D9, productId = 0x2764)
+        assertTrue(evaluate(phone).accepted)
     }
 
     @Test

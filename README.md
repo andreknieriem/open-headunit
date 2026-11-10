@@ -12,14 +12,13 @@
 Open Headunit is an Android app that allows you to turn your Android tablet or phone into an Android Auto receiver. This project is a revived version of the original headunit project by the great Michael Reid. The original project can be found here:
 https://github.com/mikereidis/headunit
 
+It runs on Android 4.1 and newer (Android 5.0 and newer for the Play Store build). Besides the stores above, you can download APKs from the [Releases page](https://github.com/andreknieriem/open-headunit/releases).
+
+**Contents:** [How to use](#how-to-use) · [Known Issues](#known-issues) · [Planned](#planned) · [Changelog](#changelog) · [Contributing](#contributing)
+
 ## NOTE!
 **Android Auto 17.4 and newer can prevent legacy wireless triggers from launching projection, including Self-Mode and automated startup via Wireless Helper. Rooted devices have a workaround: re-enable Android Auto's wireless startup receiver.**
-Choose from the five options below according to your Android Auto version and setup:
-1. **USB Wireless Android Auto Dongle (Recommended):** Hardware dongles provide seamless, hardware-level plug-and-play.
-2. **Native Mode:** Direct Wi-Fi Direct or Headunit Hotspot handshake.
-3. **Headunit Server (Developer Mode):** An option for wireless projection and Self-Mode without root. On the device running Android Auto, open its developer settings and tap "Start Headunit Server".
-4. **Wireless Helper:** The legacy startup flow works with Android Auto up to **17.3**; for **17.4+** on rooted devices, see option 5.
-5. **Root workaround (AA 17.4+):** Re-enable `WirelessStartupReceiver` with one root command to restore the previous wireless startup flow, including Wireless Helper, without starting the developer headunit server. See [the command and setup below](#5-root-workaround-for-android-auto-174).
+Use a **USB wireless dongle**, **Native Mode** or the **Headunit Server** instead. **Wireless Helper** works up to Android Auto **17.3**, or on **17.4+** with the root workaround. See [Wireless Connection Options](#wireless-connection-options).
 
 ## Screenshots
 <img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/6ed31626-480e-404f-ba7a-753b14230a02" />
@@ -33,9 +32,11 @@ Choose from the five options below according to your Android Auto version and se
 ### Wired USB Connection
 - Connect your Android device (phone) to the tablet running Open Headunit via USB cable.
 - Make sure that Android Auto is installed on your phone.
-- Set your phone to Host-Mode if nescessary and select Android Auto
+- Set your phone to Host-Mode if necessary and select Android Auto
 - Click the USB Button in Open Headunit, find your phone and click the right button to allow connection
 - Click on your phone in the list and wait for Android Auto to start
+
+Once a phone is set up, plugging it in connects by itself. You can change this in the Auto-start settings with **Connect when plugged in**.
 
 ### Wireless Connection Options
 Choose from the five options below depending on your Android Auto version and setup:
@@ -47,126 +48,13 @@ Choose from the five options below depending on your Android Auto version and se
 #### 2. Native Mode (Wi-Fi Direct / Headunit Hotspot)
 - Directly communicates with Android Auto's native wireless protocol without helper apps.
 - Supports **Wi-Fi Direct (P2P)** or the **Headunit Hotspot** transport.
-- Configure under Open Headunit Settings -> **Android Auto Mode** -> **Native Mode**.
-
-#### Optional automatic Wi-Fi scan pause
-
-In advanced settings → **Wireless Connection** → **Pause automatic Wi-Fi searches**, enable
-**Pause during wireless connections**. It is off by default and applies immediately. The setup
-screen puts installation and app approval under **Common setup**, vendor startup under
-**On FYT devices**, and manual debugging instructions under **On other devices**.
-
-- **Android 13+:** in Native mode (Wi-Fi Direct or Hotspot), pauses Android's periodic connectivity and PNO searches through the global
-  autojoin gate. Client modes keep automatic reconnection enabled. It reads the original value before changing it and restores that value on disconnect.
-- **Android 11–12L Wi-Fi Direct:** disables global autojoin through Shizuku while keeping
-  the P2P group. These versions expose no state getter: on release, searches are enabled again,
-  even if they were disabled beforehand. Command acceptance is not a measured scan state.
-- **Android 8–10 Wi-Fi Direct:** disables the internal connectivity manager through Shizuku.
-  Apply on connection, then renew every five minutes while connected. Android network requests
-  can re-enable searches between renewals. The long interval limits repeated firmware roaming
-  cleanup on Android 8–9; this is best-effort, not a guarantee of continuous suppression.
-  Release enables the manager again; the previous
-  value cannot be read. Reboot resets these temporary legacy Direct controls.
-- **Android 8–12L Hotspot:** with ordinary Wi-Fi off, pauses the remaining scan-always path
-  and restores its recorded value. The app never turns off a live Wi-Fi Direct radio.
-- **Android 7 and older:** this option is unavailable; existing wireless behavior is unchanged.
-
-Android 11+ can start Shizuku through wireless debugging; the screen also points to its USB setup
-for devices without that option. Android 8–10 uses USB/computer setup, with an explicit on-device
-startup option on supported FYT systems. FYT startup asks for normal ADB RSA authorization and
-keeps its network ADB listener open, including after app restart. Use **Close wireless ADB**
-to restore paused Wi-Fi searches and then stop the listener opened by this app. If restoration
-cannot finish, ADB stays open for recovery. Closing can also stop Shizuku and disconnect USB debugging.
-Existing ADB ports and persistent settings are left alone. An interrupted explicit close is
-retried when the app reopens. On Android 8–10 FYT systems, a previously configured FYT start is
-attempted when a Native wireless transport opens, provided this option stays enabled and Shizuku
-is not already running. App launch and boot alone do not start it. The attempt runs alongside the
-Android Auto handshake and does not delay projection. Each connection gets at most one attempt;
-disconnecting cancels unfinished startup. USB, self and wireless client sessions are excluded.
-Explicitly closing ADB disables automatic startup until the FYT start button is used again.
-Android may still require debugging authorization; failure does not block Android Auto.
-
-On app-process death, a separate shell helper attempts rollback. A device-local recovery record
-survives interruption of both processes and is retried when Shizuku is available again. Pending
-recovery is shown on the home screen and in settings, with automatic retries while an authorized
-helper is available. For a legacy scan-always recovery, Android can also restore scanning through
-a system confirmation without restarting Shizuku. Where the state can be read, the app verifies
-restoration before clearing its recovery record. Legacy Direct clears the record after Android
-accepts the enable request. On paths with readable state, if searches are re-enabled elsewhere,
-the app leaves them enabled for that connection instead of repeatedly forcing them off. Other apps' explicit scans, Wi-Fi Direct discovery and firmware roaming are outside
-this control; this option cannot promise to eliminate every radio interruption.
-
-#### Android data-service Bluetooth on dual-radio units
-
-Some head units have both a vendor-controlled calls module and a separate Android Bluetooth
-adapter, often labelled **Bluetooth data service** (for example, **Topway** on TS9 hardware).
-If the phone uses that Android adapter for Native AA, select it under **Settings → Advanced →
-Wireless Connection → Bluetooth Adapter** and pair the phone with it. If external-module
-detection blocks this known-working route, the existing **Ignore the Bluetooth compatibility
-check** option explicitly selects the Android route.
-
-On Android 12L and earlier, **Enable the selected Bluetooth adapter for Native AA** can turn that
-adapter on when Native AA starts. It is off by default. Startup waits for the adapter to report
-ON, with bounded retries, before opening the Bluetooth handshake listeners. An unsuccessful
-request is reported in the log; the adapter can still be enabled
-in system Settings. Stopping or changing the wireless mode cancels the pending startup. The
-option does not control the vendor calls module or turn Bluetooth off on exit. It is unavailable
-on Android 13 and later, where apps cannot silently enable the radio using this API.
-
-#### FYT external Bluetooth module transport (experimental)
-On FYT units where the phone pairs for calls with a separate Bluetooth module (for example **DUDUAUTO** on DUDUOS), Native Mode can carry its Android Auto Bluetooth handshake through `/dev/auto_serial`, the relay the stock Car Link app (`com.syu.carlink`) uses, while calls remain on the module and the vehicle microphone/speakers. Tested so far only on DUDUOS with a BLINK module.
-
-Requirements:
-- An FYT unit that exposes `/dev/auto_serial` (Car Link's external-module backend, `sys.fyt.bluetooth_type` above zero).
-- Nothing extra where the node is app-openable, as it is for the stock Car Link. Where it is not (node mode or SELinux), root access for Open Headunit, used as a fallback.
-- The stock `com.syu.carlink` package disabled, because two readers on the same terminal split protocol messages.
-- The phone paired with the module; pairing and phone priority remain managed by the module.
-
-Setup:
-1. Disable the stock client: `adb shell pm disable-user --user 0 com.syu.carlink` (prefix with `su -c` if the shell refuses).
-2. In Open Headunit, select **Native Mode** and enable **Connect through the FYT external Bluetooth module**.
-3. Keep the phone paired with the module and connect normally.
-
-On a detected FYT module unit with this transport off, Native Mode refuses to start and names this setting, instead of listening on a radio the phone is not paired with. If the channel cannot be opened (Car Link still enabled or running, or the node not app-openable and root denied), the reason is shown on screen and retried with a growing delay.
-
-Android Bluetooth driver selection, preferred-phone and wake-list controls are intentionally hidden on this route because Android cannot see or dial phones bonded to the external module. To roll back, turn this transport off and re-enable the stock client with `adb shell pm enable com.syu.carlink` (prefix with `su -c` if needed).
-
-#### Bluetooth Relay (ESP32 Classic BT relay)
-
-Native Mode can route the Android Auto Bluetooth handshake through an original ESP32 acting as a classic Bluetooth RFCOMM relay. Phone traffic uses RFCOMM; the head unit uses BLE GATT write / indicate. The ESP32 does not parse Android Auto (WPP) payloads; WifiStart / WifiInfo and the rest of the handshake remain on the head unit.
-
-Firmware, prebuilt binaries, and flashing: [aa-native-bt-broker-for-openheadunit](https://github.com/kendrickkim/aa-native-bt-broker-for-openheadunit) ([v1.0.0](https://github.com/kendrickkim/aa-native-bt-broker-for-openheadunit/releases/tag/v1.0.0)).
-
-Requirements:
-- Original ESP32 with Bluetooth Classic. ESP32-S2 / S3 / C3 / C6 lack Classic BT and are unsupported.
-- Head unit on Android 6.0 (API 23)+. Below API 23 the Bluetooth relay settings row is not shown.
-- Wireless connection mode: **Native**.
-
-Bonding topology (required):
-- Head unit bonds to the ESP32 BLE advertiser `OpenHU-BT-Relay-Setup` (address stored under Settings → Bluetooth relay). The head unit does not Classic-bond to the phone on this path.
-- Phone Classic-bonds to the ESP32 `OpenHU-BT-Relay`(PIN `0000`).
-- Cached Bluetooth names may lag after a re-configuration; delete the entry and rescan.
-
-Settings:
-- Enable **Use Bluetooth relay** under **Settings → Bluetooth relay (ESP32)**, then scan and select the relay.
-- Disabling the switch retains the saved relay address but returns Native Mode to the normal Bluetooth driver path.
-
-Setup (sequence is mandatory; BLE relay selection must precede phone Classic pairing):
-
-1. On the phone, remove the head unit from the Bluetooth bond list, then remove any existing `OpenHU-BT-Relay` entry.
-2. Power the ESP32. On the head unit open **Settings → Bluetooth relay (ESP32)**, enable the relay, **Scan**, and select `OpenHU-BT-Relay-Setup`. Selection stores the relay and opens a 120 s Classic discoverable window (status: pair `OpenHU-BT-Relay`, PIN `0000`).
-3. On the phone, pair `OpenHU-BT-Relay` (PIN `0000` if prompted). Confirm paired / connected status on the head unit.
-4. Start Android Auto under Native Mode. Wake / dial toward the phone is issued through the relay.
-
-HFP behaviour: after initial pairing the relay drops HFP. A transient phone-side “Bluetooth failed” indication at that point is expected. On each Native AA start the relay briefly re-enables HFP to deliver connection parameters, then disables it again. The window is handshake-only and is not intended to carry ongoing calls.
-
-Troubleshooting:
-
-| Symptom | Action |
-|---|---|
-| Discoverable window expired before Classic pairing | **Settings → Bluetooth relay (ESP32) → Pair phone** reopens the 120 s window. |
-| BLE scan empty | Reset the ESP32 and scan again. |
-| Android Auto does not start | Ensure the phone has no remaining bond to the head unit. |
+- Configure under Open Headunit Settings -> **Wireless Connection** -> **Wireless Mode** -> **Native**.
+- Native Mode starts over Bluetooth, then moves to WiFi. **Detect automatically** fits most units. Units that keep Bluetooth on a separate module, or that use a relay, take one of these routes:
+  - **[ZLink module](https://github.com/andreknieriem/open-headunit/wiki/Wireless#zlink-bluetooth-module-experimental) (experimental):** units with a ZJ/ZLink Bluetooth service on port 3152.
+  - **[ZJ socket](https://github.com/andreknieriem/open-headunit/wiki/Wireless#zj-bluetooth-socket):** Unisoc units whose module uses `/dev/socket/zj_bt_socket`.
+  - **[FYT BLINK module](https://github.com/andreknieriem/open-headunit/wiki/Wireless#fyt-external-bluetooth-module-transport-experimental) (experimental):** FYT units with a separate module, such as DUDUAUTO on DUDUOS.
+  - **[HCT service](https://github.com/andreknieriem/open-headunit/wiki/Wireless#hct-bluetooth-service):** units with a verified HCT Bluetooth service, without root. The app detects it by itself.
+  - **[ESP32 relay](https://github.com/andreknieriem/open-headunit/wiki/Wireless#bluetooth-relay-esp32-classic-bt-relay):** an original ESP32 relays the handshake. Firmware: [aa-native-bt-broker-for-openheadunit](https://github.com/kendrickkim/aa-native-bt-broker-for-openheadunit).
 
 #### 3. Headunit Server (No-Root Option for Self-Mode on AA 17.4+)
 - Starts the native Android Auto developer server directly on your phone or on the same device (Self-Mode).
@@ -180,19 +68,13 @@ Troubleshooting:
 - Our companion app triggers the wireless connection automatically in the background.
 - **Compatibility:** Android Auto **v17.3 and below**, or **v17.4+** with the root workaround in option 5.
 - **Download:** [Wireless Helper on Google Play Store](https://play.google.com/store/apps/details?id=com.andrerinas.wirelesshelper)
-- **Setup:** Set Open Headunit Wireless Mode to **Helper Mode**, ensure both devices are in the same network or Wi-Fi Direct group, and start the service in the Wireless Helper app.
+- **Setup:** Set Open Headunit **Wireless Mode** to **Wireless Helper**, ensure both devices are in the same network or Wi-Fi Direct group, and start the service in the Wireless Helper app.
 
 #### 5. Root Workaround for Android Auto 17.4+
-On the device running Android Auto (normally the phone), open a **root shell**, for example by running `su` in a terminal and granting root access. Then run:
+On a rooted device running Android Auto, one shell command restores the previous wireless startup flow, so Wireless Helper keeps working. See the [command and its limits](https://github.com/andreknieriem/open-headunit/wiki/Wireless#5-root-workaround-for-android-auto-174).
 
-```sh
-pm enable --user 0 \
-com.google.android.projection.gearhead/com.google.android.apps.auto.wireless.setup.receiver.WirelessStartupReceiver
-```
-
-Re-enabling this receiver restores the previous wireless startup flow on affected Android Auto versions. Keep using the same Wireless Helper / Helper Mode setup as before; the developer headunit server is not required for this workaround. Root is needed on the device running Android Auto, not on a separate head unit.
-
-`--user 0` targets the primary Android user. This is an internal Android Auto component: the workaround requires it to exist in the installed version, and future updates may change its name or behavior.
+### Optional automatic Wi-Fi scan pause
+This is a setting, not a way to connect. On Android 8 and newer, Open Headunit can pause Android's automatic Wi-Fi searches during a Native wireless connection, through Shizuku. It is off by default. See the [setup and limits per Android version](https://github.com/andreknieriem/open-headunit/wiki/Wireless#optional-automatic-wi-fi-scan-pause).
 
 ### Connect Wirelessly via Intent (Power Users)
 You can trigger a wireless connection attempt using an Android Intent. This is useful for automation tools like **Tasker**, **MacroDroid**, or via **ADB**.
@@ -204,36 +86,60 @@ You can trigger a wireless connection attempt using an Android Intent. This is u
 adb shell am start -a android.intent.action.VIEW -d "headunit://connect?ip=192.168.1.25"
 ```
 
+The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Automation) lists every command.
+
 ## Known Issues
 - **Google Maps in Portrait Mode:** Touch interactions (searching, scrolling) within Google Maps may not work as expected when using Portrait Mode on some devices. **Fix:** Try reducing the **Pixel density (DPI)** setting to **below 200** (e.g., 190) in the app settings. This often restores full functionality.
 - **Wireless Connection Drops:** If the connection drops frequently, disable **"WiFi Assistant"** or **"Switch between networks"** in your phone's WiFi settings to prevent it from killing the connection due to "no internet." Check battery saving options.
 - **Self-mode on Android 10 (Q) and below:** Google has disabled the automatic wireless projection startup for Android 10 and below in Android Auto versions 16.4 and higher. While Self-mode still works on newer Android versions, it is normally impossible to trigger projection on Android 10 and below directly with recent Google app updates. **Workaround:** You can still use Self-mode on these devices by starting the built-in Android Auto Headunit Server and connecting via Wi-Fi mode (loopback). See the [Troubleshooting Guide](https://github.com/andreknieriem/open-headunit/wiki/Troubleshooting#self-mode-on-android-10-q-and-below) for step-by-step instructions.
-- **WiFi-Direct needs long to connect:** A user finds that this is related to Google Assistant instead of Gemini for AA. If you use Gemini on newer AA versions it just runs smooth again. No idea why this happens.
-- **Stuck on Android is starting** Check your video codec in the settings and set it to h264 if you have a device which does not support h265. Some devices have a broken h265 decoder and this will cause the app to stuck on "Android is starting" and never start the projection.
+- **WiFi Direct takes a long time to connect:** One user traced this to Google Assistant in Android Auto. With Gemini on newer Android Auto versions it runs smoothly again. We do not know why.
+- **Stuck on "Android Auto is starting":** Check your video codec in the settings, and set it to H.264 if your device does not support H.265. Some devices have a broken H.265 decoder, which leaves the app stuck on this message.
 
 ## Planned
 - more customization options for the UI and the app itself
-- Info/Help descriptions to the settings for better understanding
 
 ## Changelog
-### 4.0.0-beta1
-- New Homescreen, thanks to @andrecuellar
-- AAP: send one version request over TCP, so a slow head unit server is not left deaf
-- AAP: Keep media and navigation display updates off the receive path
-- AAP: Preserve frame boundaries during handshake
-- AAP: send one version request over TCP, so a slow head unit server is not left deaf
-- WiFi Direct: detect a wedged P2P stack and offer a WiFi restart
-- WiFi: Pause automatic searches during wireless sessions with Shizuku
-- Native AA: remember a unit that refuses every banded WiFi Direct group
+### 4.0.0-beta2
+- New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar
+- Home: a separate switch for the widgets, and a panel opacity slider
+- Settings: redesign the screen in Material 3 and make the accent blue, thanks to @andrecuellar
+- Settings: a help button on every setting, sections ordered by use, a rail that folds to its icons, and one Bluetooth choice for Native AA
+- Settings: remove the Fake Speed switch that did nothing, thanks to @teodortomas
+- Wizard: test the decoder before recommending settings, thanks to @andrecuellar
+- Status pill: stop saying Android Auto is starting when nothing is, thanks to @andrecuellar
+- Added: Night overlay and gesture settings, with ILL+ calibration for the car_mode signal, thanks to @Anton111111
+- Gestures: keep two-finger gestures off Android Auto, add edge taps, a two-finger swipe down, a dimmer and more overlay settings, thanks to @o-jcardenass and @Anton111111
+- Added: Device-specific settings for Adayo (Haval) head units, thanks to @Anton111111
+- Added: Scaling for the exit dialog, thanks to @Anton111111
+- Automation: end the session when the charger is removed, turn the screen off and on, and connect a phone by name or MAC
+- Overlay: show the head unit's battery, free memory and WiFi signal
 - Native AA: connect faster
-- Wizard: test the decoder before recommending settings
+- Added: Bluetooth relay (ESP32) for Native AA, thanks to @kendrickkim
+- Native AA: carry the handshake over the ZJ Bluetooth socket on Unisoc units, thanks to @justme-justus
+- Native AA: support confirmed HCT Bluetooth bridges without root, thanks to @emotionbug
+- WiFi Direct: detect a wedged P2P stack and offer a WiFi restart, and remember a unit that refuses every banded group, thanks to @mark-alexander-hub
+- WiFi: Pause automatic searches during wireless sessions with Shizuku, thanks to @emotionbug
+- Wireless: keep owned WPP channels across a projection Exit, and fix legacy Wi-Fi Direct metadata and cleanup callbacks, thanks to @emotionbug
+- Hotspot: start tethering once, so auto-enable no longer tears down its own access point, thanks to @Duzttt
+- Bluetooth auto-disconnect: end the session when the phone closes the held channel, thanks to @mohammed-just
+- Bluetooth: open the app on units without a Bluetooth manager, and check ZBT reachability without activating the module, thanks to @emotionbug
+- Bluetooth: apply XYAuto media policy automatically during wireless projection, thanks to @emotionbug
+- USB: stop the permission dialog that comes back on every connect, let a plug-in leave the phone alone, and recover a lost link
 - Fix(usb): Resolve dongle AOA switching
-- Status pill: stop saying Android Auto is starting when nothing is
-- Projection: keep the decoder through a short cover
+- AAP: send one version request over TCP, so a slow head unit server is not left deaf
+- AAP: Keep media and navigation display updates off the receive path, and preserve frame boundaries during handshake, thanks to @emotionbug
+- Video: Add H.264 support to bundled FFmpeg, reduce decoder polling and preserve recovery ownership, thanks to @emotionbug
+- Projection: keep the decoder through a short cover, thanks to @andrecuellar
+- Projection: fill the screen with a SurfaceView below Android 7
 - Display: size Automatic DPI to the panel, and keep the widescreen layout it already had
-- Video: Add H.264 support to bundled FFmpeg
-- Logs: name captures OHU_Log_ instead of HUR_Log_
-- Audio: Reduce renderer work and add independent music correction
+- UI: respect system insets and refresh forced-scale projection geometry, thanks to @emotionbug
+- Audio: Reduce renderer work, add independent music correction, and keep microphone foreground ownership across service starts, thanks to @emotionbug
+- Audio: tap a channel's percentage to type an exact value, and raise the amplification ceiling to 250%, thanks to @teodortomas
+- Android 4.x: keep GPS location resends and Self-ADB working on older versions, thanks to @emotionbug
+- Fix: crash on ROMs that lack Activity.isDestroyed, and in the WiFi restart switch and the OEM app dialog on Android 4.2
+- Updates: offer only a release whose APK is uploaded
+- Translations: rewrite every locale against Android's own translations, and add the Wi-Fi scan screen, the Bluetooth relay screen and 17 other strings that were English only
+- Logs: name captures OHU_Log_ instead of HUR_Log_, thanks to @teodortomas
 
 ### v.3.5.0
 - Native AA: reconnect to a network that is still there, wake the phone over Bluetooth or the external module, bring a lost group or hotspot back after sleep, boot or ACC wake, stop advertising an address that moves, and pick, wake or hold back only for a phone that is on
@@ -772,16 +678,24 @@ adb shell am start -a android.intent.action.VIEW -d "headunit://connect?ip=192.1
 
 ## Contributing
 
-Creating release apk needs a keystore file. You can create your own keystore file using the following command in root folder:
-`keytool -genkey -v -keystore headunit-release-key.jks -alias headunit-revived -keyalg RSA -keysize 2048 -validity 10000`
+**Build and test** (the `github` flavor is the one CI builds):
+```bash
+./gradlew :app:assembleGithubDebug
+./gradlew :app:testGithubDebugUnitTest
+```
 
-After that you need to set the env variables depending on your OS:
-MAC:
-open ~/.zshrc or ~/.bashrc
+Translations are welcome: see the [translation guide](https://github.com/andreknieriem/open-headunit/wiki/Translations).
 
-`sudo nano ~/.zshrc or sudo nano ~/.bashrc`
-`export HEADUNIT_KEYSTORE_PASSWORD="YOUR_KEYSTORE_PASSWORD"
-export HEADUNIT_KEY_PASSWORD="YOUR_KEY_PASSWORD"`
+**Release APK:** this needs a keystore file. Create one in the root folder:
+```bash
+keytool -genkey -v -keystore headunit-release-key.jks -alias headunit-revived -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Then set the passwords as environment variables, for example in `~/.zshrc` or `~/.bashrc`:
+```bash
+export HEADUNIT_KEYSTORE_PASSWORD="YOUR_KEYSTORE_PASSWORD"
+export HEADUNIT_KEY_PASSWORD="YOUR_KEY_PASSWORD"
+```
 
 ## Original Headunit
 Headunit for Android Auto (tm)

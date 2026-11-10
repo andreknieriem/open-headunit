@@ -17,6 +17,8 @@ object UsbDeviceIdentityPolicy {
         val name: String? = null,
         val hasBulkIn: Boolean = false,
         val hasBulkOut: Boolean = false,
+        /** Endpoints beyond one bulk IN and one bulk OUT, such as the interrupt IN that MTP carries. */
+        val extraEndpoints: Int = 0,
     )
 
     /**
@@ -32,6 +34,8 @@ object UsbDeviceIdentityPolicy {
         val productId: Int,
         val deviceClass: Int,
         val interfaces: List<Interface>,
+        val deviceSubclass: Int = 0,
+        val deviceProtocol: Int = 0,
     )
 
     data class Verdict(val accepted: Boolean, val reason: String) {
@@ -40,6 +44,8 @@ object UsbDeviceIdentityPolicy {
     }
 
     private const val APPLE_VID = 0x05AC
+    private const val CARLINKIT_VID = 0x1314
+    private const val CARLINKIT_OWN_PROTOCOL_PID = 0x1520
     private const val GOOGLE_VID = 0x18D1
 
     /**
@@ -98,6 +104,10 @@ object UsbDeviceIdentityPolicy {
             return Verdict(false, "device class ${hex(device.deviceClass)} is not a phone")
         }
 
+        if (isCarlinkitOwnProtocol(device)) {
+            return Verdict(false, "Carlinkit box on its own protocol (bare bulk pair), not a phone")
+        }
+
         // The unambiguous triples first, so a tethering or debugging phone is decided before the
         // vendor-class rule below ever has to guess.
         for (iface in device.interfaces) {
@@ -127,6 +137,17 @@ object UsbDeviceIdentityPolicy {
     fun isInAccessoryMode(vendorId: Int, productId: Int): Boolean =
         vendorId == GOOGLE_VID && productId in ACCESSORY_PIDS
 
+    /**
+     * A Carlinkit box on 1314:1520 with one bare vendor bulk pair talks only to AutoKit and stalls AOA.
+     * Not a VID rule: the same box poses as a phone on 1521, or on 1520 with MTP's extra endpoint.
+     */
+    private fun isCarlinkitOwnProtocol(device: Device): Boolean {
+        if (device.vendorId != CARLINKIT_VID || device.productId != CARLINKIT_OWN_PROTOCOL_PID) return false
+        val only = device.interfaces.singleOrNull() ?: return false
+        return device.deviceClass == 0x00 && isVendorClass(only) &&
+            only.hasBulkIn && only.hasBulkOut && only.extraEndpoints == 0
+    }
+
     private fun unambiguousMatch(iface: Interface): String? = when {
         // ADB.
         iface.ifaceClass == 0xFF && iface.subclass == 0x42 && iface.protocol == 0x01 -> "ADB"
@@ -135,8 +156,8 @@ object UsbDeviceIdentityPolicy {
         iface.ifaceClass == 0xE0 && iface.subclass == 0x01 && iface.protocol == 0x03 -> "RNDIS"
         // PTP, the still-image class.
         iface.ifaceClass == 0x06 && iface.subclass == 0x01 && iface.protocol == 0x01 -> "PTP"
-        // Interface Association Descriptor.
-        iface.ifaceClass == 0xEF && iface.subclass == 0x04 && iface.protocol == 0x01 -> "IAD"
+        // RNDIS over Ethernet, the misc-class tethering triple. EF/02/01 is the IAD composite.
+        iface.ifaceClass == 0xEF && iface.subclass == 0x04 && iface.protocol == 0x01 -> "RNDIS over Ethernet"
         // Mass storage carrying MTP over CBI. Modern phones do not use this; kept because older
         // ones did. The name is what the rule has always claimed, so it stays.
         iface.ifaceClass == 0x08 && iface.subclass == 0x06 && iface.protocol == 0x01 -> "MTP"

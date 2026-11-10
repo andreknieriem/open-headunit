@@ -1519,6 +1519,8 @@
     <string name="native_aa_wake_verdict_destructive">Held back on this unit</string>
     <string name="native_aa_wake_remeasure_confirm">Android Auto only starts wireless when it sees the Bluetooth connection change. Where this unit already holds the hands-free link, the app has to break it to make that happen, so it measures once whether the link comes back and stops if it does not. Use this if wireless stopped starting on its own and you are willing to lose hands-free for a moment while it tries again.</string>
     <string name="native_aa_wake_remeasure_done">The Bluetooth wake will be measured again on the next connection.</string>
+    <string name="native_aa_enable_bluetooth">Enable the selected Bluetooth adapter for Native AA</string>
+    <string name="native_aa_enable_bluetooth_description">Turn on the selected Android adapter before the handshake. Off by default.</string>
     <string name="native_aa_ignore_external_bt_description">This unit looks like it keeps Bluetooth on a separate module that Android cannot reach, so wireless Android Auto is switched off automatically. Choose this only if you think that is wrong: where it is right, the connection fails silently and the log looks healthy.</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->

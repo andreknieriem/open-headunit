@@ -38,6 +38,8 @@ object WirelessRearmPolicy {
         /** Read once by the Helper launcher, and once per listener start. */
         val autoEnableHotspot: Boolean,
         val insecureAaRfcommListener: Boolean,
+        /** Changing radio startup must cancel an old wait and apply to the current launcher. */
+        val nativeAaEnableBluetooth: Boolean = false,
     )
 
     fun requiresRearm(before: Config, after: Config): Boolean = before != after
@@ -54,6 +56,7 @@ object WirelessRearmPolicy {
         externalBtBlinkTransport = settings.externalBtBlinkTransport,
         externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
+        nativeAaEnableBluetooth = settings.nativeAaEnableBluetooth,
         esp32Relay = esp32Relay,
         autoEnableHotspot = settings.autoEnableHotspot,
         insecureAaRfcommListener = settings.insecureAaRfcommListener

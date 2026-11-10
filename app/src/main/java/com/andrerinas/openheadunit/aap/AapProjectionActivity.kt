@@ -67,6 +67,7 @@ import com.andrerinas.openheadunit.view.PerformanceOverlay
 import com.andrerinas.openheadunit.view.NightProjectionOverlay
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.ProjectionHealthRecorder
+import com.andrerinas.openheadunit.utils.ScreenOrientationPolicy
 import com.andrerinas.openheadunit.utils.SystemUI
 import com.andrerinas.openheadunit.aap.AapService
 import android.content.IntentFilter
@@ -1426,7 +1427,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // Show the one-time rename notice even here, on top of an active projection.
         RenameNotice.maybeShow(this, App.provide(this).settings)
         Aa174Notice.maybeShow(this, App.provide(this).settings)
-        applyStickyOrientation()
+        // The whole rule, not only the session hold: an orientation changed in Settings while this
+        // was paused arrived while its receiver was unregistered.
+        applyOrientationSettings()
         if (!isProjectionPausedByDevice && isSurfaceSet && commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) {
             commManager.retakeVideoFocusForKeyframe()
         }
@@ -2483,7 +2486,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val prevUsableW = HeadUnitScreenConfig.getUsableWidth()
         val prevUsableH = HeadUnitScreenConfig.getUsableHeight()
         val anchorMoved = HeadUnitScreenConfig.updateSurfaceDimensions(width, height)
-        val shouldCache = !App.isPiPActive
+        // Only a projection on screen is remembered: a surface laid out behind the keyguard is the
+        // keyguard's portrait, and the next session would be negotiated from it.
+        val shouldCache = HeadUnitScreenConfig.readingDescribesProjection(this)
 
         // Cache the usable area, already normalised by the screen config, even when it matched.
         val canvasW = HeadUnitScreenConfig.getUsableWidth()
@@ -2497,7 +2502,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             settings.cachedSurfaceHeight = canvasH
             settings.cachedSurfaceSettingsHash = canvasHash
         } else if (!shouldCache) {
-            AppLog.i("[UI_DEBUG_FIX] Skipping surface dimension cache update due to transient orientation mismatch: ${width}x${height}")
+            AppLog.i("[UI_DEBUG_FIX] Not remembering the ${width}x${height} surface: the projection is not on screen (keyguard, dark screen or picture-in-picture)")
         }
         if (anchorMoved) {
             AppLog.i("[UI_DEBUG_FIX] Surface mismatch! Expected: ${prevUsableW}x${prevUsableH}, Actual: ${width}x${height}")
@@ -2750,18 +2755,19 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         commManager.sendKey(keyCode, isPress, null, "key-broadcast")
     }
 
-    private fun applyStickyOrientation() {
-        if (settings.screenOrientation == Settings.ScreenOrientation.AUTO && HeadUnitScreenConfig.isResolutionLocked) {
-            val target = if (HeadUnitScreenConfig.getNegotiatedWidth() > HeadUnitScreenConfig.getNegotiatedHeight()) {
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            } else {
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            }
-            if (requestedOrientation != target) {
-                AppLog.i("[UI_DEBUG] Sticky Orientation: Session active, forcing orientation to $target")
-                requestedOrientation = target
-            }
+    /** Holds a locked session to the shape it negotiated; true when that hold is in force. */
+    private fun applyStickyOrientation(): Boolean {
+        if (!HeadUnitScreenConfig.isResolutionLocked) return false
+        val target = ScreenOrientationPolicy.sessionOrientation(
+            settings.screenOrientation,
+            negotiatedLandscape = HeadUnitScreenConfig.getNegotiatedWidth() > HeadUnitScreenConfig.getNegotiatedHeight(),
+            sdkInt = Build.VERSION.SDK_INT,
+        ) ?: return false
+        if (requestedOrientation != target) {
+            AppLog.i("[UI_DEBUG] Sticky Orientation: Session active (${settings.screenOrientation}), forcing orientation to $target")
+            requestedOrientation = target
         }
+        return true
     }
 
     override fun onDestroy() {
@@ -2870,13 +2876,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     private fun applyOrientationSettings() {
+        if (applyStickyOrientation()) return
         val screenOrientation = settings.screenOrientation
         if (screenOrientation == Settings.ScreenOrientation.AUTO) {
-            applyStickyOrientation()
-            if (!HeadUnitScreenConfig.isResolutionLocked) {
-                // Before resolution is locked, allow sensor to orient the activity
-                requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR
-            }
+            // Before resolution is locked, allow sensor to orient the activity
+            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR
         } else {
             requestedOrientation = screenOrientation.androidOrientation
         }

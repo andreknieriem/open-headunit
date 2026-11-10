@@ -134,6 +134,156 @@ class SettingsFilterPolicyTest {
     }
 
     @Test
+    fun `search matches all terms in any order within a single field`() {
+        assertEquals(listOf("scopeNotice", "general", "debug"), visible(query = "logging debug"))
+        assertEquals(listOf("scopeNotice", "general", "debug"), visible(query = "cat log"))
+        assertEquals(listOf("scopeNotice", "general", "language"), visible(query = "language app"))
+        assertEquals(listOf("scopeNotice"), visible(query = "cat debug"))
+        assertEquals(listOf("scopeNotice"), visible(query = "english app"))
+        assertEquals(listOf("scopeNotice"), visible(query = "debug missing"))
+        assertEquals(listOf("scopeNotice"), visible(query = "english debug"))
+    }
+
+    @Test
+    fun `search ignores repeated whitespace between terms`() {
+        assertEquals(visible(query = "log cat"), visible(query = "  log   cat  "))
+        assertEquals(visible(query = "log cat"), visible(query = "\tlog\t\ncat\r\n"))
+        assertEquals(visible(), visible(query = " \t\n "))
+    }
+
+    @Test
+    fun `search matches word prefixes but not the middle of words`() {
+        val darkMode = language.copy(nameOverride = "Тёмный режим", value = "")
+        val audioMode = debug.copy(nameOverride = "Выберите этот режим. Не затрагивает системный аудиофокус.")
+
+        assertEquals(listOf("general", "language"), helpFilter(darkMode, audioMode, query = "режим темный"))
+        assertEquals(listOf("general", "language"), helpFilter(darkMode, audioMode, query = "темн реж"))
+        assertEquals(emptyList<String>(), helpFilter(audioMode, query = "темный"))
+        assertEquals(listOf("general", "debug"), helpFilter(audioMode, query = "режим систем"))
+    }
+
+    @Test
+    fun `word starts include punctuation boundaries and later valid occurrences`() {
+        val row = language.copy(
+            nameOverride = "Системный: «тёмный режим», Wi-Fi (H.264)",
+            value = ""
+        )
+
+        for (query in listOf("темный режим", "fi wi", "h.264", "264", "«темн")) {
+            assertEquals(query, listOf("general", "language"), helpFilter(row, query = query))
+        }
+        for (query in listOf("истемный", "264x", "i-fi")) {
+            assertEquals(query, emptyList<String>(), helpFilter(row, query = query))
+        }
+    }
+
+    @Test
+    fun `non Latin and Cyrillic scripts keep substring matching`() {
+        val examples = listOf(
+            "深色模式（Android Auto）" to "模式",
+            "ダークモード (Android Auto)" to "モード",
+            "โหมดมืด (Android Auto)" to "มืด",
+            "डार्क मोड (Android Auto)" to "मोड",
+            "오디오 수신" to "디오",
+            "الصوت" to "صوت"
+        )
+        for ((name, query) in examples) {
+            val row = language.copy(nameOverride = name, value = "")
+            assertEquals(name, listOf("general", "language"), helpFilter(row, query = query))
+        }
+    }
+
+    @Test
+    fun `Latin and Cyrillic word boundaries apply per term in multilingual text`() {
+        val row = language.copy(nameOverride = "深色模式（Android Auto）", value = "")
+        assertEquals(listOf("general", "language"), helpFilter(row, query = "auto 模式"))
+        assertEquals(emptyList<String>(), helpFilter(row, query = "droid 模式"))
+
+        for ((name, query) in listOf(
+            "Übertragung" to "ber",
+            "Écran" to "cran",
+            "Điều khiển" to "iều",
+            "Системний режим" to "темний"
+        )) {
+            assertEquals(
+                name,
+                emptyList<String>(),
+                helpFilter(language.copy(nameOverride = name, value = ""), query = query)
+            )
+        }
+    }
+
+    @Test
+    fun `search ignores Russian yo and e in both directions and cases`() {
+        for (name in listOf("Приём звука", "Прием звука", "ПРИЁМ ЗВУКА", "ПРИЕМ ЗВУКА")) {
+            val row = language.copy(nameOverride = name, value = "")
+            for (query in listOf("прием", "приём", "ПРИЕМ", "ПРИЁМ", "  ЗВУКА   ПРИЁМ  ")) {
+                assertEquals("$name / $query", listOf("general", "language"), helpFilter(row, query = query))
+            }
+        }
+    }
+
+    @Test
+    fun `search normalizes every searchable row field`() {
+        val row = language.copy(
+            nameResId = AUDIO_SINK,
+            value = "Приём звука",
+            descriptionResId = AUDIO_SUMMARY,
+            helpResId = AUDIO_HELP,
+            searchKeywords = "Трёх каналов"
+        )
+        val localized = titles + mapOf(
+            AUDIO_SUMMARY to "Всё включено",
+            AUDIO_HELP to "Ещё подробнее"
+        )
+        fun shown(query: String) = SettingsFilterPolicy.filter(
+                items = listOf(row),
+                query = query,
+                advanced = true,
+                showsUsb = true,
+                showsWifi = true,
+                basicIds = emptySet(),
+                text = localized::getValue
+            ).map { it.stableId }
+
+        for (query in listOf("звука прием", "включено все", "подробнее еще", "каналов трех")) {
+            assertEquals(query, listOf("language"), shown(query))
+        }
+        for (query in listOf("прием все", "еще трех", "sink прием", "все еще")) {
+            assertEquals(query, emptyList<String>(), shown(query))
+        }
+    }
+
+    @Test
+    fun `section and sub-header search use the same normalized terms`() {
+        val localized = titles + mapOf(
+            WIRELESS to "Беспроводной приём",
+            ROUTE to "Трёхканальный маршрут"
+        )
+        fun shown(query: String, showsWifi: Boolean = true) = SettingsFilterPolicy.filter(
+            items = withRoute,
+            query = query,
+            advanced = false,
+            showsUsb = true,
+            showsWifi = showsWifi,
+            basicIds = emptySet(),
+            text = localized::getValue
+        ).map { it.stableId }
+
+        assertEquals(
+            listOf("wirelessConnection", "wifiMode", "bluetoothRoute", "relay"),
+            shown("  ПРИЕМ   БЕСПРОВОДНОЙ ")
+        )
+        assertEquals(
+            listOf("wirelessConnection", "bluetoothRoute", "relay"),
+            shown("маршрут \t ТРЕХ")
+        )
+        assertEquals(emptyList<String>(), shown("прием беспроводной", showsWifi = false))
+        assertEquals(emptyList<String>(), shown("прием missing"))
+        assertEquals(emptyList<String>(), shown("маршрут missing"))
+    }
+
+    @Test
     fun `a matching section title brings the rows under it, even outside the basic tab`() {
         assertEquals(listOf("scopeNotice", "input", "useLibusb"), visible(query = "input", basics = setOf("language")))
     }

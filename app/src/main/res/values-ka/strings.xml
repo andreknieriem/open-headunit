@@ -1065,6 +1065,11 @@
     <string name="volume_keys_to_phone">ხმის ღილაკების გაგზავნა ტელეფონზე</string>
     <string name="volume_keys_to_phone_summary">ხმის ღილაკები ტელეფონის ხმას ცვლის და არა ამ მოწყობილობის.</string>
     <string name="volume_keys_to_phone_help">აგზავნის ამ მოწყობილობის ხმის ღილაკებს ტელეფონზე Android Auto-ს მეშვეობით, ნაცვლად იმისა, რომ ხმა აქ შეცვალოს. გამოიყენეთ, როცა ხმას თავად ტელეფონი უკრავს: აუდიო მიმღები (Audio Sink) გამორთულია, ან ტელეფონი მანქანის Bluetooth-ზეა მიერთებული.\n\nმუშაობს, როცა Android Auto ეკრანზეა, და მხოლოდ მაშინ, თუ ტელეფონის Android Auto ხმის ღილაკებზე რეაგირებს.</string>
+    <string name="speed_volume">სიჩქარეზე დამოკიდებული ხმა</string>
+    <string name="speed_volume_off">გამორთულია</string>
+    <string name="speed_volume_low">დაბალი</string>
+    <string name="speed_volume_high">მაღალი</string>
+    <string name="speed_volume_help">ამ მოწყობილობის GPS-ით ხმას ნაბიჯ-ნაბიჯ უწევს, როცა მანქანა აჩქარდება, და შენელებისას ამ ნაბიჯებს უკან აკლებს.\n\nგამორთულია: ხმა რჩება ისე, როგორც დააყენეთ.\n\nდაბალი: ერთი ნაბიჯი ყოველ 30 კმ/სთ-ზე, მაქსიმუმ 3 ნაბიჯი.\n\nმაღალი: ერთი ნაბიჯი ყოველ 20 კმ/სთ-ზე, მაქსიმუმ 5 ნაბიჯი.\n\nნაბიჯები ტელეფონზე მიდის, როცა „ხმის ღილაკების გაგზავნა ტელეფონზე“ ჩართულია, სხვა შემთხვევაში — ამ მოწყობილობის მედიის ხმაზე.</string>
     <string name="playback_focus_mode">სხვა აუდიოს პაუზა დაკვრისას</string>
     <string name="playback_focus_mode_auto">ავტომატურად</string>
     <string name="playback_focus_mode_always">ყოველთვის</string>

@@ -21,6 +21,7 @@ class GpsLocation constructor(private val context: Context): LocationListener {
     private val settings by lazy { App.provide(context).settings }
     private var requested: Boolean = false
     private val handler = Handler(Looper.getMainLooper())
+    private val speedVolume = SpeedVolume(context)
 
     // Only ever set from onLocationChanged, so a resend can never mislabel a network/passive
     // fallback fix as this head unit's real GPS.
@@ -134,6 +135,8 @@ class GpsLocation constructor(private val context: Context): LocationListener {
         staleFixReported = false
         LocationHolder.update(location)
         context.sendBroadcast(LocationUpdateIntent(location).setPackage(context.packageName))
+        // Real fixes only: a resend repeats an old speed, and the volume should follow the car.
+        speedVolume.onFix(location)
     }
 
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
@@ -157,6 +160,7 @@ class GpsLocation constructor(private val context: Context): LocationListener {
         lastGpsFixAtMs = 0L
         subscribedAtMs = 0L
         staleFixReported = false
+        speedVolume.reset()
         locationManager.removeUpdates(this)
         handler.removeCallbacks(periodicResend)
     }

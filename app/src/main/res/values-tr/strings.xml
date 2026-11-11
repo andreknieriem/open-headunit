@@ -1133,6 +1133,11 @@
     <string name="volume_keys_to_phone">Ses düğmelerini telefona gönder</string>
     <string name="volume_keys_to_phone_summary">Ses düğmeleri bu ünitenin değil, telefonun sesini değiştirir.</string>
     <string name="volume_keys_to_phone_help">Bu ünitenin ses düğmelerini, sesi burada değiştirmek yerine Android Auto üzerinden telefona gönderir. Sesi telefonun kendisi çalıyorsa kullanın: Ses alıcı (Audio Sink) kapalıysa veya telefon aracın Bluetooth\'una bağlıysa.\n\nAndroid Auto ekrandayken ve yalnızca telefondaki Android Auto ses tuşlarına yanıt veriyorsa çalışır.</string>
+    <string name="speed_volume">Hıza bağlı ses seviyesi</string>
+    <string name="speed_volume_off">Kapalı</string>
+    <string name="speed_volume_low">Düşük</string>
+    <string name="speed_volume_high">Yüksek</string>
+    <string name="speed_volume_help">Bu ünitenin GPS\'ini kullanarak araç hızlandıkça sesi birer adım yükseltir ve yavaşladıkça bu adımları geri alır.\n\nKapalı: Ses, ayarladığınız yerde kalır.\n\nDüşük: Hız her 30 km/sa arttığında bir adım, en fazla 3 adım.\n\nYüksek: Hız her 20 km/sa arttığında bir adım, en fazla 5 adım.\n\nSes düğmelerini telefona gönder açıksa adımlar telefona, değilse bu ünitenin medya ses seviyesine gider.</string>
     <string name="playback_focus_mode">Oynatma sırasında diğer sesleri duraklat</string>
     <string name="playback_focus_mode_auto">Otomatik</string>
     <string name="playback_focus_mode_always">Her zaman</string>

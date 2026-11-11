@@ -1136,6 +1136,11 @@
     <string name="volume_keys_to_phone">Trimite butoanele de volum către telefon</string>
     <string name="volume_keys_to_phone_summary">Butoanele de volum schimbă volumul telefonului, nu al acestei unități.</string>
     <string name="volume_keys_to_phone_help">Trimite butoanele de volum ale acestei unități către telefon prin Android Auto, în loc să schimbe volumul aici. Folosește-l când telefonul redă singur sunetul: Receptor audio dezactivat sau telefonul conectat la Bluetooth-ul mașinii.\n\nFuncționează cât timp Android Auto este pe ecran și doar dacă Android Auto de pe telefon răspunde la tastele de volum.</string>
+    <string name="speed_volume">Volum în funcție de viteză</string>
+    <string name="speed_volume_off">Dezactivat</string>
+    <string name="speed_volume_low">Redus</string>
+    <string name="speed_volume_high">Ridicat</string>
+    <string name="speed_volume_help">Crește volumul câte un pas pe măsură ce mașina accelerează, folosind GPS-ul acestei unități, și retrage acești pași când încetinește.\n\nDezactivat: Volumul rămâne unde l-ai setat.\n\nRedus: Un pas la fiecare 30 km/h, până la 3 pași.\n\nRidicat: Un pas la fiecare 20 km/h, până la 5 pași.\n\nPașii merg la telefon când Trimite butoanele de volum către telefon este activat, altfel la volumul media al acestei unități.</string>
     <string name="playback_focus_mode">Pune pe pauză alt sunet în timpul redării</string>
     <string name="playback_focus_mode_auto">Automat</string>
     <string name="playback_focus_mode_always">Întotdeauna</string>

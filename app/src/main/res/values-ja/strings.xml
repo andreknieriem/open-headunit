@@ -1142,6 +1142,11 @@
     <string name="volume_keys_to_phone">音量ボタンをスマートフォンに送信</string>
     <string name="volume_keys_to_phone_summary">音量ボタンでこの機器ではなくスマートフォンの音量を変えます。</string>
     <string name="volume_keys_to_phone_help">このヘッドユニットの音量ボタンを、ここで音量を変える代わりに Android Auto 経由でスマートフォンに送ります。スマートフォン自体が音を再生しているとき（オーディオシンクがオフのとき、またはスマートフォンが車の Bluetooth に接続されているとき）に使ってください。\n\nAndroid Auto が画面に表示されている間だけ動作し、スマートフォンの Android Auto が音量キーに反応する場合に限ります。</string>
+    <string name="speed_volume">車速連動音量</string>
+    <string name="speed_volume_off">オフ</string>
+    <string name="speed_volume_low">弱</string>
+    <string name="speed_volume_high">強</string>
+    <string name="speed_volume_help">このヘッドユニットの GPS を使い、車が速くなるにつれて音量を 1 段階ずつ上げ、減速すると上げた分を戻します。\n\nオフ：音量は設定したままです。\n\n弱：30 km/h ごとに 1 段階、最大 3 段階。\n\n強：20 km/h ごとに 1 段階、最大 5 段階。\n\n「音量ボタンをスマートフォンに送信」がオンのときはスマートフォンに、オフのときはこのヘッドユニットのメディア音量に適用されます。</string>
     <string name="playback_focus_mode">再生中は他の音声を一時停止</string>
     <string name="playback_focus_mode_auto">自動</string>
     <string name="playback_focus_mode_always">常に一時停止</string>

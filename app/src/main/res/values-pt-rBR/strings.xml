@@ -1140,6 +1140,11 @@
     <string name="volume_keys_to_phone">Enviar botões de volume ao celular</string>
     <string name="volume_keys_to_phone_summary">Os botões de volume mudam o volume do celular, não o desta unidade.</string>
     <string name="volume_keys_to_phone_help">Envia os botões de volume desta unidade ao celular pelo Android Auto em vez de mudar o volume aqui. Use quando o próprio celular toca o som: Receptor de áudio desativado, ou celular conectado ao Bluetooth do carro.\n\nFunciona enquanto o Android Auto está na tela, e só se o Android Auto do celular responder às teclas de volume.</string>
+    <string name="speed_volume">Volume conforme a velocidade</string>
+    <string name="speed_volume_off">Desativado</string>
+    <string name="speed_volume_low">Baixo</string>
+    <string name="speed_volume_high">Alto</string>
+    <string name="speed_volume_help">Aumenta o volume um passo de cada vez conforme o carro acelera, usando o GPS desta unidade, e retira esses passos quando ele desacelera.\n\nDesativado: O volume fica onde você deixou.\n\nBaixo: Um passo a cada 30 km/h, até 3 passos.\n\nAlto: Um passo a cada 20 km/h, até 5 passos.\n\nOs passos vão para o celular quando Enviar botões de volume ao celular está ativado e, caso contrário, para o volume de mídia desta unidade.</string>
     <string name="playback_focus_mode">Pausar outros áudios durante a reprodução</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Sempre</string>

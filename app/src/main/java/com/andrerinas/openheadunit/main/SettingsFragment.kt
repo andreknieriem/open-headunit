@@ -46,6 +46,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialFiel
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
+import com.andrerinas.openheadunit.location.SpeedVolumePolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.ObservedP2pCredentials
 import com.andrerinas.openheadunit.connection.wifi.direct.P2pIdentityEdit
 import com.andrerinas.openheadunit.connection.wifi.direct.P2pIdentityEditPolicy
@@ -205,6 +206,7 @@ class SettingsFragment : Fragment() {
     private var pendingEnableRotary by pending::enableRotary
     private var pendingMediaKeyRouting by pending::mediaKeyRouting
     private var pendingVolumeKeysToPhone by pending::volumeKeysToPhone
+    private var pendingSpeedVolumeMode by pending::speedVolumeMode
     private var pendingAudioLatencyMultiplier by pending::audioLatencyMultiplier
     private var pendingAudioTimeCorrectionMode by pending::audioMatchingMode
     private var pendingUseLibusb by pending::useLibusb
@@ -661,6 +663,7 @@ class SettingsFragment : Fragment() {
         pendingEnableRotary?.let { if (it != settings.enableRotary) settings.enableRotary = it }
         pendingMediaKeyRouting?.let { if (it != settings.mediaKeyRouting) settings.mediaKeyRouting = it }
         pendingVolumeKeysToPhone?.let { if (it != settings.volumeKeysToPhone) settings.volumeKeysToPhone = it }
+        pendingSpeedVolumeMode?.let { if (it != settings.speedVolumeMode) settings.speedVolumeMode = it }
         pendingAudioLatencyMultiplier?.let { if (it != settings.audioLatencyMultiplier) settings.audioLatencyMultiplier = it }
         pendingAudioTimeCorrectionMode?.let { if (it != settings.audioMatchingMode) settings.audioMatchingMode = it }
         pendingAudioQueueCapacity?.let { if (it != settings.audioQueueCapacity) settings.audioQueueCapacity = it }
@@ -1840,6 +1843,31 @@ class SettingsFragment : Fragment() {
                 ))
             }
         }
+
+        // Steps rather than a gain curve, so one setting works on this head unit's stream and, as
+        // Android Auto volume keys, on the phone. The help text quotes SpeedVolumePolicy's numbers.
+        val speedVolumeModes = listOf(
+            SpeedVolumePolicy.Mode.OFF,
+            SpeedVolumePolicy.Mode.LOW,
+            SpeedVolumePolicy.Mode.HIGH
+        )
+        val currentSpeedVolumeMode = pendingSpeedVolumeMode ?: SpeedVolumePolicy.Mode.OFF
+        items.add(SettingItem.SegmentedButtonSettingEntry(
+            stableId = "speedVolumeMode",
+            nameResId = R.string.speed_volume,
+            helpResId = R.string.speed_volume_help,
+            options = listOf(
+                getString(R.string.speed_volume_off),
+                getString(R.string.speed_volume_low),
+                getString(R.string.speed_volume_high)
+            ),
+            selectedIndex = speedVolumeModes.indexOf(currentSpeedVolumeMode).coerceAtLeast(0),
+            onOptionSelected = { index ->
+                pendingSpeedVolumeMode = speedVolumeModes.getOrElse(index) { SpeedVolumePolicy.Mode.OFF }
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
 
         items.add(SettingItem.SettingEntry(
             stableId = "audioStreamSettings",

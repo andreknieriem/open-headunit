@@ -1136,6 +1136,11 @@
     <string name="volume_keys_to_phone">將音量按鍵傳送至手機</string>
     <string name="volume_keys_to_phone_summary">音量按鍵調整手機的音量，而不是本車機的音量。</string>
     <string name="volume_keys_to_phone_help">將這台車機的音量按鍵透過 Android Auto 傳送至手機，而不是在這裡調整音量。適用於由手機自行播放聲音的情況：音訊接收器已關閉，或手機連接的是汽車的藍牙。\n\n僅在 Android Auto 顯示於螢幕上時有效，且需手機上的 Android Auto 會回應音量鍵。</string>
+    <string name="speed_volume">隨車速調整音量</string>
+    <string name="speed_volume_off">關閉</string>
+    <string name="speed_volume_low">低</string>
+    <string name="speed_volume_high">高</string>
+    <string name="speed_volume_help">使用本車機的 GPS，隨著車速提高逐級調高音量，減速時再將調高的級數降回來。\n\n關閉：音量維持在您設定的位置。\n\n低：每 30 km/h 調高一級，最多 3 級。\n\n高：每 20 km/h 調高一級，最多 5 級。\n\n開啟「將音量按鍵傳送至手機」時，調整會作用於手機；否則作用於本車機的媒體音量。</string>
     <string name="playback_focus_mode">播放時暫停其他音訊</string>
     <string name="playback_focus_mode_auto">自動</string>
     <string name="playback_focus_mode_always">一律</string>

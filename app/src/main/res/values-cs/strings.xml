@@ -1140,6 +1140,11 @@
     <string name="volume_keys_to_phone">Odesílat tlačítka hlasitosti do telefonu</string>
     <string name="volume_keys_to_phone_summary">Tlačítka hlasitosti mění hlasitost telefonu, ne této jednotky.</string>
     <string name="volume_keys_to_phone_help">Posílá tlačítka hlasitosti této jednotky do telefonu přes Android Auto, místo aby měnila hlasitost zde. Použijte, když zvuk přehrává sám telefon: Zvukový výstup (Sink) je vypnutý nebo je telefon připojen k Bluetooth vozu.\n\nFunguje, když je Android Auto na obrazovce, a jen pokud Android Auto v telefonu reaguje na tlačítka hlasitosti.</string>
+    <string name="speed_volume">Hlasitost podle rychlosti</string>
+    <string name="speed_volume_off">Vypnuto</string>
+    <string name="speed_volume_low">Nízká</string>
+    <string name="speed_volume_high">Vysoká</string>
+    <string name="speed_volume_help">Zvyšuje hlasitost po jednom stupni, jak vůz zrychluje, podle GPS této jednotky, a při zpomalení stupně zase ubírá.\n\nVypnuto: Hlasitost zůstane tam, kde jste ji nastavili.\n\nNízká: Jeden stupeň každých 30 km/h, nejvýše 3 stupně.\n\nVysoká: Jeden stupeň každých 20 km/h, nejvýše 5 stupňů.\n\nStupně jdou do telefonu, když je zapnuté Odesílat tlačítka hlasitosti do telefonu, jinak do hlasitosti médií této jednotky.</string>
     <string name="playback_focus_mode">Pozastavit ostatní zvuk při přehrávání</string>
     <string name="playback_focus_mode_auto">Automaticky</string>
     <string name="playback_focus_mode_always">Vždy</string>

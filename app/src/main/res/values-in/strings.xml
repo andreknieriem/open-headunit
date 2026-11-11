@@ -758,6 +758,11 @@
     <string name="volume_keys_to_phone">Kirim Tombol Volume Ke Ponsel</string>
     <string name="volume_keys_to_phone_summary">Tombol volume mengubah volume ponsel, bukan volume unit ini.</string>
     <string name="volume_keys_to_phone_help">Mengirim tombol volume unit ini ke ponsel melalui Android Auto alih-alih mengubah volume di sini. Gunakan ini saat ponsel memutar suaranya sendiri: Audio Sink nonaktif, atau ponsel terhubung ke Bluetooth mobil.\n\nBerfungsi saat Android Auto tampil di layar, dan hanya jika Android Auto di ponsel merespons tombol volume.</string>
+    <string name="speed_volume">Volume Berdasarkan Kecepatan</string>
+    <string name="speed_volume_off">Nonaktif</string>
+    <string name="speed_volume_low">Rendah</string>
+    <string name="speed_volume_high">Tinggi</string>
+    <string name="speed_volume_help">Menaikkan volume satu langkah demi satu langkah saat mobil melaju lebih cepat, menggunakan GPS unit ini, dan menurunkannya kembali saat melambat.\n\nNonaktif: Volume tetap seperti yang Anda atur.\n\nRendah: Satu langkah setiap 30 km/jam, hingga 3 langkah.\n\nTinggi: Satu langkah setiap 20 km/jam, hingga 5 langkah.\n\nLangkah dikirim ke ponsel saat Kirim Tombol Volume Ke Ponsel aktif, dan ke volume media unit ini jika tidak.</string>
     <string name="playback_focus_mode">Jeda Audio Lain Selama Pemutaran</string>
     <string name="playback_focus_mode_auto">Otomatis</string>
     <string name="playback_focus_mode_always">Selalu</string>

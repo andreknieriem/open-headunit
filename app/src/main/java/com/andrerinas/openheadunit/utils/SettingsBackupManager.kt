@@ -201,6 +201,9 @@ object SettingsBackupManager {
         // ALWAYS for anything out of range.
         "media-key-routing" to ValueType.INT,
         "volume-keys-to-phone" to ValueType.BOOLEAN,
+        // Enum-backed like playback-focus-mode: read through SpeedVolumePolicy.Mode.fromInt, which
+        // falls back to OFF for anything out of range.
+        "speed-volume-mode" to ValueType.INT,
         "separate-audio-streams" to ValueType.BOOLEAN,
         // AudioManager.STREAM_* constants; AudioStreamTester falls back to the media stream
         // for anything it does not recognise, so an out-of-range value cannot break playback.

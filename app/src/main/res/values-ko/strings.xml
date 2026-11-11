@@ -1135,6 +1135,11 @@
     <string name="volume_keys_to_phone">볼륨 버튼 입력을 휴대전화로 전달</string>
     <string name="volume_keys_to_phone_summary">볼륨 버튼으로 이 기기 대신 휴대전화의 볼륨을 조절합니다.</string>
     <string name="volume_keys_to_phone_help">이 헤드유닛의 볼륨 버튼 입력을 여기서 볼륨을 바꾸는 대신 Android Auto를 통해 휴대전화로 전달합니다. 휴대전화가 직접 소리를 재생할 때 사용하세요. 오디오 수신이 꺼져 있거나 휴대전화가 차량 블루투스에 연결된 경우입니다.\n\nAndroid Auto가 화면에 표시되어 있을 때만 작동하며, 휴대전화의 Android Auto가 볼륨 키에 반응하는 경우에만 적용됩니다.</string>
+    <string name="speed_volume">속도 연동 볼륨</string>
+    <string name="speed_volume_off">사용 안 함</string>
+    <string name="speed_volume_low">낮음</string>
+    <string name="speed_volume_high">높음</string>
+    <string name="speed_volume_help">이 헤드유닛의 GPS를 사용해 차량 속도가 빨라질수록 볼륨을 한 단계씩 올리고, 속도가 줄면 올린 단계를 다시 내립니다.\n\n사용 안 함: 볼륨이 설정한 그대로 유지됩니다.\n\n낮음: 30km/h마다 한 단계, 최대 3단계.\n\n높음: 20km/h마다 한 단계, 최대 5단계.\n\n“볼륨 버튼 입력을 휴대전화로 전달”이 켜져 있으면 휴대전화로, 꺼져 있으면 이 헤드유닛의 미디어 볼륨에 적용됩니다.</string>
     <string name="playback_focus_mode">재생 중 다른 오디오 일시중지</string>
     <string name="playback_focus_mode_auto">자동</string>
     <string name="playback_focus_mode_always">항상</string>

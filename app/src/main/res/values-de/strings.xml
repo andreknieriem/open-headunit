@@ -1127,6 +1127,11 @@
     <string name="volume_keys_to_phone">Lautstärketasten an das Smartphone senden</string>
     <string name="volume_keys_to_phone_summary">Lautstärketasten ändern die Lautstärke des Smartphones, nicht dieses Geräts.</string>
     <string name="volume_keys_to_phone_help">Sendet die Lautstärketasten dieses Geräts über Android Auto an das Smartphone, statt die Lautstärke hier zu ändern. Verwende das, wenn das Smartphone den Ton selbst abspielt: Audio-Ausgabe aus oder das Smartphone mit dem Bluetooth des Autos verbunden.\n\nFunktioniert, solange Android Auto auf dem Bildschirm ist, und nur, wenn Android Auto auf dem Smartphone auf Lautstärketasten reagiert.</string>
+    <string name="speed_volume">Geschwindigkeitsabhängige Lautstärke</string>
+    <string name="speed_volume_off">Aus</string>
+    <string name="speed_volume_low">Niedrig</string>
+    <string name="speed_volume_high">Hoch</string>
+    <string name="speed_volume_help">Erhöht die Lautstärke Stufe für Stufe, während das Auto schneller wird, anhand des GPS dieses Geräts, und nimmt die Stufen beim Langsamerwerden wieder zurück.\n\nAus: Die Lautstärke bleibt, wo du sie eingestellt hast.\n\nNiedrig: Eine Stufe alle 30 km/h, höchstens 3 Stufen.\n\nHoch: Eine Stufe alle 20 km/h, höchstens 5 Stufen.\n\nDie Stufen gehen an das Smartphone, wenn „Lautstärketasten an das Smartphone senden“ an ist, sonst an die Medienlautstärke dieses Geräts.</string>
     <string name="playback_focus_mode">Andere Audioquellen bei Wiedergabe pausieren</string>
     <string name="playback_focus_mode_auto">Automatisch</string>
     <string name="playback_focus_mode_always">Immer</string>

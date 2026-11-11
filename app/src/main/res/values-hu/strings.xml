@@ -1138,6 +1138,11 @@
     <string name="volume_keys_to_phone">Hangerőgombok küldése a telefonnak</string>
     <string name="volume_keys_to_phone_summary">A hangerőgombok a telefon hangerejét állítják, nem a fejegységét.</string>
     <string name="volume_keys_to_phone_help">Az Android Autón keresztül a telefonnak küldi a fejegység hangerőgombjait, ahelyett hogy itt változtatná a hangerőt. Akkor használja, ha a hangot maga a telefon játssza le: a Hang fogadása ki van kapcsolva, vagy a telefon az autó Bluetooth-jához csatlakozik.\n\nAkkor működik, amikor az Android Auto a képernyőn van, és csak ha a telefonon futó Android Auto reagál a hangerőgombokra.</string>
+    <string name="speed_volume">Sebességfüggő hangerő</string>
+    <string name="speed_volume_off">Ki</string>
+    <string name="speed_volume_low">Alacsony</string>
+    <string name="speed_volume_high">Magas</string>
+    <string name="speed_volume_help">A fejegység GPS-e alapján lépésenként növeli a hangerőt, ahogy az autó gyorsul, és lassuláskor visszaveszi ezeket a lépéseket.\n\nKi: A hangerő ott marad, ahová beállította.\n\nAlacsony: 30 km/h-nként egy lépés, legfeljebb 3 lépés.\n\nMagas: 20 km/h-nként egy lépés, legfeljebb 5 lépés.\n\nA lépések a telefonra kerülnek, ha a Hangerőgombok küldése a telefonnak be van kapcsolva, különben a fejegység médiahangerejére.</string>
     <string name="playback_focus_mode">Más hangok szüneteltetése lejátszás közben</string>
     <string name="playback_focus_mode_auto">Automatikus</string>
     <string name="playback_focus_mode_always">Mindig</string>

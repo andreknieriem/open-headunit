@@ -1140,6 +1140,11 @@
     <string name="volume_keys_to_phone">إرسال أزرار الصوت إلى الهاتف</string>
     <string name="volume_keys_to_phone_summary">تغيّر أزرار الصوت صوت الهاتف بدلًا من صوت هذه الوحدة.</string>
     <string name="volume_keys_to_phone_help">يرسل أزرار الصوت في هذه الوحدة إلى الهاتف عبر Android Auto بدلًا من تغيير مستوى الصوت هنا. استخدمه عندما يشغّل الهاتف الصوت بنفسه: عند إيقاف «مخرج الصوت»، أو عند اتصال الهاتف ببلوتوث السيارة.\n\nيعمل أثناء ظهور Android Auto على الشاشة، وفقط إذا كان Android Auto على الهاتف يستجيب لمفاتيح الصوت.</string>
+    <string name="speed_volume">مستوى الصوت حسب السرعة</string>
+    <string name="speed_volume_off">إيقاف</string>
+    <string name="speed_volume_low">منخفض</string>
+    <string name="speed_volume_high">مرتفع</string>
+    <string name="speed_volume_help">يرفع مستوى الصوت درجةً واحدة في كل مرة مع ازدياد سرعة السيارة، باستخدام GPS هذه الوحدة، ويعيد تلك الدرجات عند التباطؤ.\n\nإيقاف: يبقى مستوى الصوت كما ضبطته.\n\nمنخفض: درجة واحدة كل 30 كم/س، حتى 3 درجات.\n\nمرتفع: درجة واحدة كل 20 كم/س، حتى 5 درجات.\n\nتذهب الدرجات إلى الهاتف عند تشغيل «إرسال أزرار الصوت إلى الهاتف»، وإلا فإلى مستوى صوت الوسائط في هذه الوحدة.</string>
     <string name="playback_focus_mode">إيقاف الصوت الآخر مؤقتًا أثناء التشغيل</string>
     <string name="playback_focus_mode_auto">تلقائي</string>
     <string name="playback_focus_mode_always">دائمًا</string>

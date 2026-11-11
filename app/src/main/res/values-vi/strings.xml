@@ -1140,6 +1140,11 @@
     <string name="volume_keys_to_phone">Gửi phím âm lượng tới điện thoại</string>
     <string name="volume_keys_to_phone_summary">Phím âm lượng chỉnh âm lượng điện thoại thay vì thiết bị này.</string>
     <string name="volume_keys_to_phone_help">Gửi phím âm lượng của thiết bị này tới điện thoại qua Android Auto thay vì chỉnh âm lượng tại đây. Dùng khi điện thoại tự phát âm thanh: Nhận âm thanh trên đầu máy đang tắt, hoặc điện thoại kết nối với Bluetooth của xe.\n\nChỉ hoạt động khi Android Auto đang hiển thị trên màn hình, và chỉ khi Android Auto trên điện thoại phản hồi phím âm lượng.</string>
+    <string name="speed_volume">Âm lượng theo tốc độ</string>
+    <string name="speed_volume_off">Tắt</string>
+    <string name="speed_volume_low">Thấp</string>
+    <string name="speed_volume_high">Cao</string>
+    <string name="speed_volume_help">Tăng âm lượng từng nấc khi xe chạy nhanh hơn, dựa trên GPS của thiết bị này, và giảm lại các nấc đó khi xe chạy chậm lại.\n\nTắt: Âm lượng giữ nguyên như bạn đã đặt.\n\nThấp: Một nấc mỗi 30 km/h, tối đa 3 nấc.\n\nCao: Một nấc mỗi 20 km/h, tối đa 5 nấc.\n\nCác nấc được gửi tới điện thoại khi bật Gửi phím âm lượng tới điện thoại, nếu không sẽ áp dụng cho âm lượng đa phương tiện của thiết bị này.</string>
     <string name="playback_focus_mode">Tạm dừng âm thanh khác khi đang phát</string>
     <string name="playback_focus_mode_auto">Tự động</string>
     <string name="playback_focus_mode_always">Luôn luôn</string>

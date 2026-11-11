@@ -1025,18 +1025,12 @@
     <string name="onb_automation_more_hint">자동 연결 및 자동 시작 설정에서 더 많은 옵션을 찾을 수 있습니다.</string>
     <string name="onb_dpi_help">DPI를 높이면 Android Auto의 아이콘과 글자가 커져 화면에 표시되는 양이 줄어듭니다. 낮추면 작아져 더 많이 표시됩니다. DPI 설정은 Android Auto에 연결할 때 적용됩니다.</string>
     <string name="onb_change_later">나중에 설정에서 변경할 수 있습니다.</string>
-    <string name="dpi_automatic">자동</string>
-    <string name="dpi_automatic_desc">기기의 픽셀 밀도를 사용합니다.</string>
     <string name="onb_conn_usb_label">USB(또는 어댑터)</string>
     <string name="onb_connection_self_detail">단독 모드는 휴대전화를 연결하지 않고 이 기기에서 Android Auto를 실행합니다.</string>
-    <string name="dpi_widescreen_hint">%1$d DPI 이하에서는 Android Auto가 지도 옆에 미디어 카드를 표시하며, 텍스트가 작아집니다.</string>
-    <string name="dpi_automatic_desc_canvas">%2$s에 %1$d DPI를 사용합니다(%3$dx%4$d dp 캔버스).</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">자동: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, 전송값 %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto에는 최소 748x450 dp 캔버스가 필요하므로 %1$d DPI가 %2$d(으)로 전송됩니다.</string>
-    <string name="dpi_clamped_note_portrait">세로 모드에서 Android Auto의 Google Maps는 730 dp보다 좁은 캔버스에서 터치를 무시하므로 %1$d DPI가 %2$d(으)로 전송됩니다.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI는 선택한 값 그대로 전송됩니다. 세로 모드에서는 %2$d DPI를 넘으면 Android Auto의 Google Maps가 터치를 무시할 수 있습니다.</string>
     <string name="dpi_floor_override_note">%1$d DPI는 선택한 값 그대로 전송됩니다. %2$d DPI를 넘으면 캔버스가 Android Auto에 필요한 748x450 dp보다 작아져 축소된 레이아웃이 표시될 수 있습니다.</string>
     <string name="connection_kind_all">모두</string>
     <string name="onb_connection_all_detail">USB와 Wi-Fi 설정을 모두 표시합니다.</string>
@@ -1050,7 +1044,6 @@
     <string name="resolution_use_anyway">그래도 사용</string>
     <string name="resolution_use_recommended">권장값 사용</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">매우 크게</string>
     <string name="onb_vehicle_title">내 차</string>
     <string name="onb_vehicle_input_hint">브랜드 또는 이름</string>
     <string name="onb_vehicle_help_aa">이 이름은 Android Auto로 전송됩니다. 휴대전화의 연결 기록과 Android Auto 시작 화면에 표시됩니다.</string>
@@ -1148,7 +1141,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="onb_dpi_recommended">내 화면 권장값: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">픽셀 종횡비</string>
     <string name="pixel_aspect_ratio_help">이 화면에서 원이 타원으로 보일 때만 변경하세요. 패널의 픽셀이 정사각형이 아닐 때 발생합니다. 10000은 정사각형 픽셀을 뜻합니다.</string>
@@ -1758,6 +1750,15 @@
     <string name="onb_launcher_reopen_note">Open Headunit이 홈 앱인 동안에는 기기가 이미 이 앱으로 돌아오므로 \'재연결 시 앱 다시 열기\'가 적용되지 않습니다. 차량용 런처를 끄면 다시 작동합니다.</string>
     <string name="onb_summary_launcher_home">런처: Open Headunit이 홈 앱입니다</string>
     <string name="onb_summary_launcher_registered">런처: 홈 앱으로 등록됨</string>
+    <string name="dpi_pane_map_and_media">지도 및 미디어</string>
+    <string name="dpi_pane_one_app">앱 하나</string>
+    <string name="dpi_pane_compact">컴팩트</string>
+    <string name="dpi_pane_map_over_media">미디어 위 지도</string>
+    <string name="dpi_layout_step_title">1. 레이아웃</string>
+    <string name="dpi_size_step_title">2. 텍스트 및 아이콘 크기</string>
+    <string name="dpi_expected_format">예상: %1$s</string>
+    <string name="dpi_edge_note">크게와 자동은 레이아웃의 경계에 있습니다. 휴대전화에서 다른 레이아웃이 표시되면 중간을 선택하세요.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">빈 곳을 길게 누르세요</string>
     <string name="home_pages_hint_body">위젯용 페이지를 추가하거나 삭제하는 방법입니다.</string>
     <string name="home_pages_hint_got_it">확인</string>

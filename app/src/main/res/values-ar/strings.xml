@@ -1028,16 +1028,10 @@
     <string name="onb_automation_more_hint">يمكنك العثور على المزيد من الخيارات في إعدادات الاتصال التلقائي والتشغيل التلقائي.</string>
     <string name="onb_dpi_help">يؤدي رفع الـ DPI إلى تكبير أيقونات ونص Android Auto، فيظهر عدد أقل على الشاشة. وخفضه يصغّرها فيظهر المزيد. يُطبَّق عند توصيل Android Auto.</string>
     <string name="onb_change_later">يمكنك تغيير هذا لاحقًا من الإعدادات.</string>
-    <string name="dpi_automatic">تلقائي</string>
-    <string name="dpi_automatic_desc">استخدام كثافة الجهاز.</string>
-    <string name="dpi_widescreen_hint">عند %1$d DPI أو أقل، يعرض Android Auto الخريطة مع بطاقة وسائط بجانبها، ويصغر النص.</string>
-    <string name="dpi_automatic_desc_canvas">يستخدم %1$d DPI لـ %2$s، أي مساحة %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">تلقائي: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d، أُرسل كـ %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">يحتاج Android Auto إلى مساحة لا تقل عن 748x450 dp، لذلك يُرسل %1$d DPI على أنه %2$d.</string>
-    <string name="dpi_clamped_note_portrait">في الوضع الرأسي، يتجاهل Google Maps على Android Auto اللمس على مساحة أضيق من 730 dp، لذلك يُرسل %1$d DPI على أنه %2$d.</string>
-    <string name="dpi_portrait_override_note">يُرسل %1$d DPI كما تم اختياره. في الوضع الرأسي، قد يتجاهل Google Maps على Android Auto اللمس عند تجاوز %2$d DPI.</string>
     <string name="dpi_floor_override_note">يُرسل %1$d DPI كما تم اختياره. عند تجاوز %2$d DPI تصبح المساحة أصغر من 748x450 dp التي يحتاج إليها Android Auto، وقد يعرض تخطيطًا مصغرًا.</string>
     <string name="onb_conn_usb_label">USB (أو محول)</string>
     <string name="onb_connection_self_detail">يشغّل الوضع المستقل Android Auto على هذا الجهاز دون توصيل هاتف.</string>
@@ -1053,7 +1047,6 @@
     <string name="resolution_use_anyway">استخدام على أي حال</string>
     <string name="resolution_use_recommended">استخدام الموصى به</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">ضخم</string>
     <string name="onb_vehicle_title">سيارتك</string>
     <string name="onb_vehicle_input_hint">العلامة أو الاسم</string>
     <string name="onb_vehicle_help_aa">يُرسَل هذا الاسم إلى Android Auto. ويظهر في سجل اتصالات هاتفك وعلى شاشة الترحيب في Android Auto.</string>
@@ -1151,7 +1144,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="onb_dpi_recommended">الموصى به لشاشتك: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">نسبة أبعاد البكسل</string>
     <string name="pixel_aspect_ratio_help">غيّر هذا فقط إذا بدت الدوائر كأشكال بيضاوية على هذه الشاشة. يحدث ذلك عندما تكون وحدات البكسل في اللوحة غير مربعة. القيمة 10000 تعني بكسل مربعة.</string>
@@ -1721,6 +1713,15 @@
     <string name="onb_launcher_reopen_note">لا ينطبق خيار \"إعادة الفتح عند إعادة الاتصال\" عندما يكون Open Headunit تطبيق الصفحة الرئيسية، لأن الوحدة تعود إليه أصلًا. يعمل مجددًا إذا أوقفت مشغل السيارة.</string>
     <string name="onb_summary_launcher_home">المشغل: Open Headunit هو تطبيق الصفحة الرئيسية</string>
     <string name="onb_summary_launcher_registered">المشغل: مسجل كتطبيق الصفحة الرئيسية</string>
+    <string name="dpi_pane_map_and_media">الخريطة والوسائط</string>
+    <string name="dpi_pane_one_app">تطبيق واحد</string>
+    <string name="dpi_pane_compact">مضغوط</string>
+    <string name="dpi_pane_map_over_media">الخريطة فوق الوسائط</string>
+    <string name="dpi_layout_step_title">1. التخطيط</string>
+    <string name="dpi_size_step_title">2. حجم النص والرموز</string>
+    <string name="dpi_expected_format">المتوقع: %1$s</string>
+    <string name="dpi_edge_note">كبير وتلقائي يقعان على حدّ التخطيط. إذا عرض هاتفك تخطيطًا آخر هناك، فاختر متوسط.</string>
+    <string name="dpi_row_named_format">%1$s، %2$s</string>
     <string name="home_pages_hint_title">المس مع الاستمرار مكانًا فارغًا</string>
     <string name="home_pages_hint_body">بهذه الطريقة تضيف صفحة لأدواتك، أو تزيل واحدة.</string>
     <string name="home_pages_hint_got_it">حسنًا</string>

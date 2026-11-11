@@ -1022,16 +1022,10 @@ Open Headunit предоставляется «как есть» без каки
     <string name="onb_automation_more_hint">Больше настроек в разделах автоподключения и автозапуска.</string>
     <string name="onb_dpi_help">Более высокий DPI увеличивает значки и текст Android Auto, поэтому на экране помещается меньше. Более низкий DPI делает их мельче, помещается больше. Применяется при подключении Android Auto.</string>
     <string name="onb_change_later">Вы можете изменить это позже в настройках.</string>
-    <string name="dpi_automatic">Автоматически</string>
-    <string name="dpi_automatic_desc">Использовать плотность устройства.</string>
-    <string name="dpi_widescreen_hint">При %1$d DPI или меньше Android Auto показывает карту с карточкой медиа рядом, а текст становится мельче.</string>
-    <string name="dpi_automatic_desc_canvas">Использует %1$d DPI для %2$s, холст %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Автоматически: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, отправляется как %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto требуется холст не менее 748x450 dp, поэтому %1$d DPI отправляется как %2$d.</string>
-    <string name="dpi_clamped_note_portrait">В портретной ориентации Google Maps в Android Auto игнорирует касания на холсте уже 730 dp, поэтому %1$d DPI отправляется как %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI отправляется так, как выбрано. В портретной ориентации Google Maps в Android Auto может игнорировать касания выше %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI отправляется так, как выбрано. Выше %2$d DPI холст меньше, чем нужно Android Auto (748x450 dp), и может появиться упрощённый макет.</string>
     <string name="onb_conn_usb_label">USB (или адаптер)</string>
     <string name="onb_connection_self_detail">Автономный режим запускает Android Auto на этом устройстве без телефона.</string>
@@ -1047,7 +1041,6 @@ Open Headunit предоставляется «как есть» без каки
     <string name="resolution_use_anyway">Всё равно использовать</string>
     <string name="resolution_use_recommended">Использовать рекомендуемое</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Огромный</string>
     <string name="onb_vehicle_title">Ваш автомобиль</string>
     <string name="onb_vehicle_input_hint">Марка или название</string>
     <string name="onb_vehicle_help_aa">Это имя отправляется в Android Auto. Оно отображается в истории подключений телефона и на экране приветствия Android Auto.</string>
@@ -1079,7 +1072,6 @@ Open Headunit предоставляется «как есть» без каки
     <string name="perm_write_settings_help">Позволяет приложению автоматически включать точку доступа для беспроводных подключений.</string>
     <string name="perm_storage_title">Хранилище</string>
     <string name="perm_storage_help">Необходимо для резервного копирования и восстановления настроек, а также для выбора пользовательского экрана загрузки.</string>
-    <string name="onb_dpi_recommended">Рекомендуется для вашего экрана: %1$d dpi</string>
     <string name="onb_ready_loading_intro">Ещё кое-что: теперь вы можете задать пользовательский экран загрузки, который отображается во время подключения автомобиля.</string>
     <string name="onb_ready_loading_button">Настроить экран загрузки</string>
 
@@ -1718,6 +1710,15 @@ Open Headunit предоставляется «как есть» без каки
     <string name="onb_launcher_reopen_note">«Открывать при повторном подключении» не действует, пока Open Headunit является главным приложением: устройство и так возвращается к нему. Снова заработает, если выключить лаунчер авто.</string>
     <string name="onb_summary_launcher_home">Лаунчер: Open Headunit является домашним экраном</string>
     <string name="onb_summary_launcher_registered">Лаунчер: зарегистрирован как домашний экран</string>
+    <string name="dpi_pane_map_and_media">Карта и медиа</string>
+    <string name="dpi_pane_one_app">Одно приложение</string>
+    <string name="dpi_pane_compact">Компактный</string>
+    <string name="dpi_pane_map_over_media">Карта над медиа</string>
+    <string name="dpi_layout_step_title">1. Макет</string>
+    <string name="dpi_size_step_title">2. Размер текста и значков</string>
+    <string name="dpi_expected_format">Ожидается: %1$s</string>
+    <string name="dpi_edge_note">Размеры «Большой» и «Автоматически» находятся на границе макета. Если телефон показывает там другой макет, выберите «Средний».</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Нажмите и удерживайте пустое место</string>
     <string name="home_pages_hint_body">Так можно добавить страницу для виджетов или удалить её.</string>
     <string name="home_pages_hint_got_it">Понятно</string>

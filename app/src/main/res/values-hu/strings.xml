@@ -1021,16 +1021,10 @@
     <string name="onb_automation_more_hint">További beállításokat az Automatikus csatlakozás és Automatikus indítás menüben találsz.</string>
     <string name="onb_dpi_help">A magasabb DPI nagyobbá teszi az Android Auto ikonjait és szövegét, így kevesebb fér a képernyőre. Az alacsonyabb DPI kisebbé teszi, így több fér el. A csatlakozáskor lép érvénybe.</string>
     <string name="onb_change_later">Ezt később a Beállításokban módosíthatod.</string>
-    <string name="dpi_automatic">Automatikus</string>
-    <string name="dpi_automatic_desc">Az eszköz sűrűségének használata.</string>
-    <string name="dpi_widescreen_hint">%1$d DPI vagy az alatt az Android Auto a térkép mellett egy médiakártyát jelenít meg, és a szöveg kisebb lesz.</string>
-    <string name="dpi_automatic_desc_canvas">%1$d DPI-t használ %2$s felbontáshoz, ez %3$dx%4$d dp-s vászon.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Automatikus: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, elküldve mint %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Az Android Autónak legalább 748x450 dp-s vászon kell, ezért a(z) %1$d DPI helyett %2$d megy ki.</string>
-    <string name="dpi_clamped_note_portrait">Álló tájolásban a Google Maps az Android Autóban figyelmen kívül hagyja az érintést a 730 dp-nél keskenyebb vásznon, ezért a(z) %1$d DPI helyett %2$d megy ki.</string>
-    <string name="dpi_portrait_override_note">A(z) %1$d DPI a választott értékkel megy ki. Álló tájolásban a Google Maps az Android Autóban %2$d DPI fölött figyelmen kívül hagyhatja az érintést.</string>
     <string name="dpi_floor_override_note">A(z) %1$d DPI a választott értékkel megy ki. %2$d DPI fölött a vászon kisebb, mint az Android Autónak szükséges 748x450 dp, és csökkentett elrendezés jelenhet meg.</string>
     <string name="onb_conn_usb_label">USB (vagy adapter)</string>
     <string name="onb_connection_self_detail">Az önálló mód telefon csatlakoztatása nélkül futtatja az Android Autót ezen az eszközön.</string>
@@ -1046,7 +1040,6 @@
     <string name="resolution_use_anyway">Mégis használom</string>
     <string name="resolution_use_recommended">Ajánlott használata</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Hatalmas</string>
     <string name="onb_vehicle_title">Az autód</string>
     <string name="onb_vehicle_input_hint">Márka vagy név</string>
     <string name="onb_vehicle_help_aa">Ezt a nevet megkapja az Android Auto. Megjelenik a telefon csatlakozási előzményeiben és az Android Auto üdvözlőképernyőjén.</string>
@@ -1145,11 +1138,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="dpi_size_s">S</string>
-    <string name="dpi_size_m">M</string>
-    <string name="dpi_size_l">L</string>
-    <string name="dpi_size_xl">XL</string>
-    <string name="onb_dpi_recommended">Ajánlott a kijelzőhöz: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Képpont-képarány</string>
     <string name="pixel_aspect_ratio_help">Csak akkor módosítsa, ha a körök ovális alakúnak látszanak ezen a kijelzőn. Ez akkor fordul elő, ha a panel pixelei nem négyzet alakúak. A 10000 négyzet alakú pixeleket jelent.</string>
@@ -1720,6 +1708,15 @@
     <string name="onb_launcher_reopen_note">Az Újranyitás újracsatlakozáskor nem érvényes, amíg az Open Headunit a kezdőképernyő, mert az egység úgyis visszatér hozzá. Ha kikapcsolod az autós indítót, újra működik.</string>
     <string name="onb_summary_launcher_home">Indító: az Open Headunit a kezdőképernyő</string>
     <string name="onb_summary_launcher_registered">Indító: kezdőképernyőként regisztrálva</string>
+    <string name="dpi_pane_map_and_media">Térkép és média</string>
+    <string name="dpi_pane_one_app">Egy alkalmazás</string>
+    <string name="dpi_pane_compact">Kompakt</string>
+    <string name="dpi_pane_map_over_media">Térkép a média felett</string>
+    <string name="dpi_layout_step_title">1. Elrendezés</string>
+    <string name="dpi_size_step_title">2. Szöveg- és ikonméret</string>
+    <string name="dpi_expected_format">Várható: %1$s</string>
+    <string name="dpi_edge_note">A Nagy és az Automatikus az elrendezés határán van. Ha a telefonja ott másik elrendezést jelenít meg, válassza a Közepes lehetőséget.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Tarts nyomva egy üres helyet</string>
     <string name="home_pages_hint_body">Így adhatsz hozzá oldalt a widgeteidnek, vagy távolíthatsz el egyet.</string>
     <string name="home_pages_hint_got_it">Értem</string>

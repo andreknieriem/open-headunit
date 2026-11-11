@@ -194,22 +194,14 @@
     <string name="onb_gps_phone">Connected phone</string>
     <string name="onb_do_it_later">Do it later</string>
     <string name="onb_display_dpi_label">Android Auto size</string>
-    <!-- Full-word DPI size names, used as accessibility labels for the S/M/L/XL buttons -->
+    <!-- Text size names on the size buttons of the DPI picker -->
     <string name="onb_dpi_small">Small</string>
     <string name="onb_dpi_medium">Medium</string>
     <string name="onb_dpi_large">Large</string>
-    <string name="onb_dpi_huge">Huge</string>
-    <!-- Compact size abbreviations shown on the DPI preset buttons. Kept identical in every
-         locale (globally recognized apparel sizing) so they never truncate. -->
-    <string name="dpi_size_s" translatable="false">S</string>
-    <string name="dpi_size_m" translatable="false">M</string>
-    <string name="dpi_size_l" translatable="false">L</string>
-    <string name="dpi_size_xl" translatable="false">XL</string>
     <string name="onb_appearance_more_hint">You can find more dark mode options in Settings.</string>
     <string name="onb_automation_more_hint">You can find more options in Auto-connect and Auto-start settings.</string>
     <string name="onb_dpi_help">A higher DPI makes Android Auto icons and text larger, so less fits on screen. A lower DPI makes them smaller, so more fits. It applies when you connect Android Auto.</string>
     <!-- %1$d recommended DPI value -->
-    <string name="onb_dpi_recommended">Recommended for your screen: %1$d dpi</string>
     <string name="onb_change_later">You can change this later in Settings.</string>
     <!-- Onboarding wizard: car launcher step -->
     <string name="onb_launcher_title">Car launcher</string>
@@ -220,16 +212,21 @@
     <string name="onb_launcher_reopen_note">Reopen on reconnection does not apply while Open Headunit is the home app, since the unit already comes back to it. It works again if you turn the car launcher off.</string>
     <string name="onb_summary_launcher_home">Launcher: Open Headunit is the home app</string>
     <string name="onb_summary_launcher_registered">Launcher: registered as a home app</string>
-    <string name="dpi_automatic">Automatic</string>
-    <string name="dpi_automatic_desc">Use the device density.</string>
-    <string name="dpi_widescreen_hint">%1$d DPI or lower: Android Auto shows the map with a media card beside it; text gets smaller.</string>
-    <string name="dpi_automatic_desc_canvas">Uses %1$d DPI for %2$s, a %3$dx%4$d dp canvas.</string>
+    <string name="dpi_pane_map_and_media">Map and media</string>
+    <string name="dpi_pane_one_app">One app</string>
+    <string name="dpi_pane_compact">Compact</string>
+    <string name="dpi_pane_map_over_media">Map over media</string>
+    <string name="dpi_layout_step_title">1. Layout</string>
+    <string name="dpi_size_step_title">2. Text and icon size</string>
+    <!-- %1$s the expected layout and text size, for example "Map and media, Large" -->
+    <string name="dpi_expected_format">Expected: %1$s</string>
+    <string name="dpi_edge_note">Large and Auto sit on the edge of the layout. If your phone draws another layout there, pick Medium.</string>
+    <!-- %1$s the density and canvas text, %2$s the layout and size name -->
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Auto: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, sent as %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto needs a canvas of at least 748x450 dp, so %1$d DPI is sent as %2$d.</string>
-    <string name="dpi_clamped_note_portrait">In portrait, Google Maps on Android Auto ignores touch on a canvas narrower than 730 dp, so %1$d DPI is sent as %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI is sent as you picked it. In portrait, Google Maps on Android Auto can ignore touch above %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI is sent as you picked it. Above %2$d DPI the canvas is smaller than the 748x450 dp Android Auto needs, and it can show a reduced layout.</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>

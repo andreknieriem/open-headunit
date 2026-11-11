@@ -1029,16 +1029,10 @@
     <string name="onb_automation_more_hint">自動接続と自動起動の設定で、さらに多くのオプションを確認できます。</string>
     <string name="onb_dpi_help">DPI を高くすると Android Auto のアイコンや文字が大きくなり、画面に表示される情報は少なくなります。低くすると小さくなり、より多く表示されます。Android Auto に接続したときに反映されます。</string>
     <string name="onb_change_later">これはあとで設定で変更できます。</string>
-    <string name="dpi_automatic">自動</string>
-    <string name="dpi_automatic_desc">デバイスの密度を使用。</string>
-    <string name="dpi_widescreen_hint">%1$d DPI以下では、Android Autoは地図の横にメディアカードを表示し、文字が小さくなります。</string>
-    <string name="dpi_automatic_desc_canvas">%2$sに%1$d DPIを使用（%3$dx%4$d dpのキャンバス）。</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">自動: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d、送信値 %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Autoには748x450 dp以上のキャンバスが必要なため、%1$d DPIは%2$dとして送信されます。</string>
-    <string name="dpi_clamped_note_portrait">縦向きでは、Android Auto上のGoogle Mapsは幅730 dp未満のキャンバスでタッチを受け付けないため、%1$d DPIは%2$dとして送信されます。</string>
-    <string name="dpi_portrait_override_note">%1$d DPIは選択どおりに送信されます。縦向きでは、%2$d DPIを超えると、Android Auto上のGoogle Mapsがタッチを受け付けない場合があります。</string>
     <string name="dpi_floor_override_note">%1$d DPIは選択どおりに送信されます。%2$d DPIを超えると、キャンバスがAndroid Autoに必要な748x450 dpより小さくなり、縮小されたレイアウトで表示される場合があります。</string>
     <string name="onb_conn_usb_label">USB（またはアダプター）</string>
     <string name="onb_connection_self_detail">セルフモードでは、スマートフォンを接続せずにこの端末で Android Auto を実行します。</string>
@@ -1054,7 +1048,6 @@
     <string name="resolution_use_anyway">そのまま使用</string>
     <string name="resolution_use_recommended">推奨を使用</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">特大</string>
     <string name="onb_vehicle_title">お使いの車</string>
     <string name="onb_vehicle_input_hint">ブランドまたは名前</string>
     <string name="onb_vehicle_help_aa">この名前は Android Auto に送信されます。スマートフォンの接続履歴と Android Auto のウェルカム画面に表示されます。</string>
@@ -1153,7 +1146,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="onb_dpi_recommended">お使いの画面の推奨値: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">ピクセルのアスペクト比</string>
     <string name="pixel_aspect_ratio_help">この画面で円が楕円に見える場合のみ変更してください。パネルの画素が正方形でないと起こります。10000は正方形の画素を表します。</string>
@@ -1723,6 +1715,15 @@
     <string name="onb_launcher_reopen_note">Open Headunitがホームアプリの間は、ユニットが自動的に戻るため「再接続時に再開」は適用されません。カーランチャーをオフにすると再び有効になります。</string>
     <string name="onb_summary_launcher_home">ランチャー: Open Headunitがホームアプリです</string>
     <string name="onb_summary_launcher_registered">ランチャー: ホームアプリとして登録済み</string>
+    <string name="dpi_pane_map_and_media">マップとメディア</string>
+    <string name="dpi_pane_one_app">1つのアプリ</string>
+    <string name="dpi_pane_compact">コンパクト</string>
+    <string name="dpi_pane_map_over_media">メディアの上にマップ</string>
+    <string name="dpi_layout_step_title">1. レイアウト</string>
+    <string name="dpi_size_step_title">2. テキストとアイコンのサイズ</string>
+    <string name="dpi_expected_format">想定: %1$s</string>
+    <string name="dpi_edge_note">「大」と「自動」はレイアウトの境界にあります。スマートフォンで別のレイアウトが表示される場合は、「中」を選択してください。</string>
+    <string name="dpi_row_named_format">%1$s、%2$s</string>
     <string name="home_pages_hint_title">空いている場所を長押し</string>
     <string name="home_pages_hint_body">ウィジェット用のページを追加したり、削除したりできます。</string>
     <string name="home_pages_hint_got_it">OK</string>

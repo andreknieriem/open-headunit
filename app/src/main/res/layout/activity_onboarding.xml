@@ -419,17 +419,11 @@
                     android:layout_marginTop="8dp"
                     android:text="@string/onb_dpi_help"
                     android:textAppearance="?attr/textAppearanceBody2" />
-                <com.andrerinas.openheadunit.view.DpiPickerView
+                <com.andrerinas.openheadunit.view.DpiLayoutPickerView
                     android:id="@+id/onb_dpi_picker"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp" />
-                <TextView
-                    android:id="@+id/onb_dpi_recommended"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textAppearance="?attr/textAppearanceCaption" />
                 <TextView
                     android:id="@+id/onb_dpi_over_panel_warning"
                     android:layout_width="match_parent"

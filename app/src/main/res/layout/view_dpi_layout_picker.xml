@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:id="@+id/dpi_layout_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/dpi_layout_step_title"
+        android:textAppearance="?attr/textAppearanceSubtitle1" />
+
+    <HorizontalScrollView
+        android:id="@+id/dpi_cards_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/dpi_cards"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/dpi_single_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceBody2"
+        android:visibility="gone" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/dpi_size_step_title"
+        android:textAppearance="?attr/textAppearanceSubtitle1" />
+
+    <com.andrerinas.openheadunit.view.DpiLayoutSketchView
+        android:id="@+id/dpi_sketch"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp" />
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/dpi_sizes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:singleSelection="true" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/dpi_slider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:valueFrom="80"
+        android:valueTo="640"
+        android:stepSize="1"
+        android:value="160" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/dpi_input_layout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"
+        android:hint="@string/dpi_input_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/dpi_input"
+            android:layout_width="130dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:imeOptions="actionDone"
+            android:inputType="number"
+            android:maxLength="3" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/dpi_expected"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_horizontal"
+        android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+    <TextView
+        android:id="@+id/dpi_edge_note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/dpi_edge_note"
+        android:textAppearance="?attr/textAppearanceCaption"
+        android:visibility="gone" />
+</merge>

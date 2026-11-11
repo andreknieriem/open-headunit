@@ -46,6 +46,7 @@ import com.andrerinas.openheadunit.utils.SettingsBackupManager
 import com.andrerinas.openheadunit.utils.SettingsRestoreHandler
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy
+import com.andrerinas.openheadunit.utils.DisplayLayoutPolicy
 import com.andrerinas.openheadunit.utils.OnboardingDisplayPolicy
 import com.andrerinas.openheadunit.utils.OnboardingLauncherPolicy
 import com.andrerinas.openheadunit.utils.SystemOptimizer
@@ -110,7 +111,7 @@ class OnboardingActivity : BaseActivity() {
 
     private var selectedSize = SystemOptimizer.DisplaySizePreset.STANDARD_9_10
     private var selectedPortrait = false
-    private var dpiPicker: com.andrerinas.openheadunit.view.DpiPickerView? = null
+    private var dpiPicker: com.andrerinas.openheadunit.view.DpiLayoutPickerView? = null
 
     private var videoPreview: VideoPreviewLayout? = null
     private var videoJob: Job? = null
@@ -276,13 +277,11 @@ class OnboardingActivity : BaseActivity() {
         resolveLauncherRequest()
         updateLauncherStep()
         permissionBinder?.rebind()
-        if (step == STEP_DPI) dpiPicker?.startDemo()
         if (step == STEP_VIDEO) showVideoStep()
     }
 
     override fun onPause() {
         super.onPause()
-        dpiPicker?.stopDemo()
         audioStep?.onPause()
         // A codec and a surface must not outlive the visible wizard. The result is lost, which is
         // honest: the user can run the five second test again when they come back.
@@ -429,14 +428,10 @@ class OnboardingActivity : BaseActivity() {
             followSizeWithPicker()
         }
 
-        // Graphical DPI picker (slider + preview + Small/Medium/Large tabs, all synced).
-        // Seed from the user's saved DPI when they already set one. A size tap re-seeds it
-        // unless the picker was moved by hand (followSizeWithPicker).
-        dpiPicker = findViewById<com.andrerinas.openheadunit.view.DpiPickerView>(R.id.onb_dpi_picker).apply {
-            val m = realMetrics()
-            setPanelResolution(m.widthPixels, m.heightPixels)
-            dpi = settings.dpiPixelDensity.takeIf { it != 0 } ?: recommendedDpi()
-        }
+        // Two-step DPI picker: a layout, then a size. Seeded from the saved DPI when one is set,
+        // else from the widest layout the screen reaches. A size tap re-seeds it until it is touched.
+        dpiPicker = findViewById(R.id.onb_dpi_picker)
+        configureDpiPicker(fresh = true)
         updateDpiOverPanelWarning()
 
         // --- Appearance: full theme + night-mode pickers; more options live in Settings ---
@@ -667,13 +662,8 @@ class OnboardingActivity : BaseActivity() {
         if (step == STEP_PERMISSIONS) permissionBinder?.rebind()
         if (step == STEP_VEHICLE) applyVehicleTypeNote()
         if (step == STEP_VIDEO) showVideoStep() else stopVideoTest()
-        if (step == STEP_DPI) {
-            findViewById<TextView>(R.id.onb_dpi_recommended).text =
-                getString(R.string.onb_dpi_recommended, recommendedDpi())
-            dpiPicker?.startDemo()
-        } else {
-            dpiPicker?.stopDemo()
-        }
+        // The video test runs before this step and can change the resolution the cards are built for.
+        if (step == STEP_DPI) followSizeWithPicker()
         updateStepperDots()
     }
 
@@ -1322,12 +1312,28 @@ class OnboardingActivity : BaseActivity() {
         return OnboardingDisplayPolicy.estimatePreset(m.widthPixels, m.heightPixels, m.xdpi, m.ydpi, m.densityDpi)
     }
 
-    /** The size and orientation only reach the saved DPI through the picker, so move it with them. */
+    /** The size, orientation and applied video test change what the screen reaches, so the picker follows them. */
     private fun followSizeWithPicker() {
         val picker = dpiPicker ?: return
-        picker.dpi = OnboardingDisplayPolicy.pickerDpiAfterSizeChange(
-            recommendedDpi(), picker.dpi, picker.hasUserInteracted
-        )
+        configureDpiPicker(fresh = !picker.hasUserInteracted)
+    }
+
+    private fun configureDpiPicker(fresh: Boolean) {
+        val picker = dpiPicker ?: return
+        val g = dpiGeometry()
+        val (cw, ch) = AnnouncedDensityPolicy.phoneCanvas(g.w, g.h, g.par)
+        val clamp = AnnouncedDensityPolicy.clampDpi(g.w, g.h, g.par)
+        val kept = picker.pick
+        val storedDpi = when {
+            !fresh && kept is DisplayLayoutPolicy.Pick.Manual -> kept.dpi
+            fresh -> settings.dpiPixelDensity
+            else -> 0
+        }
+        val choices = DisplayLayoutPolicy.choices(cw, ch, clamp)
+        val keptPane = (kept as? DisplayLayoutPolicy.Pick.Auto)?.pane?.takeIf { p -> !fresh && choices.any { it.pane == p } }
+        val storedPane = settings.dpiAutoLayoutPane?.takeIf { p -> choices.any { it.pane == p } }
+        val open = keptPane ?: storedPane ?: DisplayLayoutPolicy.initialPane(cw, ch, clamp, recommendedDpi())
+        picker.configure(cw, ch, clamp, selectedPortrait, storedDpi, open, fresh)
     }
 
     private fun sizeButtonId(preset: SystemOptimizer.DisplaySizePreset): Int = when (preset) {
@@ -1344,8 +1350,10 @@ class OnboardingActivity : BaseActivity() {
         return getString(R.string.onb_display_detected, m.widthPixels, m.heightPixels, m.densityDpi, codec)
     }
 
-    /** What Automatic will send for the stored resolution, after the margins, as connect decides it. */
-    private fun recommendedDpi(): Int {
+    private data class DpiGeometry(val w: Int, val h: Int, val par: Int, val panelW: Int, val panelH: Int)
+
+    /** The area Android Auto draws in at the stored resolution, after the margins, as connect decides it. */
+    private fun dpiGeometry(): DpiGeometry {
         val m = realMetrics()
         val chosen = preflightToApply()?.resolution ?: Settings.Resolution.fromId(settings.resolutionId)
         val r = if (chosen == null || chosen == Settings.Resolution.AUTO) {
@@ -1356,8 +1364,14 @@ class OnboardingActivity : BaseActivity() {
         val par = AnnouncedDensityPolicy.pixelAspectE4(
             settings.videoFitMode, pw, ph, r.width, r.height, settings.pixelAspectRatioE4
         )
+        return DpiGeometry(w, h, par, pw, ph)
+    }
+
+    /** What Automatic will send for the stored resolution, after the margins, as connect decides it. */
+    private fun recommendedDpi(): Int {
+        val g = dpiGeometry()
         return AnnouncedDensityPolicy.decide(
-            0, selectedSize, w, h, par, panelW = pw, panelH = ph, autoLayout = settings.dpiAutoLayoutPane
+            0, selectedSize, g.w, g.h, g.par, panelW = g.panelW, panelH = g.panelH, autoLayout = null
         ).announced
     }
 
@@ -1418,9 +1432,15 @@ class OnboardingActivity : BaseActivity() {
         // Next is a button, so it never takes focus off the DPI field; without this a value the
         // user typed and did not confirm would be dropped in favour of the previous one.
         dpiPicker?.commitPendingInput()
-        val stored = settings.dpiPixelDensity
-        val dpi = dpiPicker?.let { OnboardingDisplayPolicy.dpiToSave(it.dpi, it.hasUserInteracted, stored) } ?: stored
-        if (dpi != stored) settings.dpiPixelDensity = dpi
+        // Next on the DPI step confirms a preselected layout; the display step has not shown it yet.
+        dpiPicker?.let {
+            val w = DisplayLayoutPolicy.writes(
+                it.pick, it.hasUserInteracted, step == STEP_DPI, settings.dpiPixelDensity, settings.dpiAutoLayout,
+                it.reachablePanes
+            )
+            w.dpi?.let { v -> settings.dpiPixelDensity = v }
+            w.layout?.let { v -> settings.dpiAutoLayout = v }
+        }
         if (settings.displaySizePreset != selectedSize.name) settings.displaySizePreset = selectedSize.name
         settings.commit()
         updateDpiOverPanelWarning()

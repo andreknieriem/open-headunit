@@ -189,23 +189,15 @@
     <string name="onb_dpi_small">Pequeno</string>
     <string name="onb_dpi_medium">Médio</string>
     <string name="onb_dpi_large">Grande</string>
-    <string name="onb_dpi_huge">Muito grande</string>
     <string name="onb_appearance_more_hint">Pode encontrar mais opções de modo escuro nas Definições.</string>
     <string name="onb_automation_more_hint">Pode encontrar mais opções nas definições de Ligação automática e Arranque automático.</string>
     <string name="onb_dpi_help">Um DPI mais alto torna os ícones e o texto do Android Auto maiores, pelo que cabe menos no ecrã. Um DPI mais baixo torna-os mais pequenos, pelo que cabe mais. Aplica-se quando liga o Android Auto.</string>
     <!-- %1$d recommended DPI value -->
-    <string name="onb_dpi_recommended">Recomendado para o seu ecrã: %1$d dpi</string>
     <string name="onb_change_later">Pode alterar isto mais tarde nas Definições.</string>
-    <string name="dpi_automatic">Automático</string>
-    <string name="dpi_automatic_desc">Utilizar densidade do dispositivo.</string>
-    <string name="dpi_widescreen_hint">Com %1$d DPI ou menos, o Android Auto mostra o mapa com um cartão multimédia ao lado, e o texto fica mais pequeno.</string>
-    <string name="dpi_automatic_desc_canvas">Utiliza %1$d DPI para %2$s, uma área de %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Automático: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, enviado como %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">O Android Auto precisa de uma área de, pelo menos, 748x450 dp, por isso %1$d DPI é enviado como %2$d.</string>
-    <string name="dpi_clamped_note_portrait">Na vertical, o Google Maps no Android Auto ignora o toque numa área mais estreita do que 730 dp, por isso %1$d DPI é enviado como %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI é enviado como escolhido. Na vertical, o Google Maps no Android Auto pode ignorar o toque acima de %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI é enviado como escolhido. Acima de %2$d DPI, a área fica menor do que os 748x450 dp de que o Android Auto precisa, e pode surgir um esquema reduzido.</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
@@ -1641,10 +1633,6 @@
     <string name="copied_to_clipboard">Copiado</string>
 
     <!-- Extra keys -->
-    <string name="dpi_size_s">S</string>
-    <string name="dpi_size_m">M</string>
-    <string name="dpi_size_l">L</string>
-    <string name="dpi_size_xl">XL</string>
     <string name="github_issues_url">https://github.com/andreknieriem/open-headunit/issues</string>
     <string name="support_rules_english_title">All posts in English</string>
     <string name="support_rules_english_desc">Escreva sempre o seu problema em inglês. É a língua que o responsável pelo projeto e a maioria das pessoas que ajudam têm em comum, e uma conversa em várias línguas acaba numa torre de Babel em que ninguém consegue ajudar. Ninguém avalia o seu nível de inglês nem a forma como escreve, por isso não se preocupe com erros. Se ajudar, um tradutor como o Google Tradutor ou o DeepL, ou uma IA como o ChatGPT ou o Claude, pode escrever e melhorar a sua mensagem em inglês.</string>
@@ -1773,6 +1761,15 @@
     <string name="onb_launcher_reopen_note">Reabrir ao reconectar não se aplica enquanto o Open Headunit for a aplicação de ecrã inicial, porque o rádio já volta para ela. Volta a funcionar se desativar o Car Launcher.</string>
     <string name="onb_summary_launcher_home">Launcher: o Open Headunit é o ecrã inicial</string>
     <string name="onb_summary_launcher_registered">Launcher: registado como ecrã inicial</string>
+    <string name="dpi_pane_map_and_media">Mapa e multimédia</string>
+    <string name="dpi_pane_one_app">Uma app</string>
+    <string name="dpi_pane_compact">Compacto</string>
+    <string name="dpi_pane_map_over_media">Mapa sobre multimédia</string>
+    <string name="dpi_layout_step_title">1. Disposição</string>
+    <string name="dpi_size_step_title">2. Tamanho do texto e dos ícones</string>
+    <string name="dpi_expected_format">Esperado: %1$s</string>
+    <string name="dpi_edge_note">Grande e Automático ficam no limite da disposição. Se o seu telemóvel mostrar outra disposição aí, escolha Médio.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Toque sem soltar num espaço vazio</string>
     <string name="home_pages_hint_body">É assim que adiciona uma página para os seus widgets, ou remove uma.</string>
     <string name="home_pages_hint_got_it">Percebi</string>

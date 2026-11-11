@@ -950,16 +950,10 @@
     <string name="onb_automation_more_hint">დამატებით პარამეტრებს ავტომატური დაკავშირებისა და ავტომატური გაშვების პარამეტრებში იპოვით.</string>
     <string name="onb_dpi_help">მაღალი DPI ზრდის Android Auto-ს ხატულებსა და ტექსტს, ამიტომ ეკრანზე ნაკლები ეტევა. დაბალი DPI ამცირებს მათ და მეტი ეტევა. მოქმედებს Android Auto-ს დაკავშირებისას.</string>
     <string name="onb_change_later">ამის შეცვლა მოგვიანებით პარამეტრებში შეგიძლიათ.</string>
-    <string name="dpi_automatic">ავტომატური</string>
-    <string name="dpi_automatic_desc">მოწყობილობის სიმკვრივის გამოყენება.</string>
-    <string name="dpi_widescreen_hint">%1$d DPI-ზე ან ნაკლებზე Android Auto რუკას მედიის ბარათთან ერთად აჩვენებს და ტექსტი პატარავდება.</string>
-    <string name="dpi_automatic_desc_canvas">იყენებს %1$d DPI-ს %2$s-ისთვის, ტილო: %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">ავტომატური: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, იგზავნება როგორც %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto-ს სჭირდება მინიმუმ 748x450 dp ტილო, ამიტომ %1$d DPI იგზავნება როგორც %2$d.</string>
-    <string name="dpi_clamped_note_portrait">პორტრეტულ რეჟიმში Android Auto-ში Google Maps უგულებელყოფს შეხებას 730 dp-ზე ვიწრო ტილოზე, ამიტომ %1$d DPI იგზავნება როგორც %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI იგზავნება არჩეული მნიშვნელობით. პორტრეტულ რეჟიმში Android Auto-ში Google Maps-მა შეიძლება უგულებელყოს შეხება %2$d DPI-ზე მეტის დროს.</string>
     <string name="dpi_floor_override_note">%1$d DPI იგზავნება არჩეული მნიშვნელობით. %2$d DPI-ზე მეტის დროს ტილო Android Auto-სთვის საჭირო 748x450 dp-ზე პატარაა და შეიძლება შემცირებული განლაგება გამოჩნდეს.</string>
     <string name="onb_conn_usb_label">USB (ან ადაპტერი)</string>
     <string name="onb_connection_self_detail">ავტონომიური რეჟიმი უშვებს Android Auto-ს ამ მოწყობილობაზე ტელეფონის დაკავშირების გარეშე.</string>
@@ -975,7 +969,6 @@
     <string name="resolution_use_anyway">მაინც გამოყენება</string>
     <string name="resolution_use_recommended">რეკომენდებულის გამოყენება</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">უზარმაზარი</string>
     <string name="onb_vehicle_title">თქვენი მანქანა</string>
     <string name="onb_vehicle_input_hint">მარკა ან სახელი</string>
     <string name="onb_vehicle_help_aa">ეს სახელი იგზავნება Android Auto-ში. ის ჩანს ტელეფონის კავშირების ისტორიაში და Android Auto-ს მისალმების ეკრანზე.</string>
@@ -1072,11 +1065,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="dpi_size_s">S</string>
-    <string name="dpi_size_m">M</string>
-    <string name="dpi_size_l">L</string>
-    <string name="dpi_size_xl">XL</string>
-    <string name="onb_dpi_recommended">რეკომენდებულია თქვენი ეკრანისთვის: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">პიქსელის თანაფარდობა</string>
     <string name="pixel_aspect_ratio_help">შეცვალეთ მხოლოდ მაშინ, თუ ამ ეკრანზე წრეები ოვალებივით ჩანს. ეს ხდება, როცა პანელის პიქსელები კვადრატული არ არის. 10000 კვადრატულ პიქსელებს ნიშნავს.</string>
@@ -1706,6 +1694,15 @@
     <string name="onb_launcher_reopen_note">სანამ Open Headunit მთავარი აპია, „ხელახალი კავშირისას გახსნა“ არ მოქმედებს, რადგან მოწყობილობა ისედაც მასზე ბრუნდება. მანქანის გამშვების გამორთვის შემდეგ ისევ იმუშავებს.</string>
     <string name="onb_summary_launcher_home">გამშვები: Open Headunit მთავარი აპია</string>
     <string name="onb_summary_launcher_registered">გამშვები: რეგისტრირებულია მთავარ აპად</string>
+    <string name="dpi_pane_map_and_media">რუკა და მედია</string>
+    <string name="dpi_pane_one_app">ერთი აპი</string>
+    <string name="dpi_pane_compact">კომპაქტური</string>
+    <string name="dpi_pane_map_over_media">რუკა მედიის ზემოთ</string>
+    <string name="dpi_layout_step_title">1. განლაგება</string>
+    <string name="dpi_size_step_title">2. ტექსტისა და ხატულების ზომა</string>
+    <string name="dpi_expected_format">მოსალოდნელი: %1$s</string>
+    <string name="dpi_edge_note">დიდი და ავტომატური განლაგების საზღვარზეა. თუ თქვენი ტელეფონი იქ სხვა განლაგებას აჩვენებს, აირჩიეთ საშუალო.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">ხანგრძლივად შეეხე ცარიელ ადგილს</string>
     <string name="home_pages_hint_body">ასე დაამატებ გვერდს ვიჯეტებისთვის, ან წაშლი მას.</string>
     <string name="home_pages_hint_got_it">გასაგებია</string>

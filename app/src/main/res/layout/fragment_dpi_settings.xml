@@ -34,46 +34,11 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/dpi_automatic"
-                        android:textAppearance="?attr/textAppearanceSubtitle1" />
-                    <TextView
-                        android:id="@+id/dpi_auto_desc"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/dpi_automatic_desc"
-                        android:textAppearance="?attr/textAppearanceCaption" />
-                    <TextView
-                        android:id="@+id/dpi_widescreen_hint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textAppearance="?attr/textAppearanceCaption"
-                        android:visibility="gone" />
-                </LinearLayout>
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/dpi_auto_switch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-
-            <com.andrerinas.openheadunit.view.DpiPickerView
+            <com.andrerinas.openheadunit.view.DpiLayoutPickerView
                 android:id="@+id/dpi_picker"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" />
+                android:layout_marginTop="4dp" />
 
             <TextView
                 android:id="@+id/dpi_clamped_note"

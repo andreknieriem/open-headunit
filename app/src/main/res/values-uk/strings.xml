@@ -1026,16 +1026,10 @@
     <string name="onb_automation_more_hint">Більше параметрів у налаштуваннях автопідключення та автозапуску.</string>
     <string name="onb_dpi_help">Вищий DPI збільшує значки й текст Android Auto, тож на екран вміщається менше. Нижчий DPI робить їх меншими, вміщається більше. Застосовується під час підключення Android Auto.</string>
     <string name="onb_change_later">Ви можете змінити це пізніше в налаштуваннях.</string>
-    <string name="dpi_automatic">Автоматично</string>
-    <string name="dpi_automatic_desc">Використовувати щільність пристрою.</string>
-    <string name="dpi_widescreen_hint">При %1$d DPI або менше Android Auto показує карту з карткою мультимедіа поруч, а текст стає дрібнішим.</string>
-    <string name="dpi_automatic_desc_canvas">Використовує %1$d DPI для %2$s, полотно %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Автоматично: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, надсилається як %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto потрібне полотно не менше 748x450 dp, тому %1$d DPI надсилається як %2$d.</string>
-    <string name="dpi_clamped_note_portrait">У портретному режимі Google Maps в Android Auto ігнорує дотики на полотні вужчому за 730 dp, тому %1$d DPI надсилається як %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI надсилається так, як вибрано. У портретному режимі Google Maps в Android Auto може ігнорувати дотики вище %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI надсилається так, як вибрано. Вище %2$d DPI полотно менше, ніж потрібно Android Auto (748x450 dp), і може з\'явитися спрощений макет.</string>
     <string name="onb_conn_usb_label">USB (або адаптер)</string>
     <string name="onb_connection_self_detail">Автономний режим запускає Android Auto на цьому пристрої без телефона.</string>
@@ -1051,7 +1045,6 @@
     <string name="resolution_use_anyway">Все одно використати</string>
     <string name="resolution_use_recommended">Використати рекомендовану</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Величезний</string>
     <string name="onb_vehicle_title">Ваш автомобіль</string>
     <string name="onb_vehicle_input_hint">Марка або назва</string>
     <string name="onb_vehicle_help_aa">Ця назва надсилається в Android Auto. Вона показується в історії підключень телефона та на екрані привітання Android Auto.</string>
@@ -1082,7 +1075,6 @@
     <string name="perm_write_settings_help">Дозволяє додатку автоматично вмикати точку доступу для бездротових підключень.</string>
     <string name="perm_storage_title">Сховище</string>
     <string name="perm_storage_help">Потрібен для резервного копіювання й відновлення налаштувань, а також для вибору власного зображення завантаження.</string>
-    <string name="onb_dpi_recommended">Рекомендовано для вашого екрана: %1$d dpi</string>
     <string name="onb_ready_loading_intro">Ще одне: тепер ви можете встановити власний екран завантаження, який відображатиметься під час підключення автомобіля.</string>
     <string name="onb_ready_loading_button">Налаштувати екран завантаження</string>
 
@@ -1722,6 +1714,15 @@
     <string name="onb_launcher_reopen_note">«Відкривати при повторному підключенні» не діє, поки Open Headunit є головною програмою: пристрій і так повертається до неї. Знову запрацює, якщо вимкнути лаунчер авто.</string>
     <string name="onb_summary_launcher_home">Лаунчер: Open Headunit є головним екраном</string>
     <string name="onb_summary_launcher_registered">Лаунчер: зареєстровано як головний екран</string>
+    <string name="dpi_pane_map_and_media">Карта й мультимедіа</string>
+    <string name="dpi_pane_one_app">Один застосунок</string>
+    <string name="dpi_pane_compact">Компактний</string>
+    <string name="dpi_pane_map_over_media">Карта над мультимедіа</string>
+    <string name="dpi_layout_step_title">1. Макет</string>
+    <string name="dpi_size_step_title">2. Розмір тексту й значків</string>
+    <string name="dpi_expected_format">Очікується: %1$s</string>
+    <string name="dpi_edge_note">Розміри «Великий» і «Автоматично» лежать на межі макета. Якщо телефон показує там інший макет, виберіть «Середній».</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Натисніть і утримуйте порожнє місце</string>
     <string name="home_pages_hint_body">Так можна додати сторінку для віджетів або видалити її.</string>
     <string name="home_pages_hint_got_it">Зрозуміло</string>

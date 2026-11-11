@@ -1137,6 +1137,9 @@
     <string name="media_key_routing_never">Nunca</string>
     <string name="media_key_routing_help">Sempre: Próxima, anterior e reproduzir/pausar sempre são enviados ao Android Auto. Use esta opção, a menos que um toque pule duas faixas.\n\nAutomático: Para de enviá-los enquanto esta central tiver uma conexão de mídia Bluetooth com o smartphone, porque essa conexão já executa a ação. Escolha esta opção se um toque pular duas faixas e o smartphone estiver pareado com esta central.\n\nNunca: Nunca os envia e deixa os botões para o Bluetooth. Escolha esta opção se um toque pular duas faixas e o smartphone estiver pareado com o sistema do próprio carro, e não com esta central. O modo Automático não detecta essa conexão.</string>
     <string name="media_key_routing_hint_common">Só os botões de mídia são afetados. Controles rotativos, direcional, Voltar e Enter sempre chegam ao Android Auto.</string>
+    <string name="volume_keys_to_phone">Enviar botões de volume ao celular</string>
+    <string name="volume_keys_to_phone_summary">Os botões de volume mudam o volume do celular, não o desta unidade.</string>
+    <string name="volume_keys_to_phone_help">Envia os botões de volume desta unidade ao celular pelo Android Auto em vez de mudar o volume aqui. Use quando o próprio celular toca o som: Receptor de áudio desativado, ou celular conectado ao Bluetooth do carro.\n\nFunciona enquanto o Android Auto está na tela, e só se o Android Auto do celular responder às teclas de volume.</string>
     <string name="playback_focus_mode">Pausar outros áudios durante a reprodução</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Sempre</string>

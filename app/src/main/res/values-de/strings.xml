@@ -1124,6 +1124,9 @@
     <string name="media_key_routing_never">Nie</string>
     <string name="media_key_routing_help">Immer: Weiter, Zurück und Wiedergabe/Pause werden immer an Android Auto gesendet. Verwende diese Option, es sei denn, ein Tastendruck überspringt zwei Titel.\n\nAutomatisch: Stoppt das Senden, solange die Headunit eine Bluetooth-Medienverbindung zum Smartphone hat, da diese Verbindung die Aktion bereits ausführt. Wähle diese Option, wenn ein Tastendruck zwei Titel überspringt und dein Smartphone mit dieser Headunit gekoppelt ist.\n\nNie: Sendet sie nie und überlässt die Tasten Bluetooth. Wähle diese Option, wenn ein Tastendruck zwei Titel überspringt und dein Smartphone mit dem Fahrzeugsystem statt mit dieser Headunit gekoppelt ist. Automatisch kann diese Verbindung nicht erkennen.</string>
     <string name="media_key_routing_hint_common">Betrifft nur die Medientasten. Drehregler, Steuerkreuz, Zurück und Enter erreichen Android Auto immer.</string>
+    <string name="volume_keys_to_phone">Lautstärketasten an das Smartphone senden</string>
+    <string name="volume_keys_to_phone_summary">Lautstärketasten ändern die Lautstärke des Smartphones, nicht dieses Geräts.</string>
+    <string name="volume_keys_to_phone_help">Sendet die Lautstärketasten dieses Geräts über Android Auto an das Smartphone, statt die Lautstärke hier zu ändern. Verwende das, wenn das Smartphone den Ton selbst abspielt: Audio-Ausgabe aus oder das Smartphone mit dem Bluetooth des Autos verbunden.\n\nFunktioniert, solange Android Auto auf dem Bildschirm ist, und nur, wenn Android Auto auf dem Smartphone auf Lautstärketasten reagiert.</string>
     <string name="playback_focus_mode">Andere Audioquellen bei Wiedergabe pausieren</string>
     <string name="playback_focus_mode_auto">Automatisch</string>
     <string name="playback_focus_mode_always">Immer</string>

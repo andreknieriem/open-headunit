@@ -1133,6 +1133,9 @@
     <string name="media_key_routing_never">从不</string>
     <string name="media_key_routing_help">始终：上一首、下一首和播放/暂停始终发送到 Android Auto。除非按一次会跳过两首曲目，否则请使用此项。\n\n自动：当此车机与手机建立了蓝牙媒体连接时，不再发送这些按键，因为该连接已经执行了相应操作。如果按一次会跳过两首曲目，且手机已与此车机配对，请选择此项。\n\n从不：从不发送这些按键，交由蓝牙处理。如果按一次会跳过两首曲目，且手机配对的是车辆自带系统而非此车机，请选择此项（“自动”无法检测到该连接）。</string>
     <string name="media_key_routing_hint_common">仅影响媒体按键。旋钮控制器、方向键、返回键和确认键始终会传到 Android Auto。</string>
+    <string name="volume_keys_to_phone">将音量按键发送到手机</string>
+    <string name="volume_keys_to_phone_summary">音量按键调节手机的音量，而不是本车机的音量。</string>
+    <string name="volume_keys_to_phone_help">将此车机的音量按键通过 Android Auto 发送到手机，而不是在这里调节音量。适用于由手机自己播放声音的情况：音频接收器已关闭，或手机连接的是汽车的蓝牙。\n\n仅在 Android Auto 显示在屏幕上时有效，并且需要手机上的 Android Auto 响应音量键。</string>
     <string name="playback_focus_mode">播放时暂停其他音频</string>
     <string name="playback_focus_mode_auto">自动</string>
     <string name="playback_focus_mode_always">始终</string>

@@ -1133,6 +1133,9 @@
     <string name="media_key_routing_never">永不</string>
     <string name="media_key_routing_help">一律：下一首、上一首和播放／暫停一律會傳送至 Android Auto。除非按一下會跳過兩首歌，否則請使用此選項。\n\n自動：當這台車機與手機之間已有藍牙媒體連線時，會停止傳送這些按鍵，因為該連線本身已會執行動作。如果按一下會跳過兩首歌，且手機已與這台車機配對，請選擇此項。\n\n永不：永不傳送這些按鍵，改由藍牙處理。如果按一下會跳過兩首歌，且手機是與車輛內建系統配對，而非與這台車機配對，請選擇此項。「自動」無法偵測到該連線。</string>
     <string name="media_key_routing_hint_common">只會影響媒體按鍵。旋鈕控制器、方向鍵、返回鍵和確認鍵一律會傳送至 Android Auto。</string>
+    <string name="volume_keys_to_phone">將音量按鍵傳送至手機</string>
+    <string name="volume_keys_to_phone_summary">音量按鍵調整手機的音量，而不是本車機的音量。</string>
+    <string name="volume_keys_to_phone_help">將這台車機的音量按鍵透過 Android Auto 傳送至手機，而不是在這裡調整音量。適用於由手機自行播放聲音的情況：音訊接收器已關閉，或手機連接的是汽車的藍牙。\n\n僅在 Android Auto 顯示於螢幕上時有效，且需手機上的 Android Auto 會回應音量鍵。</string>
     <string name="playback_focus_mode">播放時暫停其他音訊</string>
     <string name="playback_focus_mode_auto">自動</string>
     <string name="playback_focus_mode_always">一律</string>

@@ -1139,6 +1139,9 @@
     <string name="media_key_routing_never">送信しない</string>
     <string name="media_key_routing_help">常に送信：次へ、前へ、再生/一時停止のボタン操作を常に Android Auto に送信します。1 回押すと 2 曲飛ばされる場合を除き、この設定を使ってください。\n\n自動：このヘッドユニットがスマートフォンと Bluetooth のメディア接続を持っている間は、送信を止めます。その接続がすでに同じ操作を行うためです。1 回押すと 2 曲飛ばされ、スマートフォンがこのヘッドユニットとペアリングされている場合に選んでください。\n\n送信しない：送信せず、ボタン操作を Bluetooth に任せます。1 回押すと 2 曲飛ばされ、スマートフォンがこのヘッドユニットではなく車載システムにペアリングされている場合に選んでください。「自動」ではその接続を検出できません。</string>
     <string name="media_key_routing_hint_common">影響を受けるのはメディアボタンだけです。ロータリーコントローラー、十字キー、戻る、決定は常に Android Auto に届きます。</string>
+    <string name="volume_keys_to_phone">音量ボタンをスマートフォンに送信</string>
+    <string name="volume_keys_to_phone_summary">音量ボタンでこの機器ではなくスマートフォンの音量を変えます。</string>
+    <string name="volume_keys_to_phone_help">このヘッドユニットの音量ボタンを、ここで音量を変える代わりに Android Auto 経由でスマートフォンに送ります。スマートフォン自体が音を再生しているとき（オーディオシンクがオフのとき、またはスマートフォンが車の Bluetooth に接続されているとき）に使ってください。\n\nAndroid Auto が画面に表示されている間だけ動作し、スマートフォンの Android Auto が音量キーに反応する場合に限ります。</string>
     <string name="playback_focus_mode">再生中は他の音声を一時停止</string>
     <string name="playback_focus_mode_auto">自動</string>
     <string name="playback_focus_mode_always">常に一時停止</string>

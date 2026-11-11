@@ -755,6 +755,9 @@
     <string name="media_key_routing_never">Tidak Pernah</string>
     <string name="media_key_routing_help">Selalu: Berikutnya, sebelumnya, dan putar/jeda selalu dikirim ke Android Auto. Gunakan ini kecuali satu tekanan melewati dua trek.\n\nOtomatis: Berhenti mengirimkannya saat headunit ini memiliki koneksi media Bluetooth ke ponsel, karena koneksi tersebut sudah menjalankan tindakan itu. Pilih ini jika satu tekanan melewati dua trek dan ponsel Anda dipasangkan ke headunit ini.\n\nTidak Pernah: Tidak pernah mengirimkannya, sehingga tombol ditangani oleh Bluetooth. Pilih ini jika satu tekanan melewati dua trek dan ponsel Anda dipasangkan ke sistem bawaan mobil, bukan ke headunit ini. Mode Otomatis tidak dapat mendeteksi koneksi tersebut.</string>
     <string name="media_key_routing_hint_common">Hanya tombol media yang terpengaruh. Pengontrol putar, D-pad, Kembali, dan Enter selalu diteruskan ke Android Auto.</string>
+    <string name="volume_keys_to_phone">Kirim Tombol Volume Ke Ponsel</string>
+    <string name="volume_keys_to_phone_summary">Tombol volume mengubah volume ponsel, bukan volume unit ini.</string>
+    <string name="volume_keys_to_phone_help">Mengirim tombol volume unit ini ke ponsel melalui Android Auto alih-alih mengubah volume di sini. Gunakan ini saat ponsel memutar suaranya sendiri: Audio Sink nonaktif, atau ponsel terhubung ke Bluetooth mobil.\n\nBerfungsi saat Android Auto tampil di layar, dan hanya jika Android Auto di ponsel merespons tombol volume.</string>
     <string name="playback_focus_mode">Jeda Audio Lain Selama Pemutaran</string>
     <string name="playback_focus_mode_auto">Otomatis</string>
     <string name="playback_focus_mode_always">Selalu</string>

@@ -1135,6 +1135,9 @@
     <string name="media_key_routing_never">Soha</string>
     <string name="media_key_routing_help">Mindig: A következő, az előző és a lejátszás/szünet gomb jelét mindig megkapja az Android Auto. Ezt használja, kivéve ha egy gombnyomás két számot ugrik át.\n\nAutomatikus: Nem küldi el őket, amíg a fejegységnek Bluetooth médiakapcsolata van a telefonnal, mert ez a kapcsolat már elvégzi a műveletet. Ezt válassza, ha egy gombnyomás két számot ugrik át, és a telefon ehhez a fejegységhez van párosítva.\n\nSoha: Soha nem küldi el őket, a gombokat a Bluetoothra hagyja. Ezt válassza, ha egy gombnyomás két számot ugrik át, és a telefon az autó saját rendszeréhez van párosítva, nem ehhez a fejegységhez, mert az Automatikus mód ezt a kapcsolatot nem tudja észlelni.</string>
     <string name="media_key_routing_hint_common">Csak a médiagombokat érinti. A forgókapcsolók, a D-pad, a Vissza és az Enter gomb mindig eljut az Android Autóhoz.</string>
+    <string name="volume_keys_to_phone">Hangerőgombok küldése a telefonnak</string>
+    <string name="volume_keys_to_phone_summary">A hangerőgombok a telefon hangerejét állítják, nem a fejegységét.</string>
+    <string name="volume_keys_to_phone_help">Az Android Autón keresztül a telefonnak küldi a fejegység hangerőgombjait, ahelyett hogy itt változtatná a hangerőt. Akkor használja, ha a hangot maga a telefon játssza le: a Hang fogadása ki van kapcsolva, vagy a telefon az autó Bluetooth-jához csatlakozik.\n\nAkkor működik, amikor az Android Auto a képernyőn van, és csak ha a telefonon futó Android Auto reagál a hangerőgombokra.</string>
     <string name="playback_focus_mode">Más hangok szüneteltetése lejátszás közben</string>
     <string name="playback_focus_mode_auto">Automatikus</string>
     <string name="playback_focus_mode_always">Mindig</string>

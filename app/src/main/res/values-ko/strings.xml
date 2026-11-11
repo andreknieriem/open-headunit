@@ -1132,6 +1132,9 @@
     <string name="media_key_routing_never">사용 안 함</string>
     <string name="media_key_routing_help">항상: 다음 곡, 이전 곡, 재생/일시중지 버튼의 입력을 항상 Android Auto로 전달합니다. 버튼을 한 번 눌렀을 때 두 곡이 넘어가는 경우가 아니라면 이 옵션을 사용하세요.\n\n자동: 휴대전화와 이 헤드유닛이 블루투스 오디오로 연결되어 있는 동안에는 버튼 입력을 Android Auto로 전달하지 않습니다. 같은 버튼 입력이 블루투스를 통해 이미 처리되기 때문입니다. 버튼을 한 번 눌렀을 때 두 곡이 넘어가고 휴대전화가 이 헤드유닛과 페어링되어 있다면 이 옵션을 선택하세요.\n\n사용 안 함: 버튼 신호를 보내지 않고 블루투스가 처리하도록 합니다. 버튼을 한 번 눌렀을 때 두 곡이 넘어가고 휴대전화가 이 헤드유닛이 아닌 차량 자체 시스템과 페어링되어 있다면 이 옵션을 선택하세요. 자동 모드는 그 연결을 감지하지 못합니다.</string>
     <string name="media_key_routing_hint_common">미디어 버튼에만 적용됩니다. 로터리 컨트롤러, 방향 패드, 뒤로 가기, 엔터 키는 항상 Android Auto로 전달됩니다.</string>
+    <string name="volume_keys_to_phone">볼륨 버튼 입력을 휴대전화로 전달</string>
+    <string name="volume_keys_to_phone_summary">볼륨 버튼으로 이 기기 대신 휴대전화의 볼륨을 조절합니다.</string>
+    <string name="volume_keys_to_phone_help">이 헤드유닛의 볼륨 버튼 입력을 여기서 볼륨을 바꾸는 대신 Android Auto를 통해 휴대전화로 전달합니다. 휴대전화가 직접 소리를 재생할 때 사용하세요. 오디오 수신이 꺼져 있거나 휴대전화가 차량 블루투스에 연결된 경우입니다.\n\nAndroid Auto가 화면에 표시되어 있을 때만 작동하며, 휴대전화의 Android Auto가 볼륨 키에 반응하는 경우에만 적용됩니다.</string>
     <string name="playback_focus_mode">재생 중 다른 오디오 일시중지</string>
     <string name="playback_focus_mode_auto">자동</string>
     <string name="playback_focus_mode_always">항상</string>

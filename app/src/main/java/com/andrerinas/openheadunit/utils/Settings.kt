@@ -1362,6 +1362,14 @@ class Settings(private val context: Context) {
         )
         set(value) { prefs.edit().putInt("media-key-routing", value.value).apply() }
 
+    // Whether the hardware volume buttons go to the phone through Android Auto instead of changing
+    // this head unit's own volume. For a phone that keeps its audio (Audio Sink off, or playing to
+    // the car over Bluetooth), where the local volume controls nothing Android Auto plays. Off is
+    // the stored default, so an unset preference keeps the behaviour every existing install has.
+    var volumeKeysToPhone: Boolean
+        get() = prefs.getBoolean("volume-keys-to-phone", false)
+        set(value) { prefs.edit().putBoolean("volume-keys-to-phone", value).apply() }
+
     var separateAudioStreams: Boolean
         get() = prefs.getBoolean("separate-audio-streams", false)
         set(value) { prefs.edit().putBoolean("separate-audio-streams", value).apply() }

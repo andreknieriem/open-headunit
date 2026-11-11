@@ -1150,6 +1150,9 @@
     <string name="media_key_routing_never">Nunca</string>
     <string name="media_key_routing_help">Siempre: Siguiente, anterior y reproducir/pausar se envían siempre a Android Auto. Usa esta opción salvo que una pulsación salte dos canciones.\n\nAutomático: Deja de enviarlos mientras esta unidad tenga una conexión multimedia Bluetooth con el móvil, porque esa conexión ya realiza la acción. Elige esta opción si una pulsación salta dos canciones y tu móvil está emparejado con esta unidad.\n\nNunca: No los envía nunca y deja los botones al Bluetooth. Elige esta opción si una pulsación salta dos canciones y tu móvil está emparejado con el sistema del propio coche y no con esta unidad: Automático no puede detectar esa conexión.</string>
     <string name="media_key_routing_hint_common">Solo afecta a los botones multimedia. Los mandos giratorios, el D-pad, Atrás e Intro llegan siempre a Android Auto.</string>
+    <string name="volume_keys_to_phone">Enviar botones de volumen al móvil</string>
+    <string name="volume_keys_to_phone_summary">Los botones de volumen cambian el volumen del móvil, no el de esta unidad.</string>
+    <string name="volume_keys_to_phone_help">Envía los botones de volumen de esta unidad al móvil a través de Android Auto en lugar de cambiar el volumen aquí. Úsalo cuando el móvil reproduzca el sonido por sí mismo: Salida de audio desactivada, o el móvil conectado al Bluetooth del coche.\n\nFunciona mientras Android Auto está en pantalla, y solo si Android Auto en el móvil responde a las teclas de volumen.</string>
     <string name="playback_focus_mode">Pausar otro audio durante la reproducción</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Siempre</string>

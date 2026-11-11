@@ -1133,6 +1133,9 @@
     <string name="media_key_routing_never">Niciodată</string>
     <string name="media_key_routing_help">Întotdeauna: Butoanele următorul, anteriorul și redare/pauză sunt trimise întotdeauna către Android Auto. Folosește această opțiune, cu excepția cazului în care o apăsare sare peste două melodii.\n\nAutomat: Nu le mai trimite cât timp unitatea auto are o conexiune media Bluetooth cu telefonul, deoarece acea conexiune execută deja acțiunea. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu această unitate auto.\n\nNiciodată: Nu le trimite niciodată și lasă butoanele în seama Bluetooth. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu sistemul propriu al mașinii, nu cu această unitate auto. Modul Automat nu poate detecta acea conexiune.</string>
     <string name="media_key_routing_hint_common">Sunt afectate doar butoanele media. Controalele rotative, D-pad, Înapoi și Enter ajung întotdeauna la Android Auto.</string>
+    <string name="volume_keys_to_phone">Trimite butoanele de volum către telefon</string>
+    <string name="volume_keys_to_phone_summary">Butoanele de volum schimbă volumul telefonului, nu al acestei unități.</string>
+    <string name="volume_keys_to_phone_help">Trimite butoanele de volum ale acestei unități către telefon prin Android Auto, în loc să schimbe volumul aici. Folosește-l când telefonul redă singur sunetul: Receptor audio dezactivat sau telefonul conectat la Bluetooth-ul mașinii.\n\nFuncționează cât timp Android Auto este pe ecran și doar dacă Android Auto de pe telefon răspunde la tastele de volum.</string>
     <string name="playback_focus_mode">Pune pe pauză alt sunet în timpul redării</string>
     <string name="playback_focus_mode_auto">Automat</string>
     <string name="playback_focus_mode_always">Întotdeauna</string>

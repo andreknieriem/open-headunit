@@ -41,6 +41,7 @@ class SettingsPendingCopy {
     var micInputSource: Int? = null
     var enableRotary: Boolean? = null
     var mediaKeyRouting: MediaKeyRoutingPolicy.Mode? = null
+    var volumeKeysToPhone: Boolean? = null
     var audioLatencyMultiplier: Int? = null
     var audioMatchingMode: com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode? = null
     var useLibusb: Boolean? = null
@@ -133,6 +134,7 @@ class SettingsPendingCopy {
         micInputSource = settings.micInputSource
         enableRotary = settings.enableRotary
         mediaKeyRouting = settings.mediaKeyRouting
+        volumeKeysToPhone = settings.volumeKeysToPhone
         audioLatencyMultiplier = settings.audioLatencyMultiplier
         audioMatchingMode = settings.audioMatchingMode
         useLibusb = settings.useLibusb
@@ -226,6 +228,7 @@ class SettingsPendingCopy {
         micInputSource != settings.micInputSource ||
         enableRotary != settings.enableRotary ||
         mediaKeyRouting != settings.mediaKeyRouting ||
+        volumeKeysToPhone != settings.volumeKeysToPhone ||
         audioLatencyMultiplier != settings.audioLatencyMultiplier ||
         audioMatchingMode != settings.audioMatchingMode ||
         useLibusb != settings.useLibusb ||

@@ -12,4 +12,10 @@ object ProjectionKeyPolicy {
     fun isHomeKey(keyCode: Int): Boolean {
         return keyCode == KeyEvent.KEYCODE_HOME
     }
+
+    fun isVolumeKey(keyCode: Int): Boolean {
+        return keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
+                keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+                keyCode == KeyEvent.KEYCODE_VOLUME_MUTE
+    }
 }

@@ -782,6 +782,14 @@
     <string name="media_key_routing_never">Never</string>
     <string name="media_key_routing_help">Always: Next, previous and play/pause are always sent to Android Auto. Use this unless one press skips two tracks.\n\nAutomatic: Stops sending them while this headunit has a Bluetooth media connection to the phone, because that connection already performs the action. Choose this if one press skips two tracks and your phone is paired to this headunit.\n\nNever: Never sends them, leaving the buttons to Bluetooth. Choose this if one press skips two tracks and your phone is paired to the car\'s own system rather than to this headunit — Automatic cannot detect that connection.</string>
     <string name="media_key_routing_hint_common">Only the media buttons are affected. Rotary controllers, D-pad, Back and Enter always reach Android Auto.</string>
+    <string name="volume_keys_to_phone">Send Volume Buttons To The Phone</string>
+    <string name="volume_keys_to_phone_summary">Volume buttons change the phone\'s volume, not this unit\'s.</string>
+    <string name="volume_keys_to_phone_help">Sends this headunit\'s volume buttons to the phone through Android Auto instead of changing the volume here. Use it when the phone plays the sound itself: Audio Sink off, or the phone connected to the car\'s Bluetooth.\n\nWorks while Android Auto is on screen, and only if the phone\'s Android Auto acts on volume keys.</string>
+    <string name="speed_volume">Speed-Dependent Volume</string>
+    <string name="speed_volume_off">Off</string>
+    <string name="speed_volume_low">Low</string>
+    <string name="speed_volume_high">High</string>
+    <string name="speed_volume_help">Raises the volume one step at a time as the car speeds up, using this headunit\'s GPS, and takes the steps back off as it slows down.\n\nOff: The volume stays where you set it.\n\nLow: One step every 30 km/h, up to 3 steps.\n\nHigh: One step every 20 km/h, up to 5 steps.\n\nThe steps go to the phone when Send Volume Buttons To The Phone is on, and to this headunit\'s media volume otherwise.</string>
     <string name="playback_focus_mode">Pause Other Audio During Playback</string>
     <string name="playback_focus_mode_auto">Automatic</string>
     <string name="playback_focus_mode_always">Always</string>

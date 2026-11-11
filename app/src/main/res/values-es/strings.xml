@@ -1145,6 +1145,14 @@
     <string name="media_key_routing_never">Nunca</string>
     <string name="media_key_routing_help">Siempre: Siguiente, anterior y reproducir/pausa se envían siempre a Android Auto. Usa esta opción, salvo que al presionar una vez se salten dos canciones.\n\nAutomático: Deja de enviarlos mientras esta unidad central tenga una conexión de medios Bluetooth con el teléfono, porque esa conexión ya ejecuta la acción. Elige esta opción si al presionar una vez se saltan dos canciones y tu teléfono está vinculado a esta unidad central.\n\nNunca: Nunca los envía y deja los botones a cargo de Bluetooth. Elige esta opción si al presionar una vez se saltan dos canciones y tu teléfono está vinculado al sistema propio del auto y no a esta unidad central. El modo Automático no puede detectar esa conexión.</string>
     <string name="media_key_routing_hint_common">Solo afecta a los botones multimedia. Los controles giratorios, el D-pad, Atrás y Enter siempre llegan a Android Auto.</string>
+    <string name="volume_keys_to_phone">Enviar botones de volumen al teléfono</string>
+    <string name="volume_keys_to_phone_summary">Los botones de volumen cambian el volumen del teléfono, no el de esta unidad.</string>
+    <string name="volume_keys_to_phone_help">Envía los botones de volumen de esta unidad al teléfono a través de Android Auto en lugar de cambiar el volumen aquí. Úsalo cuando el teléfono reproduce el sonido por sí mismo: Receptor de audio desactivado, o el teléfono conectado al Bluetooth del auto.\n\nFunciona mientras Android Auto está en pantalla, y solo si Android Auto en el teléfono responde a las teclas de volumen.</string>
+    <string name="speed_volume">Volumen según la velocidad</string>
+    <string name="speed_volume_off">Desactivado</string>
+    <string name="speed_volume_low">Bajo</string>
+    <string name="speed_volume_high">Alto</string>
+    <string name="speed_volume_help">Sube el volumen un paso a la vez a medida que el auto acelera, usando el GPS de esta unidad, y quita esos pasos cuando reduce la velocidad.\n\nDesactivado: El volumen se queda donde lo dejaste.\n\nBajo: Un paso cada 30 km/h, hasta 3 pasos.\n\nAlto: Un paso cada 20 km/h, hasta 5 pasos.\n\nLos pasos van al teléfono cuando Enviar botones de volumen al teléfono está activado y, si no, al volumen multimedia de esta unidad.</string>
     <string name="playback_focus_mode">Pausar otro audio durante la reproducción</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Siempre</string>

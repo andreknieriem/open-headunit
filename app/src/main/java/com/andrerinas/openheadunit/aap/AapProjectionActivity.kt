@@ -2726,10 +2726,16 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             return true
         }
 
-        if (event.keyCode == KeyEvent.KEYCODE_BACK ||
-            event.keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
-            event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
-            event.keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+        // 1c. Volume keys go to the phone when the user chose that: a phone that keeps its own audio
+        // does not hear this head unit's volume.
+        if (settings.volumeKeysToPhone &&
+            commManager.connectionState.value is CommManager.ConnectionState.TransportStarted &&
+            ProjectionKeyPolicy.isVolumeKey(event.keyCode)) {
+            commManager.sendKey(event.keyCode, action == KeyEvent.ACTION_DOWN, event.downTime, "volume-to-phone")
+            return true
+        }
+
+        if (event.keyCode == KeyEvent.KEYCODE_BACK || ProjectionKeyPolicy.isVolumeKey(event.keyCode)) {
             return super.dispatchKeyEvent(event)
         }
 

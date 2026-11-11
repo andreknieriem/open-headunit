@@ -1139,6 +1139,14 @@
     <string name="media_key_routing_never">Mai</string>
     <string name="media_key_routing_help">Sempre: I tasti Avanti, Indietro e Play/Pausa vengono sempre inviati ad Android Auto. Usa questa opzione, a meno che una pressione non salti due brani.\n\nAutomatico: Smette di inviarli finché l\'autoradio ha una connessione multimediale Bluetooth con il telefono, perché quella connessione esegue già l\'azione. Scegli questa opzione se una pressione salta due brani e il telefono è associato a questa autoradio.\n\nMai: Non li invia mai e lascia i tasti al Bluetooth. Scegli questa opzione se una pressione salta due brani e il telefono è associato al sistema dell\'auto invece che a questa autoradio: la modalità Automatico non può rilevare quella connessione.</string>
     <string name="media_key_routing_hint_common">Cambiano solo i tasti multimediali. Manopole, D-pad, Indietro e Invio arrivano sempre ad Android Auto.</string>
+    <string name="volume_keys_to_phone">Invia i tasti del volume al telefono</string>
+    <string name="volume_keys_to_phone_summary">I tasti del volume regolano il telefono, non questa unità.</string>
+    <string name="volume_keys_to_phone_help">Invia i tasti del volume di questa unità al telefono tramite Android Auto invece di cambiare il volume qui. Usalo quando è il telefono a riprodurre l\'audio: Uscita audio disattivata, o telefono collegato al Bluetooth dell\'auto.\n\nFunziona mentre Android Auto è sullo schermo, e solo se Android Auto sul telefono risponde ai tasti del volume.</string>
+    <string name="speed_volume">Volume in base alla velocità</string>
+    <string name="speed_volume_off">Disattivato</string>
+    <string name="speed_volume_low">Basso</string>
+    <string name="speed_volume_high">Alto</string>
+    <string name="speed_volume_help">Alza il volume di un passo alla volta mentre l\'auto accelera, usando il GPS di questa unità, e toglie quei passi quando rallenta.\n\nDisattivato: Il volume resta dove l\'hai impostato.\n\nBasso: Un passo ogni 30 km/h, fino a 3 passi.\n\nAlto: Un passo ogni 20 km/h, fino a 5 passi.\n\nI passi vanno al telefono quando Invia i tasti del volume al telefono è attivo, altrimenti al volume multimediale di questa unità.</string>
     <string name="playback_focus_mode">Metti in pausa gli altri audio durante la riproduzione</string>
     <string name="playback_focus_mode_auto">Automatico</string>
     <string name="playback_focus_mode_always">Sempre</string>

@@ -1139,6 +1139,14 @@
     <string name="media_key_routing_never">Nooit</string>
     <string name="media_key_routing_help">Altijd: Volgende, vorige en afspelen/pauzeren worden altijd naar Android Auto gestuurd. Kies dit, tenzij één druk twee nummers overslaat.\n\nAutomatisch: Stuurt ze niet door zolang deze headunit een Bluetooth-mediaverbinding met de telefoon heeft, omdat die verbinding de actie al uitvoert. Kies dit als één druk twee nummers overslaat en je telefoon met deze headunit is gekoppeld.\n\nNooit: Stuurt ze nooit door en laat de toetsen aan Bluetooth over. Kies dit als één druk twee nummers overslaat en je telefoon is gekoppeld met het eigen systeem van de auto en niet met deze headunit. Automatisch kan die verbinding niet herkennen.</string>
     <string name="media_key_routing_hint_common">Dit geldt alleen voor de mediatoetsen. Draaiknoppen, D-pad, Terug en Enter bereiken Android Auto altijd.</string>
+    <string name="volume_keys_to_phone">Volumetoetsen naar de telefoon sturen</string>
+    <string name="volume_keys_to_phone_summary">Volumetoetsen regelen het volume van de telefoon, niet van dit apparaat.</string>
+    <string name="volume_keys_to_phone_help">Stuurt de volumetoetsen van dit apparaat via Android Auto naar de telefoon in plaats van het volume hier te wijzigen. Gebruik dit als de telefoon het geluid zelf afspeelt: Audio-sink uit, of de telefoon verbonden met de Bluetooth van de auto.\n\nWerkt zolang Android Auto op het scherm staat, en alleen als Android Auto op de telefoon op volumetoetsen reageert.</string>
+    <string name="speed_volume">Snelheidsafhankelijk volume</string>
+    <string name="speed_volume_off">Uit</string>
+    <string name="speed_volume_low">Laag</string>
+    <string name="speed_volume_high">Hoog</string>
+    <string name="speed_volume_help">Zet het volume stap voor stap hoger naarmate de auto sneller rijdt, met de GPS van dit apparaat, en haalt die stappen er weer af als hij afremt.\n\nUit: Het volume blijft waar je het hebt ingesteld.\n\nLaag: Eén stap per 30 km/u, maximaal 3 stappen.\n\nHoog: Eén stap per 20 km/u, maximaal 5 stappen.\n\nDe stappen gaan naar de telefoon als Volumetoetsen naar de telefoon sturen aan staat, en anders naar het mediavolume van dit apparaat.</string>
     <string name="playback_focus_mode">Andere audio pauzeren tijdens afspelen</string>
     <string name="playback_focus_mode_auto">Automatisch</string>
     <string name="playback_focus_mode_always">Altijd</string>

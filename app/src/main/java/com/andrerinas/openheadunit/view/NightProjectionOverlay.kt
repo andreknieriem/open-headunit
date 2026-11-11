@@ -22,6 +22,7 @@ import androidx.core.widget.TextViewCompat
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.NightOverlayOptions
 import com.andrerinas.openheadunit.aap.NightOverlayRows
+import com.andrerinas.openheadunit.aap.NightOverlaySizes
 import com.andrerinas.openheadunit.aap.NightOverlayState
 import java.util.Date
 
@@ -52,6 +53,9 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
     private lateinit var navRow: LinearLayout
     private var configuredWidth = 0
     private var configuredHeight = 0
+
+    /** The navigation row shows: it gets the room, the clock and the track shrink. */
+    private var navigationShown = false
     private lateinit var details: LinearLayout
     private val clockTick = object : Runnable {
         override fun run() {
@@ -204,6 +208,10 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
             distance.isVisible || road.isVisible || extraInfo.isVisible
         maneuverBlock.isVisible = topRow.isVisible || road.isVisible || extraInfo.isVisible
         navRow.isVisible = maneuverBlock.isVisible && NightOverlayRows.Row.NAVIGATION in rows
+        if (navRow.isVisible != navigationShown) {
+            navigationShown = navRow.isVisible
+            updateTextSizes()
+        }
 
         title.text =
             listOf(content.title, content.artist).filter { it.isNotBlank() }.joinToString(" - ")
@@ -220,8 +228,9 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         val density = resources.displayMetrics.density
         val shorterSide = minOf(width, height)
         val shorterDp = shorterSide / density
-        val iconSize = (shorterSide * 0.2f).toInt()
-            .coerceIn((48f * density).toInt(), (148f * density).toInt())
+        // One scale drives every text, so any of the knobs stands for the text size option.
+        val sizes = NightOverlaySizes.of(shorterDp, scaleClock, navigationShown)
+        val iconSize = (sizes.iconDp * density).toInt()
         val padding = (shorterDp * 0.04f * density).toInt()
         val tinyGap = (8f * density).toInt()
         val topInfoWidth = (
@@ -293,24 +302,12 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         ).apply {
             topMargin = tinyGap * 3
         }
-        val clockSp = (shorterDp * 0.30f * scaleClock)
-            .coerceIn(57.6f * scaleClock, 144f * scaleClock)
-        val distanceSp = (shorterDp * 0.1235f * scaleDistance)
-            .coerceIn(20.8f * scaleDistance, 65f * scaleDistance)
-        val maneuverFallbackSp = (shorterDp * 0.085f * scaleManeuverTextFallback)
-            .coerceIn(16f * scaleManeuverTextFallback, 40f * scaleManeuverTextFallback)
-        val roadSp = (shorterDp * 0.0546f * scaleRoad)
-            .coerceIn(9.8f * scaleRoad, 28f * scaleRoad)
-        val extraInfoSp = (shorterDp * 0.0546f * scaleExtraInfo)
-            .coerceIn(9.8f * scaleExtraInfo, 28f * scaleExtraInfo)
-        val titleSp = (shorterDp * 0.065f * scaleTrackTitle)
-            .coerceIn(16f * scaleTrackTitle, 32f * scaleTrackTitle)
-        setFixedTextSize(clock, clockSp)
-        setFixedTextSize(distance, distanceSp)
-        setFixedTextSize(maneuverTextFallback, maneuverFallbackSp)
-        setFixedTextSize(road, roadSp)
-        setFixedTextSize(extraInfo, extraInfoSp)
-        setFixedTextSize(title, titleSp)
+        setFixedTextSize(clock, sizes.clockSp)
+        setFixedTextSize(distance, sizes.distanceSp)
+        setFixedTextSize(maneuverTextFallback, sizes.maneuverFallbackSp)
+        setFixedTextSize(road, sizes.roadSp)
+        setFixedTextSize(extraInfo, sizes.extraInfoSp)
+        setFixedTextSize(title, sizes.titleSp)
     }
 
     private fun formatDistance(meters: Int): String {

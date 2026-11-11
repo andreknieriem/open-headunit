@@ -208,7 +208,9 @@ class DpiSettingsFragment : Fragment() {
         val preset = OnboardingDisplayPolicy.initialPreset(
             settings.displaySizePreset, SystemOptimizer.DisplaySizePreset.SMALL_7_8
         )
-        return AnnouncedDensityPolicy.decide(value, preset, p.w, p.h, p.par, override, p.panelW, p.panelH)
+        return AnnouncedDensityPolicy.decide(
+            value, preset, p.w, p.h, p.par, override, p.panelW, p.panelH, settings.dpiAutoLayoutPane
+        )
     }
 
     /** Says so while the picked value is lower on the wire than on the slider, or sent past a floor. */

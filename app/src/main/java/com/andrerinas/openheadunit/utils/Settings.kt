@@ -455,6 +455,13 @@ class Settings(private val context: Context) {
             prefs.edit().putInt("dpi-pixel-density", value).apply()
         }
 
+    /** The layout Auto works inside, a [DisplayLayoutPolicy.Pane] name; empty is the plain Automatic. */
+    var dpiAutoLayout: String
+        get() = prefs.getString("dpi-auto-layout", "") ?: ""
+        set(value) { prefs.edit().putString("dpi-auto-layout", value).apply() }
+
+    val dpiAutoLayoutPane: DisplayLayoutPolicy.Pane? get() = DisplayLayoutPolicy.Pane.fromStored(dpiAutoLayout)
+
     /** The DPI screen's "Use anyway": send a stored DPI above the canvas floor (HUIG or portrait) as is. */
     var dpiFloorOverride: Boolean
         get() = prefs.getBoolean("dpi-floor-override", false)

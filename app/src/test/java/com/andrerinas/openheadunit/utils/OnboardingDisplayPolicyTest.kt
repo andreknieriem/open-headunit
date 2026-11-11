@@ -133,7 +133,7 @@ class OnboardingDisplayPolicyTest {
                 assertEquals(
                     "$preset ${w}x$h",
                     OnboardingDisplayPolicy.recommendedDpi(preset, w, h, false),
-                    AnnouncedDensityPolicy.decide(0, preset, w, h).announced
+                    AnnouncedDensityPolicy.decide(0, preset, w, h, autoLayout = null).announced
                 )
             }
         }

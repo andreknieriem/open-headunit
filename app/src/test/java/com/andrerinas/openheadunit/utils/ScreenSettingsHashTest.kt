@@ -20,10 +20,12 @@ class ScreenSettingsHashTest {
         videoFitMode: Int = 0,
         forcedScale: Boolean = false,
         normalisation: ScreenOrientationPolicy.Normalisation = ScreenOrientationPolicy.Normalisation.LANDSCAPE,
+        dpiAutoLayout: String = "",
     ) = ScreenSettingsHash.of(
         resolutionId, dpiPixelDensity, pixelAspectRatioE4,
         insetLeft, insetTop, insetRight, insetBottom,
         viewMode, screenOrientation, fullscreenMode, videoFitMode, forcedScale, normalisation,
+        dpiAutoLayout,
     )
 
     @Test
@@ -68,5 +70,18 @@ class ScreenSettingsHashTest {
     @Test
     fun `two settings exchanged are not the same settings`() {
         assertNotEquals(hash(insetLeft = 5, insetTop = 9), hash(insetLeft = 9, insetTop = 5))
+    }
+
+    // The number the default inputs gave before dpiAutoLayout existed: an upgrade keeps its cache.
+    @Test
+    fun `an empty layout leaves the hash where it was`() {
+        assertEquals(953289905, hash())
+    }
+
+    @Test
+    fun `a picked layout invalidates a reading`() {
+        val base = hash()
+        assertNotEquals(base, hash(dpiAutoLayout = "ONE_APP"))
+        assertNotEquals(hash(dpiAutoLayout = "ONE_APP"), hash(dpiAutoLayout = "COMPACT"))
     }
 }

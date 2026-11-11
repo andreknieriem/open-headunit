@@ -25,6 +25,7 @@ object ScreenSettingsHash {
         videoFitMode: Int,
         forcedScale: Boolean,
         normalisation: ScreenOrientationPolicy.Normalisation,
+        dpiAutoLayout: String = "",
     ): Int {
         var hash = 17
         hash = 31 * hash + resolutionId
@@ -40,6 +41,8 @@ object ScreenSettingsHash {
         hash = 31 * hash + videoFitMode
         hash = 31 * hash + (if (forcedScale) 1 else 0)
         hash = 31 * hash + normalisation.ordinal
+        // Folded only when set, so an upgrade keeps every cached measurement.
+        if (dpiAutoLayout.isNotEmpty()) hash = 31 * hash + dpiAutoLayout.hashCode()
         return hash
     }
 }

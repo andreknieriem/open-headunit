@@ -1356,7 +1356,9 @@ class OnboardingActivity : BaseActivity() {
         val par = AnnouncedDensityPolicy.pixelAspectE4(
             settings.videoFitMode, pw, ph, r.width, r.height, settings.pixelAspectRatioE4
         )
-        return AnnouncedDensityPolicy.decide(0, selectedSize, w, h, par, panelW = pw, panelH = ph).announced
+        return AnnouncedDensityPolicy.decide(
+            0, selectedSize, w, h, par, panelW = pw, panelH = ph, autoLayout = settings.dpiAutoLayoutPane
+        ).announced
     }
 
     /** Warn (in red) when the current resolution is higher than the panel: the DPI is computed for

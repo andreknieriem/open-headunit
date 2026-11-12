@@ -35,6 +35,13 @@ object LockedInputPolicy {
         enabled && (screenOff || deviceLocked != false)
 
     /**
+     * Whether [shouldEngage] needs the lock state at all. Asking for it is a call into the system,
+     * and the projection asks on every new touch; with the setting off, or with the panel just
+     * gone dark, the answer changes nothing.
+     */
+    fun needsLockState(enabled: Boolean, screenOff: Boolean): Boolean = enabled && !screenOff
+
+    /**
      * Whether one input event may go to the phone.
      *
      * @param keycode the Android Auto keycode for a key event, null for touch, scroll and any other

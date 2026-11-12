@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.input
 
 import android.view.KeyEvent
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,6 +32,23 @@ class LockedInputPolicyTest {
     @Test
     fun `screen off holds input even before the unit reports locked`() {
         assertTrue(LockedInputPolicy.shouldEngage(enabled = true, deviceLocked = false, screenOff = true))
+    }
+
+    @Test
+    fun `the lock state is only needed with the setting on and the screen lit`() {
+        assertTrue(LockedInputPolicy.needsLockState(enabled = true, screenOff = false))
+        assertFalse(LockedInputPolicy.needsLockState(enabled = true, screenOff = true))
+        assertFalse(LockedInputPolicy.needsLockState(enabled = false, screenOff = false))
+        assertFalse(LockedInputPolicy.needsLockState(enabled = false, screenOff = true))
+    }
+
+    @Test
+    fun `where the lock state is not needed it does not change the hold`() {
+        for (enabled in listOf(true, false)) for (screenOff in listOf(true, false)) {
+            if (LockedInputPolicy.needsLockState(enabled, screenOff)) continue
+            val answers = listOf(true, false, null).map { LockedInputPolicy.shouldEngage(enabled, it, screenOff) }
+            assertEquals("enabled=$enabled screenOff=$screenOff", 1, answers.toSet().size)
+        }
     }
 
     @Test

@@ -1541,7 +1541,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      * screen's dialogs and brings Android Auto's map to the front.
      */
     private fun refreshLockedInput(reason: String, screenOff: Boolean = false) {
-        val engage = LockedInputPolicy.shouldEngage(settings.showOverLockScreen, isDeviceLockedNow(), screenOff)
+        val enabled = settings.showOverLockScreen
+        val deviceLocked = if (LockedInputPolicy.needsLockState(enabled, screenOff)) isDeviceLockedNow() else null
+        val engage = LockedInputPolicy.shouldEngage(enabled, deviceLocked, screenOff)
         if (engage == LockedInputPolicy.engaged) return
         LockedInputPolicy.engaged = engage
         AppLog.i("AapProjectionActivity: locked-unit input hold ${if (engage) "on" else "off"} ($reason)")

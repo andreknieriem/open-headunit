@@ -1300,6 +1300,10 @@
     <string name="raise_projection_during_call">البقاء في Android Auto أثناء المكالمات</string>
     <string name="raise_projection_during_call_description">الوضع الذاتي فقط. يُعيد العرض فوق شاشة اتصال الهاتف بحيث يتم الرد على المكالمات وإنهاؤها من واجهة Android Auto.</string>
     <string name="raise_projection_during_call_summary">للوضع الذاتي فقط. يعرض الإسقاط فوق شاشة المكالمة في الهاتف.</string>
+    <string name="show_over_lock_screen">عرض فوق شاشة القفل</string>
+    <string name="show_over_lock_screen_summary">تبقى الخريطة والاتجاهات ظاهرة أثناء القفل. اللمس والأزرار لا تعمل.</string>
+    <string name="show_over_lock_screen_help">يعرض صورة Android Auto فوق شاشة القفل، لتتمكن من قراءة الخريطة والاتجاهات دون فتح القفل. أثناء قفل هذا الجهاز لا يصل أي شيء إلى الهاتف: يتم حجب اللمس والأزرار ووحدة التحكم الدوّارة وزر الصوت، وتُعرض الخريطة في المقدمة. اضغط رجوع لفتح القفل برمز PIN أو النمط أو كلمة المرور؛ بعد ذلك يعمل كل شيء كالمعتاد. لا تتأثر الموسيقى والمكالمات والمساعد الصوتي على الهاتف نفسه.</string>
+    <string name="show_over_lock_screen_locked_toast">مقفل: الخريطة فقط. اضغط رجوع لفتح القفل.</string>
     <string name="audio_stream_settings">تدفقات الصوت</string>
     <string name="audio_stream_settings_description">اختر تدفق النظام الذي تُشغَّل عليه كل قناة من قنوات Android Auto.</string>
     <string name="audio_stream_settings_info">يرسل Android Auto الصوت عبر ثلاث قنوات: الوسائط، والإرشادات، وأصوات النظام. تصل كل قناة إلى وحدة الرأس عبر تدفق نظام، والتدفق الذي تختاره يحدد مفتاح مستوى الصوت الذي تتبعه، وفي كثير من الوحدات ما إذا كان مكبر الصوت سيعمل لها أصلًا. استخدم زر السماعة لسماع نغمة اختبار على التدفق قبل الحفظ.</string>

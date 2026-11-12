@@ -1302,6 +1302,10 @@
     <string name="raise_projection_during_call">通話中もAndroid Autoを表示したままにする</string>
     <string name="raise_projection_during_call_description">セルフモード専用。スマートフォンの通話画面の上にAndroid Autoの画面を再び表示し、通話の応答と終了をAndroid Autoの画面で行えるようにします。</string>
     <string name="raise_projection_during_call_summary">セルフモード専用。スマートフォンの通話画面の上に投影を表示します。</string>
+    <string name="show_over_lock_screen">ロック画面の上に表示</string>
+    <string name="show_over_lock_screen_summary">ロック中も地図とルート案内が表示されます。タッチとボタンは無効です。</string>
+    <string name="show_over_lock_screen_help">Android Auto の画面をロック画面の上に表示し、ロックを解除せずに地図とルート案内を確認できます。このユニットがロックされている間は、スマートフォンに何も送られません。タッチ、ボタン、ロータリーコントローラー、音声ボタンは保留され、地図が前面に表示されます。「戻る」を押すと PIN、パターン、パスワードでロックを解除でき、その後は通常どおり動作します。スマートフォン本体の音楽、通話、音声アシスタントには影響しません。</string>
+    <string name="show_over_lock_screen_locked_toast">ロック中: 地図のみ。「戻る」でロック解除。</string>
     <string name="audio_stream_settings">オーディオストリーム</string>
     <string name="audio_stream_settings_description">Android Auto の各チャンネルを再生するシステムストリームを選択します。</string>
     <string name="audio_stream_settings_info">Android Auto は音声を「メディア」「音声案内」「システム音」の 3 チャンネルで送信します。各チャンネルはシステムストリーム経由でヘッドユニットに届き、選んだストリームによって連動する音量キーが決まります。多くのヘッドユニットでは、そもそもアンプが作動するかどうかも左右します。保存する前にスピーカーボタンでテスト音を鳴らして確認してください。</string>

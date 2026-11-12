@@ -5,7 +5,7 @@ import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.proto.Input
 import com.google.protobuf.Message
 
-class KeyCodeEvent(timeStamp: Long, keycode: Int, isPress: Boolean)
+class KeyCodeEvent(timeStamp: Long, val keycode: Int, isPress: Boolean)
     : AapMessage(Channel.ID_INP, Input.MsgType.EVENT_VALUE, makeProto(timeStamp, keycode, isPress)) {
 
     companion object {

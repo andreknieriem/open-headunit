@@ -1356,6 +1356,10 @@
     <string name="raise_projection_during_call">Rester dans Android Auto pendant les appels</string>
     <string name="raise_projection_during_call_description">Mode Self uniquement. Ramène la projection par-dessus l\'écran d\'appel du téléphone pour répondre et raccrocher depuis l\'interface Android Auto.</string>
     <string name="raise_projection_during_call_summary">Mode autonome uniquement. Affiche la projection par-dessus l\'écran d\'appel du téléphone.</string>
+    <string name="show_over_lock_screen">Afficher sur l\'écran de verrouillage</string>
+    <string name="show_over_lock_screen_summary">Carte et guidage restent visibles une fois verrouillé. Toucher et touches sans effet.</string>
+    <string name="show_over_lock_screen_help">Affiche l\'image d\'Android Auto par-dessus l\'écran de verrouillage, pour lire la carte et le guidage sans déverrouiller. Tant que cet appareil est verrouillé, rien n\'atteint le téléphone : les appuis, les touches, la molette et la touche vocale sont retenus, et la carte passe au premier plan. Appuyez sur Retour pour déverrouiller avec votre code PIN, schéma ou mot de passe ; ensuite tout fonctionne normalement. La musique, les appels et l\'assistant vocal du téléphone lui-même ne sont pas concernés.</string>
+    <string name="show_over_lock_screen_locked_toast">Verrouillé : carte uniquement. Appuyez sur Retour pour déverrouiller.</string>
     <string name="audio_stream_settings">Flux audio</string>
     <string name="audio_stream_settings_description">Choisissez le flux système sur lequel joue chaque canal Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto envoie l\'audio sur trois canaux : Multimédia, Guidage et Sons système. Chacun parvient à l\'autoradio sur un flux système. Le flux choisi détermine la touche de volume utilisée et, sur de nombreux autoradios, si l\'amplificateur sort du mode muet pour ce canal. Utilisez le bouton haut-parleur pour écouter une tonalité de test sur le flux avant d\'enregistrer.</string>

@@ -1305,6 +1305,10 @@
     <string name="raise_projection_during_call">Pozostań w Android Auto podczas połączeń</string>
     <string name="raise_projection_during_call_description">Tylko Self Mode. Przywraca projekcję nad ekran połączenia telefonu, dzięki czemu połączenia odbiera się i kończy w interfejsie Android Auto.</string>
     <string name="raise_projection_during_call_summary">Tylko w trybie samodzielnym. Pokazuje projekcję nad ekranem połączenia telefonu.</string>
+    <string name="show_over_lock_screen">Pokaż na ekranie blokady</string>
+    <string name="show_over_lock_screen_summary">Mapa i wskazówki są widoczne po zablokowaniu. Dotyk i przyciski nie działają.</string>
+    <string name="show_over_lock_screen_help">Wyświetla obraz Android Auto nad ekranem blokady, dzięki czemu mapę i wskazówki można czytać bez odblokowywania. Dopóki to urządzenie jest zablokowane, nic nie trafia do telefonu: dotyk, przyciski, pokrętło i przycisk głosowy są wstrzymywane, a mapa jest przenoszona na pierwszy plan. Naciśnij Wstecz, aby odblokować kodem PIN, wzorem lub hasłem; potem wszystko działa jak zwykle. Muzyka, połączenia i asystent głosowy na samym telefonie nie są objęte tą zmianą.</string>
+    <string name="show_over_lock_screen_locked_toast">Zablokowane: tylko mapa. Naciśnij Wstecz, aby odblokować.</string>
     <string name="audio_stream_settings">Strumienie dźwięku</string>
     <string name="audio_stream_settings_description">Wybierz strumień systemowy, na którym odtwarzany jest każdy kanał Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto wysyła dźwięk trzema kanałami: Multimedia, Wskazówki i Dźwięki systemowe. Każdy trafia do radia samochodowego określonym strumieniem systemowym, a wybrany strumień decyduje, którym przyciskiem głośności jest sterowany i — w wielu radiach — czy wzmacniacz w ogóle się dla niego włączy. Użyj przycisku głośnika, aby przed zapisaniem usłyszeć ton testowy na danym strumieniu.</string>

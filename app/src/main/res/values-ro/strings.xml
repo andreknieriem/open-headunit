@@ -1296,6 +1296,10 @@
     <string name="raise_projection_during_call">Rămâi în Android Auto în timpul apelurilor</string>
     <string name="raise_projection_during_call_description">Doar Mod Self. Readuce proiecția peste ecranul de apel al telefonului, astfel încât să răspunzi la apeluri și să le închizi din interfața Android Auto.</string>
     <string name="raise_projection_during_call_summary">Doar în modul autonom. Afișează proiecția peste ecranul de apel al telefonului.</string>
+    <string name="show_over_lock_screen">Afișează peste ecranul de blocare</string>
+    <string name="show_over_lock_screen_summary">Harta și indicațiile rămân vizibile când e blocat. Atingerile și butoanele nu fac nimic.</string>
+    <string name="show_over_lock_screen_help">Afișează imaginea Android Auto peste ecranul de blocare, astfel încât harta și indicațiile pot fi citite fără deblocare. Cât timp această unitate este blocată, nimic nu ajunge la telefon: atingerile, butoanele, controlerul rotativ și butonul de voce sunt reținute, iar harta este adusă în prim-plan. Apăsați Înapoi pentru a debloca cu PIN-ul, modelul sau parola; după aceea totul funcționează ca de obicei. Muzica, apelurile și asistentul vocal de pe telefonul însuși nu sunt afectate.</string>
+    <string name="show_over_lock_screen_locked_toast">Blocat: doar harta. Apăsați Înapoi pentru deblocare.</string>
     <string name="audio_stream_settings">Fluxuri audio</string>
     <string name="audio_stream_settings_description">Alege fluxul de sistem pe care se redă fiecare canal Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto trimite sunetul pe trei canale: Media, Ghidare și Sunete de sistem. Fiecare ajunge la unitatea auto pe un flux de sistem, iar fluxul ales stabilește ce tastă de volum urmează și, pe multe unități, dacă amplificatorul se activează pentru el. Folosește butonul difuzorului pentru a auzi un ton de test pe flux înainte de salvare.</string>

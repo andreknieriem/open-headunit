@@ -12,6 +12,8 @@
         <package android:name="com.syu.ms" />
         <!-- Rootless HCT bridge discovery when SELinux hides /dev/goc_serial. -->
         <package android:name="android.microntek.mtcser" />
+        <!-- Reglink units: their service decodes the CAN box (maintenance distance). -->
+        <package android:name="com.reglink.services" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -91,6 +93,9 @@
     <!-- Declared so the microphone type can be claimed; it is only ever requested when
          RECORD_AUDIO is actually granted, because claiming it without throws on Android 14+. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- The location type keeps the maintenance mileage counting in the background. It is only
+         claimed while that feature is on and precise location is granted. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!--
         Only requested up to API 32. From API 33 (Android 13) a granted READ_LOGS makes the app a
@@ -267,7 +272,7 @@
         <service
             android:name=".aap.AapService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice|mediaPlayback|microphone"
+            android:foregroundServiceType="connectedDevice|mediaPlayback|microphone|location"
             android:stopWithTask="false">
             <!-- MediaButtonReceiver looks for a Service with this intent-filter -->
             <intent-filter>
@@ -281,6 +286,17 @@
 
         <!-- Ends the permission record's entry when Android answers, even while AapService is
              down. Only our own PendingIntents reach it, so it is not exported. -->
+        <!-- The maintenance notification's buttons and its swipe; reached only by its own PendingIntents. -->
+        <receiver
+            android:name=".maintenance.MaintenanceNotifier$Receiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".main.MaintenanceNoticeActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/AppTheme" />
+
         <receiver
             android:name=".connection.usb.UsbPermissionResultReceiver"
             android:exported="false">

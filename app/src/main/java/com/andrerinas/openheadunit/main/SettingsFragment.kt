@@ -949,6 +949,19 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        items.add(SettingItem.SettingEntry(
+            stableId = "maintenanceSettings",
+            nameResId = R.string.maintenance_settings,
+            value = getString(if (settings.maintenanceEnabled) R.string.enabled else R.string.disabled),
+            descriptionResId = R.string.maintenance_settings_summary,
+            searchKeywords = "maintenance service oil odometer mileage km miles gps filter reminder",
+            onClick = {
+                try {
+                    findNavController().navigate(R.id.action_settingsFragment_to_maintenanceFragment)
+                } catch (e: Exception) { }
+            }
+        ))
+
         // In General, not Wireless: this address is announced as carAddress in every connection mode.
         // The checkbox trades hands-free calls for the phone's Media audio, on USB sessions only.
         val btAddress = pendingBluetoothAddress.orEmpty()

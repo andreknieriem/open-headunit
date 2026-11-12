@@ -18,10 +18,13 @@ import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
 import android.os.Build
 import android.provider.Settings as SystemSettings
+import android.text.Layout
+import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -40,12 +43,15 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.main.BarFitPolicy
 import com.andrerinas.openheadunit.main.HomeColorPolicy
+import com.andrerinas.openheadunit.main.HomeInfoFitPolicy
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Connection
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Decision
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Status
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.TileState
 import com.andrerinas.openheadunit.main.HomeSurfaceOpacityPolicy
 import com.andrerinas.openheadunit.main.HomeThemePolicy.Mode
+import com.andrerinas.openheadunit.maintenance.MaintenanceHomeStatusPolicy
+import com.andrerinas.openheadunit.maintenance.MaintenanceTexts
 import com.andrerinas.openheadunit.view.WordFitTextView
 
 /** Paints the home screen. What it shows is decided by [com.andrerinas.openheadunit.main.HomePrimaryPolicy]. */
@@ -66,6 +72,16 @@ object HomeUiHelper {
     private const val SHINE_ALPHA_ON_DAY = 0xA6
     private const val SHINE_ALPHA_AT_NIGHT = 0x8C
     private const val TILE_SHINE_ALPHA = 0x59
+    /** At night, how much of its tone the maintenance line's fill carries; the outline carries all of it. */
+    private const val MAINTENANCE_TINT_ALPHA = 0x80
+    /** By day the card is the connection's color: the line's outline and its calm wash are white. */
+    private const val MAINTENANCE_DAY_STROKE_ALPHA = 0xCC
+    private const val MAINTENANCE_DAY_CALM_ALPHA = 0x26
+    /** The least of the item's name a shortened line keeps, in multiples of its text size. */
+    private const val MAINTENANCE_MIN_NAME_EMS = 3f
+    private const val MAINTENANCE_SLACK_PX = 2
+    /** How much smaller the maintenance line gets on a card with no room for it at its own size. */
+    private const val MAINTENANCE_NARROW_TEXT_SCALE = 0.75f
     /** The band's width as a share of the tile it crosses. */
     private const val TILE_SHINE_BAND = 0.7f
     private const val EXTREME_APP_ICON_ALPHA = 0.75f
@@ -185,6 +201,8 @@ object HomeUiHelper {
         @ColorInt val self: Int,
         @ColorInt val monochrome: Int,
         @ColorInt val countdownRing: Int,
+        @ColorInt val maintenanceAttention: Int,
+        @ColorInt val maintenanceSoon: Int,
         val surfaceOpacityPercent: Int = HomeSurfaceOpacityPolicy.DEFAULT
     ) {
         val isDark: Boolean get() = mode != Mode.DAY
@@ -229,6 +247,8 @@ object HomeUiHelper {
             self = color(R.color.home_self, R.color.home_extreme_self),
             monochrome = color(R.color.home_monochrome, R.color.home_extreme_monochrome),
             countdownRing = color(R.color.home_countdown_ring, R.color.home_extreme_countdown_ring),
+            maintenanceAttention = color(R.color.home_maintenance_attention, R.color.home_extreme_maintenance_attention),
+            maintenanceSoon = color(R.color.home_maintenance_soon, R.color.home_extreme_maintenance_soon),
             surfaceOpacityPercent = surfaceOpacityPercent
         )
     }
@@ -663,10 +683,13 @@ object HomeUiHelper {
         }
     }
 
+    /** The maintenance line under the date: its text and how loud it is. */
+    class MaintenanceLine(val text: MaintenanceTexts.HomeLine, val kind: MaintenanceHomeStatusPolicy.Kind)
+
     /**
      * The date, the time and the speed the driver asked for, at the far end of the main button's
-     * header. The countdown owns the header while it runs, so the block steps aside there rather
-     * than the two fighting over the same space.
+     * header, and the maintenance line when that feature is on. The countdown owns the header while
+     * it runs, so the block steps aside there rather than the two fighting over the same space.
      */
     fun applyInfoBlock(
         rootView: View,
@@ -675,12 +698,15 @@ object HomeUiHelper {
         clock: String,
         date: String,
         speed: String,
+        maintenance: MaintenanceLine?,
         countdownVisible: Boolean
     ) {
         val block = rootView.findViewById<View>(R.id.home_info) ?: return
         val showClock = settings.showHomeClock && !countdownVisible
         val showSpeed = settings.showHomeSpeed && !countdownVisible
-        val visible = showClock || showSpeed
+        val shownMaintenance = maintenance?.takeIf { !countdownVisible }
+        val showMaintenance = shownMaintenance != null
+        val visible = showClock || showSpeed || showMaintenance
         block.visibility = if (visible) View.VISIBLE else View.GONE
         rootView.findViewById<TextView>(R.id.home_info_clock)?.apply {
             visibility = if (showClock) View.VISIBLE else View.GONE
@@ -699,23 +725,131 @@ object HomeUiHelper {
             setTextColor(palette.text)
         }
         rootView.findViewById<TextView>(R.id.home_info_speed_unit)?.setTextColor(palette.textMuted)
-        constrainInfoTexts(rootView, block, visible)
+        rootView.findViewById<TextView>(R.id.home_info_maintenance)?.let { line ->
+            line.visibility = if (showMaintenance) View.VISIBLE else View.GONE
+            shownMaintenance?.let { paintMaintenanceLine(line, it, palette) }
+        }
+        constrainInfoTexts(rootView, block, visible, shownMaintenance?.text)
     }
 
     /**
-     * The block floats in the card's empty corner, so the lines under it are narrowed to leave it
-     * their width. Without this a long title ran under the time on a narrow screen. On a card too
-     * narrow for both, the block steps out rather than covering the title.
+     * A small pill, louder the more it asks for. By day the card wears the connection's color, which
+     * can be the same orange as the line, so the tone is a solid fill with a white outline that
+     * stands out on any card; at night the card is dark and a tinted fill reads without glaring.
+     * When all is well it is a calm outline, not a dark patch on the card.
      */
-    private fun constrainInfoTexts(rootView: View, block: View, visible: Boolean) {
+    private fun paintMaintenanceLine(line: TextView, maintenance: MaintenanceLine, palette: Palette) {
+        val tone = when (maintenance.kind) {
+            MaintenanceHomeStatusPolicy.Kind.OVERDUE,
+            MaintenanceHomeStatusPolicy.Kind.LOCATION_OFF,
+            MaintenanceHomeStatusPolicy.Kind.CHECK_MILEAGE -> palette.maintenanceAttention
+            MaintenanceHomeStatusPolicy.Kind.COMING_UP_DISTANCE,
+            MaintenanceHomeStatusPolicy.Kind.COMING_UP_TIME -> palette.maintenanceSoon
+            MaintenanceHomeStatusPolicy.Kind.ALL_GOOD -> null
+        }
+        val fill: Int
+        val stroke: Int
+        val textColor: Int
+        if (!palette.isDark) {
+            fill = tone ?: withAlpha(palette.text, MAINTENANCE_DAY_CALM_ALPHA)
+            stroke = withAlpha(palette.text, MAINTENANCE_DAY_STROKE_ALPHA)
+            textColor = if (tone != null) readableOn(tone) else palette.text
+        } else {
+            fill = if (tone == null) palette.tile else withAlpha(tone, MAINTENANCE_TINT_ALPHA)
+            stroke = tone ?: palette.tileStroke
+            textColor = palette.text
+        }
+        val resources = line.resources
+        // Back to its own size: a narrow card may have shrunk it on the last pass (constrainInfoTexts).
+        line.setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.home_info_date))
+        val radius = resources.getDimension(R.dimen.home_info_maintenance_radius)
+        val strokePx = dp(line.context, 1)
+        val pill = pressable(
+            palette.ripple,
+            { shape(fill, radius, stroke, strokePx) },
+            { shape(ColorUtils.darkenColor(fill, 0.85f), radius, stroke, strokePx) }
+        )
+        // The pill is drawn smaller than a finger: the touch target grows by an inset around it,
+        // so what is drawn keeps its size, and the layout's minHeight keeps it when a narrow card
+        // shrinks the text. See applyMaintenanceGap for the space above it.
+        val padH = resources.getDimensionPixelSize(R.dimen.home_info_maintenance_padding_h)
+        val padV = resources.getDimensionPixelSize(R.dimen.home_info_maintenance_padding_v)
+        val drawn = line.paint.fontMetricsInt.let { it.bottom - it.top } + padV * 2
+        val extra = Math.max(0, resources.getDimensionPixelSize(R.dimen.home_info_maintenance_touch) - drawn)
+        val above = extra / 2
+        val below = extra - above
+        // The background first: setting it applies the inset as the view's padding.
+        line.background = InsetDrawable(pill, 0, above, 0, below)
+        line.setPadding(padH, padV + above, padH, padV + below)
+        line.setTextColor(textColor)
+        line.contentDescription = maintenance.text.text
+    }
+
+    /**
+     * Keeps the drawn pill its gap under the date: the inset above it overlaps the date, which
+     * takes no touch. With nothing above it, the line starts at the block's top so the inset is
+     * not cut off there.
+     */
+    private fun applyMaintenanceGap(line: TextView, infoAbove: Boolean) {
+        val resources = line.resources
+        val inset = line.paddingTop - resources.getDimensionPixelSize(R.dimen.home_info_maintenance_padding_v)
+        val gap = resources.getDimensionPixelSize(R.dimen.home_info_maintenance_gap)
+        val params = line.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        val top = if (infoAbove) gap - inset else 0
+        if (params.topMargin != top) {
+            params.topMargin = top
+            line.layoutParams = params
+        }
+    }
+
+    /**
+     * Gives the maintenance line [width] and shortens the item's name, and only the name, to what
+     * is left of it. The state, the distance and the "+N" are what the driver acts on.
+     */
+    private fun fitMaintenanceLine(line: TextView, homeLine: MaintenanceTexts.HomeLine, width: Int) {
+        // Measured the way the line's layout measures it (bidi runs and all, which Arabic needs),
+        // with a pixel or two of slack: past the width the view would end the whole line in "...".
+        val available = width - line.paddingLeft - line.paddingRight - MAINTENANCE_SLACK_PX
+        val name = homeLine.name
+        var text = homeLine.text
+        if (name != null && lineWidth(line, text) > available) {
+            var room = available - lineWidth(line, homeLine.rest)
+            // The joined line can measure a pixel wider than its parts (kerning at the seam), so
+            // it is checked once more.
+            for (attempt in 0 until 2) {
+                text = homeLine.withName(TextUtils.ellipsize(name, line.paint, Math.max(0f, room), TextUtils.TruncateAt.END))
+                val over = lineWidth(line, text) - available
+                if (over <= 0f) break
+                room -= over + 1f
+            }
+        }
+        line.text = text
+        line.maxWidth = width
+    }
+
+    private fun lineWidth(line: TextView, text: CharSequence): Float = Layout.getDesiredWidth(text, line.paint)
+
+    /**
+     * The block floats in the card's empty corner, so the lines under it are narrowed to leave it
+     * their width. Without this a long title ran under the time on a narrow screen. Where the
+     * maintenance line does not fit beside the title it takes a row above it, and on a card too
+     * narrow for even that, the clock steps out before the line does. See [HomeInfoFitPolicy].
+     */
+    private fun constrainInfoTexts(rootView: View, block: View, visible: Boolean, maintenance: MaintenanceTexts.HomeLine?) {
         val card = rootView.findViewById<View>(R.id.home_primary_card) ?: return
         val texts = listOf(
             R.id.home_primary_kicker, R.id.home_primary_title, R.id.home_primary_subtitle
         ).mapNotNull { rootView.findViewById<TextView>(it) }
+        val line = rootView.findViewById<TextView>(R.id.home_info_maintenance)
+        val resources = card.resources
         val content = rootView.findViewById<View>(R.id.home_primary_content)
         if (content != null && content.visibility != View.VISIBLE) {
             // Compact home: there is no title to protect, so the date and the speed keep the strip.
             texts.forEach { it.maxWidth = Int.MAX_VALUE }
+            if (line != null && maintenance != null) {
+                fitMaintenanceLine(line, maintenance, resources.getDimensionPixelSize(R.dimen.home_info_maintenance_max_width))
+                applyMaintenanceGap(line, infoRows(rootView).any { it.visibility == View.VISIBLE })
+            }
             return
         }
         if (!visible) {
@@ -728,25 +862,96 @@ object HomeUiHelper {
             // and only with a width: a card already laid out at zero width would run doOnLayout
             // right away and land back here without end.
             card.doOnNextLayout {
-                if (card.width > 0) constrainInfoTexts(rootView, block, block.visibility == View.VISIBLE)
+                if (card.width > 0) constrainInfoTexts(rootView, block, block.visibility == View.VISIBLE, maintenance)
             }
             return
         }
-        block.measure(
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val resources = card.resources
-        val padding = resources.getDimensionPixelSize(R.dimen.home_card_padding_h)
-        val gap = resources.getDimensionPixelSize(R.dimen.home_gap)
-        val room = card.width - padding * 2 - block.measuredWidth - gap
-        if (room < resources.getDimensionPixelSize(R.dimen.home_info_min_text)) {
+        val room = infoRoom(rootView, card)
+        var fit = HomeInfoFitPolicy.fit(room, measureInfo(rootView, block, line, maintenance))
+        if (fit.placement == HomeInfoFitPolicy.Placement.NONE && line != null && maintenance != null) {
+            // A narrow portrait card (320 dp wide) has room for the line only beside the icon. A
+            // smaller line there beats none: it is the one that asks the driver to do something.
+            line.setTextSize(TypedValue.COMPLEX_UNIT_PX, line.textSize * MAINTENANCE_NARROW_TEXT_SCALE)
+            fit = HomeInfoFitPolicy.fit(room, measureInfo(rootView, block, line, maintenance))
+        }
+        if (fit.placement == HomeInfoFitPolicy.Placement.NONE) {
             AppLog.i("HomeUiHelper: no width left for the title beside the date on this screen")
             block.visibility = View.GONE
             texts.forEach { it.maxWidth = Int.MAX_VALUE }
             return
         }
-        texts.forEach { it.maxWidth = room }
+        if (!fit.showInfo) {
+            AppLog.i("HomeUiHelper: the clock steps aside for the maintenance line on this screen")
+            for (row in infoRows(rootView)) row.visibility = View.GONE
+        }
+        if (line != null && maintenance != null) {
+            line.visibility = View.VISIBLE
+            fitMaintenanceLine(line, maintenance, fit.lineWidth)
+            applyMaintenanceGap(line, infoRows(rootView).any { it.visibility == View.VISIBLE })
+        }
+        texts.forEach { it.maxWidth = fit.titleWidth ?: Int.MAX_VALUE }
+    }
+
+    /** The clock with the speed beside it, and the date: everything in the block but the maintenance line. */
+    private fun infoRows(rootView: View): List<View> = listOf(
+        R.id.home_info_clock, R.id.home_info_speed_row, R.id.home_info_date
+    ).mapNotNull { rootView.findViewById<View>(it) }
+
+    private fun infoRoom(rootView: View, card: View): HomeInfoFitPolicy.Room {
+        val resources = card.resources
+        val paddingH = resources.getDimensionPixelSize(R.dimen.home_card_padding_h)
+        val paddingV = resources.getDimensionPixelSize(R.dimen.home_card_padding_v)
+        val gap = resources.getDimensionPixelSize(R.dimen.home_gap)
+        val icon = resources.getDimensionPixelSize(R.dimen.home_card_icon_tile)
+        // The first line of text under the header, where a row above the title has to end.
+        val textTop = listOf(R.id.home_primary_kicker, R.id.home_primary_title, R.id.home_primary_subtitle)
+            .mapNotNull { rootView.findViewById<View>(it) }
+            .firstOrNull { it.visibility == View.VISIBLE }?.top ?: card.height
+        return HomeInfoFitPolicy.Room(
+            inner = card.width - paddingH * 2,
+            gap = gap,
+            minTitle = resources.getDimensionPixelSize(R.dimen.home_info_min_text),
+            iconWidth = icon,
+            iconHeight = icon,
+            freeHeight = textTop - paddingV - gap
+        )
+    }
+
+    /** The clock rows on their own, and the maintenance line at full length and at its shortest. */
+    private fun measureInfo(
+        rootView: View,
+        block: View,
+        line: TextView?,
+        maintenance: MaintenanceTexts.HomeLine?
+    ): HomeInfoFitPolicy.Block {
+        val unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        val hasInfo = infoRows(rootView).any { it.visibility == View.VISIBLE }
+        line?.visibility = View.GONE
+        block.measure(unspecified, unspecified)
+        val infoWidth = if (hasInfo) block.measuredWidth else 0
+        val infoHeight = if (hasInfo) block.measuredHeight else 0
+        if (line == null || maintenance == null) return HomeInfoFitPolicy.Block(infoWidth, infoHeight, null)
+        val resources = line.resources
+        val padding = line.paddingLeft + line.paddingRight
+        val paint = line.paint
+        val full = Math.ceil(lineWidth(line, maintenance.text).toDouble()).toInt() + padding + MAINTENANCE_SLACK_PX
+        val shortest = maintenance.name?.let { name ->
+            val keep = Math.min(paint.measureText(name), line.textSize * MAINTENANCE_MIN_NAME_EMS)
+            Math.ceil((lineWidth(line, maintenance.rest) + keep).toDouble()).toInt() + padding
+        } ?: full
+        // What is drawn, not the touch target around it: the inset may reach over the title.
+        val drawn = paint.fontMetricsInt.let { it.bottom - it.top } +
+            resources.getDimensionPixelSize(R.dimen.home_info_maintenance_padding_v) * 2 +
+            resources.getDimensionPixelSize(R.dimen.home_info_maintenance_gap)
+        return HomeInfoFitPolicy.Block(
+            infoWidth, infoHeight,
+            HomeInfoFitPolicy.Line(
+                width = full,
+                minWidth = Math.min(full, shortest),
+                height = drawn,
+                cap = Math.max(resources.getDimensionPixelSize(R.dimen.home_info_maintenance_max_width), infoWidth)
+            )
+        )
     }
 
     /** The speed readout: what the GPS last said, or a placeholder when it has nothing. */

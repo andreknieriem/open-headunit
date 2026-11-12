@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The maintenance banner over Android Auto. Nothing in it takes a touch: MaintenanceBannerView
+     passes every touch on to the projection. -->
+<com.andrerinas.openheadunit.view.MaintenanceBannerView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/maintenance_banner_bg"
+    android:importantForAccessibility="no"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/banner_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="20dp"
+        android:paddingTop="16dp"
+        android:paddingRight="20dp"
+        android:paddingBottom="14dp">
+
+        <FrameLayout
+            android:id="@+id/banner_icon_circle"
+            android:layout_width="48dp"
+            android:layout_height="48dp">
+
+            <ImageView
+                android:id="@+id/banner_icon"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                app:srcCompat="@drawable/ic_maintenance_wrench" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/banner_texts"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/banner_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAlignment="viewStart"
+                android:gravity="start"
+                android:textColor="@color/maintenance_notice_text"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/banner_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAlignment="viewStart"
+                android:gravity="start"
+                android:textColor="@color/maintenance_banner_detail"
+                android:textSize="15sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Inset by the corner radius, so it never pokes out of the rounded corners (clipping to
+         them needs Android 5). -->
+    <View
+        android:id="@+id/banner_countdown"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp" />
+</com.andrerinas.openheadunit.view.MaintenanceBannerView>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The full screen maintenance notice. The body is side by side on a wide screen and stacked on a
+     tall one; MaintenanceNoticeActivity picks the orientation. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/notice_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/maintenance_notice_overdue_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="32dp"
+        android:paddingTop="16dp"
+        android:paddingRight="32dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/notice_header"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/maintenance_notice_text_dim"
+                android:textSize="15sp" />
+
+            <ImageButton
+                android:id="@+id/notice_close"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/maintenance_notice_close_bg"
+                android:contentDescription="@string/maintenance_notice_close"
+                android:scaleType="center"
+                app:srcCompat="@drawable/ic_close_white" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/notice_body"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/notice_info"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                tools:ignore="NestedWeights"
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:id="@+id/notice_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/maintenance_notice_text"
+                    android:textSize="36sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/notice_detail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textSize="21sp" />
+
+                <ProgressBar
+                    android:id="@+id/notice_progress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="10dp"
+                    android:layout_marginTop="16dp"
+                    android:max="100" />
+
+                <TextView
+                    android:id="@+id/notice_last"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:textColor="@color/maintenance_notice_text_dim"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <Space
+                android:id="@+id/notice_gap"
+                android:layout_width="40dp"
+                android:layout_height="16dp" />
+
+            <LinearLayout
+                android:id="@+id/notice_actions"
+                android:layout_width="@dimen/maintenance_notice_actions_width"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/notice_done"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="64dp"
+                    android:text="@string/maintenance_mark_done"
+                    android:textAllCaps="false"
+                    android:textColor="@color/maintenance_notice_primary_text"
+                    android:textSize="19sp"
+                    app:backgroundTint="@color/maintenance_notice_text"
+                    app:cornerRadius="32dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/notice_later"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="60dp"
+                    android:text="@string/maintenance_notice_later"
+                    android:textAllCaps="false"
+                    android:textColor="@color/maintenance_notice_text"
+                    android:textSize="17sp"
+                    app:backgroundTint="@color/maintenance_notice_button"
+                    app:cornerRadius="30dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/notice_next_start"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="60dp"
+                    android:text="@string/maintenance_notice_next_start"
+                    android:textAllCaps="false"
+                    android:textColor="@color/maintenance_notice_text"
+                    android:textSize="17sp"
+                    app:backgroundTint="@color/maintenance_notice_button"
+                    app:cornerRadius="30dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/notice_details"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="52dp"
+                    android:text="@string/maintenance_notice_details"
+                    android:textAllCaps="false"
+                    android:textColor="@color/maintenance_notice_text"
+                    android:textSize="16sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

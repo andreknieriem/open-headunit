@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- A setting that opens a picker or a sub-screen. A short value sits at the trailing edge
      (settingValueInline); a long one wraps under the title (settingValue). The adapter picks
-     with SettingsLayoutPolicy.showValueInline and sets the group background. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     with SettingsLayoutPolicy.showValueInline and sets the group background; SettingRowLayout
+     moves a value under the title when beside it the title would split a word. -->
+<com.andrerinas.openheadunit.main.settings.SettingRowLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -109,4 +110,4 @@
         app:tint="?attr/settingsOnSurfaceVariant"
         tools:ignore="ContentDescription" />
 
-</LinearLayout>
+</com.andrerinas.openheadunit.main.settings.SettingRowLayout>

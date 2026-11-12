@@ -56,6 +56,9 @@ object AutomationCommandPolicy {
     /** Port of Android Auto's built-in head unit server, which is what an `ip` command targets. */
     const val HEADUNIT_SERVER_PORT = 5277
 
+    /** Longest log marker kept; the action is open to any app, so its payload is bounded. */
+    const val MAX_LOG_MARKER_CHARS = 512
+
     private val NIGHT_MODES = setOf("day", "night", "auto")
 
     private val LOG_LEVELS = setOf("verbose", "debug", "info", "warn", "error", "silent")
@@ -153,7 +156,7 @@ object AutomationCommandPolicy {
             HeadUnitCommand.ACTION_EXPORT_LOG ->
                 listOf(Effect.ExportLog(extras.string(HeadUnitCommand.EXTRA_PATH)))
             HeadUnitCommand.ACTION_LOG_MARKER -> requiring(extras, HeadUnitCommand.EXTRA_TEXT) {
-                Effect.LogMarker(it)
+                Effect.LogMarker(it.take(MAX_LOG_MARKER_CHARS))
             }
 
             else -> listOf(Effect.Refuse("unknown action $action"))

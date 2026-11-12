@@ -16,11 +16,6 @@ class AutoStartReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
-        // Use device-protected storage so the BT MACs are readable during locked boot
-        val targetMacs = Settings.getAutoStartBtMacs(context)
-
-        if (targetMacs.isEmpty()) return
-        
         val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && 
                       !(context.getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
         
@@ -31,6 +26,16 @@ class AutoStartReceiver : BroadcastReceiver() {
             AppLog.w("AutoStartReceiver: device is locked, ignoring the Bluetooth event until the user unlocks.")
             return
         }
+
+        // Union device-protected storage with all configured Bluetooth target MACs ("Auto-start on
+        // Bluetooth", "Device to wake for wireless Android Auto", and "Preferred device") so that
+        // whichever Bluetooth selector the user configured brings the app to the active foreground.
+        val targetMacs = buildSet {
+            addAll(Settings.getAutoStartBtMacs(context))
+            addAll(com.andrerinas.openheadunit.App.provide(context).settings.configuredBluetoothTargetMacs)
+        }
+
+        if (targetMacs.isEmpty()) return
 
         // [FIX] Don't trigger auto-start if we are already connected!
         // This prevents activity restarts if BT reconnects during a session.
@@ -49,7 +54,7 @@ class AutoStartReceiver : BroadcastReceiver() {
 
             AppLog.i("BT Device connected: ${device?.name} (${device?.address})")
 
-            if (device != null && targetMacs.contains(device.address)) {
+            if (device != null && targetMacs.any { it.equals(device.address, ignoreCase = true) }) {
                 AppLog.i("MATCH! Starting AapService via Bluetooth Auto-start...")
 
                 // Start the service to make the app alive. Explicit action so onStartCommand

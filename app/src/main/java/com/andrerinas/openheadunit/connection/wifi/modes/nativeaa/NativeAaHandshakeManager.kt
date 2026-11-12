@@ -248,6 +248,11 @@ class NativeAaHandshakeManager(
     private val commManager = App.provide(context).commManager
     private var aaServerSocket: BluetoothServerSocket? = null
     private var hfpServerSocket: BluetoothServerSocket? = null
+    /** Accepted stand-in hands-free channels, so a session that goes live can release them. */
+    private val activeHfpClientSockets = Collections.synchronizedSet(mutableSetOf<BluetoothSocket>())
+    private val hidMouseTrigger by lazy {
+        BtHidMouseTrigger(context) { device -> onHidDeviceConnected(device) }
+    }
 
     // Whether this app is standing in for a radio with no hands-free stack of its own. Answered
     // once in start(), because the poke needs the same answer the HFP listener already acted on:
@@ -991,35 +996,42 @@ class NativeAaHandshakeManager(
             // The raw Unix domain socket (/dev/socket/zj_bt_socket) carries the RFCOMM stream directly.
             ExternalBtTransportPolicy.Route.ZJ_SOCKET -> {
                 startOverZjSocket()
+                if (settings.btHidWakeTrigger) startAndroidRadioAlongsideModule()
                 return
             }
             // The module carries the handshake instead, over its own channel. None of the RFCOMM
             // setup below applies to it.
             ExternalBtTransportPolicy.Route.ZBT -> {
                 startOverExternalModule()
+                if (settings.btHidWakeTrigger) startAndroidRadioAlongsideModule()
                 return
             }
             ExternalBtTransportPolicy.Route.HCT -> {
                 startOverHctModule()
+                if (settings.btHidWakeTrigger) startAndroidRadioAlongsideModule()
                 return
             }
             ExternalBtTransportPolicy.Route.BLINK -> {
                 startOverBlinkModule()
+                if (settings.btHidWakeTrigger) startAndroidRadioAlongsideModule()
                 return
             }
             ExternalBtTransportPolicy.Route.BLOCKED -> {
-                val fyt = BluetoothHelper.fytModuleEvidence
-                if (fyt != null) {
-                    notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Choose " +
-                        "\"Car Bluetooth module (FYT BLINK)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
-                    AppLog.e("NativeAA: $notStartedReason")
+                if (!settings.btHidWakeTrigger) {
+                    val fyt = BluetoothHelper.fytModuleEvidence
+                    if (fyt != null) {
+                        notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Choose " +
+                            "\"Car Bluetooth module (FYT BLINK)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
+                        AppLog.e("NativeAA: $notStartedReason")
+                        return
+                    }
+                    externalBtDiagnostic(discovery)?.let { AppLog.e(it) }
+                    notStartedReason = "this unit's Bluetooth is an external module with no route through it " +
+                        "(${discovery.decision.evidence}). Choose \"Car Bluetooth " +
+                        "module (ZLink)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
                     return
                 }
-                externalBtDiagnostic(discovery)?.let { AppLog.e(it) }
-                notStartedReason = "this unit's Bluetooth is an external module with no route through it " +
-                    "(${discovery.decision.evidence}). Choose \"Car Bluetooth " +
-                    "module (ZLink)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
-                return
+                AppLog.i("NativeAA: External Bluetooth module has no vendor route, but Bluetooth HID Wake Trigger is enabled — starting Android Bluetooth listeners alongside HID.")
             }
             // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
             ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
@@ -1069,6 +1081,9 @@ class NativeAaHandshakeManager(
         // Start HFP RFCOMM Server (Required by some phones to detect HU)
         launchHfpServer(adapter, localRadioName)
 
+        // Serverless HID mouse: a link keeper and screen waker that leaves the hands-free slot alone.
+        if (settings.btHidWakeTrigger) hidMouseTrigger.start(adapter)
+
         // Some head units have two Bluetooth radios (e.g. "K706" and "CAR8032"). The phone may
         // be bonded to whichever one isn't the primary, so it never reaches the listener above.
         // Match radios by system service name, not MAC address: BluetoothAdapter.getAddress()
@@ -1079,6 +1094,51 @@ class NativeAaHandshakeManager(
         if (secondaries.isNotEmpty()) {
             AppLog.i("NativeAA: Opening AA listeners on ${secondaries.size} secondary Bluetooth radio(s) for dual-radio head units: ${secondaries.joinToString { it.serviceName }}")
             secondaries.forEach { launchExtraServers(it.serviceName, it.adapter) }
+        }
+    }
+
+    /**
+     * When an external Bluetooth module route is active alongside [SettingsManager.btHidWakeTrigger],
+     * also open Android's own Bluetooth radio AA/HFP listeners and start the HID combo trigger so a
+     * phone paired to Android's Bluetooth over the HID profile finds AA_UUID and HFP_UUID waiting.
+     */
+    @SuppressLint("MissingPermission")
+    private fun startAndroidRadioAlongsideModule() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
+            != PackageManager.PERMISSION_GRANTED
+        ) return
+        val adapter = BluetoothHelper.getBluetoothAdapter(context)?.takeIf { it.isEnabled } ?: return
+        registerBtStateReceiver()
+        val radioName = try { adapter.name ?: "?" } catch (e: Exception) { "?" }
+        AppLog.i("NativeAA: Opening Android Bluetooth AA/HFP listeners alongside module route on [$radioName] for Bluetooth HID Wake Trigger.")
+        if (aaServerSocket == null) launchAaAcceptLoop(adapter, radioName)
+        if (hfpServerSocket == null) launchHfpServer(adapter, radioName)
+        hidMouseTrigger.start(adapter)
+        secondaryRadioHandles().forEach { launchExtraServers(it.serviceName, it.adapter) }
+    }
+
+    /**
+     * Invoked when [BtHidMouseTrigger] establishes an active HID connection (`STATE_CONNECTED`) and
+     * delivers its wake reports to [device]. Refreshes SDP and immediately performs a targeted
+     * HFP/HSP Service Level Connection poke over the active, encrypted HID ACL link so Android Auto
+     * on the phone detects the head unit and dials `AA_UUID`.
+     */
+    @SuppressLint("MissingPermission")
+    private fun onHidDeviceConnected(device: BluetoothDevice) {
+        if (!isRunning || commManager.isConnected || isHandshakeInFlight() || isHandoffSettling()) return
+        try {
+            device.fetchUuidsWithSdp()
+        } catch (_: Exception) {}
+        moduleCarrier?.requestWake()
+        if (pokeAttemptInFlight) return
+        scope.launch(Dispatchers.IO + CoroutineName("NativeAa-HidConnectedWake-${device.address}")) {
+            // Give the phone 2s after the HID connection + wake nudge to dial AA_UUID on its own
+            // before opening an outbound HFP socket.
+            delay(2_000L)
+            if (!isActive() || commManager.isConnected || isHandshakeInFlight() || isHandoffSettling() || pokeAttemptInFlight) return@launch
+            AppLog.i("NativeAA: HID link active with ${device.name ?: "unnamed"} (${device.address}) — ensuring Wireless Android Auto wake loop is active.")
+            triggerPoke()
         }
     }
 
@@ -1357,12 +1417,23 @@ class NativeAaHandshakeManager(
             aaListenersClosedForSession = false
             aaListenerLost = false
             aaReopenAttempts = 0
+            if (settings.btHidWakeTrigger) {
+                BluetoothHelper.getBluetoothAdapter(context)?.takeIf { it.isEnabled }?.let { adapter ->
+                    val radioName = try { adapter.name ?: "?" } catch (e: Exception) { "?" }
+                    if (aaServerSocket == null) launchAaAcceptLoop(adapter, radioName)
+                    if (hfpServerSocket == null) launchHfpServer(adapter, radioName)
+                    hidMouseTrigger.start(adapter)
+                }
+            }
             AppLog.i("NativeAA: [$route] session state re-armed; waiting for the next manufacturer phone channel.")
             return
         }
 
         if (!SessionEndGroupPolicy.shouldReopenAaListeners(isRunning, aaListenersClosedForSession)) {
             if (!aaListenerLost) {
+                if (settings.btHidWakeTrigger) {
+                    BluetoothHelper.getBluetoothAdapter(context)?.takeIf { it.isEnabled }?.let { hidMouseTrigger.start(it) }
+                }
                 AppLog.i("NativeAA: the Android Auto listeners are still open, so the phone can come straight back.")
                 return
             }
@@ -1381,6 +1452,7 @@ class NativeAaHandshakeManager(
         AppLog.i("NativeAA: reopening the Android Auto listeners for the phone's return.")
         launchAaAcceptLoop(adapter, localRadioName)
         if (hfpServerSocket == null) launchHfpServer(adapter, localRadioName)
+        if (settings.btHidWakeTrigger) hidMouseTrigger.start(adapter)
         secondaryRadioHandles().forEach {
             val radioName = try { it.adapter.name ?: "?" } catch (e: Exception) { "?" }
             launchAaAcceptLoop(it.adapter, radioName, it.serviceName)
@@ -1433,12 +1505,23 @@ class NativeAaHandshakeManager(
      */
     private fun closeAaListeners() {
         aaListenersClosedForSession = true
+        // The stand-in link carries no call audio, so a call attached to it during a session is
+        // silent. Releasing it once projection runs lets the phone use its speaker or a real HFP sink.
+        synchronized(activeHfpClientSockets) {
+            if (activeHfpClientSockets.isNotEmpty()) {
+                AppLog.i("NativeAA: releasing ${activeHfpClientSockets.size} stand-in hands-free link(s) so calls are not swallowed.")
+            }
+            activeHfpClientSockets.toList().forEach { closePhoneSocket(it) }
+            activeHfpClientSockets.clear()
+        }
         try { aaServerSocket?.close() } catch (e: Exception) {}
+        aaServerSocket = null
         hfpServerSocket?.let {
             AppLog.i("NativeAA: session is live, so the stand-in hands-free record is withdrawn until it ends.")
             try { it.close() } catch (e: Exception) {}
             hfpServerSocket = null
         }
+        if (settings.btHidWakeTrigger) hidMouseTrigger.releaseActiveConnections()
         synchronized(extraAaServerSockets) {
             extraAaServerSockets.forEach { try { it.close() } catch (e: Exception) {} }
             extraAaServerSockets.clear()
@@ -1557,6 +1640,7 @@ class NativeAaHandshakeManager(
         onStage: ((HfpSlcInitiator.Stage) -> Unit)? = null
     ) = withContext(Dispatchers.IO) {
         try {
+            if (closeWhenDone) activeHfpClientSockets.add(socket)
             val input = socket.inputStream
             val output = socket.outputStream
             val buf = ByteArray(1024)
@@ -1632,6 +1716,7 @@ class NativeAaHandshakeManager(
         } catch (e: Exception) {
             AppLog.d("NativeAA: HFP responder error ($label): ${e.message}")
         } finally {
+            activeHfpClientSockets.remove(socket)
             if (closeWhenDone) {
                 closePhoneSocket(socket)
                 AppLog.i("NativeAA: HFP socket for ${socket.remoteDevice.address} closed.")
@@ -2075,6 +2160,13 @@ class NativeAaHandshakeManager(
         // Credentials may queue this worker before the OEM carrier is selected. Never let
         // that stale Android-radio job compete with the manufacturer's HFP/AA connection.
         if (usesHctCarrier()) return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+        // The HID nudge first and unconditionally: it neither takes nor needs the hands-free slot, so
+        // it is safe even where the poke below is stood down. Bonded devices only, as with the poke.
+        if (settings.btHidWakeTrigger && BluetoothWakePolicy.mayPoke(bondReadingFor(device)) &&
+            hidMouseTrigger.pokeAndWake(device)
+        ) {
+            AppLog.i("NativeAA: HID wake sent to ${device.name ?: "unnamed"} (${device.address}).")
+        }
         // A poke that connects takes the phone's single hands-free slot, and this unit's own client
         // is dropped to make room. The link reads are adapter-wide, so the policy is told which role
         // is up and what the target itself is doing, and says whose link it takes it to be.
@@ -2255,6 +2347,15 @@ class NativeAaHandshakeManager(
             }
             try {
                 delay(holdMs)
+                // If the Hands-Free Service Level Connection is established, keep the HFP socket
+                // open instead of disconnecting after holdMs so the phone's Bluetooth connection
+                // stays connected while Android Auto negotiates Wi-Fi projection.
+                while (reached == HfpSlcInitiator.Stage.ESTABLISHED &&
+                    isRunning && isActive && socket.isConnected &&
+                    !commManager.isConnected && !aaListenersClosedForSession
+                ) {
+                    delay(1_000L)
+                }
             } finally {
                 slc.cancel()
             }
@@ -2324,6 +2425,24 @@ class NativeAaHandshakeManager(
         // phone is not paired to. Ask the module to bring the link up instead. Branching here rather
         // than at the callers covers the credential path and WppAction.ResumePoke at once.
         moduleCarrier?.let {
+            if (settings.btHidWakeTrigger) {
+                BluetoothHelper.getBluetoothAdapter(context)?.takeIf { a -> a.isEnabled }?.let { adapter ->
+                    val prefMac = settings.nativePreferredDeviceMac
+                    val targetMacs = settings.nativePokeBtMacs.ifEmpty {
+                        if (prefMac.isNotBlank()) setOf(prefMac) else emptySet()
+                    }
+                    val devices = if (targetMacs.isNotEmpty()) {
+                        targetMacs.mapNotNull { mac -> try { adapter.getRemoteDevice(mac) } catch (_: Exception) { null } }
+                    } else {
+                        try { adapter.bondedDevices?.toList().orEmpty() } catch (_: Exception) { emptyList() }
+                    }
+                    devices.forEach { device ->
+                        if (BluetoothWakePolicy.mayPoke(bondReadingFor(device))) {
+                            hidMouseTrigger.pokeAndWake(device)
+                        }
+                    }
+                }
+            }
             if (it.sendsWake) ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
             it.requestWake()
             return
@@ -4296,6 +4415,7 @@ class NativeAaHandshakeManager(
         pokeJob?.cancel()
         pokeJob = null
         lastPokeTriggerCredentials = null
+        if (settings.btHidWakeTrigger) hidMouseTrigger.releaseActiveConnections()
     }
 
     fun stop() {
@@ -4329,6 +4449,11 @@ class NativeAaHandshakeManager(
         Esp32RelaySession.onGiveUp = null
         wppTcpServer?.stop()
         wppTcpServer = null
+        try { hidMouseTrigger.stop(BluetoothHelper.getBluetoothAdapter(context)) } catch (e: Exception) {}
+        synchronized(activeHfpClientSockets) {
+            activeHfpClientSockets.toList().forEach { closePhoneSocket(it) }
+            activeHfpClientSockets.clear()
+        }
         try { aaServerSocket?.close() } catch (e: Exception) {}
         try { hfpServerSocket?.close() } catch (e: Exception) {}
         synchronized(extraAaServerSockets) {

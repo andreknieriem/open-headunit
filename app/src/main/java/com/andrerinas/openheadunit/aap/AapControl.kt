@@ -52,7 +52,21 @@ internal class AapControlMedia(
                 val focusRequest = message.parse(Media.VideoFocusRequestNotification.newBuilder()).build()
                 AppLog.i("RX: Video Focus Request - mode: %s, reason: %s", focusRequest.mode, focusRequest.reason)
 
+                if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED ||
+                    focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED_NO_INPUT_FOCUS) {
+                    aapTransport.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(true, unsolicited = false))
+                    aapTransport.gainVideoFocus()
+                    return 0
+                }
+
                 if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_NATIVE) {
+                    if (focusRequest.hasReason() &&
+                        focusRequest.reason == Media.VideoFocusRequestNotification.VideoFocusReason.PHONE_SCREEN_OFF) {
+                        AppLog.i("Video Focus NATIVE with reason PHONE_SCREEN_OFF (phone locked) -> re-asserting VIDEO_FOCUS_PROJECTED.")
+                        aapTransport.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(true, unsolicited = true))
+                        aapTransport.gainVideoFocus()
+                        return 0
+                    }
                     AppLog.i("Video Focus NATIVE received. User clicked Exit in Android Auto.")
                     val ctx = aapTransport.context
                     val settings = App.provide(ctx).settings
@@ -275,6 +289,10 @@ internal class AapControlSensor(
 
         aapTransport.send(msg)
         aapTransport.startSensor(request.type.number)
+
+        if (request.type == Sensors.SensorType.DRIVING_STATUS) {
+            aapTransport.send(DrivingStatusEvent(Sensors.SensorBatch.DrivingStatusData.Status.UNRESTRICTED))
+        }
 
         if (request.type == Sensors.SensorType.NIGHT) {
             AppLog.i("Night sensor requested. Triggering immediate update.")
@@ -505,6 +523,18 @@ internal class AapControlGateway(
             Channel.ID_CTR -> return serviceControl.execute(message)
             Channel.ID_INP -> return touchControl.execute(message)
             Channel.ID_SEN -> return sensorControl.execute(message)
+            Channel.ID_BTH -> {
+                if (message.type == 0x8001) {
+                    // BluetoothPairingRequest -> reply BluetoothPairingResponse(status=STATUS_SUCCESS, already_paired=true)
+                    val respBytes = byteArrayOf(
+                        Channel.ID_BTH.toByte(), 0x0b, 0x00, 0x06,
+                        0x80.toByte(), 0x02, 0x08, 0x00, 0x10, 0x01
+                    )
+                    aapTransport.send(AapMessage(Channel.ID_BTH, 0x0b, 0x8002, 6, respBytes.size, respBytes))
+                    AppLog.i("BLUETOOTH: Answered BluetoothPairingRequest with already_paired=true")
+                }
+                return 0
+            }
             Channel.ID_VID, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC -> return mediaControl.execute(message)
         }
         return 0

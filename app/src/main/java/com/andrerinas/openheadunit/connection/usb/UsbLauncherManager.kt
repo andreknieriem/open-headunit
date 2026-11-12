@@ -47,6 +47,8 @@ class UsbLauncherManager(val service: AapService) {
     var isRegistered = false
     private lateinit var receiver: UsbReceiver
     private var noUsbServiceLogged = false
+    private var usbBusPollJob: Job? = null
+    private var lastPolledDevicePaths: Set<String> = emptySet()
 
     /**
      * Guards against duplicate [UsbAccessoryMode.connectAndSwitch] calls AND duplicate
@@ -227,6 +229,7 @@ class UsbLauncherManager(val service: AapService) {
         )
         ContextCompat.registerReceiver(service, receiver, UsbReceiver.createPermissionFilter(),
             ContextCompat.RECEIVER_NOT_EXPORTED)
+        startUsbBusPolling()
     }
 
     fun unregister() {
@@ -234,9 +237,69 @@ class UsbLauncherManager(val service: AapService) {
             return
 
         isRegistered = false
+        usbBusPollJob?.cancel()
+        usbBusPollJob = null
 
         // The record outlives the service: a dialog still on screen answers into UsbPermissionResultReceiver.
         try { service.unregisterReceiver(receiver) } catch (_: Exception) {}
+    }
+
+    /**
+     * Periodically polls `UsbManager.deviceList` while disconnected so locked Samsung/Android
+     * phones that enumerate without firing `ACTION_USB_DEVICE_ATTACHED` or activate USB data
+     * lines a few seconds after lock-screen charging wake are detected and switched to AOA mode.
+     */
+    private fun startUsbBusPolling() {
+        usbBusPollJob?.cancel()
+        usbBusPollJob = service.serviceScope.launch {
+            while (!service.isStopping && isRegistered) {
+                delay(2_500L)
+                if (service.isStopping || !isRegistered) break
+                val app = App.provide(service)
+                val commManager = app.commManager
+                if (commManager.isConnected ||
+                    commManager.connectionState.value !is CommManager.ConnectionState.Disconnected ||
+                    isSwitchingToProjection() ||
+                    isActivitySwitchInFlight() ||
+                    cancelledByUser ||
+                    SettingsActivity.isVisible
+                ) {
+                    continue
+                }
+                val usbManager = UsbDeviceCompat.usbManager(service) ?: continue
+                val allDevices = usbManager.deviceList.values.toList()
+                val currentPaths = allDevices.map { it.deviceName }.toSet()
+                val connectable = allDevices.filter { UsbDeviceCompat.isConnectable(service, it) }
+                if (connectable.isEmpty()) {
+                    lastPolledDevicePaths = currentPaths
+                    continue
+                }
+                val newPathsDetected = (currentPaths - lastPolledDevicePaths).isNotEmpty()
+                lastPolledDevicePaths = currentPaths
+
+                var needsScan = newPathsDetected
+                for (device in connectable) {
+                    val age = UsbPermissionAsks.attachAgeMs(device.deviceName, UsbPermissionAsks.nowMs())
+                    if (age != null && age >= ATTACH_FALLBACK_DELAY_MS) {
+                        UsbPermissionAsks.clearAttach(device.deviceName)
+                        needsScan = true
+                    } else if (age == null && !UsbPermissionAsks.isAsked(device.deviceName, currentPaths.toList())) {
+                        needsScan = true
+                    }
+                }
+                if (needsScan) {
+                    if (newPathsDetected) {
+                        AapService.lastTargetConnectionTriggerAtMs = SystemClock.elapsedRealtime()
+                        service.launchMainActivityIfNeeded("USB auto-start", defersToAndroid = false)
+                    }
+                    checkAlreadyConnected(
+                        force = true,
+                        settingsRestart = pendingSettingsRestart(),
+                        trigger = UsbPlugInPolicy.Trigger.PLUG_IN
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -848,7 +911,7 @@ class UsbLauncherManager(val service: AapService) {
             val nonAccessoryDevices = deviceList.filter { !UsbDeviceCompat.isInAccessoryMode(it) }
             val allowed = settings.allowedDevices
             val candidates = if (allowed.isNotEmpty()) {
-                nonAccessoryDevices.filter { allowed.contains(UsbDeviceCompat(it).uniqueName) }
+                nonAccessoryDevices.filter { settings.isConnectingDevice(UsbDeviceCompat(it)) }
             } else {
                 nonAccessoryDevices
             }
@@ -958,13 +1021,32 @@ class UsbLauncherManager(val service: AapService) {
             val deviceName = UsbDeviceCompat(device).uniqueName
             AppLog.i("Single USB auto-connect: connecting to $deviceName")
             if (!beginAttempt(tier, "USB switch of $deviceName", settingsRestart)) return
+            ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
+            ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
             val usbMode = UsbAccessoryMode(usbManager)
             launchAttempt(settingsRestart, Dispatchers.IO) {
-                if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
-                    noteAccessorySwitchRequested()
-                    AppLog.i("Successfully requested switch to accessory mode for single USB device. Waiting for re-enumeration...")
-                } else {
-                    AppLog.w("Single USB auto-connect: connectAndSwitch failed for $deviceName")
+                var switched = false
+                for (attempt in 1..3) {
+                    com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(service)
+                    val freshDevice = usbManager.deviceList[device.deviceName] ?: device
+                    if (UsbDeviceCompat.isInAccessoryMode(freshDevice)) {
+                        switched = true
+                        break
+                    }
+                    if (usbMode.connectAndSwitch(freshDevice, settings.useLibusb)) {
+                        noteAccessorySwitchRequested()
+                        switched = true
+                        AppLog.i("Successfully requested switch to accessory mode for single USB device (attempt $attempt). Waiting for re-enumeration...")
+                        break
+                    }
+                    if (attempt < 3) {
+                        AppLog.i("Single USB auto-connect: AOA switch attempt $attempt failed for $deviceName (phone may be locked); retrying in 1500ms...")
+                        delay(1_500L)
+                        if (App.provide(service).commManager.isConnected || usbManager.deviceList[device.deviceName] == null) break
+                    }
+                }
+                if (!switched) {
+                    AppLog.w("Single USB auto-connect: connectAndSwitch failed for $deviceName after retries")
                 }
             }
         } else {

@@ -57,7 +57,14 @@ class Settings(private val context: Context) {
 
     fun isConnectingDevice(deviceCompat: UsbDeviceCompat): Boolean {
         val allowDevices = prefs.getStringSet("allow-devices", null) ?: return false
-        return allowDevices.contains(deviceCompat.uniqueName)
+        if (allowDevices.contains(deviceCompat.uniqueName)) return true
+        val vid = deviceCompat.vendorId
+        if (vid == 0) return false
+        val vidHex = String.format("%04x", vid)
+        return allowDevices.any { entry ->
+            val match = VID_IN_UNIQUE_NAME_REGEX.find(entry)
+            match != null && match.groupValues[1].equals(vidHex, ignoreCase = true)
+        }
     }
 
     var isAdvancedSettingsActive: Boolean
@@ -108,7 +115,8 @@ class Settings(private val context: Context) {
         }
 
     var resolutionId: Int
-        get() = prefs.getInt("resolutionId", 0)
+        // 4K by default; the 720p fallback entry and the narrow-band link cap still protect weaker setups.
+        get() = prefs.getInt("resolutionId", Resolution._3840x2160.id)
         set(value) = prefs.edit().putInt("resolutionId", value).apply()
 
     // How the video is fitted into the panel, in CSS object-fit terms: FILL stretches,
@@ -395,8 +403,8 @@ class Settings(private val context: Context) {
 
     var screenOrientation: ScreenOrientation
         get() {
-            val value = prefs.getInt(KEY_SCREEN_ORIENTATION, 0)
-            return ScreenOrientation.fromInt(value) ?: ScreenOrientation.SYSTEM
+            val value = prefs.getInt(KEY_SCREEN_ORIENTATION, ScreenOrientation.LANDSCAPE.value)
+            return ScreenOrientation.fromInt(value) ?: ScreenOrientation.LANDSCAPE
         }
         set(orientation) {
             prefs.edit().putInt(KEY_SCREEN_ORIENTATION, orientation.value).apply()
@@ -1286,7 +1294,7 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putBoolean("auto-connect-last-session", value).apply() }
 
     var autoConnectSingleUsbDevice: Boolean
-        get() = prefs.getBoolean("auto-connect-single-usb", false)
+        get() = prefs.getBoolean("auto-connect-single-usb", true)
         set(value) { prefs.edit().putBoolean("auto-connect-single-usb", value).apply() }
 
     var lastConnectionType: String
@@ -1325,6 +1333,37 @@ class Settings(private val context: Context) {
         set(value) {
             prefs.edit().putBoolean("use-head-unit-microphone", value).apply()
         }
+
+    /**
+     * Routes phone call audio and the call/voice microphone through this device, for an old phone
+     * or tablet acting as the Android Auto receiver. Off by default.
+     *
+     * On: the microphone is forced on and opened as VOICE_COMMUNICATION with the hardware echo
+     * canceler, noise suppressor and gain control, and the Bluetooth service is announced so the
+     * phone connects its hands-free link here. Off: calls stay on the phone or the car, and no
+     * stand-in hands-free link is held open during a session.
+     */
+    var routeCallAudioAndMicToHeadUnit: Boolean
+        get() = prefs.getBoolean("route-call-audio-and-mic-to-headunit", false)
+        set(value) { prefs.edit().putBoolean("route-call-audio-and-mic-to-headunit", value).apply() }
+
+    /**
+     * Registers a serverless Bluetooth HID mouse (API 28+) to keep a link to the paired phone and to
+     * wake a dozing or locked one. On by default: it takes no hands-free slot and does nothing
+     * visible. Off for a ROM whose Bluetooth stack misbehaves with a HID device registered.
+     */
+    var btHidWakeTrigger: Boolean
+        get() = prefs.getBoolean("bt-hid-wake-trigger", true)
+        set(value) { prefs.edit().putBoolean("bt-hid-wake-trigger", value).apply() }
+
+    /**
+     * Switches between parked video (UNRESTRICTED) and moving audio/music mode (NO_VIDEO)
+     * based purely on GPS speed (>= 1.5 m/s). When false, keeps DRIVING_STATUS = UNRESTRICTED
+     * at all times.
+     */
+    var autoAudioOnlyWhenMoving: Boolean
+        get() = prefs.getBoolean("auto-audio-only-when-moving", true)
+        set(value) { prefs.edit().putBoolean("auto-audio-only-when-moving", value).apply() }
 
     var enableAudioSink: Boolean
         get() = prefs.getBoolean("enable-audio-sink", true)
@@ -1460,8 +1499,11 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putInt("auto-connect-delay-seconds", value).apply() }
 
     var autoStartOnUsb: Boolean
-        get() = prefs.getBoolean("auto-start-on-usb", false)
-        set(value) { prefs.edit().putBoolean("auto-start-on-usb", value).apply() }
+        get() = prefs.getBoolean("auto-start-on-usb", true)
+        set(value) {
+            prefs.edit().putBoolean("auto-start-on-usb", value).apply()
+            syncAutoStartOnUsbToDeviceStorage(context, value)
+        }
 
     var autoStartOnBoot: Boolean
         get() = prefs.getBoolean("auto-start-on-boot", false)
@@ -1582,6 +1624,7 @@ class Settings(private val context: Context) {
         }
         set(value) {
             prefs.edit().putStringSet("auto-start-bt-macs", value).apply()
+            syncAutoStartBtMacsToDeviceStorage(context, configuredBluetoothTargetMacs)
         }
 
     var autoStartBluetoothDeviceName: String
@@ -1629,6 +1672,21 @@ class Settings(private val context: Context) {
         }
         set(value) {
             prefs.edit().putStringSet("native-poke-bt-macs", value).apply()
+            syncAutoStartBtMacsToDeviceStorage(context, configuredBluetoothTargetMacs)
+        }
+
+    /**
+     * Union of all user-selected Bluetooth target MACs across "Auto-start on Bluetooth",
+     * "Device to wake for wireless Android Auto", and "Preferred device".
+     * Used to determine whether first-time Bluetooth setup is complete and whether a paired
+     * selected Bluetooth device has connected.
+     */
+    val configuredBluetoothTargetMacs: Set<String>
+        get() = buildSet {
+            addAll(autoStartBluetoothDeviceMacs.map { it.trim() }.filter { it.isNotEmpty() })
+            addAll(nativePokeBtMacs.map { it.trim() }.filter { it.isNotEmpty() })
+            val preferred = nativePreferredDeviceMac.trim()
+            if (preferred.isNotEmpty()) add(preferred)
         }
 
     /**
@@ -1809,7 +1867,7 @@ class Settings(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             syncAutoStartOnBootToDeviceStorage(context, false)
             syncAutoStartOnScreenOnToDeviceStorage(context, false)
-            syncAutoStartOnUsbToDeviceStorage(context, false)
+            syncAutoStartOnUsbToDeviceStorage(context, true)
             syncUsbConnectOnPlugInToDeviceStorage(context, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
             syncAutoStartOnWifiToDeviceStorage(context, false)
             syncListenForUsbDevicesToDeviceStorage(context, true)
@@ -2002,6 +2060,7 @@ class Settings(private val context: Context) {
 
     companion object {
         const val PREFS_NAME = "settings"
+        private val VID_IN_UNIQUE_NAME_REGEX = Regex("VID:\\s*([0-9a-fA-F]{4})")
 
         private val GESTURE_KEYS = listOf(
             "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
@@ -2216,7 +2275,7 @@ class Settings(private val context: Context) {
             } else {
                 context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             }
-            return prefs.getBoolean(KEY_AUTO_START_ON_USB, false)
+            return prefs.getBoolean(KEY_AUTO_START_ON_USB, true)
         }
 
         fun syncAutoStartOnUsbToDeviceStorage(context: Context, enabled: Boolean) {
@@ -2558,7 +2617,7 @@ class Settings(private val context: Context) {
     var appTheme: AppTheme
         get() {
             val value = prefs.getInt("app-theme", 0)
-            return AppTheme.fromInt(value) ?: AppTheme.AUTOMATIC
+            return AppTheme.fromInt(value)
         }
         set(theme) {
             prefs.edit().putInt("app-theme", theme.value).apply()
@@ -2625,7 +2684,10 @@ class Settings(private val context: Context) {
 
     var nativePreferredDeviceMac: String
         get() = prefs.getString("native-preferred-device-mac", "") ?: ""
-        set(value) = prefs.edit().putString("native-preferred-device-mac", value).apply()
+        set(value) {
+            prefs.edit().putString("native-preferred-device-mac", value).apply()
+            syncAutoStartBtMacsToDeviceStorage(context, configuredBluetoothTargetMacs)
+        }
 
     var lastConnectedNativeMac: String
         get() = prefs.getString("last-connected-native-mac", "") ?: ""

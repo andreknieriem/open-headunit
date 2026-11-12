@@ -2509,11 +2509,21 @@ class AapService : Service() {
             ContextCompat.RECEIVER_EXPORTED
         )
         AppLog.i("Registered Bluetooth auto-disconnect receiver")
+
+        val initialSettings = App.provide(this).settings
+        if (initialSettings.btHidWakeTrigger) {
+            com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.ensurePersistentConnect(
+                this,
+                initialSettings.configuredBluetoothTargetMacs,
+                true
+            )
+        }
     }
 
     /**
-     * Watches the links chosen under "Auto-disconnect on Bluetooth". Runtime-registered so it
-     * cannot outlive the session, and on ACL because the selection is addresses, not profiles.
+     * Watches the links chosen under "Auto-disconnect on Bluetooth", and also listens for
+     * ACL connections from any selected target Bluetooth device so the app can come to the
+     * active foreground immediately when the phone connects.
      */
     private val btAutoDisconnectReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -2522,9 +2532,6 @@ class AapService : Service() {
                 android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED -> false
                 else -> return
             }
-            val watched = App.provide(this@AapService).settings.autoDisconnectBluetoothDeviceMacs
-            if (watched.isEmpty()) return
-
             val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(android.bluetooth.BluetoothDevice.EXTRA_DEVICE, android.bluetooth.BluetoothDevice::class.java)
             } else {
@@ -2532,6 +2539,14 @@ class AapService : Service() {
                 intent.getParcelableExtra(android.bluetooth.BluetoothDevice.EXTRA_DEVICE)
             }
             val mac = device?.address
+            val settings = App.provide(this@AapService).settings
+
+            if (connected && device != null && com.andrerinas.openheadunit.utils.BluetoothHelper.isTargetBluetoothDevice(settings, mac)) {
+                onTargetBluetoothConnected(device, "ACL_CONNECTED")
+            }
+
+            val watched = settings.autoDisconnectBluetoothDeviceMacs
+            if (watched.isEmpty()) return
 
             when (BtAutoDisconnectPolicy.onAclEvent(watched, mac, connected)) {
                 BtAutoDisconnectArm.IGNORE -> {}
@@ -3214,6 +3229,9 @@ class AapService : Service() {
         if (pause == wirelessPausedForSettings) return
 
         if (pause) {
+            if (wifiLauncherManager.active != null || wifiModeInitialized) {
+                wirelessRearmPendingForSettings = true
+            }
             wirelessPausedForSettings = true
             releaseParkedHct()
             // A recreate or a permission prompt can have scheduled one; it must not fire now.
@@ -4100,10 +4118,13 @@ class AapService : Service() {
                     userExitedAA = false
                     userExitCooldownUntil = 0L
                 }
-                if (intent?.getBooleanExtra(EXTRA_UI_HELD, false) == true) {
+                lastTargetConnectionTriggerAtMs = SystemClock.elapsedRealtime()
+                if (intent?.getBooleanExtra(EXTRA_UI_HELD, false) == true || SettingsActivity.isVisible) {
                     bluetoothLaunchPendingForSettings = true
                     AppLog.i("AapService: Bluetooth auto-start while the settings screen is on show; " +
                         "raising the home screen when it closes.")
+                } else if (!commManager.isConnected) {
+                    bringAppToFrontForConnection(MainActivity.LAUNCH_SOURCE_BLUETOOTH)
                 }
                 if (wirelessPausedForSettings && (actions.forceRearmWireless || actions.armWirelessIfIdle)) {
                     // Held like a Save: nothing else asks again once the screen closes.
@@ -4227,8 +4248,18 @@ class AapService : Service() {
         } else {
             Intent(this, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(MainActivity.EXTRA_KEEP_IN_FOREGROUND, true)
             } to 101
         }
+
+        val settingsPendingIntent = PendingIntent.getActivity(
+            this, 102,
+            Intent(this, SettingsActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        )
 
         val contentText = if (commManager.isConnected)
             getString(R.string.notification_projection_active)
@@ -4251,6 +4282,7 @@ class AapService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or
                     (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
             ))
+            .addAction(0, getString(R.string.settings), settingsPendingIntent)
 
         if (showExit) {
             builder.addAction(R.drawable.ic_exit_to_app_white_24dp, getString(R.string.exit), stopPendingIntent)
@@ -4299,26 +4331,84 @@ class AapService : Service() {
         }
 
         AppLog.i("Reopen on reconnection: launching MainActivity ($source)")
-        launchMainActivityOnBoot()
+        lastTargetConnectionTriggerAtMs = SystemClock.elapsedRealtime()
+        bringAppToFrontForConnection("USB auto-start")
+    }
+
+    /**
+     * Called when a selected target Bluetooth device connects (either via standard ACL or via the
+     * Serverless Bluetooth HID Keyboard/Mouse profile). Arms wireless Android Auto and brings the
+     * app to the active foreground over other apps.
+     */
+    fun onTargetBluetoothConnected(device: android.bluetooth.BluetoothDevice, reason: String) {
+        val settings = App.provide(this).settings
+        if (!com.andrerinas.openheadunit.utils.BluetoothHelper.isTargetBluetoothDevice(settings, device.address)) {
+            return
+        }
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastBtTargetConnectHandledAtMs < 1_500L) {
+            return
+        }
+        lastBtTargetConnectHandledAtMs = now
+        lastTargetConnectionTriggerAtMs = now
+        if (commManager.isConnected) {
+            AppLog.d("AapService: Target Bluetooth connected ($reason: ${device.address}), already connected to AA.")
+            return
+        }
+        AppLog.i("AapService: Selected Bluetooth device connected ($reason: ${device.name} / ${device.address}) -> bringing app to foreground and starting wireless AA")
+        val serviceIntent = Intent(this, AapService::class.java)
+            .setAction(ACTION_BT_AUTO_START)
+            .putExtra(EXTRA_UI_HELD, SettingsActivity.isVisible)
+        try {
+            onStartCommand(serviceIntent, 0, 0)
+        } catch (e: Exception) {
+            AppLog.w("AapService: Failed to dispatch BT auto-start: ${e.message}")
+        }
+    }
+
+    /**
+     * Brings [MainActivity] to the active foreground over other apps using the 3-tier strategy
+     * (Direct -> Overlay Window Trampoline -> Full-Screen Intent Notification).
+     */
+    fun bringAppToFrontForConnection(launchSource: String) {
+        lastTargetConnectionTriggerAtMs = SystemClock.elapsedRealtime()
+        val launchIntent = Intent(this, MainActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+            )
+            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, launchSource)
+            putExtra(MainActivity.EXTRA_TURN_SCREEN_ON, true)
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            try {
+                startActivity(launchIntent)
+                AppLog.i("AapService: Brought MainActivity to front directly ($launchSource)")
+                return
+            } catch (e: Exception) {
+                AppLog.e("AapService: Direct startActivity failed ($launchSource): ${e.message}")
+            }
+        }
+        if (AppPermissions.isOverlayGranted(this)) {
+            if (launchViaOverlayTrampoline(launchIntent)) {
+                AppLog.i("AapService: Brought MainActivity to front via overlay trampoline ($launchSource)")
+                return
+            }
+        }
+        try {
+            startActivity(launchIntent)
+            AppLog.i("AapService: Brought MainActivity to front via direct fallback ($launchSource)")
+            return
+        } catch (e: Exception) {
+            AppLog.w("AapService: Direct fallback blocked ($launchSource), using full-screen intent: ${e.message}")
+        }
+        launchViaFullScreenIntent(launchSource)
     }
 
     private fun launchMainActivityOnBoot() {
-        // Android < 10: no background activity start restrictions
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            AppLog.i("Boot auto-start: launching directly (API ${Build.VERSION.SDK_INT} < 29)")
-            launchDirectly()
-            return
-        }
-
-        // Android 10+: try overlay trampoline (bypasses all known OEM restrictions)
-        if (AppPermissions.isOverlayGranted(this)) {
-            AppLog.i("Boot auto-start: launching via overlay window trampoline")
-            if (launchViaOverlayTrampoline()) return
-        }
-
-        // Fallback: full-screen intent notification
-        AppLog.i("Boot auto-start: falling back to full-screen intent notification")
-        launchViaFullScreenIntent()
+        bringAppToFrontForConnection("Boot auto-start")
     }
 
     private fun launchDirectly() {
@@ -4372,10 +4462,11 @@ class AapService : Service() {
         }
     }
 
-    private fun launchViaFullScreenIntent() {
+    private fun launchViaFullScreenIntent(launchSource: String = "Boot auto-start") {
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
+            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, launchSource)
+            putExtra(MainActivity.EXTRA_TURN_SCREEN_ON, true)
         }
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
@@ -4654,5 +4745,14 @@ class AapService : Service() {
         const val EXTRA_DEVICE_NAME = "extra_device_name"
         const val EXTRA_BY_COMMAND = "extra_by_command"
         const val EXTRA_ENDPOINT_ID = "extra_endpoint_id"
+
+        @Volatile private var lastBtTargetConnectHandledAtMs: Long = 0L
+        @Volatile var lastTargetConnectionTriggerAtMs: Long = 0L
+
+        /** Whether a USB or target Bluetooth connection trigger happened within the last 15 seconds. */
+        fun isRecentTargetConnectionTrigger(nowElapsedMs: Long = SystemClock.elapsedRealtime()): Boolean {
+            val stamp = lastTargetConnectionTriggerAtMs
+            return stamp > 0L && (nowElapsedMs - stamp) in 0L..15_000L
+        }
     }
 }

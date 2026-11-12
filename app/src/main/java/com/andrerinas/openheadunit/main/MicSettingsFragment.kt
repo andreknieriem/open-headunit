@@ -35,6 +35,7 @@ class MicSettingsFragment : Fragment() {
 
     // Pending states
     private var pendingUseHeadUnitMicrophone: Boolean? = null
+    private var pendingRouteCallAudioAndMicToHeadUnit: Boolean? = null
     private var pendingMicSampleRate: Int? = null
     private var pendingMicInputSource: Int? = null
     private var pendingMicEchoCanceler: Boolean? = null
@@ -56,6 +57,7 @@ class MicSettingsFragment : Fragment() {
 
         // Initialize pending state
         pendingUseHeadUnitMicrophone = settings.useHeadUnitMicrophone
+        pendingRouteCallAudioAndMicToHeadUnit = settings.routeCallAudioAndMicToHeadUnit
         pendingMicSampleRate = settings.micSampleRate
         pendingMicInputSource = settings.micInputSource
         pendingMicEchoCanceler = settings.micEchoCanceler
@@ -118,6 +120,10 @@ class MicSettingsFragment : Fragment() {
 
     private fun saveSettings() {
         pendingUseHeadUnitMicrophone?.let { if (it != settings.useHeadUnitMicrophone) settings.useHeadUnitMicrophone = it }
+        pendingRouteCallAudioAndMicToHeadUnit?.let {
+            if (it != settings.routeCallAudioAndMicToHeadUnit) settings.routeCallAudioAndMicToHeadUnit = it
+            if (it) settings.useHeadUnitMicrophone = true
+        }
         pendingMicSampleRate?.let { if (it != settings.micSampleRate) settings.micSampleRate = it }
         pendingMicInputSource?.let { if (it != settings.micInputSource) settings.micInputSource = it }
         pendingMicEchoCanceler?.let { if (it != settings.micEchoCanceler) settings.micEchoCanceler = it }
@@ -142,6 +148,7 @@ class MicSettingsFragment : Fragment() {
 
     private fun checkChanges() {
         val anyChange = pendingUseHeadUnitMicrophone != settings.useHeadUnitMicrophone ||
+                pendingRouteCallAudioAndMicToHeadUnit != settings.routeCallAudioAndMicToHeadUnit ||
                 pendingMicSampleRate != settings.micSampleRate ||
                 pendingMicInputSource != settings.micInputSource ||
                 pendingMicEchoCanceler != settings.micEchoCanceler ||
@@ -170,6 +177,27 @@ class MicSettingsFragment : Fragment() {
             isChecked = micEnabled,
             onCheckedChanged = { isChecked ->
                 pendingUseHeadUnitMicrophone = isChecked
+                if (!isChecked) pendingRouteCallAudioAndMicToHeadUnit = false
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "routeCallAudioAndMicToHeadUnit",
+            nameResId = R.string.route_call_audio_and_mic,
+            descriptionResId = R.string.route_call_audio_and_mic_summary,
+            helpResId = R.string.route_call_audio_and_mic_description,
+            isChecked = pendingRouteCallAudioAndMicToHeadUnit ?: settings.routeCallAudioAndMicToHeadUnit,
+            onCheckedChanged = { isChecked ->
+                pendingRouteCallAudioAndMicToHeadUnit = isChecked
+                if (isChecked) {
+                    pendingUseHeadUnitMicrophone = true
+                    if (pendingMicInputSource == 0) pendingMicInputSource = 3
+                    if (AcousticEchoCanceler.isAvailable()) pendingMicEchoCanceler = true
+                    if (NoiseSuppressor.isAvailable()) pendingMicNoiseSuppressor = true
+                    if (AutomaticGainControl.isAvailable()) pendingMicAutoGainControl = true
+                }
                 checkChanges()
                 updateSettingsList()
             }

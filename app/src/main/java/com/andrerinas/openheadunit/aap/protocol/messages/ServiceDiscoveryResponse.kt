@@ -234,7 +234,7 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
             // rejects everything outside {16000, 48000} Hz, 16 bits, 1 or 2 channels. 48 kHz is in
             // that set for the media channel, not for this one - AudioConfiguration is shared by
             // every audio service and the validator accepts the union.
-            if (settings.useHeadUnitMicrophone) {
+            if (settings.useHeadUnitMicrophone || settings.routeCallAudioAndMicToHeadUnit) {
                 val mic = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_MIC
                     service.mediaSourceService = Control.Service.MediaSourceService.newBuilder().also {
@@ -256,8 +256,14 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
             }
 
             // Bluetooth Service
+            // Routing calls to this unit means the phone must be told where to connect hands-free, so
+            // the "skip" announcement is not honoured then.
+            val resolvedBtAddress = settings.bluetoothAddress.ifBlank {
+                com.andrerinas.openheadunit.utils.BluetoothHelper.getBluetoothMacAddress(context).orEmpty()
+            }
             val btAnnounce = BluetoothAnnouncePolicy.decide(
-                settings.bluetoothAnnounceMode, settings.bluetoothAddress,
+                if (settings.routeCallAudioAndMicToHeadUnit) BluetoothAnnouncePolicy.STORED_REAL
+                else settings.bluetoothAnnounceMode, resolvedBtAddress,
                 App.provide(context).commManager.isUsbSession)
             if (btAnnounce.carAddress != null) {
                 val bluetooth = Control.Service.newBuilder().also { service ->
@@ -315,7 +321,7 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
             // over the one we declare. A different id misses that lookup, so our claim survives;
             // reusing one would make a changed type arrive as the old one.
             val vehicleType = VehicleTypePolicy.vehicleType(
-                settings.vehicleType, settings.useHeadUnitMicrophone)
+                settings.vehicleType, settings.useHeadUnitMicrophone || settings.routeCallAudioAndMicToHeadUnit)
             val announcedVehicleId = VehicleIdentityPolicy.vehicleId(settings.vehicleId, vehicleType)
 
             return Control.ServiceDiscoveryResponse.newBuilder().apply {

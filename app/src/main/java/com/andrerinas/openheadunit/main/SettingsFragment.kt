@@ -150,7 +150,7 @@ class SettingsFragment : Fragment() {
         // "What is my head unit's WiFi password" is an everyday question, not an Advanced one.
         "wifiDirectLastNetwork", "wifiDirectGroupIdentity",
         // Which phone Native AA wakes: the first thing to set when two phones share the car.
-        "nativePokeBt", "nativePokeAllPaired",
+        "btHidWakeTrigger", "nativePreferredDevice", "nativePokeBt", "nativePokeAllPaired",
         // Which Bluetooth the phone pairs with, and the ESP32 relay page it leads to once chosen.
         "bluetoothLink", "Esp32Relay",
         "hotspotInterfaceOverride",
@@ -270,6 +270,9 @@ class SettingsFragment : Fragment() {
     private var pendingKillOnDisconnect by pending::killOnDisconnect
     private var pendingAutoKillOemApps by pending::autoKillOemApps
     private var pendingRaiseProjectionDuringCall by pending::raiseProjectionDuringCall
+    private var pendingRouteCallAudioAndMicToHeadUnit by pending::routeCallAudioAndMicToHeadUnit
+    private var pendingBtHidWakeTrigger by pending::btHidWakeTrigger
+    private var pendingAutoAudioOnlyWhenMoving by pending::autoAudioOnlyWhenMoving
 
     // Custom Insets
     private var pendingInsetLeft by pending::insetLeft
@@ -558,10 +561,12 @@ class SettingsFragment : Fragment() {
             return
         }
         val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
+        val hidWakeEnabled = pendingBtHidWakeTrigger ?: settings.btHidWakeTrigger
         if (adapter == null || !adapter.isEnabled) {
             if (adapter == null && BluetoothDevicePicker.showManufacturerDevices(requireContext())) return
-            // A unit whose phone pairs to an external module may have no adapter to turn on.
-            if (BluetoothHelper.externalBtEvidence != null) {
+            // A unit whose phone pairs to an external module may have no adapter to turn on,
+            // unless the serverless HID mouse wake trigger is using Android's own Bluetooth radio.
+            if (BluetoothHelper.externalBtEvidence != null && (!hidWakeEnabled || adapter == null)) {
                 ToastUtils.showToast(requireContext(), getString(R.string.bt_external_module_no_picker), Toast.LENGTH_LONG, force = true)
                 return
             }
@@ -569,12 +574,22 @@ class SettingsFragment : Fragment() {
             return
         }
         val selected = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
-        BluetoothDevicePicker.show(requireContext(), R.string.select_bt_poke_device, selected, { device ->
-            BluetoothHelper.isLikelyPhone(
-                device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac, requireContext()
-            )
-        }) { chosen ->
+        BluetoothDevicePicker.show(
+            context = requireContext(),
+            titleResId = R.string.select_bt_poke_device,
+            selectedMacs = selected,
+            deviceFilter = { device ->
+                BluetoothHelper.isLikelyPhone(
+                    device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac, requireContext()
+                )
+            }
+        ) { chosen ->
             pendingNativePokeBtMacs = chosen
+            settings.nativePokeBtMacs = chosen
+            settings.commit()
+            com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.ensurePersistentConnect(
+                requireContext(), chosen, hidWakeEnabled
+            )
             checkChanges()
             updateSettingsList()
         }
@@ -694,6 +709,24 @@ class SettingsFragment : Fragment() {
         pendingKillOnDisconnect?.let { if (it != settings.rawKillOnDisconnect) settings.rawKillOnDisconnect = it }
         pendingAutoKillOemApps?.let { if (it != settings.autoKillOemApps) settings.autoKillOemApps = it }
         pendingRaiseProjectionDuringCall?.let { if (it != settings.raiseProjectionDuringCall) settings.raiseProjectionDuringCall = it }
+        pendingRouteCallAudioAndMicToHeadUnit?.let {
+            if (it != settings.routeCallAudioAndMicToHeadUnit) settings.routeCallAudioAndMicToHeadUnit = it
+            // Routing calls here is pointless without this unit recording, so the switch brings it on.
+            if (it) settings.useHeadUnitMicrophone = true
+        }
+        pendingBtHidWakeTrigger?.let { if (it != settings.btHidWakeTrigger) settings.btHidWakeTrigger = it }
+        pendingAutoAudioOnlyWhenMoving?.let {
+            if (it != settings.autoAudioOnlyWhenMoving) {
+                settings.autoAudioOnlyWhenMoving = it
+                if (!it) {
+                    App.provide(requireContext()).commManager.send(
+                        com.andrerinas.openheadunit.aap.protocol.messages.DrivingStatusEvent(
+                            com.andrerinas.openheadunit.aap.protocol.proto.Sensors.SensorBatch.DrivingStatusData.Status.UNRESTRICTED
+                        )
+                    )
+                }
+            }
+        }
         pendingAutoEnableHotspot?.let { if (it != settings.autoEnableHotspot) settings.autoEnableHotspot = it }
         pendingAutoRestartWifi?.let { if (it != settings.autoRestartWifiWhenP2pStuck) settings.autoRestartWifiWhenP2pStuck = it }
         pendingUseLibusb?.let { if (it != settings.useLibusb) settings.useLibusb = it }
@@ -1471,7 +1504,7 @@ class SettingsFragment : Fragment() {
                 MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                     .setTitle(R.string.change_screen_orientation)
                     .setSingleChoiceItems(orientationOptions, currentIdx) { dialog, whiches ->
-                        val newOrientation = Settings.ScreenOrientation.fromInt(whiches) ?: Settings.ScreenOrientation.SYSTEM
+                        val newOrientation = Settings.ScreenOrientation.fromInt(whiches) ?: Settings.ScreenOrientation.LANDSCAPE
                         pendingScreenOrientation = newOrientation
 
                         // Apply immediately
@@ -1773,6 +1806,20 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "autoAudioOnlyWhenMoving",
+            nameResId = R.string.auto_audio_only_when_moving,
+            descriptionResId = R.string.auto_audio_only_when_moving_summary,
+            helpResId = R.string.auto_audio_only_when_moving_description,
+            isChecked = pendingAutoAudioOnlyWhenMoving ?: settings.autoAudioOnlyWhenMoving,
+            searchKeywords = "youtube video parked moving driving speed audio music unrestricted parking brake",
+            onCheckedChanged = { isChecked ->
+                pendingAutoAudioOnlyWhenMoving = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
         // --- Audio Settings ---
         items.add(SettingItem.CategoryHeader("audio", R.string.category_audio))
 
@@ -1917,6 +1964,21 @@ class SettingsFragment : Fragment() {
             isChecked = pendingAutoResumePlaybackOnReconnect ?: settings.autoResumePlaybackOnReconnect,
             onCheckedChanged = { isChecked ->
                 pendingAutoResumePlaybackOnReconnect = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "routeCallAudioAndMicToHeadUnit",
+            nameResId = R.string.route_call_audio_and_mic,
+            descriptionResId = R.string.route_call_audio_and_mic_summary,
+            helpResId = R.string.route_call_audio_and_mic_description,
+            searchKeywords = "phone call audio mic microphone old phone receiver bluetooth hfp sco voice",
+            isChecked = pendingRouteCallAudioAndMicToHeadUnit ?: settings.routeCallAudioAndMicToHeadUnit,
+            onCheckedChanged = { isChecked ->
+                pendingRouteCallAudioAndMicToHeadUnit = isChecked
+                requiresRestart = true
                 checkChanges()
                 updateSettingsList()
             }
@@ -3086,7 +3148,7 @@ class SettingsFragment : Fragment() {
         }.toTypedArray()
         MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
             .setTitle(R.string.change_resolution)
-            .setSingleChoiceItems(labels, pendingResolution ?: 0) { dialog, which ->
+            .setSingleChoiceItems(labels, pendingResolution ?: settings.resolutionId) { dialog, which ->
                 dialog.dismiss()
                 val picked = Settings.Resolution.fromId(which)
                 val panelKnown = pw > 0 && ph > 0
@@ -4353,7 +4415,11 @@ class SettingsFragment : Fragment() {
     private fun addNativeBluetoothRows(items: MutableList<SettingItem>) {
         items.add(SettingItem.SubHeader("bluetooth", R.string.settings_bluetooth))
 
-        if (ExternalBtTransportPolicy.usesExternalModule(pendingExternalBtRoute())) {
+        val hidWakeEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+            (pendingBtHidWakeTrigger ?: settings.btHidWakeTrigger)
+
+        val usesExternalModule = ExternalBtTransportPolicy.usesExternalModule(pendingExternalBtRoute())
+        if (usesExternalModule) {
             items.add(SettingItem.InfoBanner(
                 stableId = "externalBtModuleControlsHint",
                 textResId = R.string.external_bt_module_controls_hint
@@ -4366,42 +4432,48 @@ class SettingsFragment : Fragment() {
                     onClick = { }
                 ))
             }
-        } else {
+        }
+
+        if (!usesExternalModule || hidWakeEnabled || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // Multi-Driver Selection settings for Native AA
             val currentDriverMode = pendingNativeDriverSelectionMode ?: NativeDriverSelectionPolicy.Mode.AUTO
-            items.add(SettingItem.SegmentedButtonSettingEntry(
-                stableId = "nativeDriverSelectionMode",
-                nameResId = R.string.native_driver_selection_title,
-                helpResId = R.string.native_driver_selection_help,
-                options = listOf(
-                    getString(R.string.native_driver_selection_mode_off),
-                    getString(R.string.native_driver_selection_mode_auto),
-                    getString(R.string.native_driver_selection_mode_always)
-                ),
-                selectedIndex = currentDriverMode.id,
-                onOptionSelected = { index ->
-                    pendingNativeDriverSelectionMode = NativeDriverSelectionPolicy.Mode.fromId(index)
-                    checkChanges()
-                    updateSettingsList()
-                }
-            ))
-
-            if (currentDriverMode != NativeDriverSelectionPolicy.Mode.DISABLED) {
-                val currentTimeout = pendingNativeDriverSelectionTimeout ?: NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC
-                items.add(SettingItem.SliderSettingEntry(
-                    stableId = "nativeDriverSelectionTimeout",
-                    nameResId = R.string.native_driver_selection_timeout,
-                    helpResId = R.string.native_driver_selection_timeout_help,
-                    value = "${currentTimeout}s",
-                    sliderValue = currentTimeout.toFloat(),
-                    valueFrom = NativeDriverSelectionPolicy.MIN_TIMEOUT_SEC.toFloat(),
-                    valueTo = NativeDriverSelectionPolicy.MAX_TIMEOUT_SEC.toFloat(),
-                    stepSize = 1f,
-                    onValueChanged = { newVal ->
-                        pendingNativeDriverSelectionTimeout = newVal.toInt()
+            if (!usesExternalModule) {
+                items.add(SettingItem.SegmentedButtonSettingEntry(
+                    stableId = "nativeDriverSelectionMode",
+                    nameResId = R.string.native_driver_selection_title,
+                    helpResId = R.string.native_driver_selection_help,
+                    options = listOf(
+                        getString(R.string.native_driver_selection_mode_off),
+                        getString(R.string.native_driver_selection_mode_auto),
+                        getString(R.string.native_driver_selection_mode_always)
+                    ),
+                    selectedIndex = currentDriverMode.id,
+                    onOptionSelected = { index ->
+                        pendingNativeDriverSelectionMode = NativeDriverSelectionPolicy.Mode.fromId(index)
                         checkChanges()
+                        updateSettingsList()
                     }
                 ))
+            }
+
+            if (currentDriverMode != NativeDriverSelectionPolicy.Mode.DISABLED || usesExternalModule) {
+                if (!usesExternalModule) {
+                    val currentTimeout = pendingNativeDriverSelectionTimeout ?: NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC
+                    items.add(SettingItem.SliderSettingEntry(
+                        stableId = "nativeDriverSelectionTimeout",
+                        nameResId = R.string.native_driver_selection_timeout,
+                        helpResId = R.string.native_driver_selection_timeout_help,
+                        value = "${currentTimeout}s",
+                        sliderValue = currentTimeout.toFloat(),
+                        valueFrom = NativeDriverSelectionPolicy.MIN_TIMEOUT_SEC.toFloat(),
+                        valueTo = NativeDriverSelectionPolicy.MAX_TIMEOUT_SEC.toFloat(),
+                        stepSize = 1f,
+                        onValueChanged = { newVal ->
+                            pendingNativeDriverSelectionTimeout = newVal.toInt()
+                            checkChanges()
+                        }
+                    ))
+                }
 
                 val currentPrefMac = pendingNativePreferredDeviceMac.orEmpty()
                 // Empty without BLUETOOTH_CONNECT: the row then shows the stored address, and
@@ -4436,6 +4508,29 @@ class SettingsFragment : Fragment() {
                 onClick = { _ -> showWakeDevicePicker() }
             ))
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "btHidWakeTrigger",
+                    nameResId = R.string.bt_hid_wake_trigger,
+                    descriptionResId = R.string.bt_hid_wake_trigger_summary,
+                    helpResId = R.string.bt_hid_wake_trigger_description,
+                    searchKeywords = "bluetooth hid keyboard mouse pair wake locked phone screen lock trigger fyt",
+                    isChecked = hidWakeEnabled,
+                    onCheckedChanged = { isChecked ->
+                        pendingBtHidWakeTrigger = isChecked
+                        settings.btHidWakeTrigger = isChecked
+                        settings.commit()
+                        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.ensurePersistentConnect(
+                            requireContext(),
+                            pendingNativePokeBtMacs ?: settings.nativePokeBtMacs,
+                            isChecked
+                        )
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
+            }
+
             // Only asked when nothing is chosen: a chosen device is never widened.
             if (wakeMacs.isEmpty()) {
                 items.add(SettingItem.ToggleSettingEntry(
@@ -4450,7 +4545,9 @@ class SettingsFragment : Fragment() {
                     }
                 ))
             }
+        }
 
+        if (!usesExternalModule) {
             val currentServiceName = pendingBluetoothManagerServiceName ?: "bluetooth_manager"
             items.add(SettingItem.SettingEntry(
                 stableId = "bluetoothAdapterServiceName",

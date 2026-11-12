@@ -91,6 +91,14 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
             false
         }
 
+        /** Whether any connectable Android phone or Android Auto dongle is currently attached on the USB bus. */
+        fun hasConnectableDeviceOnBus(context: Context): Boolean = try {
+            usbManager(context)?.deviceList?.values?.any { isConnectable(context, it) } ?: false
+        } catch (e: Exception) {
+            AppLog.w("UsbDeviceCompat: Could not read connectable USB devices: ${e.message}")
+            false
+        }
+
         fun isAndroidDevice(device: UsbDevice): Boolean = evaluate(device).accepted
 
         /**

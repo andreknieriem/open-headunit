@@ -95,6 +95,9 @@ class SettingsPendingCopy {
     var killOnDisconnect: Boolean? = null
     var autoKillOemApps: Boolean? = null
     var raiseProjectionDuringCall: Boolean? = null
+    var routeCallAudioAndMicToHeadUnit: Boolean? = null
+    var btHidWakeTrigger: Boolean? = null
+    var autoAudioOnlyWhenMoving: Boolean? = null
     var insetLeft: Int? = null
     var insetTop: Int? = null
     var insetRight: Int? = null
@@ -187,6 +190,9 @@ class SettingsPendingCopy {
         killOnDisconnect = settings.rawKillOnDisconnect
         autoKillOemApps = settings.autoKillOemApps
         raiseProjectionDuringCall = settings.raiseProjectionDuringCall
+        routeCallAudioAndMicToHeadUnit = settings.routeCallAudioAndMicToHeadUnit
+        btHidWakeTrigger = settings.btHidWakeTrigger
+        autoAudioOnlyWhenMoving = settings.autoAudioOnlyWhenMoving
         insetLeft = settings.insetLeft
         insetTop = settings.insetTop
         insetRight = settings.insetRight
@@ -280,6 +286,9 @@ class SettingsPendingCopy {
         killOnDisconnect != settings.rawKillOnDisconnect ||
         autoKillOemApps != settings.autoKillOemApps ||
         raiseProjectionDuringCall != settings.raiseProjectionDuringCall ||
+        routeCallAudioAndMicToHeadUnit != settings.routeCallAudioAndMicToHeadUnit ||
+        btHidWakeTrigger != settings.btHidWakeTrigger ||
+        autoAudioOnlyWhenMoving != settings.autoAudioOnlyWhenMoving ||
         insetLeft != settings.insetLeft ||
         insetTop != settings.insetTop ||
         insetRight != settings.insetRight ||

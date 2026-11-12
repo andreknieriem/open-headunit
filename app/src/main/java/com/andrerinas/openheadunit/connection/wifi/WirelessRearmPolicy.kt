@@ -38,6 +38,10 @@ object WirelessRearmPolicy {
         /** Read once by the Helper launcher, and once per listener start. */
         val autoEnableHotspot: Boolean,
         val insecureAaRfcommListener: Boolean,
+        val btHidWakeTrigger: Boolean = true,
+        val nativePreferredDeviceMac: String = "",
+        val nativePokeBtMacs: Set<String> = emptySet(),
+        val nativePokeAllPairedDevices: Boolean = true,
     )
 
     fun requiresRearm(before: Config, after: Config): Boolean = before != after
@@ -56,6 +60,10 @@ object WirelessRearmPolicy {
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
         esp32Relay = esp32Relay,
         autoEnableHotspot = settings.autoEnableHotspot,
-        insecureAaRfcommListener = settings.insecureAaRfcommListener
+        insecureAaRfcommListener = settings.insecureAaRfcommListener,
+        btHidWakeTrigger = settings.btHidWakeTrigger,
+        nativePreferredDeviceMac = settings.nativePreferredDeviceMac,
+        nativePokeBtMacs = settings.nativePokeBtMacs,
+        nativePokeAllPairedDevices = settings.nativePokeAllPairedDevices,
     )
 }

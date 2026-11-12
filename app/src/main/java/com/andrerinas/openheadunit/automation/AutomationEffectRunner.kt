@@ -40,7 +40,7 @@ object AutomationEffectRunner {
                 }
                 is AutomationCommandPolicy.Effect.StartService -> startService(context, effect)
                 is AutomationCommandPolicy.Effect.ConnectSocket ->
-                    CoroutineScope(Dispatchers.IO).launch {
+                    component.applicationScope.launch {
                         component.commManager.connect(effect.ip, effect.port, ConnectionPriorityPolicy.Tier.USER)
                     }
                 is AutomationCommandPolicy.Effect.SetNightMode ->
@@ -181,7 +181,7 @@ object AutomationEffectRunner {
         }
         // The save suspends and a receiver must not block, so the reply says where to look rather
         // than waiting for the write.
-        CoroutineScope(Dispatchers.IO).launch {
+        App.provide(context).applicationScope.launch {
             val file = LogExporter.saveLogToPublicFile(context, settings.exporterLogLevel)
             if (file != null && !target.isNullOrBlank()) {
                 runCatching { file.copyTo(File(target), overwrite = true) }

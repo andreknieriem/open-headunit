@@ -1846,4 +1846,13 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Kết thúc phiên nếu rơ-le không phản hồi hai lần liên tiếp</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Thiết bị này gửi kiểm tra trạng thái đến rơ-le mỗi 2 giây. Nếu hai lần kiểm tra liên tiếp không có phản hồi, phiên Android Auto sẽ kết thúc.</string>
     <string name="esp32_relay_phase_failed">Thất bại: %1$s</string>
+    <string name="route_call_audio_and_mic">Route Phone Call Audio &amp; Mic to Head Unit</string>
+    <string name="route_call_audio_and_mic_summary">Use this device\'s mic and voice processing for phone calls</string>
+    <string name="route_call_audio_and_mic_description">Optimizes audio and microphone routing when using an old Android phone or tablet as a head unit receiver. Forces the head unit microphone on with VOICE_COMMUNICATION echo cancellation, announces the head unit Bluetooth MAC so calls can route cleanly, and releases the silent stand-in HFP link during active sessions so phone calls are never swallowed into silence.</string>
+    <string name="bt_hid_wake_trigger">Serverless Bluetooth Mouse Wake Trigger</string>
+    <string name="bt_hid_wake_trigger_summary">Wake locked phones via Bluetooth HID mouse without taking HFP</string>
+    <string name="bt_hid_wake_trigger_description">Registers the head unit stock Bluetooth radio as a serverless Bluetooth HID Mouse (Android 9+). Sends a 1-pixel wake nudge on connection so locked phones wake their screen and trigger wireless Android Auto automatically without occupying the phone\'s Hands-Free (HFP) call audio slot.</string>
+    <string name="auto_audio_only_when_moving">Parked Video / Moving Audio-Only (GPS Speed)</string>
+    <string name="auto_audio_only_when_moving_summary">Play video when parked and switch to audio when moving</string>
+    <string name="auto_audio_only_when_moving_description">Uses GPS speed to allow YouTube and video apps while parked (&lt; 5 km/h) and automatically switches Android Auto to audio/music mode (NO_VIDEO) when the car starts moving. Turn off to stay unrestricted at all times.</string>
 </resources>

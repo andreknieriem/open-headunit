@@ -38,4 +38,20 @@
     <usb-device class="239" subclass="4" protocol="1" />    <!-- RNDIS over Ethernet -->
     <usb-device class="8" subclass="6" protocol="1" />      <!-- MTP over mass storage -->
 
+    <!--
+        Major Android phone Vendor IDs so Android OS detects locked phones in Charge-Only or
+        Samsung CDC-ACM mode (when MTP is disabled by the phone's lock screen).
+    -->
+    <usb-device vendor-id="1256" />   <!-- 0x04E8 Samsung -->
+    <usb-device vendor-id="10007" />  <!-- 0x2717 Xiaomi / Redmi / POCO -->
+    <usb-device vendor-id="8888" />   <!-- 0x22B8 Motorola -->
+    <usb-device vendor-id="10864" />  <!-- 0x2A70 OnePlus -->
+    <usb-device vendor-id="8921" />   <!-- 0x22D9 OPPO / Realme -->
+    <usb-device vendor-id="11669" />  <!-- 0x2D95 Vivo / iQOO -->
+    <usb-device vendor-id="4046" />   <!-- 0x0FCE Sony -->
+    <usb-device vendor-id="4100" />   <!-- 0x1004 LG -->
+    <usb-device vendor-id="4817" />   <!-- 0x12D1 Huawei / Honor -->
+    <usb-device vendor-id="10518" />  <!-- 0x2916 Nothing -->
+    <usb-device vendor-id="2821" />   <!-- 0x0B05 ASUS -->
+
 </resources>

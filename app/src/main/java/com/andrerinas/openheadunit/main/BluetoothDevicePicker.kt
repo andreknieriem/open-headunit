@@ -65,7 +65,7 @@ object BluetoothDevicePicker {
         }
 
         val rowMacs = bondedDevices.map { it.address } + orphanMacs
-        val deviceNames = (bondedDevices.map { labelFor(it) } + orphanMacs.map { mac ->
+        val deviceLabels = (bondedDevices.map { labelFor(it) } + orphanMacs.map { mac ->
             discovery.inventory.peer(mac)?.name?.let { "$it ($mac)" } ?: mac
         }).toTypedArray()
         val checkedItems = rowMacs.map { selectedMacs.contains(it) }.toBooleanArray()
@@ -73,7 +73,7 @@ object BluetoothDevicePicker {
 
         MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
             .setTitle(titleResId)
-            .setMultiChoiceItems(deviceNames, checkedItems) { _, which, isChecked ->
+            .setMultiChoiceItems(deviceLabels, checkedItems) { _, which, isChecked ->
                 val mac = rowMacs[which]
                 if (isChecked) working.add(mac) else working.remove(mac)
             }

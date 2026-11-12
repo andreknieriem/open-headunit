@@ -36,6 +36,10 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
         service.userExitedAA = false
 
+        // If the phone is locked, send an immediate Serverless Bluetooth HID wake nudge (if paired)
+        // so the phone screen wakes and unlocks its USB gadget promptly.
+        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(service)
+
         if (UsbDeviceCompat.isInAccessoryMode(device)) {
             // Device already in AOA mode (re-enumerated after UsbAttachedActivity switched it).
             AppLog.i("USB accessory device attached, connecting.")
@@ -43,21 +47,40 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
         } else {
             // UsbAttachedActivity normally handles normal-mode devices via the manifest filter.
-            // If nothing has connected after a delay, the service checks too; the permission
-            // policy still defers a device to Android when Android owns its ask.
+            // However, a locked phone in Charge-Only / No-data-transfer mode often does not match
+            // usb_device_filter.xml, so Android never launches UsbAttachedActivity for it.
             val deviceName = UsbDeviceCompat(device).uniqueName
+            val matchesManifestFilter = UsbManifestFilter.matches(UsbDeviceCompat.describe(device))
 
-            AppLog.i("Normal USB device attached: $deviceName. Will check auto-connect in ${ATTACH_FALLBACK_DELAY_MS}ms...")
+            if (!matchesManifestFilter) {
+                AppLog.i("Normal USB device attached (locked/charging mode, not in manifest filter): $deviceName. Connecting immediately from service...")
+                UsbPermissionAsks.clearAttach(device.deviceName)
+                service.launchMainActivityIfNeeded("USB locked attach ($deviceName)", defersToAndroid = false)
+                manager.checkAlreadyConnected(
+                    force = true,
+                    settingsRestart = manager.pendingSettingsRestart(),
+                    trigger = UsbPlugInPolicy.Trigger.PLUG_IN
+                )
+            } else {
+                AppLog.i("Normal USB device attached: $deviceName. Will check auto-connect in ${ATTACH_FALLBACK_DELAY_MS}ms...")
 
-            service.launchMainActivityIfNeeded("USB normal attach ($deviceName)", defersToAndroid(device))
-            service.serviceScope.launch {
-                delay(ATTACH_FALLBACK_DELAY_MS)
-                // The manager retains this scan if its own AOA switch is still running.
-                // An Activity-owned switch keeps its separate handoff guard.
-                if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
-                    AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service...")
-                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(),
-                        trigger = UsbPlugInPolicy.Trigger.PLUG_IN)
+                service.launchMainActivityIfNeeded("USB normal attach ($deviceName)", defersToAndroid(device))
+                service.serviceScope.launch {
+                    delay(ATTACH_FALLBACK_DELAY_MS)
+                    // The manager retains this scan if its own AOA switch is still running.
+                    // An Activity-owned switch keeps its separate handoff guard.
+                    if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
+                        AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service (clearing attach defer)...")
+                        // Clear the attach stamp so UsbPermissionAskPolicy does not defer back to
+                        // UsbAttachedActivity after UsbAttachedActivity already failed to handle it.
+                        UsbPermissionAsks.clearAttach(device.deviceName)
+                        service.launchMainActivityIfNeeded("USB normal attach fallback ($deviceName)", defersToAndroid = false)
+                        manager.checkAlreadyConnected(
+                            force = true,
+                            settingsRestart = manager.pendingSettingsRestart(),
+                            trigger = UsbPlugInPolicy.Trigger.PLUG_IN
+                        )
+                    }
                 }
             }
         }
@@ -144,10 +167,27 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 val settings = App.provide(service).settings
                 val usbMode = UsbAccessoryMode(usbManager)
                 manager.launchAttempt(restart, Dispatchers.IO) {
-                    if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
-                        manager.noteAccessorySwitchRequested()
-                        AppLog.i("Successfully requested switch to accessory mode for $deviceName")
-                    } else {
+                    var switched = false
+                    for (attempt in 1..3) {
+                        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(service)
+                        val freshDevice = usbManager.deviceList[device.deviceName] ?: device
+                        if (UsbDeviceCompat.isInAccessoryMode(freshDevice)) {
+                            switched = true
+                            break
+                        }
+                        if (usbMode.connectAndSwitch(freshDevice, settings.useLibusb)) {
+                            manager.noteAccessorySwitchRequested()
+                            switched = true
+                            AppLog.i("Successfully requested switch to accessory mode for $deviceName (attempt $attempt)")
+                            break
+                        }
+                        if (attempt < 3) {
+                            AppLog.i("USB permission granted: AOA switch attempt $attempt failed for $deviceName; retrying in 1500ms...")
+                            delay(1_500L)
+                            if (App.provide(service).commManager.isConnected || usbManager.deviceList[device.deviceName] == null) break
+                        }
+                    }
+                    if (!switched) {
                         AppLog.w("USB permission granted but connectAndSwitch failed for $deviceName")
                     }
                 }

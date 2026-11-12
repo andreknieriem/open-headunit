@@ -466,8 +466,10 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
+                <!-- No BROWSABLE: a link on a web page must not be able to connect, disconnect or
+                     exit a live session. Automation tools send explicit VIEW intents, which need
+                     only DEFAULT. -->
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
                     android:host="connect"

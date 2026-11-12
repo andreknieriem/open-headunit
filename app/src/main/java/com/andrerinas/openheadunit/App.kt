@@ -165,7 +165,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         AppThemeManager.reapply(this, settings)
 
         if (settings.autoKillOemApps) {
-            CoroutineScope(Dispatchers.IO).launch {
+            component.applicationScope.launch {
                 OemAppManager.runAutoKillIfEnabled(this@App)
             }
         }

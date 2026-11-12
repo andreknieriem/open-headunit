@@ -1920,4 +1920,13 @@
     <string name="audio_matching_phase_gradient_hint">Slow playback</string>
     <string name="audio_matching_option" translatable="false">%1$s\n(%2$s)</string>
     <string name="audio_matching_description">OHU remains the default. WSOLA aligns overlapping waveforms; Phase Vocoder adjusts spectral phases. Short uses a shorter analysis window. Phase Gradient integrates phase gradients to reconstruct phases. These independent methods add processing latency; their names do not rank sound quality.\n\nNative methods: PCM music. Navigation, voice responses, system sounds and AAC use OHU.\nReconnect to apply. Removed engine preferences reset to OHU.</string>
+    <string name="route_call_audio_and_mic">Route Phone Call Audio &amp; Mic to Head Unit</string>
+    <string name="route_call_audio_and_mic_summary">Use this device\'s mic and voice processing for phone calls</string>
+    <string name="route_call_audio_and_mic_description">Optimizes audio and microphone routing when using an old Android phone or tablet as a head unit receiver. Forces the head unit microphone on with VOICE_COMMUNICATION echo cancellation, announces the head unit Bluetooth MAC so calls can route cleanly, and releases the silent stand-in HFP link during active sessions so phone calls are never swallowed into silence.</string>
+    <string name="bt_hid_wake_trigger">Pair with Serverless Bluetooth Keyboard/Mouse</string>
+    <string name="bt_hid_wake_trigger_summary">Keep trying to connect to selected device until connected</string>
+    <string name="bt_hid_wake_trigger_description">Registers this unit as a Serverless Bluetooth Keyboard and Mouse (Android 9+). When enabled, it continuously retries connecting to the selected wake device until connected, wakes locked screens, and starts Wireless Android Auto.</string>
+    <string name="auto_audio_only_when_moving">Parked Video / Moving Audio-Only (GPS Speed)</string>
+    <string name="auto_audio_only_when_moving_summary">Play video when parked and switch to audio when moving</string>
+    <string name="auto_audio_only_when_moving_description">Uses GPS speed to allow YouTube and video apps while parked (&lt; 5 km/h) and automatically switches Android Auto to audio/music mode (NO_VIDEO) when the car starts moving. Turn off to stay unrestricted at all times.</string>
 </resources>

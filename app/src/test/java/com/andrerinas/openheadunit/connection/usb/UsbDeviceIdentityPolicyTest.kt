@@ -294,4 +294,36 @@ class UsbDeviceIdentityPolicyTest {
     fun `an empty bus entry is rejected rather than throwing`() {
         assertFalse(evaluate(Device(0x1234, 0x5678, 0x00, emptyList())).accepted)
     }
+
+    @Test
+    fun `a locked Android phone in charge-only or Samsung CDC-ACM mode is accepted`() {
+        // Locked Samsung (0x04E8) with bDeviceClass = 0x02 (USB_CLASS_COMM) or 0x00 exposing only CDC-ACM modem pair when MTP is blocked on lock screen
+        for (devClass in listOf(0x00, 0x02, 0xEF, 0xFF)) {
+            val lockedSamsung = Device(
+                vendorId = 0x04E8, productId = 0x6860, deviceClass = devClass,
+                interfaces = listOf(
+                    Interface(0x02, 0x02, 0x01),
+                    Interface(0x0A, 0x00, 0x00, hasBulkIn = true, hasBulkOut = true),
+                ),
+            )
+            assertEquals("accepted: Android phone in locked/charging mode", evaluate(lockedSamsung).toString())
+        }
+
+        // Locked Samsung (0x04E8) with a vendor interface alongside a secondary CDC-NCM configuration (0x02 / 0x0D) when MTP (06/01/01) is hidden on lock screen
+        val lockedSamsungWithNcmConfig = Device(
+            vendorId = 0x04E8, productId = 0x6860, deviceClass = 0x02,
+            interfaces = listOf(
+                vendorClass(null),
+                Interface(0x02, 0x0D, 0x00),
+                Interface(0x0A, 0x00, 0x00, hasBulkIn = true, hasBulkOut = true),
+            ),
+        )
+        assertTrue(evaluate(lockedSamsungWithNcmConfig).accepted)
+
+        // Locked Pixel (0x18D1) / Xiaomi (0x2717) / OnePlus (0x2A70) in "No data transfer" (0 interfaces or non-bulk interface)
+        for (vid in listOf(0x04E8, 0x18D1, 0x2717, 0x2A70, 0x22B8)) {
+            val lockedChargeOnly = Device(vid, 0x4EE1, 0x00, emptyList())
+            assertTrue("VID 0x%04X should be accepted when locked".format(vid), evaluate(lockedChargeOnly).accepted)
+        }
+    }
 }

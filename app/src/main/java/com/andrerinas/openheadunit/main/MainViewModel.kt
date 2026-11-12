@@ -44,6 +44,10 @@ class MainViewModel(application: Application): AndroidViewModel(application), Us
             ContextCompat.registerReceiver(app, usbReceiver, UsbReceiver.createPermissionFilter(), ContextCompat.RECEIVER_NOT_EXPORTED)
             isRegistered = true
         }
+        refreshUsbDevices()
+    }
+
+    fun refreshUsbDevices() {
         usbDevices.value = createDeviceList(settings.allowedDevices)
     }
 

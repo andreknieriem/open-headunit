@@ -269,7 +269,7 @@ class QuickSettingsFragment : DialogFragment() {
         MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
             .setTitle(R.string.change_screen_orientation)
             .setSingleChoiceItems(options, settings.screenOrientation.value) { dialog, which ->
-                val newOrientation = Settings.ScreenOrientation.fromInt(which) ?: Settings.ScreenOrientation.SYSTEM
+                val newOrientation = Settings.ScreenOrientation.fromInt(which) ?: Settings.ScreenOrientation.LANDSCAPE
                 settings.screenOrientation = newOrientation
                 settings.commit()
                 // Applied live: the projection activity re-reads the orientation on this broadcast.

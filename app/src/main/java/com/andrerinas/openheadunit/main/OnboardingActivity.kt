@@ -144,6 +144,7 @@ class OnboardingActivity : BaseActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        requestedOrientation = settings.screenOrientation.androidOrientation
         super.onCreate(savedInstanceState)
 
         // Match the app theme overlays used by MainActivity/SettingsActivity so the wizard
@@ -171,7 +172,7 @@ class OnboardingActivity : BaseActivity() {
 
         applyCompactChrome()
 
-        selectedPortrait = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+        selectedPortrait = AnnouncedDensityPolicy.projectsPortrait(settings.screenOrientation)
         selectedSize = OnboardingDisplayPolicy.initialPreset(settings.displaySizePreset, estimateSizePreset())
 
         buildStepperDots()
@@ -1403,10 +1404,12 @@ class OnboardingActivity : BaseActivity() {
         // apply the DPI the user set in the picker. A test they chose to apply is the exception.
         if (!isUpgrader() || preflight != null) {
             val previousViewMode = settings.viewMode
-            // Set the resolution the panel warrants (the shared panel ceiling; mild downscaling of a
-            // slightly-larger standard resolution is allowed, heavy downscaling is not — see panelCeiling).
-            settings.resolutionId = preflight?.resolution?.id
-                ?: SystemOptimizer.recommendedResolution(panel.widthPixels, panel.heightPixels).id
+            // Keep 2160p (4K) as the default resolution unless preflight explicitly detected an H.265 failure.
+            settings.resolutionId = if (preflight != null && VideoPreflightNote.H265_FAILED in preflight.notes) {
+                preflight.resolution.id
+            } else {
+                Settings.Resolution._3840x2160.id
+            }
             settings.videoCodec = preflight?.codec?.settingsValue ?: result.recommendedVideoCodec
             settings.viewMode = preflight?.viewMode ?: result.recommendedViewMode
             settings.screenOrientation = result.suggestedOrientation

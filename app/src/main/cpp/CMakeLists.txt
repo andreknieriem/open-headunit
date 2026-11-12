@@ -28,6 +28,7 @@ set_target_properties(usb1.0 PROPERTIES
 
 # Define our JNI wrapper library
 add_library(usbhelper SHARED usbhelper.c)
+target_compile_options(usbhelper PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter)
 
 # Link wrapper with libusb and Android logging framework
 target_link_libraries(usbhelper

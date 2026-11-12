@@ -265,6 +265,41 @@ object BluetoothHelper {
      */
     fun isDeviceConnected(device: BluetoothDevice): Boolean = deviceConnectionState(device) == true
 
+    /**
+     * Whether [address] matches one of the user's configured Bluetooth target devices
+     * (case-insensitive) across "Auto-start on Bluetooth", "Device to wake for wireless
+     * Android Auto", and "Preferred device".
+     */
+    fun isTargetBluetoothDevice(settings: Settings, address: String?): Boolean {
+        val normalized = address?.trim().orEmpty()
+        if (normalized.isEmpty()) return false
+        return settings.configuredBluetoothTargetMacs.any { it.equals(normalized, ignoreCase = true) }
+    }
+
+    /**
+     * Whether any paired device selected by the user is currently connected over Bluetooth
+     * (ACL/profile or Serverless Bluetooth HID Keyboard/Mouse).
+     */
+    fun isAnyTargetBluetoothConnected(context: Context, settings: Settings): Boolean {
+        val targetMacs = settings.configuredBluetoothTargetMacs
+        if (targetMacs.isEmpty()) return false
+        if (com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.isTargetDeviceConnected(targetMacs)) {
+            return true
+        }
+        val adapter = getBluetoothAdapter(context) ?: return false
+        val bonded = try {
+            adapter.bondedDevices ?: emptySet()
+        } catch (_: SecurityException) {
+            return false
+        } catch (_: Exception) {
+            return false
+        }
+        return bonded.any { device ->
+            val addr = device.address ?: return@any false
+            targetMacs.any { it.equals(addr, ignoreCase = true) } && isDeviceConnected(device)
+        }
+    }
+
     /** One bonded device with the policy's verdict on it. */
     data class DriverCandidate(
         val device: BluetoothDevice,

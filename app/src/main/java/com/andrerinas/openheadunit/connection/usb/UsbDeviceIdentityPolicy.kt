@@ -59,6 +59,42 @@ object UsbDeviceIdentityPolicy {
         0x2D05, // accessory + audio + ADB
     )
 
+    private val AUDIO_ONLY_ACCESSORY_PIDS = setOf(
+        0x2D02, // audio only
+        0x2D03, // audio + ADB
+    )
+
+    /**
+     * Known Android phone Vendor IDs. When an Android phone is plugged into USB while **locked**
+     * (in "No data transfer" / Charge-Only mode), Android disables the MTP interface until unlock:
+     * Samsung exposes only its CDC-ACM modem pair (02/02 + 0A/00), and Pixel/Xiaomi/OnePlus/etc.
+     * expose 0 interfaces or a non-bulk charging/HID/SID interface. Endpoint 0 still answers AOA
+     * control transfers (51/52/53) and switches the locked phone into 0x18D1:0x2D00 accessory mode.
+     */
+    val KNOWN_ANDROID_PHONE_VIDS = setOf(
+        0x18D1, // Google / Pixel / Nexus / AAWireless
+        0x04E8, // Samsung
+        0x2717, // Xiaomi / Redmi / POCO
+        0x22B8, // Motorola
+        0x2A70, // OnePlus
+        0x22D9, // OPPO / Realme
+        0x2D95, // Vivo / iQOO
+        0x0FCE, // Sony
+        0x1004, // LG
+        0x12D1, // Huawei / Honor
+        0x2916, // Nothing
+        0x0B05, // ASUS
+        0x0BB4, // HTC
+        0x19D2, // ZTE / Nubia / RedMagic
+        0x05C6, // Qualcomm
+        0x0E8D, // MediaTek
+        0x1782, // Unisoc
+        0x1BBB, // TCL / Alcatel
+        0x2A45, // Meizu
+        0x109B, // Hisense / Honor
+        0x2B4C, // Fairphone
+    )
+
     /**
      * `iInterface` on the vendor-class interface. Three different products present the identical
      * FF/FF/00 triple, and only this string tells them apart: the accessory gadget names itself,
@@ -98,6 +134,10 @@ object UsbDeviceIdentityPolicy {
             return Verdict(true, "already in accessory mode")
         }
 
+        if (device.vendorId == GOOGLE_VID && device.productId in AUDIO_ONLY_ACCESSORY_PIDS) {
+            return Verdict(false, "no Android interface")
+        }
+
         // Rarely fires, because a composite device reports class 0 and defers to its interfaces.
         // It is still the cheapest way to drop a device that has declared what it is.
         if (device.deviceClass in EXCLUDED_DEVICE_CLASSES) {
@@ -120,6 +160,14 @@ object UsbDeviceIdentityPolicy {
             }
         }
 
+        // A locked Android phone in "No data transfer" / Charge-Only mode disables MTP while the
+        // lock screen is up, exposing either 0 interfaces, a control/HID/SID interface without
+        // bulk endpoints, or (on Samsung) only its CDC-ACM modem pair. Endpoint 0 still answers
+        // AOA protocol requests (51/52/53) to switch the locked phone into accessory mode.
+        if (isLockedOrChargingAndroidPhone(device)) {
+            return Verdict(true, "Android phone in locked/charging mode")
+        }
+
         // A device whose interfaces are only a CDC-ACM pair is a serial port: a vendor dongle's own
         // channel, not a phone. Named apart from the fall-through because "no Android interface"
         // reads like a descriptor we failed to find rather than one we recognised.
@@ -128,6 +176,15 @@ object UsbDeviceIdentityPolicy {
         }
 
         return Verdict(false, "no Android interface")
+    }
+
+    private fun isLockedOrChargingAndroidPhone(device: Device): Boolean {
+        if (device.vendorId !in KNOWN_ANDROID_PHONE_VIDS) return false
+        // Reject only pure USB mass-storage flash drives (08/06/50)
+        if (device.interfaces.isNotEmpty() && device.interfaces.all { it.ifaceClass == 0x08 && it.protocol == 0x50 }) {
+            return false
+        }
+        return true
     }
 
     /**
@@ -173,6 +230,10 @@ object UsbDeviceIdentityPolicy {
     private fun accessoryVerdict(device: Device, iface: Interface): Verdict = when {
         iface.name == NAME_ACCESSORY -> Verdict(true, "AOAP")
         iface.name == NAME_MTP -> Verdict(true, "MTP")
+        // Known Android phone vendors (e.g. Samsung 0x04E8) may report vendor/comm deviceClass
+        // or carry a secondary CDC NCM configuration alongside their vendor interface when locked.
+        device.vendorId in KNOWN_ANDROID_PHONE_VIDS ->
+            Verdict(true, "AOAP (vendor interface named ${describeName(iface.name)})")
         // An Android gadget always defers to its interfaces and reports device class 0. A vendor
         // class on the device descriptor is the adapter saying the whole device is proprietary,
         // and it is the only thing separating one from a phone in file transfer, whose interface

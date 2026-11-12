@@ -11,6 +11,9 @@ import com.andrerinas.openheadunit.connection.carkey.CarKeysManager
 import com.andrerinas.openheadunit.utils.SUExecutor
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.aap.NightOverlayState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class AppComponent(private val app: App) {
 
@@ -33,4 +36,6 @@ class AppComponent(private val app: App) {
     val suExecutor = SUExecutor()
 
     val carKeysManager = CarKeysManager()
+
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 }

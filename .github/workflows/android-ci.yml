@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Cancel superseded runs on the same ref (e.g. a new push to an open PR).
 concurrency:
@@ -51,11 +52,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # github flavor only: the playstore flavor cannot compile because
-      # VpnControl.kt lives solely in app/src/github. When that source-set
-      # split is fixed, add an assemblePlaystoreDebug build here.
-      - name: Assemble github debug APK
-        run: ./gradlew :app:assembleGithubDebug --stacktrace
+      - name: Assemble github & playstore debug APKs
+        run: ./gradlew :app:assembleGithubDebug :app:assemblePlaystoreDebug --stacktrace
 
       - name: Upload debug APK
         if: always()
@@ -87,7 +85,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run unit tests
-        run: ./gradlew :app:testGithubDebugUnitTest --stacktrace
+        run: ./gradlew :app:testGithubDebugUnitTest :app:testPlaystoreDebugUnitTest --stacktrace
+
+      - name: Run C++ native-time-stretch tests
+        run: |
+          cmake -S app/src/test/native-time-stretch -B build/native-time-stretch
+          cmake --build build/native-time-stretch
+          ctest --test-dir build/native-time-stretch --output-on-failure
 
       # Gradle populates the Kotlin compiler/runtime cache used by this host harness.
       # Explicit bash preserves a Python failure through tee, so this check fails too.

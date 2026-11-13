@@ -1558,6 +1558,9 @@ class AapService : Service() {
 
     private fun onConnected() {
         usbLauncherManager.setSwitchingToProjection(false)
+        if (!commManager.isWirelessSession && !commManager.isLoopbackSession) {
+            launchMainActivityIfNeeded("USB session connected", defersToAndroid = false)
+        }
         updateNotification()
         // apply_hfp: projection TCP is up — ESP32 relay must release HFP and stop wake retries.
         // Only when AA came up over the board (not USB / Headunit Server with a saved board).

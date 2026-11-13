@@ -132,46 +132,22 @@ class SettingsFragment : Fragment() {
     // Wireless items here only appear in Basic when the user connects wirelessly (see filterSettings).
     private val basicSettingIds = setOf(
         // General
-        "autoOptimize", "connectionMode", "appLanguage", "listenForUsbDevices",
-        // Wireless (shown in Basic only when WiFi is among the selected connection modes).
-        // The hotspot entries come along with the transport choice: they only render once Hotspot
-        // is picked, and on a device that will not let an app read its hotspot configuration the
-        // manual name is the only way to finish setting the route up.
+        "permissions", "connectionMode", "bluetoothAddress", "listenForUsbDevices", "appLanguage",
+        // Wireless (shown in Basic only when WiFi is among the selected connection modes)
         "wifiConnectionMode",
-        "nativeApTransport", "hotspotBand",
-        // The WiFi Direct band, for the same reason as the hotspot one beside it: it is the first
-        // thing to try when a wireless session connects and shows no picture, and a user sent to
-        // Advanced to find it is a user who never finds it.
+        "nativeApTransport", "hotspotBand", "hotspotSsidOverride", "hotspotPasswordOverride",
         "wifiDirectBand",
-        // And the channel within the band, which is the same kind of first thing to try: a
-        // network on a channel the phone's regulatory domain forbids is one it never lists.
-        "fiveGhzChannel",
-        "hotspotSsidOverride", "hotspotPasswordOverride",
-        // "What is my head unit's WiFi password" is an everyday question, not an Advanced one.
-        "wifiDirectLastNetwork", "wifiDirectGroupIdentity",
-        // Which phone Native AA wakes: the first thing to set when two phones share the car.
-        "btHidWakeTrigger", "nativePreferredDevice", "nativePokeBt", "nativePokeAllPaired",
-        // Which Bluetooth the phone pairs with, and the ESP32 relay page it leads to once chosen.
-        "bluetoothLink", "Esp32Relay",
-        "hotspotInterfaceOverride",
-        // Dark mode
-        "darkModeSettings",
-        // Automation
-        "autoStartSettings", "autoConnectSettings", "enableCarLauncher",
-        // Navigation
-        "gpsNavigation",
-        // Graphic
-        "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "startInFullscreenMode",
-        // Theming
-        "loadingScreen", "customization",
-        // Video
-        "videoCodec", "fpsLimit",
-        // Input
-        "keymap",
+        "btHidWakeTrigger", "nativePreferredDevice", "nativePokeBt",
+        // Graphics & Video
+        "resolution", "screenOrientation", "autoAudioOnlyWhenMoving",
         // Audio
-        "enableAudioSink", "audioStreamSettings", "audioMatchingMode", "audioMatchingModeHint", "useAAudioOutput", "micSettings", "audioVolumeOffsets",
+        "enableAudioSink", "routeCallAudioAndMicToHeadUnit",
+        // Automation (includes MacroDroid/Tasker external configuration)
+        "autoStartSettings", "autoConnectSettings", "allowExternalConfiguration",
+        // Navigation & Theming
+        "gpsNavigation", "darkModeSettings",
         // Info
-        "version", "about", "support"
+        "version", "about"
     )
 
     // Local state to hold changes before saving

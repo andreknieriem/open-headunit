@@ -158,6 +158,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 return
             }
             AppLog.i("USB permission granted for $deviceName")
+            service.launchMainActivityIfNeeded("USB permission granted ($deviceName)", defersToAndroid = false)
             if (!manager.beginAttempt(Tier.USB, "USB $deviceName", restart)) return
             if (UsbDeviceCompat.isInAccessoryMode(device)) {
                 manager.launchAttempt(restart) {

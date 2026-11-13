@@ -2,6 +2,8 @@ package com.andrerinas.openheadunit.utils
 
 import android.app.Application
 import android.content.Context
+import com.andrerinas.openheadunit.input.InputAction
+import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.main.SettingsPendingCopy
 import org.json.JSONObject
 import org.junit.Assert.*
@@ -100,6 +102,30 @@ class SettingsBackupManagerTest {
         assertTrue(Settings(context).showHomeClock)
         assertEquals(51.123456789, Settings(context).fixedSunriseLatitude, 0.0)
         assertEquals(-122.123456789, Settings(context).fixedSunriseLongitude, 0.0)
+    }
+
+    @Test fun `an older backup's key mappings and gestures replace the newer ones`() {
+        prefs.edit().clear()
+            .putStringSet(Settings.KEY_BINDINGS, setOf("140=local:dim"))
+            .putString("gesture-action-left", "local:overlay")
+            .putString("gesture-action-right", "local:dim")
+            .commit()
+        val json = SettingsBackupManager.exportToJson(
+            mapOf("key-codes" to setOf("87-131"), "left-two-finger-gesture" to 0), "test", 1
+        )
+        SettingsBackupManager.importFromJson(context, json, applyTheme = false)
+        val settings = Settings(context)
+        assertEquals(mapOf(131 to InputAction.AaKey(87)), settings.keyBindings)
+        assertEquals(InputAction.None, settings.gestureAction(Settings.GestureSlot.LEFT))
+        // Not in the backup: kept.
+        assertEquals(InputAction.Local(LocalAction.DIM_SCREEN), settings.gestureAction(Settings.GestureSlot.RIGHT))
+    }
+
+    @Test fun `a newer backup's bindings win over its legacy key mappings`() {
+        assertEquals(
+            emptySet<String>(),
+            SettingsBackupManager.supersededKeys(setOf("key-codes", Settings.KEY_BINDINGS, "left-two-finger-gesture", "gesture-action-left"))
+        )
     }
 
     @Test fun `legacy backup merges without resetting missing user preferences`() {

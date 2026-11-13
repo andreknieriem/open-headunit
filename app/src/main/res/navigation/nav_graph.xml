@@ -162,12 +162,41 @@
     <fragment
         android:id="@+id/keymapFragment"
         android:name="com.andrerinas.openheadunit.main.KeymapFragment"
-        android:label="@string/keymap" />
+        android:label="@string/keymap">
+        <action
+            android:id="@+id/action_keymapFragment_to_actionPickerFragment"
+            app:destination="@id/actionPickerFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/gesturesFragment"
         android:name="com.andrerinas.openheadunit.main.GesturesFragment"
-        android:label="@string/gestures" />
+        android:label="@string/gestures">
+        <action
+            android:id="@+id/action_gesturesFragment_to_actionPickerFragment"
+            app:destination="@id/actionPickerFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/actionPickerFragment"
+        android:name="com.andrerinas.openheadunit.main.ActionPickerFragment"
+        android:label="@string/action_picker_title">
+        <action
+            android:id="@+id/action_actionPickerFragment_to_appDrawerFragment"
+            app:destination="@id/appDrawerFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/permissionsFragment"

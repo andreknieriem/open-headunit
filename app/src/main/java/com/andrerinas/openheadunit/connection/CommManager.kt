@@ -9,7 +9,12 @@ import com.andrerinas.openheadunit.aap.DimState
 import com.andrerinas.openheadunit.aap.AaPresentationSession
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
+import com.andrerinas.openheadunit.input.InputAction
+import com.andrerinas.openheadunit.input.InputActionCodec
+import com.andrerinas.openheadunit.input.KeyBindingPolicy
+import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
+import com.andrerinas.openheadunit.main.AppLauncher
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
@@ -99,6 +104,11 @@ class CommManager(
 
     /** The dimmer outlives the projection activity and clears when a session ends. */
     val dimState = DimState()
+
+    private val _localActions = MutableSharedFlow<LocalAction>(extraBufferCapacity = 4)
+
+    /** Projection-screen actions a bound key asked for; the projection activity runs them. */
+    val localActions: SharedFlow<LocalAction> = _localActions.asSharedFlow()
 
     /**
      * Represents the lifecycle state of the Android Auto connection.
@@ -1333,19 +1343,37 @@ class CommManager(
             return
         }
 
-        // 1. Remapping (Physical -> Logical)
-        // Check if the physical keyCode is mapped to a logical action in settings.
-        // If not mapped, we use the original keyCode as the logical code.
-        var logicalCode = settings.keyCodes.entries.find { it.value == keyCode }?.key ?: keyCode
+        // 1. Bindings (physical key -> action). An unbound key goes on as itself.
+        val logicalCode = when (val resolution = KeyBindingPolicy.resolve(settings.keyBindings, keyCode, isPress)) {
+            is KeyBindingPolicy.Resolution.SendToAa -> resolution.logicalCode
+            is KeyBindingPolicy.Resolution.Swallow -> return
+            is KeyBindingPolicy.Resolution.Run -> {
+                runBoundAction(resolution.action, keyCode)
+                return
+            }
+            KeyBindingPolicy.Resolution.Unbound -> {
+                // 2. Proprietary Key Filtering
+                // An unbound proprietary key (internal ID > 1000) is dropped: these are meant to be
+                // bound in the Keymap settings, and Android Auto would read them as KEYCODE_UNKNOWN.
+                if (keyCode >= 1000) {
+                    AppLog.v("CommManager: Ignoring unmapped proprietary key $keyCode")
+                    return
+                }
+                keyCode
+            }
+        }
+        sendLogicalKey(logicalCode, isPress, downTime, source)
+    }
 
-        // 2. Proprietary Key Filtering
-        // If the key is proprietary (internal ID > 1000) and NOT mapped, we drop it.
-        // These keys are intended to be learned/mapped in the Keymap settings.
-        // Sending them directly to AA would result in KEYCODE_UNKNOWN.
-        if (keyCode >= 1000 && logicalCode == keyCode) {
-            AppLog.v("CommManager: Ignoring unmapped proprietary key $keyCode")
+    /**
+     * Sends an Android Auto key as is, without looking at key bindings. For gestures bound to an
+     * Android Auto key, and for [sendKey] once a binding was resolved.
+     */
+    fun sendLogicalKey(code: Int, isPress: Boolean, downTime: Long? = null, source: String = "unknown") {
+        if (_connectionState.value !is ConnectionState.TransportStarted) {
             return
         }
+        var logicalCode = code
 
         // [FIX] BMW/Rotary Enter remapping: Most AA apps expect DPAD_CENTER (23) for selection,
         // but physical rotary knobs often send ENTER (66). Remap 66 -> 23 to ensure selection works.
@@ -1390,6 +1418,15 @@ class CommManager(
 
         AppLog.i("CommManager: TX Key -> AA=$logicalCode (isPress=$isPress) src=$source")
         _transport?.send(logicalCode, isPress)
+    }
+
+    private fun runBoundAction(action: InputAction, keyCode: Int) {
+        AppLog.i("CommManager: Key $keyCode runs bound action ${InputActionCodec.encode(action)}")
+        when (action) {
+            is InputAction.Local -> _localActions.tryEmit(action.kind)
+            is InputAction.LaunchApp -> AppLauncher.launch(context, action.target)
+            is InputAction.AaKey, InputAction.None -> Unit
+        }
     }
 
     /**

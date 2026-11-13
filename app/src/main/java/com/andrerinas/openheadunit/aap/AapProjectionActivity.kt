@@ -38,7 +38,11 @@ import com.andrerinas.openheadunit.input.GestureOutcomePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.input.RemoteTouchPolicy
 import com.andrerinas.openheadunit.input.TouchCoordinateMapper
+import com.andrerinas.openheadunit.input.InputAction
+import com.andrerinas.openheadunit.input.InputActionCodec
+import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.input.TwoFingerGestureTracker
+import com.andrerinas.openheadunit.main.AppLauncher
 import com.andrerinas.openheadunit.utils.ActivityState
 import kotlinx.coroutines.launch
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
@@ -96,7 +100,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private lateinit var projectionView: IProjectionView
     private val videoDecoder: VideoDecoder by lazy { App.provide(this).videoDecoder }
     private val settings: Settings by lazy { Settings(this) }
-    private val cachedKeyCodes: Map<Int, Int> by lazy { settings.keyCodes }
+    private val cachedKeyBindings: Map<Int, InputAction> by lazy { settings.keyBindings }
     private var isSurfaceSet = false
     private var ownedSurface: android.view.Surface? = null
     private var overlayState = OverlayState.STARTING
@@ -145,9 +149,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val overlayOrigin = IntArray(2)
     private val gestureHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val twoFingerLongPress = Runnable {
-        if (twoFingerTracker?.still == true &&
-            settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
-            lastTwoFingerEvent?.let { finishTwoFingerGesture(settings.longPressTwoFingerGesture, it, "LONG_PRESS") }
+        val action = settings.gestureAction(Settings.GestureSlot.LONG_PRESS)
+        if (twoFingerTracker?.still == true && action != InputAction.None) {
+            lastTwoFingerEvent?.let { finishTwoFingerGesture(action, it, "LONG_PRESS") }
         }
     }
     // A pending tap whose last finger stays down past the window: the phone gets that finger.
@@ -1153,6 +1157,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     lastSurfaceSetMs = 0L
                     relaunchRecovery.resetSession()
                 }
+            }
+        }
+
+        // Keys bound to a projection-screen action reach the service first; this screen runs them.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                commManager.localActions.collect { performLocalAction(it) }
             }
         }
 
@@ -2211,7 +2222,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
                     if (tracker.mayBecome(enabledGestures())) {
                         lastTwoFingerEvent = MotionEvent.obtain(ev)
-                        if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
+                        if (settings.gestureAction(Settings.GestureSlot.LONG_PRESS) != InputAction.None) {
                             gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
                         }
                     } else {
@@ -2237,12 +2248,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     lastTwoFingerEvent = MotionEvent.obtain(ev)
                 }
                 val action = when (swipe) {
-                    TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.leftTwoFingerGesture
-                    TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.rightTwoFingerGesture
-                    TwoFingerGestureTracker.Swipe.DOWN -> settings.downTwoFingerGesture
-                    null -> Settings.GestureAction.DISABLED
+                    TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.gestureAction(Settings.GestureSlot.LEFT)
+                    TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.gestureAction(Settings.GestureSlot.RIGHT)
+                    TwoFingerGestureTracker.Swipe.DOWN -> settings.gestureAction(Settings.GestureSlot.DOWN)
+                    null -> InputAction.None
                 }
-                if (action != Settings.GestureAction.DISABLED) {
+                if (action != InputAction.None) {
                     finishTwoFingerGesture(action, ev, swipe?.name.orEmpty())
                     return true
                 }
@@ -2275,8 +2286,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 val tap = tracker?.tap(enabledGestures(), ev.eventTime)
                 if (tap != null) {
                     val action = when (tap) {
-                        TwoFingerGestureTracker.Tap.LEFT_TAP -> settings.leftTapTwoFingerGesture
-                        TwoFingerGestureTracker.Tap.RIGHT_TAP -> settings.rightTapTwoFingerGesture
+                        TwoFingerGestureTracker.Tap.LEFT_TAP -> settings.gestureAction(Settings.GestureSlot.LEFT_TAP)
+                        TwoFingerGestureTracker.Tap.RIGHT_TAP -> settings.gestureAction(Settings.GestureSlot.RIGHT_TAP)
                     }
                     finishTwoFingerGesture(action, ev, tap.name)
                     return true
@@ -2311,9 +2322,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         lastTwoFingerEvent = null
     }
 
-    private fun finishTwoFingerGesture(action: Settings.GestureAction, event: MotionEvent, source: String) {
+    private fun finishTwoFingerGesture(action: InputAction, event: MotionEvent, source: String) {
         remoteTouch.recognise()
-        AppLog.i("AapProjectionActivity: two-finger gesture $source -> $action, withheld from Android Auto")
+        AppLog.i("AapProjectionActivity: two-finger gesture $source -> ${InputActionCodec.encode(action)}, withheld from Android Auto")
         val cancel = MotionEvent.obtain(event)
         cancel.action = MotionEvent.ACTION_CANCEL
         consumeGestureUntilUp = true
@@ -2331,12 +2342,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         (touchOverlayView?.width?.takeIf { it > 0 } ?: HeadUnitScreenConfig.getUsableWidth()).toFloat()
 
     private fun enabledGestures() = TwoFingerGestureTracker.Enabled(
-        left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
-        right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
-        longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED,
-        leftTap = settings.leftTapTwoFingerGesture != Settings.GestureAction.DISABLED,
-        rightTap = settings.rightTapTwoFingerGesture != Settings.GestureAction.DISABLED,
-        down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED
+        left = settings.gestureAction(Settings.GestureSlot.LEFT) != InputAction.None,
+        right = settings.gestureAction(Settings.GestureSlot.RIGHT) != InputAction.None,
+        longPress = settings.gestureAction(Settings.GestureSlot.LONG_PRESS) != InputAction.None,
+        leftTap = settings.gestureAction(Settings.GestureSlot.LEFT_TAP) != InputAction.None,
+        rightTap = settings.gestureAction(Settings.GestureSlot.RIGHT_TAP) != InputAction.None,
+        down = settings.gestureAction(Settings.GestureSlot.DOWN) != InputAction.None
     )
 
     /** Runs on every start too, so a strength changed in settings while the dimmer is on takes effect. */
@@ -2364,8 +2375,19 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         container.addView(dimmer, DimmerLayerPolicy.index(kinds))
     }
 
-    private fun performTouchGesture(action: Settings.GestureAction): Boolean = when (GestureOutcomePolicy.decide(action)) {
-        GestureOutcomePolicy.Outcome.None -> false
+    /** What a gesture does: the same choices a key binding has. */
+    private fun performTouchGesture(action: InputAction): Boolean = when (action) {
+        InputAction.None -> false
+        is InputAction.Local -> performLocalAction(action.kind)
+        is InputAction.AaKey -> {
+            commManager.sendLogicalKey(action.keyCode, true, source = "gesture")
+            commManager.sendLogicalKey(action.keyCode, false, source = "gesture")
+            true
+        }
+        is InputAction.LaunchApp -> AppLauncher.launch(this, action.target)
+    }
+
+    private fun performLocalAction(action: LocalAction): Boolean = when (GestureOutcomePolicy.decide(action)) {
         GestureOutcomePolicy.Outcome.ShowExitDialog -> {
             showExitDialog()
             true
@@ -2712,7 +2734,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // If Back was explicitly learned in Keymap and transport is running,
         // route it through CommManager so it can be remapped and sent to Android Auto.
         if (commManager.connectionState.value is CommManager.ConnectionState.TransportStarted &&
-            ProjectionKeyPolicy.shouldRouteBackKeyToProjection(cachedKeyCodes, event.keyCode)) {
+            ProjectionKeyPolicy.shouldRouteBackKeyToProjection(cachedKeyBindings, event.keyCode)) {
             commManager.sendKey(event.keyCode, action == KeyEvent.ACTION_DOWN, event.downTime, "projection")
             return true
         }

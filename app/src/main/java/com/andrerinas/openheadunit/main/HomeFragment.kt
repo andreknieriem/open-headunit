@@ -1578,15 +1578,7 @@ class HomeFragment : Fragment() {
 
     private fun onFavoriteClicked(slot: Int) {
         val target = App.provide(requireContext()).settings.homeFavoriteApps[slot]
-        val launched = when (target) {
-            is FavoriteTarget.Empty -> false
-            is FavoriteTarget.App -> AppDrawerFragment.launchPackage(requireContext(), target.packageName)
-            is FavoriteTarget.Shortcut ->
-                LauncherShortcuts.launch(requireContext(), target.packageName, target.shortcutId) ||
-                    // Unreadable outside the home role: the app is the closest thing that still opens.
-                    (!LauncherShortcuts.canRead(requireContext()) &&
-                        AppDrawerFragment.launchPackage(requireContext(), target.packageName))
-        }
+        val launched = AppLauncher.launch(requireContext(), target)
         if (!launched) openAppDrawer(favoriteSlot = slot)
     }
 

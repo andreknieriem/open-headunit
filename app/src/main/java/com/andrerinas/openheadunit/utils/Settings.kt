@@ -13,7 +13,11 @@ import android.location.Location
 import android.media.AudioManager
 import android.os.Build
 import com.andrerinas.openheadunit.aap.DimPolicy
+import com.andrerinas.openheadunit.input.InputAction
+import com.andrerinas.openheadunit.input.InputActionCodec
+import com.andrerinas.openheadunit.input.KeyBindingPolicy
 import com.andrerinas.openheadunit.input.KeyCode
+import com.andrerinas.openheadunit.input.toInputAction
 import com.andrerinas.openheadunit.main.FavoriteAppsPolicy
 import com.andrerinas.openheadunit.main.FavoriteTarget
 import com.andrerinas.openheadunit.main.HomePagesPolicy
@@ -339,6 +343,36 @@ class Settings(private val context: Context) {
             prefs.edit().putStringSet("key-codes", list.toSet()).apply()
         }
 
+    /**
+     * What each physical key does (physical key code → action), stored as `"<physical>=<action>"`
+     * with [InputActionCodec]. Until it is first written, it is read from the older [keyCodes] map,
+     * so mappings learned before bindings existed keep working.
+     */
+    var keyBindings: Map<Int, InputAction>
+        get() {
+            val stored = prefs.getStringSet(KEY_BINDINGS, null)
+            if (stored == null) {
+                if (!prefs.contains("key-codes")) return emptyMap()
+                val migrated = KeyBindingPolicy.fromLegacy(keyCodes)
+                keyBindings = migrated
+                return migrated
+            }
+            val map = mutableMapOf<Int, InputAction>()
+            for (entry in stored) {
+                val separator = entry.indexOf('=')
+                if (separator <= 0) continue
+                val physical = entry.substring(0, separator).toIntOrNull() ?: continue
+                val action = InputActionCodec.decode(entry.substring(separator + 1))
+                if (action != InputAction.None) map[physical] = action
+            }
+            return map
+        }
+        set(bindings) {
+            val set = bindings.filterValues { it != InputAction.None }
+                .map { (physical, action) -> "$physical=${InputActionCodec.encode(action)}" }.toSet()
+            prefs.edit().putStringSet(KEY_BINDINGS, set).apply()
+        }
+
     var exporterLogLevel: LogExporter.LogLevel
         get() = LogExporter.LogLevel.entries.getOrElse(prefs.getInt(KEY_LOG_LEVEL, LogExporter.LogLevel.INFO.ordinal)) { LogExporter.LogLevel.INFO }
         set(value) { prefs.edit().putInt(KEY_LOG_LEVEL, value.ordinal).apply() }
@@ -583,6 +617,21 @@ class Settings(private val context: Context) {
         get() = GestureEdgeZone.fromInt(prefs.getInt("gesture-edge-zone", GestureEdgeZone.NORMAL.value))
             ?: GestureEdgeZone.NORMAL
         set(value) { prefs.edit().putInt("gesture-edge-zone", value.value).apply() }
+
+    /**
+     * What a gesture does. Read from its `gesture-action-*` string once one was saved, and from the
+     * older Int value (or its default) until then.
+     */
+    fun gestureAction(slot: GestureSlot): InputAction {
+        prefs.getString(slot.key, null)?.let { return InputActionCodec.decode(it) }
+        val legacy = GestureAction.fromInt(prefs.getInt(slot.legacyKey, slot.legacyDefault.value))
+            ?: slot.legacyDefault
+        return legacy.toInputAction()
+    }
+
+    fun setGestureAction(slot: GestureSlot, action: InputAction) {
+        prefs.edit().putString(slot.key, InputActionCodec.encode(action)).apply()
+    }
 
     /** Removes the stored values so the defaults stay live. */
     fun resetGestureSettings() {
@@ -2003,9 +2052,12 @@ class Settings(private val context: Context) {
     companion object {
         const val PREFS_NAME = "settings"
 
+        const val KEY_BINDINGS = "key-bindings"
+
         private val GESTURE_KEYS = listOf(
             "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
             "left-tap-two-finger-gesture", "right-tap-two-finger-gesture", "down-two-finger-gesture",
+        ) + GestureSlot.values().map { it.key } + listOf(
             "gesture-edge-zone",
             "dim-opacity-percent", "night-overlay-text-size",
             "night-overlay-show-clock", "night-overlay-show-navigation", "night-overlay-show-track",
@@ -2457,6 +2509,20 @@ class Settings(private val context: Context) {
         companion object {
             private val map = values().associateBy(GestureAction::value)
             fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    /** The six two-finger gestures, with where each one's action is stored. */
+    enum class GestureSlot(val id: String, val key: String, val legacyKey: String, val legacyDefault: GestureAction) {
+        LEFT("left", "gesture-action-left", "left-two-finger-gesture", GestureAction.EXIT_DIALOG),
+        RIGHT("right", "gesture-action-right", "right-two-finger-gesture", GestureAction.TOGGLE_FULLSCREEN),
+        DOWN("down", "gesture-action-down", "down-two-finger-gesture", GestureAction.DISABLED),
+        LEFT_TAP("leftTap", "gesture-action-left-tap", "left-tap-two-finger-gesture", GestureAction.DIM_SCREEN),
+        RIGHT_TAP("rightTap", "gesture-action-right-tap", "right-tap-two-finger-gesture", GestureAction.NIGHT_OVERLAY),
+        LONG_PRESS("longPress", "gesture-action-long-press", "long-press-two-finger-gesture", GestureAction.DISABLED);
+
+        companion object {
+            fun fromId(id: String): GestureSlot? = values().firstOrNull { it.id == id }
         }
     }
 

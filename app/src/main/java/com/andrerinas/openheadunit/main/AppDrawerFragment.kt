@@ -87,6 +87,19 @@ class AppDrawerFragment : DialogFragment() {
         /** Opens the drawer to choose the app for one of the home screen's favorite slots. */
         fun pickFavoriteArgs(slot: Int) = Bundle().apply { putInt(ARG_FAVORITE_SLOT, slot) }
 
+        private const val ARG_PICK_REQUEST_KEY = "pick_request_key"
+        private const val RESULT_TARGET = "target"
+
+        /**
+         * Opens the drawer to choose an app or shortcut for an action. The choice comes back as a
+         * fragment result under [requestKey]; read it with [pickedTarget].
+         */
+        fun pickActionArgs(requestKey: String) = Bundle().apply { putString(ARG_PICK_REQUEST_KEY, requestKey) }
+
+        fun pickedTarget(result: Bundle): FavoriteTarget? =
+            result.getString(RESULT_TARGET)?.let { FavoriteAppsPolicy.decode(it).first() }
+                ?.takeIf { it != FavoriteTarget.Empty }
+
         /** @return false when the package has no launcher entry or refused to start. */
         fun launchPackage(context: Context, packageName: String): Boolean {
             return try {
@@ -255,12 +268,20 @@ class AppDrawerFragment : DialogFragment() {
         rvApps.layoutManager = GridLayoutManager(requireContext(), (screenWidthDp / 120).toInt().coerceAtLeast(3))
 
         val favoriteSlot = arguments?.getInt(ARG_FAVORITE_SLOT, -1) ?: -1
-        if (favoriteSlot >= 0) toolbar.setTitle(R.string.home_choose_favorite_app)
+        val pickRequestKey = arguments?.getString(ARG_PICK_REQUEST_KEY)
+        val picking = favoriteSlot >= 0 || pickRequestKey != null
+        if (picking) toolbar.setTitle(R.string.home_choose_favorite_app)
         val adapter = AppDrawerAdapter(
             emptyList(),
             viewLifecycleOwner.lifecycleScope,
-            onItemClick = { app -> if (favoriteSlot >= 0) pickFavorite(favoriteSlot, app) else launchApp(app) },
-            onItemLongClick = { anchor, app -> if (favoriteSlot < 0) showAddToFavorites(anchor, app) }
+            onItemClick = { app ->
+                when {
+                    pickRequestKey != null -> pickForAction(pickRequestKey, app)
+                    favoriteSlot >= 0 -> pickFavorite(favoriteSlot, app)
+                    else -> launchApp(app)
+                }
+            },
+            onItemLongClick = { anchor, app -> if (!picking) showAddToFavorites(anchor, app) }
         )
         rvApps.adapter = adapter
         this.adapter = adapter
@@ -376,6 +397,14 @@ class AppDrawerFragment : DialogFragment() {
                 AppDrawerCache.iconCache.put(item.iconKey, icon)
             }
         }
+    }
+
+    private fun pickForAction(requestKey: String, item: AppDrawerItem) {
+        parentFragmentManager.setFragmentResult(
+            requestKey,
+            Bundle().apply { putString(RESULT_TARGET, FavoriteAppsPolicy.encode(listOf(item.favoriteTarget()))) }
+        )
+        closeDrawer()
     }
 
     private fun pickFavorite(slot: Int, item: AppDrawerItem) {

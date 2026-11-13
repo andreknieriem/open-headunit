@@ -32,7 +32,7 @@ import com.andrerinas.openheadunit.aap.protocol.Channel
  */
 object AuditRecoveryPolicy {
     fun shouldRequestKeyframe(outcome: FragmentedMessageAudit.Outcome, channel: Int): Boolean =
-        channel == Channel.ID_VID && when (outcome) {
+        Channel.isVideo(channel) && when (outcome) {
             FragmentedMessageAudit.Outcome.DELTA_CHANGED,
             FragmentedMessageAudit.Outcome.ORPHANED_FRAGMENT,
             FragmentedMessageAudit.Outcome.TRUNCATED_RUN -> true
@@ -41,5 +41,5 @@ object AuditRecoveryPolicy {
     // DELTA_CHANGED describes the unit about to complete. An orphan has no live unit, and a
     // truncated-run finding refers to the previous unit, not the replacement FIRST being read.
     fun shouldDiscardAssembledUnit(result: FragmentedMessageAudit.Result): Boolean =
-        result.channel == Channel.ID_VID && result.outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED
+        Channel.isVideo(result.channel) && result.outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED
 }

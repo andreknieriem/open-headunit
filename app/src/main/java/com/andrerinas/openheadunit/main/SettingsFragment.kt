@@ -132,7 +132,7 @@ class SettingsFragment : Fragment() {
     // Wireless items here only appear in Basic when the user connects wirelessly (see filterSettings).
     private val basicSettingIds = setOf(
         // General
-        "permissions", "connectionMode", "bluetoothAddress", "listenForUsbDevices", "appLanguage",
+        "permissions", "connectionMode", "bluetoothAddress", "listenForUsbDevices", "autoBackgroundTimeout", "appLanguage",
         // Wireless (shown in Basic only when WiFi is among the selected connection modes)
         "wifiConnectionMode",
         "nativeApTransport", "hotspotBand", "hotspotSsidOverride", "hotspotPasswordOverride",
@@ -186,6 +186,7 @@ class SettingsFragment : Fragment() {
     private var pendingListenForUsbDevices by pending::listenForUsbDevices
     private var pendingAudioQueueCapacity by pending::audioQueueCapacity
     private var pendingShowToastMessages by pending::showToastMessages
+    private var pendingAutoBackgroundTimeoutSeconds by pending::autoBackgroundTimeoutSeconds
     private var pendingScreenOrientation by pending::screenOrientation
     private var pendingAppLanguage by pending::appLanguage
     private var pendingAutoRestartWifi by pending::autoRestartWifi
@@ -654,6 +655,9 @@ class SettingsFragment : Fragment() {
         pendingAudioTimeCorrectionMode?.let { if (it != settings.audioMatchingMode) settings.audioMatchingMode = it }
         pendingAudioQueueCapacity?.let { if (it != settings.audioQueueCapacity) settings.audioQueueCapacity = it }
         pendingShowToastMessages?.let { if (it != settings.showToastMessages) settings.showToastMessages = it }
+        pendingAutoBackgroundTimeoutSeconds?.let {
+            if (it != settings.autoBackgroundTimeoutSeconds) settings.autoBackgroundTimeoutSeconds = it
+        }
         pendingScreenOrientation?.let { if (it != settings.screenOrientation) settings.screenOrientation = it }
 
         pendingMediaVolumeOffset?.let { if (it != settings.mediaVolumeOffset) settings.mediaVolumeOffset = it }
@@ -1051,6 +1055,39 @@ class SettingsFragment : Fragment() {
                 pendingShowToastMessages = isChecked
                 checkChanges()
                 updateSettingsList()
+            }
+        ))
+
+        val idleTimeoutSec = pendingAutoBackgroundTimeoutSeconds ?: settings.autoBackgroundTimeoutSeconds
+        val idleTimeoutValue = if (idleTimeoutSec <= 0) {
+            getString(R.string.auto_background_timeout_off)
+        } else {
+            getString(R.string.auto_background_timeout_seconds, idleTimeoutSec)
+        }
+        items.add(SettingItem.SettingEntry(
+            stableId = "autoBackgroundTimeout",
+            nameResId = R.string.auto_background_timeout,
+            descriptionResId = R.string.auto_background_timeout_summary,
+            helpResId = R.string.auto_background_timeout_description,
+            value = idleTimeoutValue,
+            searchKeywords = "idle background minimize home timeout seconds auto",
+            onClick = { _ ->
+                val options = listOf(0, 5, 10, 15, 30, 60, 120)
+                val labels = options.map { sec ->
+                    if (sec == 0) getString(R.string.auto_background_timeout_off)
+                    else getString(R.string.auto_background_timeout_seconds, sec)
+                }.toTypedArray()
+                val checked = options.indexOf(idleTimeoutSec).let { if (it >= 0) it else options.indexOf(30) }
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.auto_background_timeout)
+                    .setSingleChoiceItems(labels, checked) { dialog, which ->
+                        pendingAutoBackgroundTimeoutSeconds = options[which]
+                        checkChanges()
+                        updateSettingsList()
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
             }
         ))
 

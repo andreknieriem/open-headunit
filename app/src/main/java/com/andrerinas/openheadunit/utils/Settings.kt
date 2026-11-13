@@ -1514,6 +1514,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("auto-start-on-boot-in-background", true)
         set(value) { prefs.edit().putBoolean("auto-start-on-boot-in-background", value).apply() }
 
+    /** Seconds to wait in foreground with no device connected before minimizing to background (0 = off). */
+    var autoBackgroundTimeoutSeconds: Int
+        get() = prefs.getInt("auto-background-timeout-seconds", 30)
+        set(value) { prefs.edit().putInt("auto-background-timeout-seconds", value).apply() }
+
     var autoStartOnScreenOn: Boolean
         get() = prefs.getBoolean("auto-start-on-screen-on", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-screen-on", value).apply() }

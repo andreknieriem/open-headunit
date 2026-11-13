@@ -271,24 +271,24 @@ class UsbLauncherManager(val service: AapService) {
                 val currentPaths = allDevices.map { it.deviceName }.toSet()
                 val connectable = allDevices.filter { UsbDeviceCompat.isConnectable(service, it) }
                 if (connectable.isEmpty()) {
-                    lastPolledDevicePaths = currentPaths
+                    lastPolledDevicePaths = emptySet()
                     continue
                 }
-                val newPathsDetected = (currentPaths - lastPolledDevicePaths).isNotEmpty()
-                lastPolledDevicePaths = currentPaths
+                val connectablePaths = connectable.map { it.deviceName }.toSet()
+                val newConnectableDetected = (connectablePaths - lastPolledDevicePaths).isNotEmpty()
+                lastPolledDevicePaths = connectablePaths
 
-                var needsScan = newPathsDetected
+                var needsScan = false
                 for (device in connectable) {
                     val age = UsbPermissionAsks.attachAgeMs(device.deviceName, UsbPermissionAsks.nowMs())
-                    if (age != null && age >= ATTACH_FALLBACK_DELAY_MS) {
-                        UsbPermissionAsks.clearAttach(device.deviceName)
+                    if (age != null && age >= ATTACH_FALLBACK_DELAY_MS && usbManager.hasPermission(device)) {
                         needsScan = true
                     } else if (age == null && !UsbPermissionAsks.isAsked(device.deviceName, currentPaths.toList())) {
                         needsScan = true
                     }
                 }
                 if (needsScan) {
-                    if (newPathsDetected) {
+                    if (newConnectableDetected && connectable.any { usbManager.hasPermission(it) }) {
                         AapService.lastTargetConnectionTriggerAtMs = SystemClock.elapsedRealtime()
                         service.launchMainActivityIfNeeded("USB auto-start", defersToAndroid = false)
                     }

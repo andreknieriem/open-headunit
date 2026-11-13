@@ -1356,10 +1356,8 @@ class MainActivity : BaseActivity() {
 
     override fun onUserInteraction() {
         super.onUserInteraction()
-        userInteractedThisResume = true
-        if (autoBackgroundJob?.isActive == true) {
-            autoBackgroundJob?.cancel()
-            AppLog.i("MainActivity: User interaction detected, keeping app in foreground for configuration.")
+        if (autoBackgroundJob?.isActive == true || !SettingsActivity.isVisible) {
+            scheduleBackgroundIfDisconnected()
         }
     }
 
@@ -1409,28 +1407,28 @@ class MainActivity : BaseActivity() {
         if (appSettings.onboardingVersion < OnboardingActivity.CURRENT_ONBOARDING_VERSION) {
             return
         }
-        // 2. Keep in foreground for first-time Bluetooth configuration if no target BT device is selected yet
-        if (appSettings.configuredBluetoothTargetMacs.isEmpty()) {
-            AppLog.i("MainActivity: No target Bluetooth device configured yet; staying in foreground for first-time setup.")
-            return
-        }
-        // 3. Keep in foreground if acting as the car's Home launcher or if opened explicitly to stay
+        // 2. Keep in foreground if acting as the car's Home launcher or if opened explicitly to stay
         if (appSettings.isCarLauncherActive || CarLauncherManager.isDefaultLauncher(this)) {
             return
         }
-        if (SettingsActivity.isVisible || userInteractedThisResume ||
+        if (SettingsActivity.isVisible ||
             intent?.getBooleanExtra(EXTRA_KEEP_IN_FOREGROUND, false) == true
         ) {
             return
         }
-        // 4. Keep in foreground if USB or selected Bluetooth device is connected (or connecting)
+        // 3. Keep in foreground if USB or selected Bluetooth device is connected (or connecting)
         if (isAnyConnectionOrTargetPresent(appSettings)) {
+            return
+        }
+
+        val timeoutSeconds = appSettings.autoBackgroundTimeoutSeconds
+        if (timeoutSeconds <= 0) {
             return
         }
 
         val launchSource = intent?.getStringExtra(EXTRA_LAUNCH_SOURCE) ?: ""
         val isAutoLaunch = launchSource == "Boot auto-start" || launchSource == "WiFi auto-start"
-        val delayMs = if (isAutoLaunch) 0L else AUTO_BACKGROUND_GRACE_MS
+        val delayMs = if (isAutoLaunch) 0L else timeoutSeconds * 1000L
 
         if (delayMs > 0L) {
             ToastUtils.showToast(
@@ -1445,7 +1443,7 @@ class MainActivity : BaseActivity() {
                 delay(delayMs)
             }
             if (!isActive || isFinishing || isDestroyed) return@launch
-            if (userInteractedThisResume || SettingsActivity.isVisible ||
+            if (SettingsActivity.isVisible ||
                 intent?.getBooleanExtra(EXTRA_KEEP_IN_FOREGROUND, false) == true
             ) {
                 return@launch

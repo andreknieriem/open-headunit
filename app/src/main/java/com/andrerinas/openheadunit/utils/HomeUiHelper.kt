@@ -586,15 +586,17 @@ object HomeUiHelper {
         val resources = context.resources
         val panelRadius = resources.getDimension(R.dimen.home_panel_radius)
         val tileRadius = resources.getDimension(R.dimen.home_tile_radius)
-        val ctaRadius = resources.getDimension(R.dimen.home_cta_height) / 3.5f
-        val cancelRadius = resources.getDimension(R.dimen.home_secondary_cta_height) / 2f
+        val ctaRadius = tileRadius
+        val cancelRadius = tileRadius
+        val strokePx = dp(context, 1)
         val iconTile = rootView.findViewById<View>(R.id.home_primary_icon_tile)
 
         if (!palette.isDark) {
-            // Day: the whole card wears the connection's color, as see-through as the panels.
+            // Day: the whole card wears the connection's color, as see-through as the panels,
+            // with crisp Windows 11-style 1dp hairline borders.
             val shade = ColorUtils.darkenColor(color, 0.78f)
-            card.background = rounded(palette.fill(color), panelRadius)
-            iconTile?.background = rounded(palette.fill(shade), tileRadius)
+            card.background = shape(palette.fill(color), panelRadius, withAlpha(Color.WHITE, 0x38), strokePx)
+            iconTile?.background = shape(palette.fill(shade), tileRadius, withAlpha(Color.WHITE, 0x2E), strokePx)
             icon?.clearColorFilter()
             listOf(kicker, title, subtitle, detail).forEach { it?.setTextColor(Color.WHITE) }
             action?.apply {
@@ -610,9 +612,13 @@ object HomeUiHelper {
 
         // Night: a neutral card, so the screen does not glow. The color stays on the kicker, the
         // icon and the button, which is what the driver looks for.
-        val strokePx = dp(context, 1)
         card.background = shape(palette.panel, panelRadius, palette.panelStroke, strokePx)
-        iconTile?.background = rounded(withAlpha(color, ACCENT_WASH_ALPHA), tileRadius)
+        iconTile?.background = shape(
+            withAlpha(color, ACCENT_WASH_ALPHA),
+            tileRadius,
+            withAlpha(color, 0x55),
+            strokePx
+        )
         icon?.setColorFilter(color, PorterDuff.Mode.SRC_IN)
         kicker?.setTextColor(color)
         title?.setTextColor(palette.text)

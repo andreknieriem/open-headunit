@@ -25,22 +25,29 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
             return false
         }
 
-        // Claim interface 0 if present so composite/locked devices (such as Samsung bDeviceClass=0x02)
-        // bind the USB handle before sending vendor control transfers on endpoint 0.
-        if (device.interfaceCount > 0) {
-            try {
-                connection.claimInterface(device.getInterface(0), true)
-            } catch (_: Throwable) {}
-        }
-
         var result = if (useLibusb) {
             switchViaLibusb(connection)
         } else {
             switch(connection)
         }
         if (!result && !useLibusb) {
-            AppLog.i("UsbAccessoryMode: Standard AOA switch failed; retrying via native libusb fallback (locked/charging phone)...")
-            result = switchViaLibusb(connection)
+            var claimed = false
+            if (device.interfaceCount > 0) {
+                try {
+                    claimed = connection.claimInterface(device.getInterface(0), true)
+                } catch (_: Throwable) {}
+                if (claimed) {
+                    AppLog.i("UsbAccessoryMode: Standard AOA switch failed; retrying with interface 0 claimed...")
+                    result = switch(connection)
+                    try {
+                        connection.releaseInterface(device.getInterface(0))
+                    } catch (_: Throwable) {}
+                }
+            }
+            if (!result) {
+                AppLog.i("UsbAccessoryMode: Standard AOA switch failed; retrying via native libusb fallback (locked/charging phone)...")
+                result = switchViaLibusb(connection)
+            }
         }
         connection.close()
 

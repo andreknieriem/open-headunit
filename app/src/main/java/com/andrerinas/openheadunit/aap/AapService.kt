@@ -24,6 +24,7 @@ import android.net.NetworkRequest
 import android.os.BatteryManager
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
@@ -4138,6 +4139,9 @@ class AapService : Service() {
                         "raising the home screen when it closes.")
                 } else if (!commManager.isConnected) {
                     bringAppToFrontForConnection(MainActivity.LAUNCH_SOURCE_BLUETOOTH)
+                } else if (!App.hasStartedActivity) {
+                    AppLog.i("AapService: Bluetooth reconnected while AA is connected and app is in background -> bringing projection to front.")
+                    launchAapProjectionActivity(allowNotificationFallback = true)
                 }
                 if (wirelessPausedForSettings && (actions.forceRearmWireless || actions.armWirelessIfIdle)) {
                     // Held like a Save: nothing else asks again once the screen closes.
@@ -4145,6 +4149,9 @@ class AapService : Service() {
                     AppLog.i("AapService: Bluetooth auto-start while the settings screen is open; " +
                         "re-arming when it closes.")
                 } else if (actions.forceRearmWireless) {
+                    if (!sessionUp) {
+                        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(this)
+                    }
                     wifiLauncherManager.setActiveFromSettings(force = true)
                 } else if (networkComingUp == true) {
                     // Nothing to do and nothing safe to do: the network this arrival would rebuild
@@ -4152,13 +4159,17 @@ class AapService : Service() {
                     // create underneath the first.
                     AppLog.i("AapService: Bluetooth auto-start: the Native AA group is still being created, so it is left to answer.")
                 } else if (actions.armWirelessIfIdle) {
+                    if (!sessionUp) {
+                        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(this)
+                    }
                     wifiLauncherManager.setActiveFromSettings()
                 } else if (settings.wifiConnectionMode == WifiLauncherMode.NATIVE && !sessionUp && attemptInFlight != true) {
-                    // Armed with a live group, so the phone dials RFCOMM itself. Re-read the
-                    // credentials rather than remake the group; that also catches a group that died.
-                    // Skipped while an attempt is in flight, because that ACL is our own poke's.
-                    AppLog.i("AapService: Bluetooth auto-start: Native AA is armed with a live group, leaving it alone.")
+                    // Armed with a live group: refresh credentials, wake the phone if locked, and
+                    // actively poke over Bluetooth WPP so it joins Wi-Fi Direct / Hotspot promptly.
+                    AppLog.i("AapService: Bluetooth auto-start: Native AA is armed with a live group -> refreshing & poking phone.")
+                    com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(this)
                     launcher?.triggerWifiDirectRefresh()
+                    launcher?.handshakeManager?.triggerPoke()
                 }
             }
             ACTION_NEARBY_CONNECT         -> {
@@ -4354,8 +4365,25 @@ class AapService : Service() {
      * app to the active foreground over other apps.
      */
     fun onTargetBluetoothConnected(device: android.bluetooth.BluetoothDevice, reason: String) {
+        onTargetBluetoothAddressConnected(device.address, device.name, reason)
+    }
+
+    /**
+     * Address-based entry point for target Bluetooth arrivals (including external FYT/Blink
+     * modules where no [android.bluetooth.BluetoothDevice] is exposed to Android's stack).
+     */
+    fun onTargetBluetoothAddressConnected(address: String?, name: String?, reason: String) {
         val settings = App.provide(this).settings
-        if (!com.andrerinas.openheadunit.utils.BluetoothHelper.isTargetBluetoothDevice(settings, device.address)) {
+        val explicitTarget = com.andrerinas.openheadunit.utils.BluetoothHelper.isTargetBluetoothDevice(settings, address)
+        val isExternalOrHid = reason.contains("HID", ignoreCase = true) ||
+            reason.contains("FYT", ignoreCase = true) ||
+            reason.contains("BLINK", ignoreCase = true)
+        val allowUnfilteredArrival = !explicitTarget &&
+            settings.configuredBluetoothTargetMacs.isEmpty() &&
+            isExternalOrHid &&
+            (settings.nativePokeAllPairedDevices || reason.contains("FYT", ignoreCase = true))
+        if (!explicitTarget && !allowUnfilteredArrival) {
+            AppLog.d("AapService: Ignoring BT connect ($reason: $address) — not in configured target MACs.")
             return
         }
         val now = SystemClock.elapsedRealtime()
@@ -4364,18 +4392,25 @@ class AapService : Service() {
         }
         lastBtTargetConnectHandledAtMs = now
         lastTargetConnectionTriggerAtMs = now
-        if (commManager.isConnected) {
-            AppLog.d("AapService: Target Bluetooth connected ($reason: ${device.address}), already connected to AA.")
+        if (commManager.isConnected && App.hasStartedActivity) {
+            AppLog.d("AapService: Target Bluetooth connected ($reason: $address), already connected to AA in foreground.")
             return
         }
-        AppLog.i("AapService: Selected Bluetooth device connected ($reason: ${device.name} / ${device.address}) -> bringing app to foreground and starting wireless AA")
+        AppLog.i("AapService: Selected Bluetooth device connected ($reason: $name / $address, aaConnected=${commManager.isConnected}, foreground=${App.hasStartedActivity}) -> bringing app to foreground")
         val serviceIntent = Intent(this, AapService::class.java)
             .setAction(ACTION_BT_AUTO_START)
             .putExtra(EXTRA_UI_HELD, SettingsActivity.isVisible)
-        try {
-            onStartCommand(serviceIntent, 0, 0)
-        } catch (e: Exception) {
-            AppLog.w("AapService: Failed to dispatch BT auto-start: ${e.message}")
+        val dispatch = Runnable {
+            try {
+                onStartCommand(serviceIntent, 0, 0)
+            } catch (e: Exception) {
+                AppLog.w("AapService: Failed to dispatch BT auto-start: ${e.message}")
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            dispatch.run()
+        } else {
+            Handler(Looper.getMainLooper()).post(dispatch)
         }
     }
 
@@ -4384,6 +4419,10 @@ class AapService : Service() {
      * (Direct -> Overlay Window Trampoline -> Full-Screen Intent Notification).
      */
     fun bringAppToFrontForConnection(launchSource: String) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            Handler(Looper.getMainLooper()).post { bringAppToFrontForConnection(launchSource) }
+            return
+        }
         lastTargetConnectionTriggerAtMs = SystemClock.elapsedRealtime()
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(
@@ -4410,12 +4449,14 @@ class AapService : Service() {
                 return
             }
         }
+        // On Android 10+, startActivity() from background is silently dropped by BAL without
+        // throwing an exception, so do not return early here when overlay is not granted —
+        // always trigger launchViaFullScreenIntent as well.
         try {
             startActivity(launchIntent)
-            AppLog.i("AapService: Brought MainActivity to front via direct fallback ($launchSource)")
-            return
+            AppLog.i("AapService: Attempted direct fallback startActivity ($launchSource)")
         } catch (e: Exception) {
-            AppLog.w("AapService: Direct fallback blocked ($launchSource), using full-screen intent: ${e.message}")
+            AppLog.w("AapService: Direct fallback blocked ($launchSource): ${e.message}")
         }
         launchViaFullScreenIntent(launchSource)
     }
@@ -4466,12 +4507,15 @@ class AapService : Service() {
             wm.addView(view, params)
             startActivity(launchIntent)
             AppLog.i("Overlay trampoline: startActivity succeeded")
+            Handler(Looper.getMainLooper()).postDelayed(
+                { try { wm.removeView(view) } catch (_: Exception) {} },
+                300L
+            )
             true
         } catch (e: Exception) {
             AppLog.e("Overlay trampoline failed: ${e.message}")
-            false
-        } finally {
             try { wm.removeView(view) } catch (_: Exception) {}
+            false
         }
     }
 
@@ -4483,7 +4527,15 @@ class AapService : Service() {
         }
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-        val fullScreenPi = PendingIntent.getActivity(this, 200, launchIntent, piFlags)
+        val fullScreenPi = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val opts = android.app.ActivityOptions.makeBasic()
+                .setPendingIntentCreatorBackgroundActivityStartMode(
+                    android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                )
+            PendingIntent.getActivity(this, 200, launchIntent, piFlags, opts.toBundle())
+        } else {
+            PendingIntent.getActivity(this, 200, launchIntent, piFlags)
+        }
 
         val notification = NotificationCompat.Builder(this, App.bootStartChannel)
             .setSmallIcon(R.drawable.ic_stat_aa)

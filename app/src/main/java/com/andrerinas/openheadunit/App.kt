@@ -28,6 +28,7 @@ import com.andrerinas.openheadunit.utils.Settings
 import android.os.SystemClock
 import com.andrerinas.openheadunit.main.AppDrawerFragment
 import com.andrerinas.openheadunit.main.FloatingButtonManager
+import com.google.android.material.color.DynamicColors
 import java.io.File
 
 class App : Application(), Application.ActivityLifecycleCallbacks {
@@ -46,6 +47,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        DynamicColors.applyToActivitiesIfAvailable(this)
         registerActivityLifecycleCallbacks(this)
 
         try {

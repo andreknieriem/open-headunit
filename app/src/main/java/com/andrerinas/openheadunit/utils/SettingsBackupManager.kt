@@ -98,6 +98,7 @@ object SettingsBackupManager {
         "home-surface-opacity-percent" to ValueType.INT,
         "show-home-clock" to ValueType.BOOLEAN,
         "show-home-speed" to ValueType.BOOLEAN,
+        "auto-background-timeout-seconds" to ValueType.INT,
         "use-fixed-sun-location" to ValueType.BOOLEAN,
         // Coordinates are stored as raw Double bits, not as JSON floating-point numbers.
         "fixed-sun-latitude" to ValueType.LONG,

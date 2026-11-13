@@ -55,7 +55,10 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             if (!matchesManifestFilter) {
                 AppLog.i("Normal USB device attached (locked/charging mode, not in manifest filter): $deviceName. Connecting immediately from service...")
                 UsbPermissionAsks.clearAttach(device.deviceName)
-                service.launchMainActivityIfNeeded("USB locked attach ($deviceName)", defersToAndroid = false)
+                val hasPermission = UsbDeviceCompat.usbManager(service)?.hasPermission(device) == true
+                if (hasPermission) {
+                    service.launchMainActivityIfNeeded("USB locked attach ($deviceName)", defersToAndroid = false)
+                }
                 manager.checkAlreadyConnected(
                     force = true,
                     settingsRestart = manager.pendingSettingsRestart(),
@@ -70,11 +73,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                     // The manager retains this scan if its own AOA switch is still running.
                     // An Activity-owned switch keeps its separate handoff guard.
                     if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
-                        AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service (clearing attach defer)...")
-                        // Clear the attach stamp so UsbPermissionAskPolicy does not defer back to
-                        // UsbAttachedActivity after UsbAttachedActivity already failed to handle it.
-                        UsbPermissionAsks.clearAttach(device.deviceName)
-                        service.launchMainActivityIfNeeded("USB normal attach fallback ($deviceName)", defersToAndroid = false)
+                        AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service...")
                         manager.checkAlreadyConnected(
                             force = true,
                             settingsRestart = manager.pendingSettingsRestart(),

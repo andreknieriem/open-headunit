@@ -47,6 +47,7 @@ class SettingsPendingCopy {
     var listenForUsbDevices: Boolean? = null
     var audioQueueCapacity: Int? = null
     var showToastMessages: Boolean? = null
+    var autoBackgroundTimeoutSeconds: Int? = null
     var screenOrientation: Settings.ScreenOrientation? = null
     var appLanguage: String? = null
     var autoRestartWifi: Boolean? = null
@@ -142,6 +143,7 @@ class SettingsPendingCopy {
         listenForUsbDevices = settings.listenForUsbDevices
         audioQueueCapacity = settings.audioQueueCapacity
         showToastMessages = settings.showToastMessages
+        autoBackgroundTimeoutSeconds = settings.autoBackgroundTimeoutSeconds
         screenOrientation = settings.screenOrientation
         appLanguage = settings.appLanguage
         autoRestartWifi = settings.autoRestartWifiWhenP2pStuck
@@ -238,6 +240,7 @@ class SettingsPendingCopy {
         listenForUsbDevices != settings.listenForUsbDevices ||
         audioQueueCapacity != settings.audioQueueCapacity ||
         showToastMessages != settings.showToastMessages ||
+        autoBackgroundTimeoutSeconds != settings.autoBackgroundTimeoutSeconds ||
         screenOrientation != settings.screenOrientation ||
         appLanguage != settings.appLanguage ||
         autoRestartWifi != settings.autoRestartWifiWhenP2pStuck ||

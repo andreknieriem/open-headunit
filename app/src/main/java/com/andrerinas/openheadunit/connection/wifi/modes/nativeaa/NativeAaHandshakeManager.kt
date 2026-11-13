@@ -3206,6 +3206,13 @@ class NativeAaHandshakeManager(
             isFinishedForSession = { aaListenersClosedForSession },
             mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
             onPhoneEvidence = { resetHandshakeBackoff() },
+            onPhoneLinked = { address ->
+                com.andrerinas.openheadunit.aap.AapService.instance?.onTargetBluetoothAddressConnected(
+                    address = address,
+                    name = null,
+                    reason = "FYT Bluetooth hands-free connected"
+                )
+            },
             onRefusalChanged = { refusal -> onBlinkRefusalChanged(refusal) },
             stockClient = { StockCarLink.state(context.packageManager) }
         )

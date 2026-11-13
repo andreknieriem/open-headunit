@@ -61,6 +61,15 @@ class BtHidMouseTrigger(
      */
     fun start(adapter: BluetoothAdapter) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context.applicationContext,
+                android.Manifest.permission.BLUETOOTH_CONNECT
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            AppLog.w("NativeAA-HID: BLUETOOTH_CONNECT permission not granted yet; deferring HID registration.")
+            return
+        }
         if (onHidConnected != null) {
             sharedOnHidConnected = onHidConnected
         }
@@ -84,6 +93,8 @@ class BtHidMouseTrigger(
             } catch (e: Exception) {
                 AppLog.w("NativeAA-HID: could not request the HID device profile: ${e.message}")
             }
+        } else if (!sharedAppRegistered) {
+            registerHidApp(existingHid)
         }
     }
 
@@ -346,68 +357,73 @@ class BtHidMouseTrigger(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun registerHidApp(hid: BluetoothHidDevice) {
+        try {
+            val sdp = BluetoothHidDeviceAppSdpSettings(
+                "OpenHeadunit HID Trigger",
+                "Serverless Keyboard & Mouse",
+                "OpenHeadunit",
+                BluetoothHidDevice.SUBCLASS1_COMBO,
+                COMBO_HID_DESCRIPTOR
+            )
+            val registeredCall = hid.registerApp(sdp, null, null, scheduler, object : BluetoothHidDevice.Callback() {
+                override fun onAppStatusChanged(pluggedDevice: BluetoothDevice?, registered: Boolean) {
+                    sharedAppRegistered = registered
+                    if (pluggedDevice != null) {
+                        lastPluggedDevice = pluggedDevice
+                    }
+                    AppLog.i("NativeAA-HID: serverless keyboard+mouse registered=$registered, pluggedDevice=${pluggedDevice?.address}")
+                    if (registered) {
+                        activeOwner?.let { owner ->
+                            if (pluggedDevice != null) owner.lastPluggedDevice = pluggedDevice
+                            owner.connectAndWakeTargets(hid)
+                        }
+                    }
+                }
+
+                override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
+                    val stateName = when (state) {
+                        BluetoothProfile.STATE_DISCONNECTED -> "DISCONNECTED"
+                        BluetoothProfile.STATE_CONNECTING -> "CONNECTING"
+                        BluetoothProfile.STATE_CONNECTED -> "CONNECTED"
+                        BluetoothProfile.STATE_DISCONNECTING -> "DISCONNECTING"
+                        else -> state.toString()
+                    }
+                    AppLog.i("NativeAA-HID: connection state for ${device?.name ?: "unnamed"} (${device?.address}) -> $stateName")
+                    if (device != null) {
+                        val addr = device.address.uppercase()
+                        if (state == BluetoothProfile.STATE_CONNECTED) {
+                            wokenConnectedAddresses.add(addr)
+                            activeOwner?.let { owner ->
+                                owner.lastPluggedDevice = device
+                                if (owner.armedForWake) {
+                                    owner.sendWakeSequence(hid, device)
+                                }
+                            }
+                            com.andrerinas.openheadunit.aap.AapService.instance?.onTargetBluetoothConnected(
+                                device,
+                                "Serverless Bluetooth HID Keyboard/Mouse connected"
+                            )
+                        } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                            wokenConnectedAddresses.remove(addr)
+                        }
+                    }
+                }
+            })
+            AppLog.i("NativeAA-HID: registerApp call returned $registeredCall")
+        } catch (e: Exception) {
+            AppLog.w("NativeAA-HID: registerApp failed: ${e.message}")
+        }
+    }
+
     private val profileListener = object : BluetoothProfile.ServiceListener {
         @RequiresApi(Build.VERSION_CODES.P)
         override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
             if (profile != PROFILE_HID_DEVICE) return
             val hid = proxy as? BluetoothHidDevice ?: return
             sharedHidDevice = hid
-            try {
-                val sdp = BluetoothHidDeviceAppSdpSettings(
-                    "OpenHeadunit HID Trigger",
-                    "Serverless Keyboard & Mouse",
-                    "OpenHeadunit",
-                    BluetoothHidDevice.SUBCLASS1_COMBO,
-                    COMBO_HID_DESCRIPTOR
-                )
-                val registeredCall = hid.registerApp(sdp, null, null, scheduler, object : BluetoothHidDevice.Callback() {
-                    override fun onAppStatusChanged(pluggedDevice: BluetoothDevice?, registered: Boolean) {
-                        sharedAppRegistered = registered
-                        if (pluggedDevice != null) {
-                            lastPluggedDevice = pluggedDevice
-                        }
-                        AppLog.i("NativeAA-HID: serverless keyboard+mouse registered=$registered, pluggedDevice=${pluggedDevice?.address}")
-                        if (registered) {
-                            activeOwner?.let { owner ->
-                                if (pluggedDevice != null) owner.lastPluggedDevice = pluggedDevice
-                                owner.connectAndWakeTargets(hid)
-                            }
-                        }
-                    }
-
-                    override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
-                        val stateName = when (state) {
-                            BluetoothProfile.STATE_DISCONNECTED -> "DISCONNECTED"
-                            BluetoothProfile.STATE_CONNECTING -> "CONNECTING"
-                            BluetoothProfile.STATE_CONNECTED -> "CONNECTED"
-                            BluetoothProfile.STATE_DISCONNECTING -> "DISCONNECTING"
-                            else -> state.toString()
-                        }
-                        AppLog.i("NativeAA-HID: connection state for ${device?.name ?: "unnamed"} (${device?.address}) -> $stateName")
-                        if (device != null) {
-                            val addr = device.address.uppercase()
-                            if (state == BluetoothProfile.STATE_CONNECTED) {
-                                wokenConnectedAddresses.add(addr)
-                                activeOwner?.let { owner ->
-                                    owner.lastPluggedDevice = device
-                                    if (owner.armedForWake) {
-                                        owner.sendWakeSequence(hid, device)
-                                    }
-                                }
-                                com.andrerinas.openheadunit.aap.AapService.instance?.onTargetBluetoothConnected(
-                                    device,
-                                    "Serverless Bluetooth HID Keyboard/Mouse connected"
-                                )
-                            } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
-                                wokenConnectedAddresses.remove(addr)
-                            }
-                        }
-                    }
-                })
-                AppLog.i("NativeAA-HID: registerApp call returned $registeredCall")
-            } catch (e: Exception) {
-                AppLog.w("NativeAA-HID: registerApp failed: ${e.message}")
-            }
+            registerHidApp(hid)
         }
 
         override fun onServiceDisconnected(profile: Int) {

@@ -479,6 +479,7 @@ class AapService : Service() {
         }
 
         mediaSessionIsPlaying = isPlaying
+        notifyPipPlaybackState(isPlaying)
         var actions = PlaybackStateCompat.ACTION_STOP or
                 PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
@@ -586,10 +587,19 @@ class AapService : Service() {
         val isPlayingFromStatus = resolveIsPlayingFromStatus(status)
         lastAaPlaybackIsPlaying = isPlayingFromStatus
         mediaSessionIsPlaying = isPlayingFromStatus
+        notifyPipPlaybackState(isPlayingFromStatus)
 
         if (!shouldSyncAaMediaMetadata()) return
         updateMediaSessionState(isPlayingFromStatus)
         lastAaMediaMetadata?.let { updateMediaNotification(it) }
+    }
+
+    private fun notifyPipPlaybackState(isPlaying: Boolean) {
+        currentPlaybackIsPlaying = isPlaying
+        sendBroadcast(Intent(ACTION_PIP_PLAYBACK_STATE_CHANGED).apply {
+            setPackage(packageName)
+            putExtra(EXTRA_PIP_IS_PLAYING, isPlaying)
+        })
     }
 
     private fun resolveIsPlayingFromStatus(status: MediaPlayback.MediaPlaybackStatus): Boolean {
@@ -4659,6 +4669,10 @@ class AapService : Service() {
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "com.andrerinas.openheadunit.aap.action.REQUEST_NIGHT_MODE_UPDATE"
         const val ACTION_NIGHT_MODE_CHANGED      = "com.andrerinas.openheadunit.ACTION_NIGHT_MODE_CHANGED"
         const val ACTION_ORIENTATION_CHANGED     = "com.andrerinas.openheadunit.ACTION_ORIENTATION_CHANGED"
+        const val ACTION_PIP_PLAYBACK_STATE_CHANGED = "com.andrerinas.openheadunit.ACTION_PIP_PLAYBACK_STATE_CHANGED"
+        const val EXTRA_PIP_IS_PLAYING           = "is_playing"
+        @Volatile var currentPlaybackIsPlaying: Boolean = false
+            private set
         const val ACTION_REFRESH_SENSORS         = "com.andrerinas.openheadunit.aap.action.REFRESH_SENSORS"
         const val ACTION_RESTART_AUDIO           = "com.andrerinas.openheadunit.aap.action.RESTART_AUDIO"
         const val ACTION_RAISE_PROJECTION        = "com.andrerinas.openheadunit.aap.action.RAISE_PROJECTION"

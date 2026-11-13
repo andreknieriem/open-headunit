@@ -37,10 +37,13 @@ class AutoStartReceiver : BroadcastReceiver() {
 
         if (targetMacs.isEmpty()) return
 
-        // [FIX] Don't trigger auto-start if we are already connected!
-        // This prevents activity restarts if BT reconnects during a session.
-        if (com.andrerinas.openheadunit.App.provide(context).commManager.isConnected) {
-            AppLog.d("AutoStartReceiver: Already connected to Android Auto. Ignoring BT event.")
+        val commConnected = com.andrerinas.openheadunit.App.provide(context).commManager.isConnected
+        val appInForeground = com.andrerinas.openheadunit.App.hasStartedActivity
+        // Don't trigger auto-start if Android Auto is already connected AND the app is already
+        // in the foreground. If the app was sent to the background while AA is connected and BT
+        // reconnects, forward to AapService so it brings the projection back to the front.
+        if (commConnected && appInForeground) {
+            AppLog.d("AutoStartReceiver: Already connected to Android Auto in foreground. Ignoring BT event.")
             return
         }
 
@@ -71,7 +74,7 @@ class AutoStartReceiver : BroadcastReceiver() {
                     AppLog.e("Failed to start AapService from background: ${e.message}")
                 }
 
-                if (uiHeld) return
+                if (uiHeld || commConnected) return
 
                 // Also attempt to start the UI (might be blocked on Android 10+ without special permission)
                 val launchIntent = Intent(context, MainActivity::class.java).apply {

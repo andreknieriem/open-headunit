@@ -77,11 +77,11 @@
          Day colors here, dark ones in values-night. Extreme dark is a theme rather than a
          resource qualifier, so its colors are the home_extreme_* set and HomeUiHelper picks them. -->
     <color name="home_panel">#1A1F27</color>
-    <color name="home_panel_stroke">#00000000</color>
+    <color name="home_panel_stroke">#2E3643</color>
     <color name="home_tile">#232934</color>
     <color name="home_tile_pressed">#323A47</color>
-    <color name="home_tile_stroke">#00000000</color>
-    <color name="home_slot_stroke">#39414D</color>
+    <color name="home_tile_stroke">#36404F</color>
+    <color name="home_slot_stroke">#455060</color>
     <color name="home_text">#FFFFFF</color>
     <color name="home_text_muted">#FFFFFF</color>
     <color name="home_apps_tile">#0F766E</color>

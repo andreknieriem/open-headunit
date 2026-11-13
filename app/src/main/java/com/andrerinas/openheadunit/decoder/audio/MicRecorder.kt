@@ -309,7 +309,11 @@ class MicRecorder(
         if (!claim.claim()) return ERROR_NO_FOREGROUND_TYPE
         claimedForeground = claim
 
-        val configuredSource = getAudioSource(settings.micInputSource)
+        // Routing calls here: the unit's own microphone sits beside its speakers, so open it as the
+        // voice-communication source (which engages the platform's echo handling) unless one was chosen.
+        val configuredSource = if (settings.routeCallAudioAndMicToHeadUnit && settings.micInputSource == 0)
+            MediaRecorder.AudioSource.VOICE_COMMUNICATION
+        else getAudioSource(settings.micInputSource)
 
         return if (configuredSource == SOURCE_BLUETOOTH_SCO) {
             startScoAndRecord()
@@ -417,27 +421,27 @@ class MicRecorder(
             val audioSessionId = audioRecord?.audioSessionId ?: 0
             if (audioSessionId != 0) {
                 try {
-                    if (settings.micNoiseSuppressor && NoiseSuppressor.isAvailable()) {
+                    if ((settings.micNoiseSuppressor || settings.routeCallAudioAndMicToHeadUnit) && NoiseSuppressor.isAvailable()) {
                         ns = NoiseSuppressor.create(audioSessionId)
                         ns?.enabled = true
                         AppLog.i("MicRecorder: NoiseSuppressor: ${if (ns?.enabled == true) "ON" else "failed"}")
-                    } else if (settings.micNoiseSuppressor) {
+                    } else if ((settings.micNoiseSuppressor || settings.routeCallAudioAndMicToHeadUnit)) {
                         AppLog.i("MicRecorder: NoiseSuppressor: Unsupported on this device")
                     }
                     
-                    if (settings.micAutoGainControl && AutomaticGainControl.isAvailable()) {
+                    if ((settings.micAutoGainControl || settings.routeCallAudioAndMicToHeadUnit) && AutomaticGainControl.isAvailable()) {
                         agc = AutomaticGainControl.create(audioSessionId)
                         agc?.enabled = true
                         AppLog.i("MicRecorder: AutomaticGainControl: ${if (agc?.enabled == true) "ON" else "failed"}")
-                    } else if (settings.micAutoGainControl) {
+                    } else if ((settings.micAutoGainControl || settings.routeCallAudioAndMicToHeadUnit)) {
                         AppLog.i("MicRecorder: AutomaticGainControl: Unsupported on this device")
                     }
                     
-                    if (settings.micEchoCanceler && AcousticEchoCanceler.isAvailable()) {
+                    if ((settings.micEchoCanceler || settings.routeCallAudioAndMicToHeadUnit) && AcousticEchoCanceler.isAvailable()) {
                         aec = AcousticEchoCanceler.create(audioSessionId)
                         aec?.enabled = true
                         AppLog.i("MicRecorder: AcousticEchoCanceler: ${if (aec?.enabled == true) "ON" else "failed"}")
-                    } else if (settings.micEchoCanceler) {
+                    } else if ((settings.micEchoCanceler || settings.routeCallAudioAndMicToHeadUnit)) {
                         AppLog.i("MicRecorder: AcousticEchoCanceler: Unsupported on this device")
                     }
                 } catch (e: Exception) {

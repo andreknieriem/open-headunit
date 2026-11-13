@@ -93,6 +93,16 @@ object UsbPermissionAsks {
         hinted.remove(path)
     }
 
+    /**
+     * Clears the attach stamp when `UsbAttachedActivity` did not handle the device within the
+     * fallback window (e.g. a locked phone in charging mode), allowing the service fallback to
+     * request USB permission directly instead of deferring forever.
+     */
+    @Synchronized
+    fun clearAttach(path: String) {
+        attachedAtMs.remove(path)
+    }
+
     /** True once per plug-in, so the USB access note does not repeat on every home resume. */
     @Synchronized
     fun tryHint(path: String): Boolean = hinted.add(path)

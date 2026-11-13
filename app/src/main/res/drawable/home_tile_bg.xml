@@ -3,12 +3,14 @@
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <solid android:color="@color/home_tile_pressed" />
+            <stroke android:width="1dp" android:color="@color/home_tile_stroke" />
             <corners android:radius="@dimen/home_tile_radius" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <solid android:color="@color/home_tile" />
+            <stroke android:width="1dp" android:color="@color/home_tile_stroke" />
             <corners android:radius="@dimen/home_tile_radius" />
         </shape>
     </item>

@@ -31,7 +31,6 @@
 
 # --- JNI ---
 -keep class com.andrerinas.openheadunit.decoder.audio.NativeAAudio { *; }
--keep class com.andrerinas.openheadunit.aap.AapSslNative { *; }
 -keep class com.andrerinas.openheadunit.decoder.video.FfmpegVideoDecoder { *; }
 -keep class com.andrerinas.openheadunit.decoder.video.FfmpegVideoDecoder$Companion { *; }
 
@@ -55,3 +54,8 @@
 
 # Instantiated by Shizuku in a separate process using its class name and public constructor.
 -keep class com.andrerinas.openheadunit.connection.wifi.scan.WifiScanUserService { *; }
+
+# JNI-bound singletons: keep names and members so R8 cannot rename what native code registers.
+-keep class com.andrerinas.openheadunit.connection.usb.UsbNative { *; }
+-keep class com.andrerinas.openheadunit.decoder.audio.NativeTimeStretch { *; }
+-keep class com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoProjectionProperty { *; }

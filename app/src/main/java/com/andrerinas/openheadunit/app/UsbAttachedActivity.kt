@@ -213,6 +213,19 @@ class UsbAttachedActivity : Activity() {
 
         val usbManager = UsbDeviceCompat.usbManager(this) ?: run { finish(); return }
 
+        // Wake the locked phone over Serverless Bluetooth HID Keyboard/Mouse if connected
+        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(this)
+
+        // If Android launched UsbAttachedActivity without granting USB permission for the normal-mode
+        // device, hand off to AapService with the attach defer cleared so AapService requests permission.
+        if (!usbManager.hasPermission(device)) {
+            AppLog.i("UsbAttachedActivity: no USB permission yet for ${deviceCompat.uniqueName}; handing off to AapService to request permission")
+            UsbPermissionAsks.clearAttach(device.deviceName)
+            handOffToService()
+            finish()
+            return
+        }
+
         // The switch starts the USB attempt, so it takes the connection arbiter here, before the
         // stage is reported: standing the wireless stack down clears the status pill.
         val arbiterClaim = ConnectionArbiter.claim(
@@ -235,11 +248,23 @@ class UsbAttachedActivity : Activity() {
         // is in a finally and the claim expires on its own if even that is missed.
         UsbSwitchClaim.stake()
         Thread {
-            val result = try {
-                usbMode.connectAndSwitch(device, useLibusb).also { if (it) UsbSwitchClaim.noteSwitched() }
+            var result = false
+            try {
+                for (attempt in 1..3) {
+                    com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.wakeConnectedTargetsNow(this)
+                    if (usbMode.connectAndSwitch(device, useLibusb)) {
+                        UsbSwitchClaim.noteSwitched()
+                        result = true
+                        break
+                    }
+                    if (attempt < 3) {
+                        AppLog.i("UsbAttachedActivity: AOA switch attempt $attempt failed for ${deviceCompat.uniqueName} (locked phone); retrying in 1000ms...")
+                        try { Thread.sleep(1000) } catch (_: Exception) {}
+                    }
+                }
             } catch (e: Exception) {
                 AppLog.e("AOA switch threw for ${deviceCompat.uniqueName}", e)
-                false
+                result = false
             } finally {
                 UsbSwitchClaim.release()
                 ConnectionArbiter.release(arbiterClaim, sessionFormed = false)
@@ -248,8 +273,9 @@ class UsbAttachedActivity : Activity() {
                 if (result) {
                     ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
                 } else {
-                    ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
-                    if (!App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
+                    AppLog.w("UsbAttachedActivity: AOA switch did not complete in activity for ${deviceCompat.uniqueName}; handing off to service to keep trying")
+                    UsbPermissionAsks.clearAttach(device.deviceName)
+                    handOffToService()
                 }
                 finish()
             }
@@ -280,10 +306,17 @@ class UsbAttachedActivity : Activity() {
     }
 
     private fun openHome(source: String) {
+        AapService.lastTargetConnectionTriggerAtMs = android.os.SystemClock.elapsedRealtime()
         try {
             startActivity(Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                )
                 putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
+                putExtra(MainActivity.EXTRA_TURN_SCREEN_ON, true)
             })
         } catch (e: Exception) {
             AppLog.w("Could not start UI from $source: ${e.message}")

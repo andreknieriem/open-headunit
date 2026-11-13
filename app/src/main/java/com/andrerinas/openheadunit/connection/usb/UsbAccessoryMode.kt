@@ -25,24 +25,29 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
             return false
         }
 
-        val result = if (useLibusb) {
-            AppLog.i("UsbAccessoryMode: Performing AOA switch via native libusb...")
-            val native = UsbNative()
-            if (native.wrap(connection, 0, 0)) {
-                val code = native.accModeSwitch()
-                native.close()
-                // The code only reaches raw logcat from the native side, and an APPLOG_FILE export
-                // carries none of it. Say what it means where the reporter's log will have it.
-                if (code != 0) AppLog.w(AoaSwitchFailurePolicy.failureLine(code))
-                code == 0
-            } else {
-                AppLog.e("UsbAccessoryMode: Failed to wrap device for native AOA switch")
-                native.close()
-                AppLog.w(AoaSwitchFailurePolicy.failureLine(AoaSwitchFailurePolicy.NO_HANDLE))
-                false
-            }
+        var result = if (useLibusb) {
+            switchViaLibusb(connection)
         } else {
             switch(connection)
+        }
+        if (!result && !useLibusb) {
+            var claimed = false
+            if (device.interfaceCount > 0) {
+                try {
+                    claimed = connection.claimInterface(device.getInterface(0), true)
+                } catch (_: Throwable) {}
+                if (claimed) {
+                    AppLog.i("UsbAccessoryMode: Standard AOA switch failed; retrying with interface 0 claimed...")
+                    result = switch(connection)
+                    try {
+                        connection.releaseInterface(device.getInterface(0))
+                    } catch (_: Throwable) {}
+                }
+            }
+            if (!result) {
+                AppLog.i("UsbAccessoryMode: Standard AOA switch failed; retrying via native libusb fallback (locked/charging phone)...")
+                result = switchViaLibusb(connection)
+            }
         }
         connection.close()
 
@@ -50,6 +55,22 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
         if (result) UsbPermissionAsks.stampOwnSwitch()
         AppLog.i("Result: $result")
         return result
+    }
+
+    private fun switchViaLibusb(connection: UsbDeviceConnection): Boolean {
+        AppLog.i("UsbAccessoryMode: Performing AOA switch via native libusb...")
+        val native = UsbNative()
+        return if (native.wrap(connection, 0, 0)) {
+            val code = native.accModeSwitch()
+            native.close()
+            if (code != 0) AppLog.w(AoaSwitchFailurePolicy.failureLine(code))
+            code == 0
+        } else {
+            AppLog.e("UsbAccessoryMode: Failed to wrap device for native AOA switch")
+            native.close()
+            AppLog.w(AoaSwitchFailurePolicy.failureLine(AoaSwitchFailurePolicy.NO_HANDLE))
+            false
+        }
     }
 
     /** Resets the device on the bus through libusb; true when the reset was issued. */
@@ -75,8 +96,21 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
 
     private fun switch(connection: UsbDeviceConnection): Boolean {
         // Do accessory negotiation and attempt to switch to accessory mode. Called only by usb_connect()
+        // Locked phones waking from USB suspend may stall or time out on the very first ep0 transfer,
+        // so retry ACC_REQ_GET_PROTOCOL up to 3 times with a short settle delay.
         val buffer = ByteArray(2)
-        var len = connection.controlTransfer(UsbConstants.USB_DIR_IN or UsbConstants.USB_TYPE_VENDOR, ACC_REQ_GET_PROTOCOL, 0, 0, buffer, 2, USB_TIMEOUT_IN_MS)
+        var len = -1
+        for (attempt in 1..3) {
+            len = connection.controlTransfer(
+                UsbConstants.USB_DIR_IN or UsbConstants.USB_TYPE_VENDOR,
+                ACC_REQ_GET_PROTOCOL, 0, 0, buffer, 2, USB_TIMEOUT_IN_MS
+            )
+            if (len == 2) break
+            if (attempt < 3) {
+                AppLog.i("UsbAccessoryMode: ACC_REQ_GET_PROTOCOL attempt $attempt returned $len; waiting 250ms for locked phone USB gadget...")
+                try { Thread.sleep(250) } catch (_: Exception) {}
+            }
+        }
         if (len != 2) {
             AppLog.e("Error controlTransfer len: $len")
             // controlTransfer returns -1 for a stall and for a timeout alike, so name both. A
@@ -124,18 +158,19 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
     }
 
     private fun initStringControlTransfer(conn: UsbDeviceConnection, index: Int, string: String): Boolean {
-        val len = conn.controlTransfer(UsbConstants.USB_TYPE_VENDOR, ACC_REQ_SEND_STRING, 0, index, string.toByteArray(), string.length, USB_TIMEOUT_IN_MS)
+        val bytes = (string + "\u0000").toByteArray(Charsets.UTF_8)
+        val len = conn.controlTransfer(UsbConstants.USB_TYPE_VENDOR, ACC_REQ_SEND_STRING, 0, index, bytes, bytes.size, USB_TIMEOUT_IN_MS)
         return if (len < 0) {
             // Negative means the USB transfer itself failed (e.g. device disconnected or
             // timed out). Abort the switch — ACC_REQ_START would be pointless.
             AppLog.e("Error controlTransfer len: $len  index: $index  string: \"$string\"")
             false
         } else {
-            // len == string.length is the ideal ACK. Some phones return 0 for a successful
+            // len == bytes.size or string.length is the ideal ACK. Some phones return 0 for a successful
             // OUT control transfer (they accept the data but report 0 bytes in the data
             // stage). Treat any non-negative return as success; log a warning if unexpected.
-            if (len != string.length) {
-                AppLog.w("Unexpected controlTransfer len: $len (expected ${string.length})  index: $index  string: \"$string\"")
+            if (len != bytes.size && len != string.length) {
+                AppLog.w("Unexpected controlTransfer len: $len (expected ${bytes.size})  index: $index  string: \"$string\"")
             } else {
                 AppLog.i("Success controlTransfer len: $len  index: $index  string: \"$string\"")
             }

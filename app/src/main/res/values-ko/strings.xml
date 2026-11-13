@@ -1838,4 +1838,18 @@
     <string name="hct_aa_wake_unconfirmed">헤드유닛이 Android Auto 연결을 완료하지 못했습니다. 휴대전화를 다시 선택해 재시도하거나, 휴대전화의 블루투스 설정에서 다시 연결하세요. Open Headunit은 계속 Android Auto를 기다리는 중입니다.</string>
     <string name="wifi_restart_failed">Wi-Fi를 다시 시작하지 못했습니다. 여기서 Wi-Fi를 껐다가 켜세요.</string>
     <string name="wifi_restart_running">Wi-Fi를 다시 시작하는 중…</string>
+    <string name="route_call_audio_and_mic">Route Phone Call Audio &amp; Mic to Head Unit</string>
+    <string name="route_call_audio_and_mic_summary">Use this device\'s mic and voice processing for phone calls</string>
+    <string name="route_call_audio_and_mic_description">Optimizes audio and microphone routing when using an old Android phone or tablet as a head unit receiver. Forces the head unit microphone on with VOICE_COMMUNICATION echo cancellation, announces the head unit Bluetooth MAC so calls can route cleanly, and releases the silent stand-in HFP link during active sessions so phone calls are never swallowed into silence.</string>
+    <string name="bt_hid_wake_trigger">Serverless Bluetooth Mouse Wake Trigger</string>
+    <string name="bt_hid_wake_trigger_summary">Wake locked phones via Bluetooth HID mouse without taking HFP</string>
+    <string name="bt_hid_wake_trigger_description">Registers the head unit stock Bluetooth radio as a serverless Bluetooth HID Mouse (Android 9+). Sends a 1-pixel wake nudge on connection so locked phones wake their screen and trigger wireless Android Auto automatically without occupying the phone\'s Hands-Free (HFP) call audio slot.</string>
+    <string name="auto_audio_only_when_moving">Parked Video / Moving Audio-Only (GPS Speed)</string>
+    <string name="auto_audio_only_when_moving_summary">Play video when parked and switch to audio when moving</string>
+    <string name="auto_audio_only_when_moving_description">Uses GPS speed to allow YouTube and video apps while parked (&lt; 5 km/h) and automatically switches Android Auto to audio/music mode (NO_VIDEO) when the car starts moving. Turn off to stay unrestricted at all times.</string>
+    <string name="auto_background_timeout">Minimize to background if idle</string>
+    <string name="auto_background_timeout_summary">Return to background when no device connects</string>
+    <string name="auto_background_timeout_description">Automatically minimizes Open Headunit to the background when no USB or target Bluetooth device connects within the chosen time. Set to Off to keep the app in the foreground.</string>
+    <string name="auto_background_timeout_off">Off</string>
+    <string name="auto_background_timeout_seconds">%1$d seconds</string>
 </resources>

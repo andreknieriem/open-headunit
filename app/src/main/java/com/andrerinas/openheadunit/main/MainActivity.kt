@@ -66,6 +66,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -86,6 +87,8 @@ class MainActivity : BaseActivity() {
 
     /** Ends the hold after a clean phone-side exit; the flow itself emits nothing at that moment. */
     private var phoneExitQuietJob: Job? = null
+    private var autoBackgroundJob: Job? = null
+    private var userInteractedThisResume: Boolean = false
     private var renderedNetwork: ConnectionNetworkDetail? = null
     private var autoConnectKenBurnsAnim: ObjectAnimator? = null
 
@@ -1101,6 +1104,8 @@ class MainActivity : BaseActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
+        autoBackgroundJob?.cancel()
         if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_HOME)) {
             // Like any launcher, Home leaves whatever inner screen was open (USB list, network
             // list, app drawer) for the home itself. The home then shows its first page.
@@ -1108,6 +1113,12 @@ class MainActivity : BaseActivity() {
             viewModel.homePressed.value = SystemClock.uptimeMillis()
         }
         applyTurnScreenOn(intent)
+        if (intent.getStringExtra(EXTRA_LAUNCH_SOURCE) == "USB auto-start") {
+            dismissSplashImmediately()
+            beginAutoConnect("USB auto-start", ConnectionUiMode.OVERLAY)
+        } else if (intent.getStringExtra(EXTRA_LAUNCH_SOURCE) == LAUNCH_SOURCE_BLUETOOTH) {
+            dismissSplashImmediately()
+        }
         handleLaunchIntent(intent)
     }
 
@@ -1337,8 +1348,112 @@ class MainActivity : BaseActivity() {
 
         // Coming back from a failed attempt lands here, so this is where the reason gets said.
         updateConnectionIssueBanner()
+        viewModel.refreshUsbDevices()
 
         checkOverlayPermission()
+        scheduleBackgroundIfDisconnected()
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        if (autoBackgroundJob?.isActive == true || !SettingsActivity.isVisible) {
+            scheduleBackgroundIfDisconnected()
+        }
+    }
+
+    /**
+     * Checks whether an active session, pending auto-connect, connectable USB device (phone or
+     * Android Auto dongle), or paired selected Bluetooth device is currently connected.
+     */
+    private fun isAnyConnectionOrTargetPresent(appSettings: Settings): Boolean {
+        val commManager = App.provide(this).commManager
+        if (commManager.isConnected || commManager.connectionState.value !is CommManager.ConnectionState.Disconnected) {
+            return true
+        }
+        if (autoConnectInProgress || AapService.isRecentTargetConnectionTrigger()) {
+            return true
+        }
+        if (com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat.hasConnectableDeviceOnBus(this)) {
+            return true
+        }
+        if (com.andrerinas.openheadunit.utils.BluetoothHelper.isAnyTargetBluetoothConnected(this, appSettings)) {
+            return true
+        }
+        return false
+    }
+
+    /**
+     * When the app is launched and neither a USB device (phone/dongle) nor any selected paired
+     * Bluetooth device is connected, moves the app to the background so `AapService` can listen
+     * silently and bring the app back over other apps the moment USB or Bluetooth connects.
+     *
+     * Stays in the foreground during first-time setup (onboarding or before any target Bluetooth
+     * device has been selected) and whenever the user interacts with the screen to open Settings.
+     */
+    private fun scheduleBackgroundIfDisconnected() {
+        autoBackgroundJob?.cancel()
+        val appSettings = Settings(this)
+
+        // Ensure Serverless Bluetooth HID Keyboard/Mouse persistent auto-connect loop is running
+        if (appSettings.btHidWakeTrigger) {
+            com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BtHidMouseTrigger.ensurePersistentConnect(
+                this,
+                appSettings.configuredBluetoothTargetMacs,
+                true
+            )
+        }
+
+        // 1. Keep in foreground during first-time onboarding wizard
+        if (appSettings.onboardingVersion < OnboardingActivity.CURRENT_ONBOARDING_VERSION) {
+            return
+        }
+        // 2. Keep in foreground if acting as the car's Home launcher or if opened explicitly to stay
+        if (appSettings.isCarLauncherActive || CarLauncherManager.isDefaultLauncher(this)) {
+            return
+        }
+        if (SettingsActivity.isVisible ||
+            intent?.getBooleanExtra(EXTRA_KEEP_IN_FOREGROUND, false) == true
+        ) {
+            return
+        }
+        // 3. Keep in foreground if USB or selected Bluetooth device is connected (or connecting)
+        if (isAnyConnectionOrTargetPresent(appSettings)) {
+            return
+        }
+
+        val timeoutSeconds = appSettings.autoBackgroundTimeoutSeconds
+        if (timeoutSeconds <= 0) {
+            return
+        }
+
+        val launchSource = intent?.getStringExtra(EXTRA_LAUNCH_SOURCE) ?: ""
+        val isAutoLaunch = launchSource == "Boot auto-start" || launchSource == "WiFi auto-start"
+        val delayMs = if (isAutoLaunch) 0L else timeoutSeconds * 1000L
+
+        if (delayMs > 0L) {
+            ToastUtils.showToast(
+                this,
+                "Waiting for USB or selected Bluetooth in background (tap screen for Settings)",
+                Toast.LENGTH_SHORT
+            )
+        }
+
+        autoBackgroundJob = lifecycleScope.launch {
+            if (delayMs > 0L) {
+                delay(delayMs)
+            }
+            if (!isActive || isFinishing || isDestroyed) return@launch
+            if (SettingsActivity.isVisible ||
+                intent?.getBooleanExtra(EXTRA_KEEP_IN_FOREGROUND, false) == true
+            ) {
+                return@launch
+            }
+            if (isAnyConnectionOrTargetPresent(Settings(this@MainActivity))) {
+                return@launch
+            }
+            AppLog.i("MainActivity: No USB or selected Bluetooth device connected -> moving task to background.")
+            moveTaskToBack(true)
+        }
     }
 
     private fun checkOverlayPermission() {
@@ -1564,6 +1679,9 @@ class MainActivity : BaseActivity() {
 
     override fun onPause() {
         super.onPause()
+        autoBackgroundJob?.cancel()
+        userInteractedThisResume = false
+        intent?.removeExtra(EXTRA_KEEP_IN_FOREGROUND)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setTurnScreenOn(false)
         if (isOrientationReceiverRegistered) {
             unregisterReceiver(orientationReceiver)
@@ -1645,8 +1763,10 @@ class MainActivity : BaseActivity() {
         @Volatile var hasRequestedPermissionsThisSession: Boolean = false
         const val EXTRA_LAUNCH_SOURCE = "launch_source"
         const val EXTRA_TURN_SCREEN_ON = "turn_screen_on"
+        const val EXTRA_KEEP_IN_FOREGROUND = "keep_in_foreground"
         const val LAUNCH_SOURCE_BLUETOOTH = "Bluetooth auto-start"
         const val EXTRA_SHOW_DRIVER_SELECTOR = "show_driver_selector"
+        private const val AUTO_BACKGROUND_GRACE_MS = 3_500L
 
         /** Launch sources that mean the app opened itself, with nobody necessarily watching. */
         private val AUTOMATIC_LAUNCH_SOURCES = setOf(

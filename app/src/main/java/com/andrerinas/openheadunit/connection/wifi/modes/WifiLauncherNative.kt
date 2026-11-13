@@ -94,7 +94,7 @@ class WifiLauncherNative : WifiLauncher {
         // measured yet - the dial that measures it is in handshakeManager.start(), which this
         // return skips, so the answer used to be gated behind itself.
         val discovery = ZbtDiscovery.snapshot()
-        val blockedByExternalBt = ExternalBtTransportPolicy.refusesBringUp(
+        val blockedByExternalBt = !settings.btHidWakeTrigger && ExternalBtTransportPolicy.refusesBringUp(
             discovery,
             settings.externalBtZbtTransport,
             settings.nativeAaIgnoreExternalBt,

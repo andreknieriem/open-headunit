@@ -565,7 +565,10 @@ object HeadUnitScreenConfig {
         // and only hides rows. min(current, ceiling), so a lower choice is never raised.
         val preCapResolution = negotiatedResolutionType
         val hardCeiling = hardCeilingForPanel(realScreenWidthPx, realScreenHeightPx, isPortraitDisplay, canNegotiateHevc)
-        if (announcedGeometry == null && pixelsOf(negotiatedResolutionType) > pixelsOf(hardCeiling)) {
+        // An explicit 4K choice (now the default) is honoured on any panel when HEVC can carry it:
+        // the phone's 720p fallback entry covers a stream the device then cannot sustain.
+        val honour4k = selectedResolution == Settings.Resolution._3840x2160 && canNegotiateHevc
+        if (!honour4k && announcedGeometry == null && pixelsOf(negotiatedResolutionType) > pixelsOf(hardCeiling)) {
             negotiatedResolutionType = hardCeiling
         }
         // And to what the link can carry. Same min(current, ceiling) shape as the panel cap above,

@@ -35,6 +35,8 @@ class BlinkAaCarrier(
     private val isFinishedForSession: () -> Boolean,
     private val mayServeHandshake: () -> Boolean,
     private val onPhoneEvidence: () -> Unit,
+    /** Called when the external module reports a phone's hands-free link is up (JH). */
+    private val onPhoneLinked: (String) -> Unit = {},
     /** Called with the reason whenever it changes, and with null once the port is open again. */
     private val onRefusalChanged: (BlinkRefusal?) -> Unit = {},
     /** Whether the stock client is out of the way, read without root before every pass. */
@@ -263,6 +265,7 @@ class BlinkAaCarrier(
             is BlinkAutoLine.Event.PhoneLinked -> {
                 phoneAddress = event.address
                 AppLog.i("NativeAA: [BLINK] hands-free link up to ${event.address}.")
+                onPhoneLinked(event.address)
             }
             BlinkAutoLine.Event.ChannelOpened -> {
                 AppLog.i("NativeAA: [BLINK] the phone opened the Android Auto channel.")

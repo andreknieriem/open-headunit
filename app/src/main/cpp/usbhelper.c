@@ -75,6 +75,10 @@ Java_com_andrerinas_openheadunit_connection_usb_UsbNative_nativeWrite(JNIEnv *en
         LOGE("nativeWrite: handle is NULL");
         return -1;
     }
+    if (!data || length < 0) {
+        LOGE("nativeWrite: invalid arguments (data=%p, length=%d)", (void *)data, length);
+        return -3;
+    }
     jsize array_len = (*env)->GetArrayLength(env, data);
     if (length > array_len) {
         length = array_len;

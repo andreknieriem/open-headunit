@@ -995,30 +995,43 @@ class SettingsFragment : Fragment() {
             value = if (keepMediaAudio) "$btAddressValue · ${getString(R.string.usb_keep_phone_media_audio)}" else btAddressValue,
             searchKeywords = "bluetooth mac address car identity hands-free calls qr usb media audio a2dp",
             onClick = { _ ->
-                DialogUtils.showTextInputDialogWithMessage(
-                    requireContext(),
-                    R.string.enter_bluetooth_mac,
-                    R.string.bluetooth_address_message,
-                    btAddress,
-                    DialogUtils.Checkbox(
-                        R.string.usb_keep_phone_media_audio,
-                        R.string.usb_keep_phone_media_audio_description,
-                        keepMediaAudio
-                    ),
-                    { newVal, keep ->
+                val detectedMac = BluetoothHelper.getBluetoothMacAddress(requireContext())
+                BluetoothDevicePicker.showAddressPicker(
+                    context = requireContext(),
+                    currentMac = btAddress,
+                    detectedMac = detectedMac,
+                    keepMediaAudio = keepMediaAudio,
+                    onSelected = { chosenMac, keep ->
+                        pendingBluetoothAddress = chosenMac
                         pendingBluetoothAnnounceSkip = keep
-                        // Validated at entry, for the reason the static BSSID row records: an
-                        // address that is not MAC-shaped is announced verbatim and fails much later.
-                        val trimmed = newVal.trim()
-                        when {
-                            trimmed.isEmpty() -> pendingBluetoothAddress = ""
-                            SoftApBssidPolicy.isUsable(trimmed) -> pendingBluetoothAddress = trimmed
-                            else -> ToastUtils.showToast(
-                                requireContext(), R.string.invalid_bluetooth_address, Toast.LENGTH_LONG, force = true
-                            )
-                        }
                         checkChanges()
                         updateSettingsList()
+                    },
+                    onManualEntry = { keep ->
+                        DialogUtils.showTextInputDialogWithMessage(
+                            requireContext(),
+                            R.string.enter_bluetooth_mac,
+                            R.string.bluetooth_address_message,
+                            btAddress,
+                            DialogUtils.Checkbox(
+                                R.string.usb_keep_phone_media_audio,
+                                R.string.usb_keep_phone_media_audio_description,
+                                keep
+                            ),
+                            { newVal, newKeep ->
+                                pendingBluetoothAnnounceSkip = newKeep
+                                val trimmed = newVal.trim()
+                                when {
+                                    trimmed.isEmpty() -> pendingBluetoothAddress = ""
+                                    SoftApBssidPolicy.isUsable(trimmed) -> pendingBluetoothAddress = trimmed
+                                    else -> ToastUtils.showToast(
+                                        requireContext(), R.string.invalid_bluetooth_address, Toast.LENGTH_LONG, force = true
+                                    )
+                                }
+                                checkChanges()
+                                updateSettingsList()
+                            }
+                        )
                     }
                 )
             }

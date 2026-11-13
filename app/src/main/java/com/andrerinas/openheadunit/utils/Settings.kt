@@ -1506,12 +1506,12 @@ class Settings(private val context: Context) {
         }
 
     var autoStartOnBoot: Boolean
-        get() = prefs.getBoolean("auto-start-on-boot", false)
+        get() = prefs.getBoolean("auto-start-on-boot", true)
         set(value) { prefs.edit().putBoolean("auto-start-on-boot", value).apply() }
 
     /** With [autoStartOnBoot], start only the service and leave the screen to the phone connecting. */
     var autoStartOnBootInBackground: Boolean
-        get() = prefs.getBoolean("auto-start-on-boot-in-background", false)
+        get() = prefs.getBoolean("auto-start-on-boot-in-background", true)
         set(value) { prefs.edit().putBoolean("auto-start-on-boot-in-background", value).apply() }
 
     var autoStartOnScreenOn: Boolean
@@ -2150,7 +2150,7 @@ class Settings(private val context: Context) {
             } else {
                 context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             }
-            return prefs.getBoolean(KEY_AUTO_START_ON_BOOT, false)
+            return prefs.getBoolean(KEY_AUTO_START_ON_BOOT, true)
         }
 
         /**

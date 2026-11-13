@@ -1929,4 +1929,11 @@
     <string name="auto_audio_only_when_moving">Parked Video / Moving Audio-Only (GPS Speed)</string>
     <string name="auto_audio_only_when_moving_summary">Play video when parked and switch to audio when moving</string>
     <string name="auto_audio_only_when_moving_description">Uses GPS speed to allow YouTube and video apps while parked (&lt; 5 km/h) and automatically switches Android Auto to audio/music mode (NO_VIDEO) when the car starts moving. Turn off to stay unrestricted at all times.</string>
+    <string name="bt_scanning_nearby">Scanning nearby Bluetooth devices…</string>
+    <string name="bt_scan_done">Tap a device to select its MAC address</string>
+    <string name="bt_nearby_tag">Nearby</string>
+    <string name="bt_auto_detect_mac">Auto-detect (%1$s)</string>
+    <string name="bt_auto_detect_clear">Auto-detect (clear)</string>
+    <string name="bt_enter_manually">Enter manually</string>
+    <string name="bt_done">Done</string>
 </resources>

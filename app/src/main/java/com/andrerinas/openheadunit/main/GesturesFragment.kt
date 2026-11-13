@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.DimPolicy
+import com.andrerinas.openheadunit.input.InputActionCodec
 import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
@@ -18,7 +19,6 @@ import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class GesturesFragment : Fragment() {
 
@@ -26,6 +26,19 @@ class GesturesFragment : Fragment() {
     private lateinit var adapter: SettingsAdapter
     private lateinit var toolbar: MaterialToolbar
     private val resetItemId = 1004
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        parentFragmentManager.setFragmentResultListener(REQUEST_KEY, this) { _, result ->
+            val slot = Settings.GestureSlot.fromId(result.getString(ActionPickerFragment.RESULT_TAG).orEmpty())
+                ?: return@setFragmentResultListener
+            val action = InputActionCodec.decode(result.getString(ActionPickerFragment.RESULT_ACTION))
+            val settings = Settings(requireContext())
+            // Write only a change, so an untouched slot keeps following its default.
+            if (action != settings.gestureAction(slot)) settings.setGestureAction(slot, action)
+            if (::adapter.isInitialized) updateItems()
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         inflater.inflate(R.layout.fragment_gestures, container, false)
@@ -62,40 +75,34 @@ class GesturesFragment : Fragment() {
         adapter.submitList(
             listOf(
                 gestureSetting(
-                    id = "left",
+                    slot = Settings.GestureSlot.LEFT,
                     titleResId = R.string.gesture_two_finger_left,
                     helpResId = R.string.gesture_two_finger_edge_swipe_help,
-                    action = settings.leftTwoFingerGesture
                 ),
                 gestureSetting(
-                    id = "right",
+                    slot = Settings.GestureSlot.RIGHT,
                     titleResId = R.string.gesture_two_finger_right,
                     helpResId = R.string.gesture_two_finger_edge_swipe_help,
-                    action = settings.rightTwoFingerGesture
                 ),
                 gestureSetting(
-                    id = "down",
+                    slot = Settings.GestureSlot.DOWN,
                     titleResId = R.string.gesture_two_finger_down,
                     helpResId = R.string.gesture_two_finger_down_help,
-                    action = settings.downTwoFingerGesture
                 ),
                 gestureSetting(
-                    id = "leftTap",
+                    slot = Settings.GestureSlot.LEFT_TAP,
                     titleResId = R.string.gesture_two_finger_tap_left,
                     helpResId = R.string.gesture_two_finger_edge_tap_help,
-                    action = settings.leftTapTwoFingerGesture
                 ),
                 gestureSetting(
-                    id = "rightTap",
+                    slot = Settings.GestureSlot.RIGHT_TAP,
                     titleResId = R.string.gesture_two_finger_tap_right,
                     helpResId = R.string.gesture_two_finger_edge_tap_help,
-                    action = settings.rightTapTwoFingerGesture
                 ),
                 gestureSetting(
-                    id = "longPress",
+                    slot = Settings.GestureSlot.LONG_PRESS,
                     titleResId = R.string.gesture_two_finger_long_press,
                     helpResId = R.string.gesture_two_finger_long_press_help,
-                    action = settings.longPressTwoFingerGesture
                 ),
                 SettingItem.SegmentedButtonSettingEntry(
                     stableId = "edgeZone",
@@ -185,47 +192,33 @@ class GesturesFragment : Fragment() {
     }
 
     private fun gestureSetting(
-        id: String,
+        slot: Settings.GestureSlot,
         titleResId: Int,
         helpResId: Int,
-        action: Settings.GestureAction
     ) = SettingItem.SettingEntry(
-        stableId = id,
+        stableId = slot.id,
         nameResId = titleResId,
-        value = getString(action.labelResId),
+        value = ActionCatalog.label(requireContext(), settings.gestureAction(slot)),
         helpResId = helpResId,
-        onClick = { showActionPicker(id, titleResId, action) }
+        onClick = { openActionPicker(slot, titleResId) }
     )
 
-    private fun showActionPicker(id: String, titleResId: Int, selected: Settings.GestureAction) {
-        val actions = Settings.GestureAction.values()
-        val options = actions.map { getString(it.labelResId) }.toTypedArray()
-        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(titleResId)
-            .setSingleChoiceItems(options, selected.value) { dialog, which ->
-                val action = actions.firstOrNull { it.value == which } ?: return@setSingleChoiceItems
-                // Write only a change, so an untouched slot keeps following its default.
-                if (action != selected) when (id) {
-                    "left" -> settings.leftTwoFingerGesture = action
-                    "right" -> settings.rightTwoFingerGesture = action
-                    "down" -> settings.downTwoFingerGesture = action
-                    "leftTap" -> settings.leftTapTwoFingerGesture = action
-                    "rightTap" -> settings.rightTapTwoFingerGesture = action
-                    "longPress" -> settings.longPressTwoFingerGesture = action
-                }
-                updateItems()
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+    private fun openActionPicker(slot: Settings.GestureSlot, titleResId: Int) {
+        val controller = findNavController()
+        if (controller.currentDestination?.id != R.id.gesturesFragment) return
+        controller.navigate(
+            R.id.action_gesturesFragment_to_actionPickerFragment,
+            ActionPickerFragment.args(
+                requestKey = REQUEST_KEY,
+                tag = slot.id,
+                title = getString(titleResId),
+                current = settings.gestureAction(slot),
+                noneLabelResId = R.string.gesture_action_disabled
+            )
+        )
     }
 
-    private val Settings.GestureAction.labelResId: Int
-        get() = when (this) {
-            Settings.GestureAction.DISABLED -> R.string.gesture_action_disabled
-            Settings.GestureAction.EXIT_DIALOG -> R.string.gesture_action_exit_dialog
-            Settings.GestureAction.TOGGLE_FULLSCREEN -> R.string.gesture_action_toggle_fullscreen
-            Settings.GestureAction.NIGHT_OVERLAY -> R.string.gesture_action_night_overlay
-            Settings.GestureAction.DIM_SCREEN -> R.string.gesture_action_dim_screen
-        }
+    companion object {
+        private const val REQUEST_KEY = "gesture_action"
+    }
 }

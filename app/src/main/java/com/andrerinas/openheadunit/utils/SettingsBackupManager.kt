@@ -70,6 +70,12 @@ object SettingsBackupManager {
         "left-tap-two-finger-gesture" to ValueType.INT,
         "right-tap-two-finger-gesture" to ValueType.INT,
         "down-two-finger-gesture" to ValueType.INT,
+        "gesture-action-left" to ValueType.STRING,
+        "gesture-action-right" to ValueType.STRING,
+        "gesture-action-down" to ValueType.STRING,
+        "gesture-action-left-tap" to ValueType.STRING,
+        "gesture-action-right-tap" to ValueType.STRING,
+        "gesture-action-long-press" to ValueType.STRING,
         "gesture-edge-zone" to ValueType.INT,
         "dim-opacity-percent" to ValueType.INT,
         "night-overlay-text-size" to ValueType.INT,
@@ -145,6 +151,7 @@ object SettingsBackupManager {
         "night-mode-threshold-lux" to ValueType.INT,
         "night-mode-threshold-brightness" to ValueType.INT,
         "key-codes" to ValueType.STRING_SET,
+        Settings.KEY_BINDINGS to ValueType.STRING_SET,
         Settings.KEY_LOG_LEVEL to ValueType.INT,
         // Where the log comes from and where it lands. A round that asks for a particular capture
         // has to be able to seed these the same way it seeds the level.
@@ -447,6 +454,7 @@ object SettingsBackupManager {
         val existing = backupPreferences(context)
         val changedKeys = importData.values.filter { (key, value) -> existing[key] != value }.keys
 
+        removeSupersededKeys(prefs, importData.values.keys)
         applyValues(prefs, importData.values.filterKeys { it !in wifiScanBackupKeys })
         val scanValues = importData.values.filterKeys { it in wifiScanBackupKeys }
             .mapKeys { (key, _) -> wifiScanBackupKeys.getValue(key) }
@@ -618,6 +626,28 @@ object SettingsBackupManager {
             result.add(item)
         }
         return result
+    }
+
+    /**
+     * A backup made before key bindings and gesture actions were strings only holds the older
+     * values. The newer keys win when both exist, so this device's current ones are dropped and the
+     * imported older values are read (and migrated) in their place.
+     */
+    internal fun supersededKeys(importedKeys: Set<String>): Set<String> {
+        val stale = mutableSetOf<String>()
+        if ("key-codes" in importedKeys && Settings.KEY_BINDINGS !in importedKeys) stale += Settings.KEY_BINDINGS
+        for (slot in Settings.GestureSlot.values()) {
+            if (slot.legacyKey in importedKeys && slot.key !in importedKeys) stale += slot.key
+        }
+        return stale
+    }
+
+    private fun removeSupersededKeys(prefs: SharedPreferences, importedKeys: Set<String>) {
+        val stale = supersededKeys(importedKeys)
+        if (stale.isEmpty()) return
+        val editor = prefs.edit()
+        stale.forEach { editor.remove(it) }
+        editor.commit()
     }
 
     private fun applyValues(prefs: SharedPreferences, values: Map<String, Any>) {

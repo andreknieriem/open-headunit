@@ -71,7 +71,7 @@ class TwoFingerGestureTrackerTest {
     @Test fun mainSourceReadsTheDownSwipe() {
         val main = File("src/main")
         val hits = main.walkTopDown().filter { it.isFile && (it.extension == "kt" || it.extension == "xml") }
-            .filter { f -> f.readText().let { "down-two-finger" in it || "downTwoFinger" in it || "gesture_two_finger_down" in it } }
+            .filter { f -> f.readText().let { "down-two-finger" in it || "downTwoFinger" in it || "GestureSlot.DOWN" in it || "gesture_two_finger_down" in it } }
             .map { it.path }.toList()
         assertTrue(main.isDirectory)
         assertTrue(hits.any { it.endsWith("Settings.kt") })

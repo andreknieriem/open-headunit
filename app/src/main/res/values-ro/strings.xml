@@ -812,6 +812,21 @@
     <string name="share_hotspot_qr_error">Nu s-au putut obține datele de autentificare ale hotspotului Wi-Fi activ. Asigură-te că hotspotul este pornit și că Locația este activată.</string>
     <string name="carplay_box_title">Cutie CarPlay (experimental)</string>
     <string name="carplay_box_description">Deschide o cutie CarPlay conectată. Păstrați această aplicație deschisă. Netestat cu un iPhone.</string>
+    <string name="carplay_native_header">CarPlay nativ (experimental)</string>
+    <string name="carplay_native_status">Semnatar Apple</string>
+    <string name="carplay_native_checking">Se verifică această unitate...</string>
+    <string name="carplay_native_signer_chip">Semnatar: cip MFi</string>
+    <string name="carplay_native_signer_file">Semnatar: fișier importat</string>
+    <string name="carplay_native_signer_none">Semnatar: niciunul</string>
+    <string name="carplay_native_chip_candidate">Cale MFi găsită (%1$s), cip necunoscut</string>
+    <string name="carplay_native_chip_none">Fără cale MFi (%1$s)</string>
+    <string name="carplay_native_import">Importați certificatul și cheia</string>
+    <string name="carplay_native_import_hint">Alegeți un fișier PEM cu propriul certificat și cheia privată.</string>
+    <string name="carplay_native_import_ok">Certificat și cheie importate</string>
+    <string name="carplay_native_import_wrong_key">Cheia nu aparține acestui certificat</string>
+    <string name="carplay_native_import_corrupt">Fișierul este deteriorat sau trunchiat</string>
+    <string name="carplay_native_import_wrong_format">Fișierul necesită un certificat și o cheie PKCS#8 necriptată în format PEM</string>
+    <string name="carplay_native_import_no_picker">Această unitate nu are selector de fișiere</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Luminozitate curentă: %d / 255</string>

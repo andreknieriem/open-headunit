@@ -812,6 +812,21 @@
     <string name="share_hotspot_qr_error">Nie udało się pobrać danych aktywnego hotspota Wi-Fi. Upewnij się, że hotspot jest włączony, a lokalizacja aktywna.</string>
     <string name="carplay_box_title">Box CarPlay (eksperymentalne)</string>
     <string name="carplay_box_description">Otwiera podłączony box CarPlay. Pozostaw tę aplikację otwartą. Nie testowano z iPhonem.</string>
+    <string name="carplay_native_header">Natywny CarPlay (eksperymentalne)</string>
+    <string name="carplay_native_status">Podpis Apple</string>
+    <string name="carplay_native_checking">Sprawdzanie stacji...</string>
+    <string name="carplay_native_signer_chip">Podpis: chip MFi</string>
+    <string name="carplay_native_signer_file">Podpis: zaimportowany plik</string>
+    <string name="carplay_native_signer_none">Podpis: brak</string>
+    <string name="carplay_native_chip_candidate">Znaleziono ścieżkę MFi (%1$s), chip nieznany</string>
+    <string name="carplay_native_chip_none">Brak ścieżki MFi (%1$s)</string>
+    <string name="carplay_native_import">Importuj certyfikat i klucz</string>
+    <string name="carplay_native_import_hint">Wybierz plik PEM z własnym certyfikatem i kluczem prywatnym.</string>
+    <string name="carplay_native_import_ok">Zaimportowano certyfikat i klucz</string>
+    <string name="carplay_native_import_wrong_key">Klucz nie pasuje do tego certyfikatu</string>
+    <string name="carplay_native_import_corrupt">Plik jest uszkodzony lub ucięty</string>
+    <string name="carplay_native_import_wrong_format">Plik musi zawierać certyfikat i nieszyfrowany klucz PKCS#8 w formacie PEM</string>
+    <string name="carplay_native_import_no_picker">Ta stacja nie ma selektora plików</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Aktualna jasność: %d / 255</string>

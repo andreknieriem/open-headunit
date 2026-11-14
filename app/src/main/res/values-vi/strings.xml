@@ -785,6 +785,21 @@
     <string name="share_hotspot_qr_error">Không lấy được thông tin của điểm phát sóng Wi-Fi đang hoạt động. Hãy bật điểm phát sóng và bật Vị trí.</string>
     <string name="carplay_box_title">Hộp CarPlay (thử nghiệm)</string>
     <string name="carplay_box_description">Mở hộp CarPlay đã cắm. Hãy giữ ứng dụng này luôn mở. Chưa thử nghiệm với iPhone.</string>
+    <string name="carplay_native_header">CarPlay gốc (thử nghiệm)</string>
+    <string name="carplay_native_status">Bên ký của Apple</string>
+    <string name="carplay_native_checking">Đang kiểm tra thiết bị này...</string>
+    <string name="carplay_native_signer_chip">Bên ký: chip MFi</string>
+    <string name="carplay_native_signer_file">Bên ký: tệp đã nhập</string>
+    <string name="carplay_native_signer_none">Bên ký: không có</string>
+    <string name="carplay_native_chip_candidate">Tìm thấy đường dẫn MFi (%1$s), chưa rõ chip</string>
+    <string name="carplay_native_chip_none">Không có đường dẫn MFi (%1$s)</string>
+    <string name="carplay_native_import">Nhập chứng chỉ và khóa</string>
+    <string name="carplay_native_import_hint">Chọn tệp PEM chứa chứng chỉ và khóa riêng của bạn.</string>
+    <string name="carplay_native_import_ok">Đã nhập chứng chỉ và khóa</string>
+    <string name="carplay_native_import_wrong_key">Khóa không thuộc về chứng chỉ này</string>
+    <string name="carplay_native_import_corrupt">Tệp bị hỏng hoặc bị cắt cụt</string>
+    <string name="carplay_native_import_wrong_format">Tệp cần có chứng chỉ và khóa PKCS#8 không mã hóa ở định dạng PEM</string>
+    <string name="carplay_native_import_no_picker">Thiết bị này không có bộ chọn tệp</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="exit_dialog_settings">Cài đặt nhanh</string>

@@ -839,6 +839,21 @@
     <string name="share_hotspot_qr_error">ვერ მოხერხდა აქტიური Wi-Fi ჰოტსპოტის მონაცემების მიღება. გთხოვთ, დარწმუნდეთ, რომ ჰოტსპოტი ჩართულია და ლოკაცია (Location) აქტიურია.</string>
     <string name="carplay_box_title">CarPlay ბოქსი (ექსპერიმენტული)</string>
     <string name="carplay_box_description">ხსნის მიერთებულ CarPlay ბოქსს. დატოვეთ ეს აპი ღია. iPhone-ზე გამოცდილი არ არის.</string>
+    <string name="carplay_native_header">ნატიური CarPlay (ექსპერიმენტული)</string>
+    <string name="carplay_native_status">Apple-ის ხელმომწერი</string>
+    <string name="carplay_native_checking">ამ მოწყობილობის შემოწმება...</string>
+    <string name="carplay_native_signer_chip">ხელმომწერი: MFi ჩიპი</string>
+    <string name="carplay_native_signer_file">ხელმომწერი: იმპორტირებული ფაილი</string>
+    <string name="carplay_native_signer_none">ხელმომწერი: არცერთი</string>
+    <string name="carplay_native_chip_candidate">ნაპოვნია MFi გზა (%1$s), ჩიპი უცნობია</string>
+    <string name="carplay_native_chip_none">MFi გზა არ არის (%1$s)</string>
+    <string name="carplay_native_import">სერტიფიკატისა და გასაღების იმპორტი</string>
+    <string name="carplay_native_import_hint">აირჩიეთ PEM ფაილი თქვენი სერტიფიკატითა და პირადი გასაღებით.</string>
+    <string name="carplay_native_import_ok">სერტიფიკატი და გასაღები იმპორტირებულია</string>
+    <string name="carplay_native_import_wrong_key">გასაღები ამ სერტიფიკატს არ ეკუთვნის</string>
+    <string name="carplay_native_import_corrupt">ფაილი დაზიანებულია ან შეწყვეტილია</string>
+    <string name="carplay_native_import_wrong_format">ფაილს სჭირდება სერტიფიკატი და დაშიფვრის გარეშე PKCS#8 გასაღები PEM ფორმატში</string>
+    <string name="carplay_native_import_no_picker">ამ მოწყობილობას ფაილის ამომრჩევი არ აქვს</string>
     <!-- Native USB Driver -->
     <string name="use_libusb">USB-ის ნატივი დრაივერის გამოყენება</string>
     <string name="use_libusb_description">libusb-ის გამოყენება კავშირისთვის. გამორთეთ Android-ის სტანდარტული USB API-ის გამოსაყენებლად.</string>

@@ -812,6 +812,21 @@
     <string name="share_hotspot_qr_error">No se pudieron obtener las credenciales del punto de acceso Wi-Fi activo. Comprueba que el punto de acceso esté activado y que la ubicación esté habilitada.</string>
     <string name="carplay_box_title">Caja CarPlay (experimental)</string>
     <string name="carplay_box_description">Abre una caja CarPlay conectada. Mantén abierta esta aplicación. No se ha probado con un iPhone.</string>
+    <string name="carplay_native_header">CarPlay nativo (experimental)</string>
+    <string name="carplay_native_status">Firmante de Apple</string>
+    <string name="carplay_native_checking">Comprobando esta unidad...</string>
+    <string name="carplay_native_signer_chip">Firmante: chip MFi</string>
+    <string name="carplay_native_signer_file">Firmante: archivo importado</string>
+    <string name="carplay_native_signer_none">Firmante: ninguno</string>
+    <string name="carplay_native_chip_candidate">Ruta MFi encontrada (%1$s), chip desconocido</string>
+    <string name="carplay_native_chip_none">Sin ruta MFi (%1$s)</string>
+    <string name="carplay_native_import">Importar certificado y clave</string>
+    <string name="carplay_native_import_hint">Elige un archivo PEM con tu propio certificado y clave privada.</string>
+    <string name="carplay_native_import_ok">Certificado y clave importados</string>
+    <string name="carplay_native_import_wrong_key">La clave no pertenece a este certificado</string>
+    <string name="carplay_native_import_corrupt">El archivo está dañado o truncado</string>
+    <string name="carplay_native_import_wrong_format">El archivo necesita un certificado y una clave PKCS#8 sin cifrar en formato PEM</string>
+    <string name="carplay_native_import_no_picker">Esta unidad no tiene selector de archivos</string>
 
     <!-- Brightness reading (night mode) -->
     <string name="current_brightness_reading">Brillo actual: %d / 255</string>

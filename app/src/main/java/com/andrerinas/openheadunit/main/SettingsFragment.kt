@@ -91,6 +91,11 @@ import com.andrerinas.openheadunit.utils.ProjectionSetupQrDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.activity.result.contract.ActivityResultContracts
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayIdentityFile
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayIdentityImport
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlaySignerPolicy
+import com.andrerinas.openheadunit.connection.carplaynative.MfiChipLocationPolicy
+import com.andrerinas.openheadunit.connection.carplaynative.MfiChipProbe
 import android.content.pm.PackageManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
@@ -383,6 +388,16 @@ class SettingsFragment : Fragment() {
     private val legacyImportSettingsLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { importSettingsFromUri(it) }
     }
+
+    private val identityImportLauncher = registerForActivityResult(OpenAnyFile()) { uri ->
+        uri?.let { importCarPlayIdentity(it) }
+    }
+
+    private var mfiVerdict: MfiChipLocationPolicy.Verdict? = null
+    private var carPlayIdentityValid = false
+    private var carPlayNativeChecked = false
+
+    private val androidBase64: (String) -> ByteArray = { android.util.Base64.decode(it, android.util.Base64.DEFAULT) }
 
     // Re-running the onboarding wizard can change restart-sensitive display settings;
     // reload pending state and recreate on return, mirroring the old SetupWizard callback.
@@ -2678,6 +2693,22 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        items.add(SettingItem.SubHeader("carPlayNative", R.string.carplay_native_header))
+        items.add(SettingItem.SettingEntry(
+            stableId = "carPlayNativeStatus",
+            nameResId = R.string.carplay_native_status,
+            value = carPlayNativeStatusText(),
+            searchKeywords = "carplay apple iphone mfi chip signer certificate native",
+            onClick = { _ -> checkCarPlayNative() }
+        ))
+        items.add(SettingItem.SettingEntry(
+            stableId = "carPlayIdentityImport",
+            nameResId = R.string.carplay_native_import,
+            value = getString(R.string.carplay_native_import_hint),
+            searchKeywords = "carplay apple certificate key pem import identity",
+            onClick = { _ -> launchCarPlayIdentityPicker() }
+        ))
+
         items.add(SettingItem.SettingEntry(
             stableId = "oemAppManagement",
             nameResId = R.string.oem_app_management,
@@ -3609,6 +3640,72 @@ class SettingsFragment : Fragment() {
 
         if (recreate) {
             activity?.recreate()
+        }
+    }
+
+    /** Probes the MFi paths and the imported file off the main thread, then redraws the status row. */
+    private fun checkCarPlayNative() {
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (verdict, valid) = withContext(Dispatchers.IO) {
+                MfiChipProbe.probe() to CarPlayIdentityFile.isValid(appContext, androidBase64)
+            }
+            mfiVerdict = verdict
+            carPlayIdentityValid = valid
+            carPlayNativeChecked = true
+            // No code confirms a chip yet, so only the file can make a signer.
+            val signer = CarPlaySignerPolicy.choose(chipConfirmed = false, identityFileValid = valid)
+            AppLog.i("CarPlayNative: signer ${signer.label}")
+            updateSettingsList()
+        }
+    }
+
+    private fun carPlayNativeStatusText(): String {
+        if (!carPlayNativeChecked) {
+            carPlayNativeChecked = true
+            checkCarPlayNative()
+        }
+        val verdict = mfiVerdict ?: return getString(R.string.carplay_native_checking)
+        val signer = when (CarPlaySignerPolicy.choose(chipConfirmed = false, identityFileValid = carPlayIdentityValid)) {
+            CarPlaySignerPolicy.Choice.CHIP -> getString(R.string.carplay_native_signer_chip)
+            CarPlaySignerPolicy.Choice.FILE -> getString(R.string.carplay_native_signer_file)
+            CarPlaySignerPolicy.Choice.NONE -> getString(R.string.carplay_native_signer_none)
+        }
+        val chip = when (verdict) {
+            is MfiChipLocationPolicy.Verdict.Candidate -> getString(R.string.carplay_native_chip_candidate, verdict.path)
+            is MfiChipLocationPolicy.Verdict.None -> getString(R.string.carplay_native_chip_none, verdict.reason)
+        }
+        return "$signer. $chip"
+    }
+
+    private fun launchCarPlayIdentityPicker() {
+        try {
+            identityImportLauncher.launch("*/*")
+        } catch (e: ActivityNotFoundException) {
+            ToastUtils.showToast(requireContext(), getString(R.string.carplay_native_import_no_picker), Toast.LENGTH_LONG, force = true)
+        }
+    }
+
+    private fun importCarPlayIdentity(uri: Uri) {
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            // The file content is never logged, only the verdict.
+            val result = withContext(Dispatchers.IO) {
+                val bytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                if (bytes == null || bytes.size > 64 * 1024) CarPlayIdentityImport.Result.WrongFormat
+                else CarPlayIdentityImport.parse(bytes, androidBase64).also {
+                    if (it is CarPlayIdentityImport.Result.Ok) CarPlayIdentityFile.save(appContext, bytes)
+                }
+            }
+            val message = when (result) {
+                is CarPlayIdentityImport.Result.Ok -> R.string.carplay_native_import_ok
+                CarPlayIdentityImport.Result.WrongKey -> R.string.carplay_native_import_wrong_key
+                CarPlayIdentityImport.Result.Corrupt -> R.string.carplay_native_import_corrupt
+                CarPlayIdentityImport.Result.WrongFormat -> R.string.carplay_native_import_wrong_format
+            }
+            AppLog.i("CarPlayNative: identity import ${result::class.java.simpleName}")
+            ToastUtils.showToast(requireContext(), message, Toast.LENGTH_LONG, force = true)
+            checkCarPlayNative()
         }
     }
 
@@ -5613,4 +5710,15 @@ class SettingsFragment : Fragment() {
             )
         }
     }
+}
+
+/** One picker for every API level: `OpenDocument` needs API 19 and `minSdk` is 16. */
+private class OpenAnyFile : androidx.activity.result.contract.ActivityResultContract<String, Uri?>() {
+    override fun createIntent(context: Context, input: String): Intent {
+        val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) Intent.ACTION_OPEN_DOCUMENT else Intent.ACTION_GET_CONTENT
+        return Intent(action).addCategory(Intent.CATEGORY_OPENABLE).setType(input)
+    }
+
+    override fun parseResult(resultCode: Int, intent: Intent?): Uri? =
+        if (resultCode == android.app.Activity.RESULT_OK) intent?.data else null
 }

@@ -811,6 +811,21 @@
     <string name="share_hotspot_qr_error">無法取得目前無線基地台的登入資訊。請確認無線基地台已開啟，且已啟用位置資訊。</string>
     <string name="carplay_box_title">CarPlay 盒(實驗性)</string>
     <string name="carplay_box_description">開啟已插入的 CarPlay 盒。請保持此應用程式開啟。尚未在 iPhone 上測試。</string>
+    <string name="carplay_native_header">原生 CarPlay(實驗性)</string>
+    <string name="carplay_native_status">Apple 簽署者</string>
+    <string name="carplay_native_checking">正在檢查此裝置...</string>
+    <string name="carplay_native_signer_chip">簽署者:MFi 晶片</string>
+    <string name="carplay_native_signer_file">簽署者:已匯入的檔案</string>
+    <string name="carplay_native_signer_none">簽署者:無</string>
+    <string name="carplay_native_chip_candidate">找到 MFi 路徑(%1$s),晶片不明</string>
+    <string name="carplay_native_chip_none">無 MFi 路徑(%1$s)</string>
+    <string name="carplay_native_import">匯入憑證和金鑰</string>
+    <string name="carplay_native_import_hint">請選擇包含您自己憑證和私密金鑰的 PEM 檔案。</string>
+    <string name="carplay_native_import_ok">已匯入憑證和金鑰</string>
+    <string name="carplay_native_import_wrong_key">此金鑰不屬於這個憑證</string>
+    <string name="carplay_native_import_corrupt">檔案已損毀或不完整</string>
+    <string name="carplay_native_import_wrong_format">檔案需要包含憑證和未加密的 PKCS#8 金鑰,格式為 PEM</string>
+    <string name="carplay_native_import_no_picker">此裝置沒有檔案選擇器</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">目前亮度：%d / 255</string>

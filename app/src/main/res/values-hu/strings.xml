@@ -851,6 +851,21 @@
     <string name="share_hotspot_qr_error">Nem sikerült lekérni az aktív Wi-Fi hotspot adatait. Ellenőrizze, hogy a hotspot be van kapcsolva, és a helymeghatározás engedélyezett.</string>
     <string name="carplay_box_title">CarPlay-doboz (kísérleti)</string>
     <string name="carplay_box_description">Megnyitja a csatlakoztatott CarPlay-dobozt. Tartsa nyitva ezt az alkalmazást. iPhone-nal nem tesztelték.</string>
+    <string name="carplay_native_header">Natív CarPlay (kísérleti)</string>
+    <string name="carplay_native_status">Apple-aláíró</string>
+    <string name="carplay_native_checking">Az egység ellenőrzése...</string>
+    <string name="carplay_native_signer_chip">Aláíró: MFi-chip</string>
+    <string name="carplay_native_signer_file">Aláíró: importált fájl</string>
+    <string name="carplay_native_signer_none">Aláíró: nincs</string>
+    <string name="carplay_native_chip_candidate">MFi-útvonal található (%1$s), a chip ismeretlen</string>
+    <string name="carplay_native_chip_none">Nincs MFi-útvonal (%1$s)</string>
+    <string name="carplay_native_import">Tanúsítvány és kulcs importálása</string>
+    <string name="carplay_native_import_hint">Válasszon egy PEM-fájlt a saját tanúsítványával és privát kulcsával.</string>
+    <string name="carplay_native_import_ok">Tanúsítvány és kulcs importálva</string>
+    <string name="carplay_native_import_wrong_key">A kulcs nem tartozik ehhez a tanúsítványhoz</string>
+    <string name="carplay_native_import_corrupt">A fájl sérült vagy csonka</string>
+    <string name="carplay_native_import_wrong_format">A fájlnak tanúsítványt és titkosítatlan PKCS#8 kulcsot kell tartalmaznia PEM formátumban</string>
+    <string name="carplay_native_import_no_picker">Ezen az egységen nincs fájlválasztó</string>
     <!-- Native USB Driver -->
     <string name="use_libusb">Natív USB-illesztőprogram használata</string>
     <string name="use_libusb_description">Libusb használata a kommunikációhoz. Kapcsolja ki az Android szabványos USB API-jának használatához.</string>

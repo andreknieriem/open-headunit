@@ -812,6 +812,21 @@
     <string name="share_hotspot_qr_error">Не вдалося отримати облікові дані активної точки доступу Wi-Fi. Переконайтеся, що точку доступу та геолокацію ввімкнено.</string>
     <string name="carplay_box_title">Блок CarPlay (експериментально)</string>
     <string name="carplay_box_description">Відкриває підключений блок CarPlay. Не закривайте цей застосунок. Не перевірено з iPhone.</string>
+    <string name="carplay_native_header">Нативний CarPlay (експериментально)</string>
+    <string name="carplay_native_status">Підпис Apple</string>
+    <string name="carplay_native_checking">Перевірка цього пристрою...</string>
+    <string name="carplay_native_signer_chip">Підпис: чип MFi</string>
+    <string name="carplay_native_signer_file">Підпис: імпортований файл</string>
+    <string name="carplay_native_signer_none">Підпис: немає</string>
+    <string name="carplay_native_chip_candidate">Знайдено шлях MFi (%1$s), чип невідомий</string>
+    <string name="carplay_native_chip_none">Немає шляху MFi (%1$s)</string>
+    <string name="carplay_native_import">Імпортувати сертифікат і ключ</string>
+    <string name="carplay_native_import_hint">Виберіть файл PEM зі своїм сертифікатом і закритим ключем.</string>
+    <string name="carplay_native_import_ok">Сертифікат і ключ імпортовано</string>
+    <string name="carplay_native_import_wrong_key">Ключ не належить до цього сертифіката</string>
+    <string name="carplay_native_import_corrupt">Файл пошкоджено або обрізано</string>
+    <string name="carplay_native_import_wrong_format">Потрібен файл із сертифікатом і незашифрованим ключем PKCS#8 у форматі PEM</string>
+    <string name="carplay_native_import_no_picker">На цьому пристрої немає вибору файлів</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Поточна яскравість: %d / 255</string>

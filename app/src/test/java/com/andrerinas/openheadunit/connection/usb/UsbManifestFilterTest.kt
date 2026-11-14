@@ -98,8 +98,8 @@ class UsbManifestFilterTest {
 
     @Test
     fun `an AAWireless adapter idling as 18D1 4EE1 matches on its id alone`() {
-        // The adapter presents device class 0 and no interface triple the filter knows, so before
-        // the explicit entry nothing matched and the app was never launched on attach (#1261).
+        // 18D1:4EE1 is the adapter's idle identity before the AOA switch. Before the explicit entry
+        // nothing matched it, so the app was never launched on attach (#1261).
         assertTrue(matches(Device(0x18D1, 0x4EE1, 0x00, emptyList())))
     }
 }

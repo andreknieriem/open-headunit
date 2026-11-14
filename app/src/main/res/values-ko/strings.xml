@@ -865,6 +865,8 @@
     <string name="hotspot_qr_description">Wireless Helper 설정 QR 코드</string>
     <string name="scan_with_wireless_helper">휴대전화의 Wireless Helper QR 스캐너로 이 QR 코드를 스캔하세요.</string>
     <string name="share_hotspot_qr_error">현재 Wi-Fi 핫스팟의 연결 정보를 가져올 수 없습니다. 핫스팟과 위치 기능이 켜져 있는지 확인하세요.</string>
+    <string name="carplay_box_title">CarPlay 박스(실험용)</string>
+    <string name="carplay_box_description">연결된 CarPlay 박스를 엽니다. 이 앱을 열어 두세요. iPhone에서는 테스트하지 않았습니다.</string>
     <string name="use_libusb">네이티브 USB 드라이버 사용</string>
     <string name="use_libusb_description">USB 통신에 libusb를 사용합니다. 이 기능을 사용 중지하면 Android의 표준 USB API를 사용합니다.</string>
     <string name="use_libusb_help">휴대전화와의 케이블 연결에 Android USB 시스템 대신 앱 자체 USB 라이브러리를 사용합니다. 사용 중지 상태로 두세요. USB로 연결된 휴대전화는 인식되는데 Android Auto가 시작되지 않을 때만 사용 설정하세요. 무선 연결에는 영향이 없습니다.</string>

@@ -60,6 +60,7 @@ class SettingsPendingCopy {
     var debugVideoLowLatency: Boolean? = null
     var allowExternalConfiguration: Boolean? = null
     var keepDummyVpnDuringSession: Boolean? = null
+    var carPlayBoxEnabled: Boolean? = null
     var wifiConnectionMode: WifiLauncherMode? = null
     var helperConnectionStrategy: HelperStrategy? = null
     var autoEnableHotspot: Boolean? = null
@@ -161,6 +162,7 @@ class SettingsPendingCopy {
         debugVideoLowLatency = settings.debugVideoLowLatency
         allowExternalConfiguration = settings.allowExternalConfiguration
         keepDummyVpnDuringSession = settings.keepDummyVpnDuringSession
+        carPlayBoxEnabled = settings.carPlayBoxEnabled
         wifiConnectionMode = settings.wifiConnectionMode
         helperConnectionStrategy = settings.helperConnectionStrategy
         autoEnableHotspot = settings.autoEnableHotspot
@@ -263,6 +265,7 @@ class SettingsPendingCopy {
         debugVideoLowLatency != settings.debugVideoLowLatency ||
         allowExternalConfiguration != settings.allowExternalConfiguration ||
         keepDummyVpnDuringSession != settings.keepDummyVpnDuringSession ||
+        carPlayBoxEnabled != settings.carPlayBoxEnabled ||
         wifiConnectionMode != settings.wifiConnectionMode ||
         helperConnectionStrategy != settings.helperConnectionStrategy ||
         autoEnableHotspot != settings.autoEnableHotspot ||

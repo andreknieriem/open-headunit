@@ -809,6 +809,8 @@
     <string name="hotspot_qr_description">Wireless Helper 設定 QR 碼</string>
     <string name="scan_with_wireless_helper">請在手機上使用 Wireless Helper 的 QR 碼掃描器，掃描此 QR 碼。</string>
     <string name="share_hotspot_qr_error">無法取得目前無線基地台的登入資訊。請確認無線基地台已開啟，且已啟用位置資訊。</string>
+    <string name="carplay_box_title">CarPlay 盒(實驗性)</string>
+    <string name="carplay_box_description">開啟已插入的 CarPlay 盒。請保持此應用程式開啟。尚未在 iPhone 上測試。</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">目前亮度：%d / 255</string>

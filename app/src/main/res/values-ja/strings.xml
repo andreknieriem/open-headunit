@@ -818,6 +818,8 @@
     <string name="hotspot_qr_description">Wireless Helper 設定用QRコード</string>
     <string name="scan_with_wireless_helper">スマートフォンの Wireless Helper にあるQRスキャナーを使用して、このQRコードをスキャンしてください。</string>
     <string name="share_hotspot_qr_error">有効な Wi-Fi アクセス ポイントの認証情報を取得できませんでした。アクセス ポイントがオンで、位置情報が有効になっていることを確認してください。</string>
+    <string name="carplay_box_title">CarPlayボックス(試験運用)</string>
+    <string name="carplay_box_description">接続されているCarPlayボックスを開きます。このアプリを開いたままにしてください。iPhoneでは未検証です。</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">現在の明るさ: %d / 255</string>

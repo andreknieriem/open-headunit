@@ -809,6 +809,8 @@
     <string name="hotspot_qr_description">Wireless Helper 配置二维码</string>
     <string name="scan_with_wireless_helper">请使用手机上 Wireless Helper 的二维码扫描器扫描此二维码。</string>
     <string name="share_hotspot_qr_error">无法获取当前的 Wi-Fi 热点凭据。请确保热点已开启，且已启用位置信息。</string>
+    <string name="carplay_box_title">CarPlay 盒子(实验性)</string>
+    <string name="carplay_box_description">打开已插入的 CarPlay 盒子。请保持此应用开启。尚未在 iPhone 上测试。</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">当前亮度：%d / 255</string>

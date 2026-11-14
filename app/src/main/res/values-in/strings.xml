@@ -1484,6 +1484,8 @@
     <string name="hotspot_qr_description">Kode QR Konfigurasi Wireless Helper</string>
     <string name="scan_with_wireless_helper">Pindai Kode QR ini menggunakan Pemindai QR di Wireless Helper pada ponsel Anda.</string>
     <string name="share_hotspot_qr_error">Tidak dapat mengambil kredensial hotspot Wi-Fi yang aktif. Pastikan hotspot Anda aktif dan Lokasi diaktifkan.</string>
+    <string name="carplay_box_title">Kotak CarPlay (eksperimental)</string>
+    <string name="carplay_box_description">Membuka kotak CarPlay yang terpasang. Biarkan aplikasi ini tetap terbuka. Belum diuji dengan iPhone.</string>
     <string name="use_libusb">Gunakan Driver USB Asli</string>
     <string name="use_libusb_description">Gunakan libusb untuk komunikasi. Nonaktifkan untuk menggunakan API USB standar Android.</string>
     <string name="use_libusb_help">Memakai pustaka USB milik aplikasi, bukan sistem USB Android, untuk koneksi kabel ke ponsel. Biarkan nonaktif. Aktifkan hanya jika ponsel di USB terdeteksi tetapi Android Auto tidak mulai. Tidak mengubah apa pun pada koneksi nirkabel.</string>

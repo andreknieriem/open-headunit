@@ -1483,6 +1483,8 @@
     <string name="hotspot_qr_description">Wireless Helper कॉन्फ़िगरेशन QR कोड</string>
     <string name="scan_with_wireless_helper">अपने फ़ोन पर Wireless Helper में QR स्कैनर का उपयोग करके इस QR कोड को स्कैन करें।</string>
     <string name="share_hotspot_qr_error">चालू वाई-फ़ाई हॉटस्पॉट की जानकारी नहीं मिल सकी। पक्का करें कि हॉटस्पॉट और जगह की जानकारी चालू हैं।</string>
+    <string name="carplay_box_title">CarPlay बॉक्स (प्रायोगिक)</string>
+    <string name="carplay_box_description">प्लग किए गए CarPlay बॉक्स को खोलता है। इस ऐप को खुला रखें। iPhone के साथ परीक्षण नहीं किया गया।</string>
     <string name="use_libusb">नेटिव यूएसबी ड्राइवर इस्तेमाल करें</string>
     <string name="use_libusb_description">संचार के लिए libusb इस्तेमाल करें। Android का मानक यूएसबी API इस्तेमाल करने के लिए इसे बंद करें।</string>
     <string name="use_libusb_help">फ़ोन से केबल कनेक्शन के लिए Android के USB सिस्टम की जगह ऐप की अपनी USB लाइब्रेरी इस्तेमाल करता है। इसे बंद रखें। इसे तभी चालू करें जब USB पर फ़ोन मिल जाए लेकिन Android Auto शुरू न हो। वायरलेस कनेक्शन पर इसका कोई असर नहीं होता।</string>

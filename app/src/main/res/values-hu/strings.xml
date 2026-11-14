@@ -849,6 +849,8 @@
     <string name="hotspot_qr_description">Wireless Helper konfigurációs QR-kód</string>
     <string name="scan_with_wireless_helper">Olvassa be ezt a QR-kódot a telefonján lévő Wireless Helper QR-olvasójával.</string>
     <string name="share_hotspot_qr_error">Nem sikerült lekérni az aktív Wi-Fi hotspot adatait. Ellenőrizze, hogy a hotspot be van kapcsolva, és a helymeghatározás engedélyezett.</string>
+    <string name="carplay_box_title">CarPlay-doboz (kísérleti)</string>
+    <string name="carplay_box_description">Megnyitja a csatlakoztatott CarPlay-dobozt. Tartsa nyitva ezt az alkalmazást. iPhone-nal nem tesztelték.</string>
     <!-- Native USB Driver -->
     <string name="use_libusb">Natív USB-illesztőprogram használata</string>
     <string name="use_libusb_description">Libusb használata a kommunikációhoz. Kapcsolja ki az Android szabványos USB API-jának használatához.</string>

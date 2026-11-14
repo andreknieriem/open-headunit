@@ -811,6 +811,8 @@ Open Headunit предоставляется «как есть» без каки
     <string name="hotspot_qr_description">QR-код конфигурации Wireless Helper</string>
     <string name="scan_with_wireless_helper">Отсканируйте этот QR-код с помощью сканера в приложении Wireless Helper на вашем телефоне.</string>
     <string name="share_hotspot_qr_error">Не удалось получить данные активной точки доступа Wi-Fi. Убедитесь, что точка доступа включена и геолокация разрешена.</string>
+    <string name="carplay_box_title">Блок CarPlay (экспериментально)</string>
+    <string name="carplay_box_description">Открывает подключённый блок CarPlay. Не закрывайте это приложение. Не проверено с iPhone.</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Текущая яркость: %d / 255</string>

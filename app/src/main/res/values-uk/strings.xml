@@ -810,6 +810,8 @@
     <string name="hotspot_qr_description">QR-код конфігурації Wireless Helper</string>
     <string name="scan_with_wireless_helper">Відскануйте цей QR-код за допомогою сканера в додатку Wireless Helper на телефоні.</string>
     <string name="share_hotspot_qr_error">Не вдалося отримати облікові дані активної точки доступу Wi-Fi. Переконайтеся, що точку доступу та геолокацію ввімкнено.</string>
+    <string name="carplay_box_title">Блок CarPlay (експериментально)</string>
+    <string name="carplay_box_description">Відкриває підключений блок CarPlay. Не закривайте цей застосунок. Не перевірено з iPhone.</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Поточна яскравість: %d / 255</string>

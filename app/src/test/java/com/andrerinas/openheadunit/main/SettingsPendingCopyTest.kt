@@ -112,4 +112,18 @@ class SettingsPendingCopyTest {
     @Test fun `the tab choice is not part of the copy`() {
         assertFalse(fields().any { it.name == "advancedSettings" })
     }
+
+    @Test fun `the CarPlay box switch is off by default and a save writes it only when changed`() {
+        val settings = newSettings()
+        assertFalse(settings.carPlayBoxEnabled)
+        val copy = SettingsPendingCopy()
+        copy.loadFrom(settings)
+        assertFalse(copy.differsFrom(settings))
+        copy.carPlayBoxEnabled = true
+        assertTrue(copy.differsFrom(settings))
+        copy.carPlayBoxEnabled?.let { if (it != settings.carPlayBoxEnabled) settings.carPlayBoxEnabled = it }
+        assertTrue(settings.carPlayBoxEnabled)
+        copy.loadFrom(settings)
+        assertFalse(copy.differsFrom(settings))
+    }
 }

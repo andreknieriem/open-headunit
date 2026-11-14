@@ -1167,6 +1167,8 @@
     <string name="hotspot_qr_description">Code QR de configuration de l\'assistant sans fil</string>
     <string name="scan_with_wireless_helper">Scannez ce code QR avec le scanner QR de Wireless Helper sur votre téléphone.</string>
     <string name="share_hotspot_qr_error">Impossible de récupérer les identifiants du point d\'accès Wi-Fi actif. Vérifiez que votre point d\'accès est activé et que la localisation est activée.</string>
+    <string name="carplay_box_title">Boîtier CarPlay (expérimental)</string>
+    <string name="carplay_box_description">Ouvre un boîtier CarPlay branché. Gardez cette application ouverte. Non testé avec un iPhone.</string>
     <string name="use_libusb">Utiliser le pilote USB natif</string>
     <string name="use_libusb_description">Utilise libusb pour la communication. Désactivez cette option pour utiliser l\'API USB standard d\'Android.</string>
     <string name="use_libusb_help">Utilise la bibliothèque USB propre à l\'appli à la place du système USB d\'Android pour la connexion filaire au téléphone. Laissez-le désactivé. Activez-le seulement si un téléphone en USB est détecté mais qu\'Android Auto ne démarre pas. Sans effet sur une connexion sans fil.</string>

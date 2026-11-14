@@ -783,6 +783,8 @@
     <string name="hotspot_qr_description">Wireless Helper Yapılandırma QR Kodu</string>
     <string name="scan_with_wireless_helper">Bu QR Kodunu telefonunuzdaki Wireless Helper\'da bulunan QR Tarayıcıyı kullanarak tarayın.</string>
     <string name="share_hotspot_qr_error">Etkin Wi-Fi erişim noktasının kimlik bilgileri alınamadı. Lütfen erişim noktasının ve Konum özelliğinin açık olduğundan emin olun.</string>
+    <string name="carplay_box_title">CarPlay kutusu (deneysel)</string>
+    <string name="carplay_box_description">Takılı CarPlay kutusunu açar. Bu uygulamayı açık tutun. iPhone ile test edilmedi.</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Geçerli parlaklık: %d / 255</string>

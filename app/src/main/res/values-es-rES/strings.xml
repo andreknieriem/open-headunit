@@ -810,6 +810,8 @@
     <string name="hotspot_qr_description">Código QR de configuración de Wireless Helper</string>
     <string name="scan_with_wireless_helper">Escanea este código QR usando el escáner QR en Wireless Helper en tu teléfono.</string>
     <string name="share_hotspot_qr_error">No se pudieron obtener las credenciales del punto de acceso Wi-Fi activo. Comprueba que el punto de acceso esté activado y que la ubicación esté habilitada.</string>
+    <string name="carplay_box_title">Caja CarPlay (experimental)</string>
+    <string name="carplay_box_description">Abre una caja CarPlay conectada. Mantén abierta esta aplicación. No se ha probado con un iPhone.</string>
 
     <!-- Brightness reading (night mode) -->
     <string name="current_brightness_reading">Brillo actual: %d / 255</string>

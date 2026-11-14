@@ -1484,6 +1484,8 @@
     <string name="hotspot_qr_description">รหัส QR กำหนดค่า Wireless Helper</string>
     <string name="scan_with_wireless_helper">สแกนรหัส QR นี้โดยใช้ตัวสแกน QR ใน Wireless Helper บนโทรศัพท์ของคุณ</string>
     <string name="share_hotspot_qr_error">ไม่สามารถดึงข้อมูลประจำตัวฮอตสปอต Wi-Fi ที่ใช้งานอยู่ได้ ตรวจสอบว่าเปิดฮอตสปอตและตำแหน่งแล้ว</string>
+    <string name="carplay_box_title">กล่อง CarPlay (ทดลอง)</string>
+    <string name="carplay_box_description">เปิดกล่อง CarPlay ที่เสียบอยู่ เปิดแอปนี้ค้างไว้ ยังไม่ได้ทดสอบกับ iPhone</string>
     <string name="use_libusb">ใช้ไดรเวอร์ USB ดั้งเดิม (Native)</string>
     <string name="use_libusb_description">ใช้ libusb สำหรับการสื่อสาร ปิดใช้งานเพื่อใช้ Android USB API มาตรฐาน</string>
     <string name="use_libusb_help">ใช้ไลบรารี USB ของแอปเองแทนระบบ USB ของ Android สำหรับการเชื่อมต่อสายกับโทรศัพท์ ควรปิดไว้ เปิดเฉพาะเมื่อพบโทรศัพท์ผ่าน USB แต่ Android Auto ไม่เริ่มทำงาน ไม่มีผลกับการเชื่อมต่อไร้สาย</string>

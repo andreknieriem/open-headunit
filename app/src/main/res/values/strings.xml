@@ -1608,6 +1608,8 @@
     <string name="hotspot_qr_description">Wireless Helper Configuration QR Code</string>
     <string name="scan_with_wireless_helper">Scan this QR Code using the QR Scanner in Wireless Helper on your phone.</string>
     <string name="share_hotspot_qr_error">Could not retrieve active Wi-Fi hotspot credentials. Please ensure your hotspot is turned on and Location is enabled.</string>
+    <string name="carplay_box_title">CarPlay box (experimental)</string>
+    <string name="carplay_box_description">Opens a plugged-in CarPlay box. Keep this app open. Untested with an iPhone.</string>
     <string name="use_libusb">Use Native USB Driver</string>
     <string name="use_libusb_description">Use libusb for communication. Disable to use Android\'s standard USB API.</string>
     <string name="use_libusb_help">Uses the app\'s own USB library instead of the Android USB system for the cable connection to the phone. Leave it off. Turn it on only if a phone on USB is found but Android Auto does not start. It changes nothing for a wireless connection.</string>

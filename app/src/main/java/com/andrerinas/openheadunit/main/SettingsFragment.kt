@@ -228,6 +228,7 @@ class SettingsFragment : Fragment() {
     private var pendingDebugVideoLowLatency by pending::debugVideoLowLatency
     private var pendingAllowExternalConfiguration by pending::allowExternalConfiguration
     private var pendingKeepDummyVpnDuringSession by pending::keepDummyVpnDuringSession
+    private var pendingCarPlayBoxEnabled by pending::carPlayBoxEnabled
 
     private var pendingWifiConnectionMode by pending::wifiConnectionMode
     private var pendingHelperConnectionStrategy by pending::helperConnectionStrategy
@@ -733,6 +734,7 @@ class SettingsFragment : Fragment() {
         pendingDebugVideoLowLatency?.let { if (it != settings.debugVideoLowLatency) settings.debugVideoLowLatency = it }
         pendingAllowExternalConfiguration?.let { if (it != settings.allowExternalConfiguration) settings.allowExternalConfiguration = it }
         pendingKeepDummyVpnDuringSession?.let { if (it != settings.keepDummyVpnDuringSession) settings.keepDummyVpnDuringSession = it }
+        pendingCarPlayBoxEnabled?.let { if (it != settings.carPlayBoxEnabled) settings.carPlayBoxEnabled = it }
 
         val wirelessConfigBefore = wirelessRearmConfig()
         pendingWifiConnectionMode?.let { if (it != settings.wifiConnectionMode) settings.wifiConnectionMode = it }
@@ -2662,6 +2664,19 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "carPlayBoxEnabled",
+            nameResId = R.string.carplay_box_title,
+            descriptionResId = R.string.carplay_box_description,
+            isChecked = pendingCarPlayBoxEnabled ?: false,
+            searchKeywords = "carplay apple iphone box carlinkit dongle",
+            onCheckedChanged = { isChecked ->
+                pendingCarPlayBoxEnabled = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
 
         items.add(SettingItem.SettingEntry(
             stableId = "oemAppManagement",

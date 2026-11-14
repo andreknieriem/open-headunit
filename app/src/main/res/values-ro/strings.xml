@@ -810,6 +810,8 @@
     <string name="hotspot_qr_description">Cod QR de configurare Wireless Helper</string>
     <string name="scan_with_wireless_helper">Scanează acest cod QR folosind scanerul QR din Wireless Helper pe telefonul tău.</string>
     <string name="share_hotspot_qr_error">Nu s-au putut obține datele de autentificare ale hotspotului Wi-Fi activ. Asigură-te că hotspotul este pornit și că Locația este activată.</string>
+    <string name="carplay_box_title">Cutie CarPlay (experimental)</string>
+    <string name="carplay_box_description">Deschide o cutie CarPlay conectată. Păstrați această aplicație deschisă. Netestat cu un iPhone.</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Luminozitate curentă: %d / 255</string>

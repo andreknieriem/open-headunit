@@ -783,6 +783,8 @@
     <string name="hotspot_qr_description">Mã QR cấu hình Wireless Helper</string>
     <string name="scan_with_wireless_helper">Quét mã QR này bằng Trình quét QR trong Wireless Helper trên điện thoại của bạn.</string>
     <string name="share_hotspot_qr_error">Không lấy được thông tin của điểm phát sóng Wi-Fi đang hoạt động. Hãy bật điểm phát sóng và bật Vị trí.</string>
+    <string name="carplay_box_title">Hộp CarPlay (thử nghiệm)</string>
+    <string name="carplay_box_description">Mở hộp CarPlay đã cắm. Hãy giữ ứng dụng này luôn mở. Chưa thử nghiệm với iPhone.</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="exit_dialog_settings">Cài đặt nhanh</string>

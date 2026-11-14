@@ -809,6 +809,8 @@
     <string name="hotspot_qr_description">رمز QR لتكوين Wireless Helper</string>
     <string name="scan_with_wireless_helper">امسح رمز QR هذا باستخدام ماسح QR في Wireless Helper على هاتفك.</string>
     <string name="share_hotspot_qr_error">تعذر استرداد بيانات اعتماد نقطة اتصال Wi-Fi النشطة. يرجى التأكد من تشغيل نقطة الاتصال وتمكين الموقع.</string>
+    <string name="carplay_box_title">صندوق CarPlay (تجريبي)</string>
+    <string name="carplay_box_description">يفتح صندوق CarPlay الموصول. أبقِ هذا التطبيق مفتوحًا. لم يُختبر مع iPhone.</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">السطوع الحالي: %d / 255</string>

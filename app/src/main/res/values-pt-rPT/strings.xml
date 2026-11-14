@@ -1484,6 +1484,8 @@
     <string name="hotspot_qr_description">Código QR de configuração do Wireless Helper</string>
     <string name="scan_with_wireless_helper">Leia este código QR com o leitor do Wireless Helper no seu telemóvel.</string>
     <string name="share_hotspot_qr_error">Não foi possível obter os dados da zona Wi-Fi ativa. Certifique-se de que a zona Wi-Fi e a localização estão ativadas.</string>
+    <string name="carplay_box_title">Caixa CarPlay (experimental)</string>
+    <string name="carplay_box_description">Abre uma caixa CarPlay ligada. Mantenha esta aplicação aberta. Não testado com um iPhone.</string>
     <string name="use_libusb">Utilizar controlador USB nativo</string>
     <string name="use_libusb_description">Utilizar libusb para comunicação. Desative para utilizar a API USB padrão do Android.</string>
     <string name="use_libusb_help">Utiliza a biblioteca USB da própria app em vez do sistema USB do Android na ligação por cabo ao telemóvel. Deixe desativado. Ative apenas se um telemóvel em USB for encontrado, mas o Android Auto não iniciar. Não altera nada numa ligação sem fios.</string>

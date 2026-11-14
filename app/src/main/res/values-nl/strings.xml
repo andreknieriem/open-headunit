@@ -809,6 +809,8 @@
     <string name="hotspot_qr_description">QR-code voor de configuratie van Wireless Helper</string>
     <string name="scan_with_wireless_helper">Scan deze QR-code met de QR-scanner in Wireless Helper op je telefoon.</string>
     <string name="share_hotspot_qr_error">De gegevens van de actieve Wi-Fi-hotspot konden niet worden opgehaald. Zorg dat je hotspot aanstaat en locatie is ingeschakeld.</string>
+    <string name="carplay_box_title">CarPlay-box (experimenteel)</string>
+    <string name="carplay_box_description">Opent een aangesloten CarPlay-box. Houd deze app open. Niet getest met een iPhone.</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Huidige helderheid: %d / 255</string>

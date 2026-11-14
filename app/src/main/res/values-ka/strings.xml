@@ -837,6 +837,8 @@
     <string name="hotspot_qr_description">Wireless Helper კონფიგურაციის QR კოდი</string>
     <string name="scan_with_wireless_helper">დაასკანირეთ ეს QR კოდი თქვენი ტელეფონის Wireless Helper აპის QR სკანერით.</string>
     <string name="share_hotspot_qr_error">ვერ მოხერხდა აქტიური Wi-Fi ჰოტსპოტის მონაცემების მიღება. გთხოვთ, დარწმუნდეთ, რომ ჰოტსპოტი ჩართულია და ლოკაცია (Location) აქტიურია.</string>
+    <string name="carplay_box_title">CarPlay ბოქსი (ექსპერიმენტული)</string>
+    <string name="carplay_box_description">ხსნის მიერთებულ CarPlay ბოქსს. დატოვეთ ეს აპი ღია. iPhone-ზე გამოცდილი არ არის.</string>
     <!-- Native USB Driver -->
     <string name="use_libusb">USB-ის ნატივი დრაივერის გამოყენება</string>
     <string name="use_libusb_description">libusb-ის გამოყენება კავშირისთვის. გამორთეთ Android-ის სტანდარტული USB API-ის გამოსაყენებლად.</string>

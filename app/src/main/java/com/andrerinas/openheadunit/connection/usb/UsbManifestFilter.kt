@@ -20,6 +20,7 @@ object UsbManifestFilter {
     val ENTRIES: List<Entry> = listOf(
         Entry(vendorId = 6353, productId = 11520),
         Entry(vendorId = 6353, productId = 11521),
+        Entry(vendorId = 6353, productId = 20193),
         Entry(deviceClass = 255, subclass = 255, protocol = 0),
         Entry(deviceClass = 255, subclass = 66, protocol = 1),
         Entry(deviceClass = 6, subclass = 1, protocol = 1),

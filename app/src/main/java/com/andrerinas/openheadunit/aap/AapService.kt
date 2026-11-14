@@ -75,6 +75,7 @@ import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.carplaybox.AudioDecoderBoxSink
+import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxActivity
 import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxManager
 import com.andrerinas.openheadunit.connection.carplaybox.MicRecorderBoxMic
 import com.andrerinas.openheadunit.connection.carplaybox.VideoDecoderBoxSink
@@ -204,6 +205,24 @@ class AapService : Service() {
             displaySize = { resources.displayMetrics.widthPixels to resources.displayMetrics.heightPixels },
             densityDpi = { resources.displayMetrics.densityDpi },
         )
+    }
+
+    /** Brings the box screen up the way the AA raise does: directly, over other apps, or by notification. */
+    fun raiseCarPlayBox() {
+        val intent = CarPlayBoxActivity.intent(this).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        val strategy = ActivityLaunchPolicy.chooseLaunchStrategy(
+            Build.VERSION.SDK_INT, AppPermissions.isOverlayGranted(this), App.hasStartedActivity
+        )
+        AppLog.i("AapService: raising the CarPlay box screen by $strategy")
+        when (strategy) {
+            ActivityLaunchPolicy.LaunchStrategy.DIRECT ->
+                try { startActivity(intent) } catch (e: Exception) { AppLog.e("CarPlay box launch failed: ${e.message}") }
+            ActivityLaunchPolicy.LaunchStrategy.OVERLAY ->
+                if (!launchViaOverlayTrampoline(intent)) {
+                    try { startActivity(intent) } catch (e: Exception) { AppLog.e("CarPlay box launch failed: ${e.message}") }
+                }
+            ActivityLaunchPolicy.LaunchStrategy.NOTIFICATION -> launchProjectionViaNotification(intent)
+        }
     }
 
     /** The one CarPlay box session this service runs; stopped in [onDestroy]. */

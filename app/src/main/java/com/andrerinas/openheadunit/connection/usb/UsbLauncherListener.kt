@@ -9,6 +9,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
+import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager.Companion.ATTACH_FALLBACK_DELAY_MS
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -27,6 +28,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
     override fun onUsbAttach(device: UsbDevice) {
         // Android raises its own dialog only now, so a later scan for this path knows it may be up.
         UsbPermissionAsks.stampAttach(device.deviceName)
+        if (manager.handleCarPlayBox(device)) return
         if (!UsbDeviceCompat.isConnectable(service, device)) {
             AppLog.i("Ignoring USB device attached in service (${Settings.formatUsbVidPidDisplay(device.vendorId, device.productId)}): ${UsbDeviceCompat.connectableReason(service, device)}")
             return
@@ -76,6 +78,12 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         manager.noteRecoveryDeviceDetached(device)
         val commManager = App.provide(service).commManager
 
+        if (CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(device))) {
+            val box = service.carPlayBoxManager
+            box.stop("unplugged")
+            box.onBoxDetached()
+        }
+
         service.userExitedAA = false
 
         if (commManager.isConnectedToUsbDevice(device)) {
@@ -109,6 +117,12 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
     }
 
     override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) {
+        if (CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(device)) &&
+            App.provide(service).settings.carPlayBoxEnabled) {
+            if (granted) manager.handleCarPlayBox(device)
+            else AppLog.w("CarPlayBox: USB permission denied for ${device.deviceName}")
+            return
+        }
         if (!UsbDeviceCompat.isConnectable(service, device)) {
             AppLog.i("Ignoring USB permission callback (VID: ${device.vendorId}): ${UsbDeviceCompat.matchReason(device)}")
             return

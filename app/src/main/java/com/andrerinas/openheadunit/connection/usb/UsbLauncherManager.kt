@@ -18,6 +18,8 @@ import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxPolicy
+import com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -719,6 +721,56 @@ class UsbLauncherManager(val service: AapService) {
      * @param trigger What started the scan. A plug-in switches a normal-mode phone only when
      *                [UsbPlugInPolicy] allows it; an accessory identity is always connected.
      */
+    /**
+     * Opens, asks for or refuses a CarPlay box. False when [device] is not a box, or the setting
+     * is off and the device falls through to the Android Auto rules.
+     */
+    internal fun handleCarPlayBox(device: UsbDevice): Boolean {
+        if (!CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(device))) return false
+        val settings = App.provide(service).settings
+        val id = CarPlayBoxPolicy.label(device.vendorId, device.productId)
+        AppLog.i("CarPlayBox: box $id attached; setting ${if (settings.carPlayBoxEnabled) "on" else "off"}")
+        val usbManager = UsbDeviceCompat.usbManager(service) ?: return false
+        val box = service.carPlayBoxManager
+        val commManager = App.provide(service).commManager
+        val verdict = CarPlayBoxPolicy.attach(
+            isBox = true,
+            enabled = settings.carPlayBoxEnabled,
+            boxSessionLive = box.isLive,
+            boxUserExited = box.boxUserExited,
+            aaSessionLive = commManager.isConnected ||
+                commManager.connectionState.value is CommManager.ConnectionState.Connecting,
+            hasPermission = usbManager.hasPermission(device),
+        )
+        when (verdict) {
+            CarPlayBoxPolicy.Attach.NotABox, CarPlayBoxPolicy.Attach.Disabled -> return false
+            CarPlayBoxPolicy.Attach.AlreadyLive, CarPlayBoxPolicy.Attach.UserExited ->
+                AppLog.i("CarPlayBox: box $id not opened ($verdict)")
+            CarPlayBoxPolicy.Attach.RefusedAaLive ->
+                AppLog.i("CarPlayBox: refused, an Android Auto session is live")
+            CarPlayBoxPolicy.Attach.AskPermission -> askBoxPermission(usbManager, device)
+            CarPlayBoxPolicy.Attach.Open -> {
+                if (box.start(id, StandardUsbProjectionConnection(usbManager, device))) service.raiseCarPlayBox()
+            }
+        }
+        return true
+    }
+
+    private fun askBoxPermission(usbManager: UsbManager, device: UsbDevice) {
+        val present = usbManager.deviceList.values.map { it.deviceName }
+        val token = UsbPermissionAsks.newToken()
+        if (!UsbPermissionAsks.tryMark(device.deviceName, present, token)) {
+            AppLog.i("CarPlayBox: permission for ${device.deviceName} already asked")
+            return
+        }
+        try {
+            usbManager.requestPermission(device, UsbReceiver.createPermissionPendingIntent(service, token))
+        } catch (e: Exception) {
+            UsbPermissionAsks.complete(device.deviceName, token)
+            AppLog.w("CarPlayBox: the permission request failed: ${e.message}")
+        }
+    }
+
     fun checkAlreadyConnected(
         force: Boolean = false,
         userRequested: Boolean = false,
@@ -729,6 +781,13 @@ class UsbLauncherManager(val service: AapService) {
         val settings = App.provide(service).settings
         val commManager = App.provide(service).commManager
         if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
+        // A box is asked for before the AA gates: they would all reject it.
+        if (settings.carPlayBoxEnabled) {
+            UsbDeviceCompat.usbManager(service)?.deviceList?.values
+                ?.filter { CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(it)) }
+                ?.forEach { handleCarPlayBox(it) }
+            if (service.carPlayBoxManager.isLive) return
+        }
         val lastSession = settings.autoConnectLastSession
         val singleUsb = settings.autoConnectSingleUsbDevice
         val usbAutoStart = settings.effectiveAutoStartOnUsb

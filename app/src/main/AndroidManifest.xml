@@ -120,6 +120,14 @@
         tools:ignore="GoogleAppIndexingWarning">
 
         <activity
+            android:name=".connection.carplaybox.CarPlayBoxActivity"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme" />
+
+        <activity
             android:name=".aap.AapProjectionActivity"
             android:allowEmbedded="true"
             android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"

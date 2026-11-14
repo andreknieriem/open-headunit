@@ -74,6 +74,10 @@ import com.andrerinas.openheadunit.aap.protocol.proto.MediaPlayback
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.carplaybox.AudioDecoderBoxSink
+import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxManager
+import com.andrerinas.openheadunit.connection.carplaybox.MicRecorderBoxMic
+import com.andrerinas.openheadunit.connection.carplaybox.VideoDecoderBoxSink
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -187,6 +191,23 @@ class AapService : Service() {
      */
     private val stationScanMonitor = StationScanMonitor()
     private val usbLauncherManager = UsbLauncherManager(this)
+    private val carPlayBoxLazy = lazy {
+        val app = App.provide(this)
+        CarPlayBoxManager(
+            serviceScope,
+            VideoDecoderBoxSink(app.videoDecoder),
+            AudioDecoderBoxSink(app.audioDecoder, app.settings),
+            MicRecorderBoxMic(MicRecorder(this)),
+            aaSessionLive = {
+                commManager.isConnected || commManager.connectionState.value is CommManager.ConnectionState.Connecting
+            },
+            displaySize = { resources.displayMetrics.widthPixels to resources.displayMetrics.heightPixels },
+            densityDpi = { resources.displayMetrics.densityDpi },
+        )
+    }
+
+    /** The one CarPlay box session this service runs; stopped in [onDestroy]. */
+    val carPlayBoxManager: CarPlayBoxManager get() = carPlayBoxLazy.value
     private val selfLauncherManager = SelfLauncherManager(this, wifiLauncherManager)
     private val carKeysManager by lazy { App.provide(this).carKeysManager }
 
@@ -3487,6 +3508,7 @@ class AapService : Service() {
         deviceHackManager = null
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.close(this)
         if (Build.VERSION.SDK_INT >= 26) WifiScanControl.end(this)
+        if (carPlayBoxLazy.isInitialized()) carPlayBoxLazy.value.stop("service ending")
         ConnectionArbiter.actions = null
         // The hold outlives this instance; the next one arms from its own onCreate.
         WirelessSleepHold.clear()

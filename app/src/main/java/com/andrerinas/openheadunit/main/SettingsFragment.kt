@@ -132,7 +132,7 @@ class SettingsFragment : Fragment() {
     // Wireless items here only appear in Basic when the user connects wirelessly (see filterSettings).
     private val basicSettingIds = setOf(
         // General
-        "autoOptimize", "connectionMode", "appLanguage", "listenForUsbDevices",
+        "autoOptimize", "connectionMode", "appLanguage", "listenForUsbDevices", "usbWirelessDongle",
         // Wireless (shown in Basic only when WiFi is among the selected connection modes).
         // The hotspot entries come along with the transport choice: they only render once Hotspot
         // is picked, and on a device that will not let an app read its hotspot configuration the
@@ -208,6 +208,7 @@ class SettingsFragment : Fragment() {
     private var pendingAudioTimeCorrectionMode by pending::audioMatchingMode
     private var pendingUseLibusb by pending::useLibusb
     private var pendingListenForUsbDevices by pending::listenForUsbDevices
+    private var pendingUsbWirelessDongle by pending::usbWirelessDongle
     private var pendingAudioQueueCapacity by pending::audioQueueCapacity
     private var pendingShowToastMessages by pending::showToastMessages
     private var pendingScreenOrientation by pending::screenOrientation
@@ -702,6 +703,7 @@ class SettingsFragment : Fragment() {
             Settings.syncListenForUsbDevicesToDeviceStorage(requireContext(), it)
             Settings.setUsbAttachedActivityEnabled(requireContext(), it)
         }
+        pendingUsbWirelessDongle?.let { if (it != settings.usbWirelessDongle) settings.usbWirelessDongle = it }
         pendingNarrowBandProfileCap?.let { if (it != settings.narrowBandProfileCap) settings.narrowBandProfileCap = it }
         pendingDebugVideoLowLatency?.let { if (it != settings.debugVideoLowLatency) settings.debugVideoLowLatency = it }
         pendingAllowExternalConfiguration?.let { if (it != settings.allowExternalConfiguration) settings.allowExternalConfiguration = it }
@@ -999,6 +1001,19 @@ class SettingsFragment : Fragment() {
             isChecked = pendingListenForUsbDevices ?: true,
             onCheckedChanged = { isChecked ->
                 pendingListenForUsbDevices = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "usbWirelessDongle",
+            nameResId = R.string.usb_wireless_dongle_label,
+            descriptionResId = R.string.usb_wireless_dongle_summary,
+            helpResId = R.string.usb_wireless_dongle_help,
+            isChecked = pendingUsbWirelessDongle ?: false,
+            onCheckedChanged = { isChecked ->
+                pendingUsbWirelessDongle = isChecked
                 checkChanges()
                 updateSettingsList()
             }

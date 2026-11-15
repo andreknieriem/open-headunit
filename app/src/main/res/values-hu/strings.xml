@@ -1844,4 +1844,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Munkamenet vége, ha a relé kétszer egymás után nem válaszol</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">A fejegység 2 másodpercenként állapotellenőrzést küld a relének. Ha két egymást követő ellenőrzésre nem érkezik válasz, az Android Auto munkamenet véget ér.</string>
     <string name="esp32_relay_phase_failed">Sikertelen: %1$s</string>
+    <string name="usb_wireless_dongle_label">Vezeték nélküli USB-kulcs</string>
+    <string name="usb_wireless_dongle_summary">Kábel helyett vezeték nélküli felirat megjelenítése a kezdőképernyőn USB-nél.</string>
+    <string name="usb_wireless_dongle_help">Kapcsold be, ha vezeték nélküli USB-adapterrel (például AAWireless vagy Carlinkit) csatlakozol. Az Open Headunit nem tudja megkülönböztetni az adaptert a kábeltől, ezért ez az opció vezeték nélkülire cseréli a kezdőképernyő feliratait.</string>
+    <string name="home_subtitle_usb_dongle">Vezeték nélkül</string>
+    <string name="home_action_connect_wireless_dongle">Csatlakozás vezeték nélkül</string>
 </resources>

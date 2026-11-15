@@ -1842,4 +1842,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Încheie sesiunea dacă releul nu răspunde de două ori la rând</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Această unitate trimite releului o verificare de stare la fiecare 2 secunde. Dacă două verificări la rând rămân fără răspuns, sesiunea Android Auto se încheie.</string>
     <string name="esp32_relay_phase_failed">Eșuat: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB wireless</string>
+    <string name="usb_wireless_dongle_summary">Afișează text wireless în loc de cablu pe ecranul principal pentru USB.</string>
+    <string name="usb_wireless_dongle_help">Activează această opțiune dacă te conectezi printr-un adaptor USB wireless precum AAWireless sau Carlinkit. Open Headunit nu poate deosebi un dongle de un cablu, așa că această opțiune schimbă etichetele de pe ecranul principal din cablu în wireless.</string>
+    <string name="home_subtitle_usb_dongle">Wireless</string>
+    <string name="home_action_connect_wireless_dongle">Conectează wireless</string>
 </resources>

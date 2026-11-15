@@ -1846,4 +1846,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">リレーが2回連続で応答しないとセッションを終了します</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">このユニットは2秒ごとにリレーへ状態確認を送ります。2回続けて応答がない場合、Android Autoのセッションを終了します。</string>
     <string name="esp32_relay_phase_failed">失敗: %1$s</string>
+    <string name="usb_wireless_dongle_label">ワイヤレス USB ドングル</string>
+    <string name="usb_wireless_dongle_summary">USB 接続時にホーム画面でケーブルではなくワイヤレス表記を表示します。</string>
+    <string name="usb_wireless_dongle_help">AAWireless や Carlinkit などのワイヤレス USB アダプターで接続する場合に有効にします。Open Headunit はドングルとケーブルを判別できないため、ホーム画面の表示をケーブルからワイヤレスに切り替えます。</string>
+    <string name="home_subtitle_usb_dongle">ワイヤレス接続</string>
+    <string name="home_action_connect_wireless_dongle">ワイヤレスで接続</string>
 </resources>

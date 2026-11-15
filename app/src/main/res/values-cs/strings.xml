@@ -1844,4 +1844,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Ukončit relaci, když relé dvakrát za sebou neodpoví</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Tato jednotka posílá relé každé 2 sekundy kontrolu stavu. Pokud dvě kontroly po sobě zůstanou bez odpovědi, relace Android Auto skončí.</string>
     <string name="esp32_relay_phase_failed">Selhalo: %1$s</string>
+    <string name="usb_wireless_dongle_label">Bezdrátový USB adaptér</string>
+    <string name="usb_wireless_dongle_summary">Zobrazit na domovské obrazovce bezdrátový text místo kabelu pro USB připojení.</string>
+    <string name="usb_wireless_dongle_help">Zapněte, pokud se připojujete přes bezdrátový USB adaptér, například AAWireless nebo Carlinkit. Open Headunit nerozezná adaptér od kabelu, proto tato volba změní popisky na domovské obrazovce na bezdrátové.</string>
+    <string name="home_subtitle_usb_dongle">Bezdrátově</string>
+    <string name="home_action_connect_wireless_dongle">Připojit bezdrátově</string>
 </resources>

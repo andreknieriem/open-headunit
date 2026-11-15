@@ -1842,4 +1842,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">中繼器連續兩次無回應時結束工作階段</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">本主機每 2 秒向中繼器傳送一次狀態檢查。如果連續兩次檢查都沒有回應,Android Auto 工作階段將結束。</string>
     <string name="esp32_relay_phase_failed">失敗:%1$s</string>
+    <string name="usb_wireless_dongle_label">無線 USB 轉接器</string>
+    <string name="usb_wireless_dongle_summary">在主畫面上將 USB 連線顯示為無線而非有線。</string>
+    <string name="usb_wireless_dongle_help">如果您透過 AAWireless 或 Carlinkit 等無線 USB 轉接器連線，請開啟此選項。Open Headunit 無法區分轉接器與傳輸線，開啟後會將主畫面文字從有線改為無線。</string>
+    <string name="home_subtitle_usb_dongle">無線連線</string>
+    <string name="home_action_connect_wireless_dongle">無線連線</string>
 </resources>

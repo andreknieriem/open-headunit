@@ -1845,4 +1845,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">إنهاء الجلسة إذا لم يستجب المرحّل مرتين متتاليتين</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">يرسل هذا الجهاز فحص حالة إلى المرحّل كل ثانيتين. إذا لم يردّ المرحّل على فحصين متتاليين، تنتهي جلسة Android Auto.</string>
     <string name="esp32_relay_phase_failed">فشل: %1$s</string>
+    <string name="usb_wireless_dongle_label">دونجل USB لاسلكي</string>
+    <string name="usb_wireless_dongle_summary">عرض نصوص الاتصال اللاسلكي بدلاً من الكابل لاتصالات USB.</string>
+    <string name="usb_wireless_dongle_help">فعّل هذا الخيار إذا كنت تتصل عبر محول USB لاسلكي مثل AAWireless أو Carlinkit. لا يستطيع Open Headunit التمييز بين الدونجل والكابل، لذا يغيّر هذا الخيار تسميات الشاشة الرئيسية من سلكي إلى لاسلكي.</string>
+    <string name="home_subtitle_usb_dongle">لاسلكياً</string>
+    <string name="home_action_connect_wireless_dongle">الاتصال لاسلكياً</string>
 </resources>

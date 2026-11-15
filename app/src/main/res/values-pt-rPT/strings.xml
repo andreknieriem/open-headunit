@@ -1896,4 +1896,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Terminar a sessão se o relé não responder duas vezes seguidas</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Esta unidade envia uma verificação de estado ao relé a cada 2 segundos. Se duas verificações seguidas ficarem sem resposta, a sessão do Android Auto termina.</string>
     <string name="esp32_relay_phase_failed">Falha: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB sem fios</string>
+    <string name="usb_wireless_dongle_summary">Mostrar texto sem fios em vez de cabo no ecrã inicial para ligações USB.</string>
+    <string name="usb_wireless_dongle_help">Ative esta opção se utiliza um adaptador USB sem fios como AAWireless ou Carlinkit. O Open Headunit não distingue um dongle de um cabo, pelo que esta opção altera os textos do ecrã inicial de cabo para sem fios.</string>
+    <string name="home_subtitle_usb_dongle">Sem fios</string>
+    <string name="home_action_connect_wireless_dongle">Ligar sem fios</string>
 </resources>

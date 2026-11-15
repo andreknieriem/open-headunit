@@ -555,10 +555,11 @@ object HomeUiHelper {
         val subtitle = rootView.findViewById<TextView>(R.id.home_primary_subtitle)
         val action = rootView.findViewById<TextView>(R.id.home_primary_action)
         val icon = rootView.findViewById<ImageView>(R.id.home_primary_icon)
-        kicker?.text = context.getString(kickerRes(decision))
-        title?.text = title(context, decision, phoneName)
-        subtitle?.text = stage?.let { context.getString(it.label) } ?: context.getString(subtitleRes(decision))
-        action?.text = context.getString(actionRes(decision))
+        val usbAsWireless = settings.usbWirelessDongle
+        kicker?.text = context.getString(kickerRes(decision, usbAsWireless))
+        title?.text = title(context, decision, phoneName, usbAsWireless)
+        subtitle?.text = stage?.let { context.getString(it.label) } ?: context.getString(subtitleRes(decision, usbAsWireless))
+        action?.text = context.getString(actionRes(decision, usbAsWireless))
         // Nothing to start while a connection is on its way; Cancel is the one thing left to do.
         action?.visibility = if (connecting) View.GONE else View.VISIBLE
         icon?.setImageResource(iconRes(decision.primary))
@@ -780,17 +781,17 @@ object HomeUiHelper {
         Connection.SELF -> palette.self
     }
 
-    private fun kickerRes(decision: Decision): Int = when (decision.status) {
+    internal fun kickerRes(decision: Decision, usbAsWireless: Boolean = false): Int = when (decision.status) {
         Status.ACTIVE_SESSION -> R.string.home_kicker_active
         Status.RECONNECTING -> R.string.home_kicker_last_connection
         else -> when (decision.primary) {
-            Connection.USB -> R.string.home_kicker_cable
+            Connection.USB -> if (usbAsWireless) R.string.home_kicker_wireless else R.string.home_kicker_cable
             Connection.WIFI -> R.string.home_kicker_wireless
             Connection.SELF -> R.string.self_mode
         }
     }
 
-    private fun title(context: Context, decision: Decision, phoneName: String?): String = when (decision.status) {
+    internal fun title(context: Context, decision: Decision, phoneName: String?, usbAsWireless: Boolean = false): String = when (decision.status) {
         Status.ACTIVE_SESSION -> context.getString(R.string.home_title_active)
         Status.RECONNECTING -> context.getString(R.string.home_title_reconnecting)
         Status.CONNECTING -> context.getString(R.string.home_title_connecting)
@@ -799,7 +800,7 @@ object HomeUiHelper {
             ?: context.getString(R.string.home_title_phone_detected_generic)
         Status.WAITING, Status.READY -> context.getString(
             when (decision.primary) {
-                Connection.USB -> R.string.home_title_usb_ready
+                Connection.USB -> if (usbAsWireless) R.string.home_title_wifi_ready else R.string.home_title_usb_ready
                 Connection.WIFI -> R.string.home_title_wifi_ready
                 Connection.SELF -> R.string.home_title_self_ready
             }
@@ -995,19 +996,19 @@ object HomeUiHelper {
         return scale > 0f
     }
 
-    private fun subtitleRes(decision: Decision): Int = when {
+    internal fun subtitleRes(decision: Decision, usbAsWireless: Boolean = false): Int = when {
         decision.status == Status.SEARCHING -> R.string.home_subtitle_searching
-        decision.primary == Connection.USB -> R.string.home_subtitle_usb
+        decision.primary == Connection.USB -> if (usbAsWireless) R.string.home_subtitle_usb_dongle else R.string.home_subtitle_usb
         decision.primary == Connection.WIFI -> R.string.home_subtitle_wifi
         else -> R.string.home_subtitle_self
     }
 
-    private fun actionRes(decision: Decision): Int = when (decision.status) {
+    internal fun actionRes(decision: Decision, usbAsWireless: Boolean = false): Int = when (decision.status) {
         Status.ACTIVE_SESSION -> R.string.home_action_back_to_android_auto
         Status.RECONNECTING -> R.string.home_action_connect_now
         Status.SEARCHING -> R.string.home_action_search_again
         else -> when (decision.primary) {
-            Connection.USB -> R.string.home_action_connect_usb
+            Connection.USB -> if (usbAsWireless) R.string.home_action_connect_wireless_dongle else R.string.home_action_connect_usb
             Connection.WIFI -> R.string.home_action_connect_wifi
             Connection.SELF -> R.string.home_action_start_self_mode
         }

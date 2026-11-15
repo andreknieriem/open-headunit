@@ -1838,4 +1838,9 @@
     <string name="hct_aa_wake_unconfirmed">헤드유닛이 Android Auto 연결을 완료하지 못했습니다. 휴대전화를 다시 선택해 재시도하거나, 휴대전화의 블루투스 설정에서 다시 연결하세요. Open Headunit은 계속 Android Auto를 기다리는 중입니다.</string>
     <string name="wifi_restart_failed">Wi-Fi를 다시 시작하지 못했습니다. 여기서 Wi-Fi를 껐다가 켜세요.</string>
     <string name="wifi_restart_running">Wi-Fi를 다시 시작하는 중…</string>
+    <string name="usb_wireless_dongle_label">무선 USB 동글</string>
+    <string name="usb_wireless_dongle_summary">USB 연결 시 홈 화면에 유선 대신 무선 문구를 표시합니다.</string>
+    <string name="usb_wireless_dongle_help">AAWireless 또는 Carlinkit 같은 무선 USB 어댑터를 통해 연결하는 경우 켜세요. Open Headunit은 동글과 일반 케이블을 구분할 수 없으므로, 이 옵션으로 홈 화면 표시를 유선에서 무선으로 바꿉니다.</string>
+    <string name="home_subtitle_usb_dongle">무선으로</string>
+    <string name="home_action_connect_wireless_dongle">무선으로 연결</string>
 </resources>

@@ -1890,4 +1890,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">रिले लगातार दो बार जवाब न दे तो सत्र समाप्त करें</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">यह यूनिट हर 2 सेकंड में रिले को स्थिति जाँच भेजती है। लगातार दो जाँचों का जवाब न मिले तो Android Auto सत्र समाप्त हो जाता है।</string>
     <string name="esp32_relay_phase_failed">विफल: %1$s</string>
+    <string name="usb_wireless_dongle_label">वायरलेस USB डोंगल</string>
+    <string name="usb_wireless_dongle_summary">USB कनेक्शन के लिए होम स्क्रीन पर केबल के बजाय वायरलेस टेक्स्ट दिखाएं।</string>
+    <string name="usb_wireless_dongle_help">यदि आप AAWireless या Carlinkit जैसे वायरलेस USB अडैप्टर से कनेक्ट करते हैं तो इसे चालू करें। Open Headunit डोंगल और केबल में अंतर नहीं कर सकता, इसलिए यह विकल्प होम स्क्रीन के लेबल को केबल से वायरलेस में बदल देता है।</string>
+    <string name="home_subtitle_usb_dongle">वायरलेस रूप से</string>
+    <string name="home_action_connect_wireless_dongle">वायरलेस कनेक्ट करें</string>
 </resources>

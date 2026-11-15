@@ -1843,4 +1843,9 @@ Open Headunit предоставляется «как есть» без каки
     <string name="esp32_relay_end_aa_on_disconnect_summary">Завершать сеанс, если ретранслятор дважды не ответил</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Устройство каждые 2 секунды отправляет ретранслятору проверку состояния. Если на две проверки подряд нет ответа, сеанс Android Auto завершается.</string>
     <string name="esp32_relay_phase_failed">Ошибка: %1$s</string>
+    <string name="usb_wireless_dongle_label">Беспроводной USB-адаптер</string>
+    <string name="usb_wireless_dongle_summary">Показывать «без проводов» вместо кабеля на главном экране для USB.</string>
+    <string name="usb_wireless_dongle_help">Включите, если подключаетесь через беспроводной USB-адаптер (например, AAWireless или Carlinkit). Open Headunit не может отличить адаптер от кабеля, поэтому эта настройка меняет подписи на главном экране с кабельных на беспроводные.</string>
+    <string name="home_subtitle_usb_dongle">Без проводов</string>
+    <string name="home_action_connect_wireless_dongle">Подключить без проводов</string>
 </resources>

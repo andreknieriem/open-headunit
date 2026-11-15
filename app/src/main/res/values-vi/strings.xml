@@ -1846,4 +1846,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Kết thúc phiên nếu rơ-le không phản hồi hai lần liên tiếp</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Thiết bị này gửi kiểm tra trạng thái đến rơ-le mỗi 2 giây. Nếu hai lần kiểm tra liên tiếp không có phản hồi, phiên Android Auto sẽ kết thúc.</string>
     <string name="esp32_relay_phase_failed">Thất bại: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB không dây</string>
+    <string name="usb_wireless_dongle_summary">Hiển thị văn bản không dây thay vì cáp trên màn hình chính cho USB.</string>
+    <string name="usb_wireless_dongle_help">Bật tùy chọn này nếu bạn kết nối qua bộ chuyển đổi USB không dây như AAWireless hoặc Carlinkit. Open Headunit không thể phân biệt dongle với cáp, nên tùy chọn này đổi nhãn màn hình chính từ cáp sang không dây.</string>
+    <string name="home_subtitle_usb_dongle">Không dây</string>
+    <string name="home_action_connect_wireless_dongle">Kết nối không dây</string>
 </resources>

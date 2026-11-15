@@ -1846,4 +1846,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Termina la sessione se il relay non risponde due volte di seguito</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Questa unità invia un controllo di stato al relay ogni 2 secondi. Se due controlli di fila restano senza risposta, la sessione di Android Auto termina.</string>
     <string name="esp32_relay_phase_failed">Non riuscito: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB wireless</string>
+    <string name="usb_wireless_dongle_summary">Mostra etichette wireless invece di cavo nella schermata iniziale per USB.</string>
+    <string name="usb_wireless_dongle_help">Attiva questa opzione se ti colleghi tramite un adattatore USB wireless come AAWireless o Carlinkit. Open Headunit non può distinguere un dongle da un cavo, quindi questa opzione cambia le etichette della schermata iniziale da cavo a wireless.</string>
+    <string name="home_subtitle_usb_dongle">In modalità wireless</string>
+    <string name="home_action_connect_wireless_dongle">Connetti in modalità wireless</string>
 </resources>

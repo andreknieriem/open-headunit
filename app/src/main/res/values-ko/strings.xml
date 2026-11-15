@@ -617,6 +617,17 @@
     <string name="full_navigation_data">전체 내비게이션 데이터(차로)</string>
     <string name="full_navigation_data_description">휴대폰에 차로와 다음 안내 전체를 요청합니다</string>
     <string name="full_navigation_data_help">휴대폰은 내비게이션을 두 가지 형식 중 하나로 보냅니다. Android Auto 프로토콜 1.2(기본값)를 요청하는 기기에는 회전 아이콘, 도로, 거리만 보냅니다. 1.6부터는 다음 안내 전체를 보냅니다: 동작, 차로, 회전교차로 출구, 목적지, 도착 시간. 켜면 앱이 1.6을 요청하므로 내비게이션 알림과 컴패니언 앱이 전체 데이터를 받습니다. 다음 연결부터 적용됩니다.</string>
+    <string name="third_party_access_title">컴패니언 앱</string>
+    <string name="third_party_access_description">내비게이션과 미디어 데이터를 선택한 앱으로 보냅니다</string>
+    <string name="third_party_access_help">일부 앱은 계기판처럼 자체 디스플레이를 구동하며 휴대폰의 내비게이션과 미디어 메시지가 필요합니다. Open Headunit은 이를 변경 없이, 체크한 앱에만, 세션 중에만 전달합니다. 기본적으로 체크된 앱은 없습니다. 각 앱은 서명 인증서에 묶입니다. 다른 키로 서명된 앱으로 바뀌면 다시 체크할 때까지 아무것도 받지 않습니다.</string>
+    <string name="third_party_access_banner">휴대폰의 내비게이션 메시지(회전, 도로, 차로, 목적지)와 미디어 메시지(제목, 아티스트, 앨범)는 아래에서 체크한 앱만 받습니다.</string>
+    <string name="third_party_album_art">앨범 아트 포함</string>
+    <string name="third_party_album_art_description">끔: 제목, 아티스트, 앨범만 보냅니다</string>
+    <string name="third_party_album_art_help">커버 이미지는 클 수 있고, 대부분의 디스플레이는 텍스트만 표시합니다. 이미지가 필요한 앱이 없다면 꺼 두세요.</string>
+    <string name="third_party_apps_header">앱</string>
+    <string name="third_party_state_changed">서명이 바뀜, 다시 체크하세요</string>
+    <string name="third_party_no_signature">이 앱에는 읽을 수 있는 서명이 없어 추가할 수 없습니다.</string>
+    <string name="third_party_confirm">%1$s(%2$s)이(가) 휴대폰의 내비게이션과 미디어 데이터를 받도록 허용할까요? 회전 안내, 도로 이름, 목적지, 재생 중인 트랙을 받게 됩니다.</string>
     <string name="media_session_aa_status_placeholder">연결됨</string>
     <string name="sync_media_session_aa_metadata">Android Auto 재생 정보를 미디어 세션에 표시</string>
     <string name="sync_media_session_aa_metadata_description">휴대전화의 곡 제목, 아티스트, 재생 시간, 앨범 아트를 시스템 미디어 세션과 미디어 알림에 표시합니다.</string>

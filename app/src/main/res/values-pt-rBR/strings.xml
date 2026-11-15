@@ -543,6 +543,17 @@
     <string name="full_navigation_data">Dados de navegação completos (faixas)</string>
     <string name="full_navigation_data_description">Pede ao telefone as faixas e a próxima etapa completa</string>
     <string name="full_navigation_data_help">O telefone envia a navegação em uma de duas formas. Para uma unidade que pede o protocolo 1.2 do Android Auto, o padrão, ele envia só um ícone de curva, a via e a distância. A partir do 1.6, envia a próxima etapa completa: manobra, faixas, saída da rotatória, destino e horário de chegada. Ativado, o app pede 1.6, e a notificação de navegação e os apps complementares recebem os dados completos. Vale a partir da próxima conexão.</string>
+    <string name="third_party_access_title">Apps complementares</string>
+    <string name="third_party_access_description">Envia dados de navegação e mídia para os apps que você escolher</string>
+    <string name="third_party_access_help">Alguns apps controlam uma tela própria, por exemplo o painel de instrumentos, e precisam das mensagens de navegação e mídia do telefone. O Open Headunit as repassa sem alterações, só para os apps que você marcar e só durante uma sessão. Nenhum app vem marcado. Cada app fica vinculado ao seu certificado de assinatura: se for substituído por um assinado com outra chave, não recebe nada até você marcá-lo de novo.</string>
+    <string name="third_party_access_banner">Só os apps marcados abaixo recebem as mensagens de navegação (curvas, vias, faixas, destino) e de mídia (título, artista, álbum) do telefone.</string>
+    <string name="third_party_album_art">Incluir a capa do álbum</string>
+    <string name="third_party_album_art_description">Desativado: só título, artista e álbum são enviados</string>
+    <string name="third_party_album_art_help">A imagem da capa pode ser grande, e a maioria das telas mostra só texto. Deixe desativado, a menos que um app precise da imagem.</string>
+    <string name="third_party_apps_header">Apps</string>
+    <string name="third_party_state_changed">assinatura alterada, marque de novo</string>
+    <string name="third_party_no_signature">Este app não tem uma assinatura legível e não pode ser adicionado.</string>
+    <string name="third_party_confirm">Permitir que %1$s (%2$s) receba os dados de navegação e mídia do telefone? Ele receberá instruções de curva, nomes de ruas, o destino e a faixa que está tocando.</string>
     <string name="nav_notification_channel_name">Navegação</string>
     <string name="nav_notification_channel_description">Indicações passo a passo do Android Auto.</string>
     <string name="nav_notification_title_format">Em %1$d m: %2$s</string>

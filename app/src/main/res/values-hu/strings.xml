@@ -544,6 +544,17 @@
     <string name="full_navigation_data">Teljes navigációs adatok (sávok)</string>
     <string name="full_navigation_data_description">Sávokat és a teljes következő lépést kér a telefontól</string>
     <string name="full_navigation_data_help">A telefon kétféle formában küldi a navigációt. Annak az egységnek, amely az Android Auto 1.2-es protokollt kéri (ez az alapértelmezés), csak egy kanyarodási ikont, az utat és a távolságot küldi. Az 1.6-ostól a teljes következő lépést küldi: manőver, sávok, körforgalmi kijárat, úti cél és érkezési idő. Bekapcsolva az alkalmazás az 1.6-ost kéri, így a navigációs értesítés és a kísérőalkalmazások a teljes adatokat kapják. A következő csatlakozástól érvényes.</string>
+    <string name="third_party_access_title">Kísérőalkalmazások</string>
+    <string name="third_party_access_description">Navigációs és médiaadatok küldése a kiválasztott alkalmazásoknak</string>
+    <string name="third_party_access_help">Egyes alkalmazások saját kijelzőt vezérelnek, például a műszerfalat, és szükségük van a telefon navigációs és médiaüzeneteire. Az Open Headunit ezeket változatlanul továbbítja, csak a bejelölt alkalmazásoknak és csak munkamenet közben. Alapértelmezés szerint egy alkalmazás sincs bejelölve. Minden alkalmazás az aláíró tanúsítványához kötődik: ha egy másik kulccsal aláírt alkalmazás váltja fel, semmit sem kap, amíg újra be nem jelöli.</string>
+    <string name="third_party_access_banner">Csak az alább bejelölt alkalmazások kapják meg a telefon navigációs (kanyarok, utak, sávok, úti cél) és médiaüzeneteit (cím, előadó, album).</string>
+    <string name="third_party_album_art">Albumborító küldése</string>
+    <string name="third_party_album_art_description">Ki: csak a cím, az előadó és az album kerül elküldésre</string>
+    <string name="third_party_album_art_help">A borítókép nagy lehet, és a legtöbb kijelző csak szöveget mutat. Hagyja kikapcsolva, hacsak egy alkalmazásnak nincs szüksége a képre.</string>
+    <string name="third_party_apps_header">Alkalmazások</string>
+    <string name="third_party_state_changed">az aláírás megváltozott, jelölje be újra</string>
+    <string name="third_party_no_signature">Ennek az alkalmazásnak nincs olvasható aláírása, ezért nem adható hozzá.</string>
+    <string name="third_party_confirm">Megkaphatja a(z) %1$s (%2$s) a telefon navigációs és médiaadatait? Kanyarodási utasításokat, utcaneveket, az úti célt és az éppen szóló számot kapja meg.</string>
     <string name="nav_notification_channel_name">Navigáció</string>
     <string name="nav_notification_channel_description">Részletes navigációs utasítások az Android Autótól.</string>
     <string name="nav_notification_title_format">%1$d m múlva — %2$s</string>

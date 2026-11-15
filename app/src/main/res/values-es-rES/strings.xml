@@ -546,6 +546,17 @@
     <string name="full_navigation_data">Datos de navegación completos (carriles)</string>
     <string name="full_navigation_data_description">Pide al teléfono los carriles y el siguiente paso completo</string>
     <string name="full_navigation_data_help">El teléfono envía la navegación de una de dos formas. A una unidad que pide el protocolo 1.2 de Android Auto, el predeterminado, solo le envía un icono de giro, la vía y la distancia. Desde 1.6 envía el siguiente paso completo: maniobra, carriles, salida de rotonda, destino y hora de llegada. Activado, la app pide 1.6, y la notificación de navegación y las apps complementarias reciben los datos completos. Se aplica en la próxima conexión.</string>
+    <string name="third_party_access_title">Apps complementarias</string>
+    <string name="third_party_access_description">Envía datos de navegación y multimedia a las apps que elijas</string>
+    <string name="third_party_access_help">Algunas apps controlan una pantalla propia, por ejemplo el cuadro de instrumentos, y necesitan los mensajes de navegación y multimedia del teléfono. Open Headunit los reenvía sin cambios, solo a las apps que marques y solo durante una sesión. Ninguna app está marcada por defecto. Cada app queda vinculada a su certificado de firma: si se sustituye por una firmada con otra clave, no recibe nada hasta que la vuelvas a marcar.</string>
+    <string name="third_party_access_banner">Solo las apps marcadas abajo reciben los mensajes de navegación (giros, vías, carriles, destino) y multimedia (título, artista, álbum) del teléfono.</string>
+    <string name="third_party_album_art">Incluir la carátula del álbum</string>
+    <string name="third_party_album_art_description">Desactivado: solo se envían el título, el artista y el álbum</string>
+    <string name="third_party_album_art_help">La imagen de la carátula puede ser grande y la mayoría de las pantallas solo muestran texto. Déjalo desactivado salvo que una app necesite la imagen.</string>
+    <string name="third_party_apps_header">Apps</string>
+    <string name="third_party_state_changed">firma cambiada, márcala de nuevo</string>
+    <string name="third_party_no_signature">Esta app no tiene una firma legible y no se puede añadir.</string>
+    <string name="third_party_confirm">¿Permitir que %1$s (%2$s) reciba los datos de navegación y multimedia del teléfono? Recibirá indicaciones de giro, nombres de calles, el destino y la pista que se está reproduciendo.</string>
     <string name="nav_notification_channel_name">Navegación</string>
     <string name="nav_notification_channel_description">Indicaciones paso a paso de Android Auto.</string>
     <string name="nav_notification_title_format">En %1$d m — %2$s</string>

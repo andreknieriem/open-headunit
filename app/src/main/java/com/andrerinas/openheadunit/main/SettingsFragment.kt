@@ -2274,6 +2274,19 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        // Which installed apps may receive the phone's navigation and media messages (empty by default).
+        items.add(SettingItem.SettingEntry(
+            stableId = "thirdPartyAccess",
+            nameResId = R.string.third_party_access_title,
+            descriptionResId = R.string.third_party_access_description,
+            helpResId = R.string.third_party_access_help,
+            value = ThirdPartyAccessFragment.summary(requireContext()),
+            searchKeywords = kw(R.string.third_party_album_art, R.string.third_party_apps_header),
+            onClick = {
+                findNavController().navigate(R.id.action_settingsFragment_to_thirdPartyAccessFragment)
+            }
+        ))
+
         // --- Theming Settings ---
         items.add(SettingItem.CategoryHeader("theming", R.string.category_theming))
 

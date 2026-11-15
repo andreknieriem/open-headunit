@@ -7,6 +7,8 @@ import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.aap.protocol.proto.MediaPlayback
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.thirdparty.ThirdPartyForwardPolicy
+import com.andrerinas.openheadunit.thirdparty.ThirdPartyFrameForwarder
 import com.andrerinas.openheadunit.utils.Settings
 
 internal class AapMessageHandlerType(
@@ -45,6 +47,15 @@ internal class AapMessageHandlerType(
     )
     private val aapNavigation = AapNavigation(context, settings, presentation) { navigation ->
         nightOverlayState?.navigation(presentationSession, navigation)
+    }
+
+    // Hands the raw navigation and media messages to the apps the user whitelisted (nothing is sent while the list is empty).
+    private val thirdPartyFrames = ThirdPartyFrameForwarder(context)
+
+    private fun forwardToThirdParties(channel: String, message: AapMessage) {
+        if (presentationSession.isActive && ThirdPartyForwardPolicy.isForwarded(channel, message.type)) {
+            thirdPartyFrames.forward(channel, message.type, message.data, message.dataOffset, message.size)
+        }
     }
 
     override fun close() {
@@ -130,6 +141,7 @@ internal class AapMessageHandlerType(
 
         // 3. Media Playback Status (separate channel)
         if (message.channel == Channel.ID_MPB && msgType > 31) {
+            forwardToThirdParties(ThirdPartyForwardPolicy.CHANNEL_MEDIA, message)
             mediaPlayback.process(message)
             return
         }
@@ -138,6 +150,7 @@ internal class AapMessageHandlerType(
         // Process only payload messages on NAV channel (>31).
         // Control/handshake messages on NAV channel must pass through to AapControl.
         if (message.channel == Channel.ID_NAV && msgType > 31) {
+            forwardToThirdParties(ThirdPartyForwardPolicy.CHANNEL_NAV, message)
             if (aapNavigation.process(message)) {
                 return
             }

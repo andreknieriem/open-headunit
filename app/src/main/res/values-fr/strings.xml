@@ -872,6 +872,17 @@
     <string name="full_navigation_data">Données de navigation complètes (voies)</string>
     <string name="full_navigation_data_description">Demande au téléphone les voies et l\'étape suivante complète</string>
     <string name="full_navigation_data_help">Le téléphone envoie la navigation sous l\'une de deux formes. À un appareil qui demande le protocole Android Auto 1.2, la valeur par défaut, il n\'envoie qu\'une icône de virage, la route et la distance. À partir de 1.6, il envoie l\'étape suivante complète : manœuvre, voies, sortie de rond-point, destination et heure d\'arrivée. Activé, l\'application demande 1.6, et la notification de navigation et les applications compagnons reçoivent les données complètes. Prend effet à la prochaine connexion.</string>
+    <string name="third_party_access_title">Applications compagnons</string>
+    <string name="third_party_access_description">Envoyer les données de navigation et de média aux applis choisies</string>
+    <string name="third_party_access_help">Certaines applications pilotent leur propre écran, par exemple le combiné d\'instruments, et ont besoin des messages de navigation et de média du téléphone. Open Headunit les transmet sans les modifier, uniquement aux applications cochées et uniquement pendant une session. Aucune application n\'est cochée par défaut. Chaque application est liée à son certificat de signature : si elle est remplacée par une application signée avec une autre clé, elle ne reçoit plus rien tant que vous ne la cochez pas à nouveau.</string>
+    <string name="third_party_access_banner">Seules les applications cochées ci-dessous reçoivent les messages de navigation (virages, routes, voies, destination) et de média (titre, artiste, album) du téléphone.</string>
+    <string name="third_party_album_art">Inclure la pochette d\'album</string>
+    <string name="third_party_album_art_description">Désactivé : seuls le titre, l\'artiste et l\'album sont envoyés</string>
+    <string name="third_party_album_art_help">L\'image de pochette peut être volumineuse, et la plupart des écrans n\'affichent que du texte. Laissez cette option désactivée sauf si une application a besoin de l\'image.</string>
+    <string name="third_party_apps_header">Applications</string>
+    <string name="third_party_state_changed">signature modifiée, cochez à nouveau</string>
+    <string name="third_party_no_signature">Cette application n\'a pas de signature lisible et ne peut pas être ajoutée.</string>
+    <string name="third_party_confirm">Autoriser %1$s (%2$s) à recevoir les données de navigation et de média du téléphone ? Elle recevra les instructions de navigation, les noms de rue, la destination et le titre en cours de lecture.</string>
     <string name="media_session_aa_status_placeholder">Connecté</string>
     <string name="sync_media_session_aa_metadata">Lecture en cours d\'Android Auto dans la session média</string>
     <string name="sync_media_session_aa_metadata_description">Afficher le titre de la piste, l\'artiste, la durée et la pochette du téléphone dans la session média du système et la notification média.</string>

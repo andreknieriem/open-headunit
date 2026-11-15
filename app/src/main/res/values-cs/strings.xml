@@ -545,6 +545,17 @@
     <string name="full_navigation_data">Úplná navigační data (jízdní pruhy)</string>
     <string name="full_navigation_data_description">Požádá telefon o jízdní pruhy a celý další krok</string>
     <string name="full_navigation_data_help">Telefon posílá navigaci v jedné ze dvou podob. Jednotce, která žádá protokol Android Auto 1.2 (výchozí), posílá jen ikonu odbočení, silnici a vzdálenost. Od verze 1.6 posílá celý další krok: manévr, jízdní pruhy, výjezd z kruhového objezdu, cíl a čas příjezdu. Když je zapnuto, aplikace žádá 1.6 a oznámení navigace i doprovodné aplikace dostávají úplná data. Platí od dalšího připojení.</string>
+    <string name="third_party_access_title">Doprovodné aplikace</string>
+    <string name="third_party_access_description">Posílat navigační a mediální data vybraným aplikacím</string>
+    <string name="third_party_access_help">Některé aplikace ovládají vlastní displej, například přístrojový štít, a potřebují navigační a mediální zprávy z telefonu. Open Headunit je předává beze změny, jen aplikacím, které zaškrtnete, a jen během relace. Ve výchozím stavu není zaškrtnutá žádná aplikace. Každá aplikace je vázaná na svůj podpisový certifikát: pokud ji nahradí aplikace podepsaná jiným klíčem, nedostane nic, dokud ji znovu nezaškrtnete.</string>
+    <string name="third_party_access_banner">Navigační zprávy (odbočení, silnice, jízdní pruhy, cíl) a mediální zprávy (název, interpret, album) z telefonu dostávají jen aplikace zaškrtnuté níže.</string>
+    <string name="third_party_album_art">Přikládat obal alba</string>
+    <string name="third_party_album_art_description">Vypnuto: posílá se jen název, interpret a album</string>
+    <string name="third_party_album_art_help">Obrázek obalu může být velký a většina displejů zobrazuje jen text. Nechte to vypnuté, pokud aplikace obrázek nepotřebuje.</string>
+    <string name="third_party_apps_header">Aplikace</string>
+    <string name="third_party_state_changed">podpis se změnil, zaškrtněte znovu</string>
+    <string name="third_party_no_signature">Tato aplikace nemá čitelný podpis a nelze ji přidat.</string>
+    <string name="third_party_confirm">Povolit aplikaci %1$s (%2$s) přijímat navigační a mediální data z telefonu? Dostane pokyny k odbočení, názvy ulic, cíl a právě přehrávanou skladbu.</string>
     <string name="nav_notification_channel_name">Navigace</string>
     <string name="nav_notification_channel_description">Podrobné navigační pokyny z Android Auto.</string>
     <string name="nav_notification_title_format">Za %1$d m: %2$s</string>

@@ -610,6 +610,17 @@
     <string name="full_navigation_data">Vollständige Navigationsdaten (Fahrspuren)</string>
     <string name="full_navigation_data_description">Fragt das Handy nach Fahrspuren und dem ganzen nächsten Schritt</string>
     <string name="full_navigation_data_help">Das Handy sendet die Navigation in einer von zwei Formen. Fragt ein Gerät nach Android-Auto-Protokoll 1.2, dem Standard, bekommt es nur ein Abbiegesymbol, die Straße und die Entfernung. Ab 1.6 sendet das Handy den ganzen nächsten Schritt: Manöver, Fahrspuren, Kreisverkehrsausfahrt, Ziel und Ankunftszeit. Ist dies an, fragt die App nach 1.6, und die Navigationsbenachrichtigung und Begleit-Apps erhalten die vollständigen Daten. Gilt ab der nächsten Verbindung.</string>
+    <string name="third_party_access_title">Begleit-Apps</string>
+    <string name="third_party_access_description">Navigations- und Mediendaten an ausgewählte Apps senden</string>
+    <string name="third_party_access_help">Manche Apps steuern ein eigenes Display, zum Beispiel das Kombiinstrument, und brauchen die Navigations- und Mediennachrichten des Handys. Open Headunit gibt sie unverändert weiter, nur an die Apps, die du ankreuzt, und nur während einer Sitzung. Standardmäßig ist keine App angekreuzt. Jede App ist an ihr Signaturzertifikat gebunden: Wird sie durch eine mit anderem Schlüssel signierte App ersetzt, bekommt sie nichts, bis du sie erneut ankreuzt.</string>
+    <string name="third_party_access_banner">Nur die unten angekreuzten Apps erhalten die Navigationsnachrichten (Abbiegungen, Straßen, Fahrspuren, Ziel) und Mediennachrichten (Titel, Interpret, Album) des Handys.</string>
+    <string name="third_party_album_art">Albumcover mitsenden</string>
+    <string name="third_party_album_art_description">Aus: Nur Titel, Interpret und Album werden gesendet</string>
+    <string name="third_party_album_art_help">Das Coverbild kann groß sein, und die meisten Displays zeigen nur Text. Lass dies aus, außer eine App braucht das Bild.</string>
+    <string name="third_party_apps_header">Apps</string>
+    <string name="third_party_state_changed">Signatur geändert, erneut ankreuzen</string>
+    <string name="third_party_no_signature">Diese App hat keine lesbare Signatur und kann nicht hinzugefügt werden.</string>
+    <string name="third_party_confirm">Soll %1$s (%2$s) die Navigations- und Mediendaten des Handys erhalten? Die App bekommt Abbiegehinweise, Straßennamen, das Ziel und den laufenden Titel.</string>
     <string name="nav_notification_channel_name">Navigation</string>
     <string name="nav_notification_channel_description">Abbiegehinweise von Android Auto.</string>
     <string name="nav_notification_title_format">In %1$d m — %2$s</string>

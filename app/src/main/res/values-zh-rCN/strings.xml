@@ -542,6 +542,17 @@
     <string name="full_navigation_data">完整导航数据（车道）</string>
     <string name="full_navigation_data_description">向手机请求车道和完整的下一步</string>
     <string name="full_navigation_data_help">手机以两种形式之一发送导航。对于请求 Android Auto 协议 1.2（默认）的设备，手机只发送转弯图标、道路和距离。从 1.6 起，手机发送完整的下一步：操作、车道、环岛出口、目的地和到达时间。开启后，应用会请求 1.6，导航通知和配套应用都能获得完整数据。从下次连接起生效。</string>
+    <string name="third_party_access_title">配套应用</string>
+    <string name="third_party_access_description">将导航和媒体数据发送给你选择的应用</string>
+    <string name="third_party_access_help">有些应用驱动自己的显示屏，例如仪表盘，需要手机的导航和媒体消息。Open Headunit 原样转发这些消息，只发给你勾选的应用，并且只在会话期间转发。默认不勾选任何应用。每个应用都与其签名证书绑定：如果它被用其他密钥签名的应用替换，在你重新勾选之前它什么也收不到。</string>
+    <string name="third_party_access_banner">只有下面勾选的应用才会收到手机的导航消息（转弯、道路、车道、目的地）和媒体消息（标题、艺人、专辑）。</string>
+    <string name="third_party_album_art">包含专辑封面</string>
+    <string name="third_party_album_art_description">关闭：只发送标题、艺人和专辑</string>
+    <string name="third_party_album_art_help">封面图片可能很大，而大多数显示屏只显示文字。除非有应用需要图片，否则请保持关闭。</string>
+    <string name="third_party_apps_header">应用</string>
+    <string name="third_party_state_changed">签名已更改，请重新勾选</string>
+    <string name="third_party_no_signature">此应用没有可读取的签名，无法添加。</string>
+    <string name="third_party_confirm">允许 %1$s（%2$s）接收手机的导航和媒体数据吗？它将收到转弯提示、道路名称、目的地和正在播放的曲目。</string>
     <string name="nav_notification_channel_name">导航</string>
     <string name="nav_notification_channel_description">来自 Android Auto 的逐向导航更新。</string>
     <string name="nav_notification_title_format">%1$d 米后 — %2$s</string>

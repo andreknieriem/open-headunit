@@ -1,4 +1,9 @@
 # Changelog
+### 4.1.0 (upcoming)
+- Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
+- Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
+- Allow embedding the projection activity, thanks to @codepdbh
+
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar
 - Home: a separate switch for the widgets, and a panel opacity slider

@@ -8,6 +8,7 @@ import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.connection.carkey.CarKeysManager
+import com.andrerinas.openheadunit.maintenance.MaintenanceStore
 import com.andrerinas.openheadunit.utils.SUExecutor
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.aap.NightOverlayState
@@ -33,4 +34,8 @@ class AppComponent(private val app: App) {
     val suExecutor = SUExecutor()
 
     val carKeysManager = CarKeysManager()
+
+    // Shared by the service that counts the mileage and the screens that show it, so the distance
+    // not written yet is the same number everywhere.
+    val maintenanceStore = MaintenanceStore(settings)
 }

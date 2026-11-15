@@ -74,4 +74,25 @@ class ForegroundServiceTypePolicyTest {
             }
         }
     }
+
+    // --- the mileage ---
+
+    private val location = ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+
+    @Test
+    fun `counting the mileage with precise location adds the location type`() {
+        assertEquals(base or location, ForegroundServiceTypePolicy.withLocation(base, u, true, true))
+        assertEquals(base or mic or location, ForegroundServiceTypePolicy.withLocation(base or mic, u, true, true))
+    }
+
+    @Test
+    fun `no permission or the feature off never claims it`() {
+        assertEquals(base, ForegroundServiceTypePolicy.withLocation(base, u, false, true))
+        assertEquals(base, ForegroundServiceTypePolicy.withLocation(base, u, true, false))
+    }
+
+    @Test
+    fun `before Q there is no location type to claim`() {
+        assertEquals(0, ForegroundServiceTypePolicy.withLocation(0, Build.VERSION_CODES.P, true, true))
+    }
 }

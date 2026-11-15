@@ -97,6 +97,8 @@ class AudioMixer(
     private val renderDeadline = PcmRenderDeadline()
     private val limiter = MixerSoftClipper()
     private val ducking = MixerDuckingEnvelope(OUTPUT_SAMPLE_RATE)
+    // Mixer thread only. See MediaDuck.
+    private var mediaDuckGain = 1f
 
     fun start() {
         if (!running.compareAndSet(false, true)) return
@@ -266,6 +268,7 @@ class AudioMixer(
     internal fun renderCycle(nowMs: Long, outputBurstFrames: Int, cycleChannels: Array<Channel> = channelSnapshot): ShortArray {
         mixBuffer.fill(0)
         if (duckMediaForSpeech) mediaBuffer.fill(0)
+        mediaDuckGain = MediaDuck.next(mediaDuckGain, MediaDuck.active)
         var activeChannels = 0
         var speechActive = false
         var boosted = false
@@ -274,7 +277,7 @@ class AudioMixer(
             val active = state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
             state.timeStretch?.spaceAvailable()
             state.activeThisCycle = active
-            val gain = state.gain
+            val gain = if (state.isMediaSink) state.gain * mediaDuckGain else state.gain
             if (active && gain > 0f) activeChannels++
             speechActive = speechActive || (active && !state.isMediaSink && gain > 0f)
             boosted = boosted || (active && gain > 1f)

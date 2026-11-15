@@ -577,6 +577,8 @@ class CustomizationFragment : Fragment() {
             date = android.text.format.DateFormat.getMediumDateFormat(ctx).format(java.util.Date()),
             // The preview has no GPS reading, which is exactly what the readout shows without one.
             speed = HomeUiHelper.speedText(null),
+            // The preview is about the look this screen changes; maintenance has its own screen.
+            maintenance = null,
             countdownVisible = false
         )
         HomeUiHelper.applyDriverSide(homeView, settings.rightHandDrive)

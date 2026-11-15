@@ -47,4 +47,23 @@ object ForegroundServiceTypePolicy {
 
         return base or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
     }
+
+    /**
+     * [mask] plus the location type while the mileage is being counted.
+     *
+     * From Android Q a foreground service only gets location in the background when it holds this
+     * type, and from Android 11 only when it was started or re-started while the app was on
+     * screen. Like the microphone it is a while-in-use type, so a claim from the background can be
+     * refused on Android 14: the caller tries it and falls back to [mask] when it is.
+     *
+     * @param mask what the service claims otherwise, from [baseTypeMask] or [withMicrophone].
+     * @param fineLocationGranted whether ACCESS_FINE_LOCATION is held right now.
+     * @param countingMileage whether the maintenance feature is on.
+     */
+    fun withLocation(mask: Int, sdkInt: Int, fineLocationGranted: Boolean, countingMileage: Boolean): Int {
+        if (sdkInt < Build.VERSION_CODES.Q) return mask
+        if (!fineLocationGranted || !countingMileage) return mask
+
+        return mask or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+    }
 }

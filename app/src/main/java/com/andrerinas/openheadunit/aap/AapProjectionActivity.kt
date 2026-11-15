@@ -65,6 +65,13 @@ import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.view.OverlayTouchView
 import com.andrerinas.openheadunit.view.PerformanceOverlay
 import com.andrerinas.openheadunit.view.NightProjectionOverlay
+import com.andrerinas.openheadunit.view.MaintenanceBannerView
+import com.andrerinas.openheadunit.decoder.audio.MaintenanceChime
+import com.andrerinas.openheadunit.maintenance.MaintenanceBannerHost
+import com.andrerinas.openheadunit.maintenance.MaintenanceBannerPolicy
+import com.andrerinas.openheadunit.maintenance.MaintenanceDuePolicy
+import com.andrerinas.openheadunit.maintenance.MaintenanceReminderPolicy
+import com.andrerinas.openheadunit.maintenance.MaintenanceTexts
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.ProjectionHealthRecorder
 import com.andrerinas.openheadunit.utils.SystemUI
@@ -724,6 +731,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     // automatically (it reports no drawn frames), so we ask the user directly.
     private var rendererBanner: View? = null
     private var autoStartOfferBanner: View? = null
+
+    /** The maintenance banner on screen now, if any. See [showMaintenanceBanner]. */
+    private var maintenanceBanner: MaintenanceBannerView? = null
+    private val maintenanceBannerShower: (MaintenanceReminderPolicy.Entry, Boolean) -> Boolean =
+        { entry, miles -> showMaintenanceBanner(entry, miles) }
     private var autoStartOfferResolved = false
     private var autoStartOfferTimer: CountDownTimer? = null
     private var rendererConfirmResolved = false
@@ -897,6 +909,56 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             // off without tapping. A genuinely broken renderer still re-offers via the no-frame path.
             settings.pendingRendererConfirm = false
         }
+    }
+
+    /**
+     * The maintenance banner over the picture while the car is moving (AapService decides when).
+     * It takes no touch and goes away by itself; the chime ducks the music around it. Returns
+     * false when the screen is not showing the picture right now, so the item waits.
+     */
+    private fun showMaintenanceBanner(entry: MaintenanceReminderPolicy.Entry, miles: Boolean): Boolean {
+        if (!isForeground || isFinishing || maintenanceBanner != null) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) return false
+        if (overlayState != OverlayState.HIDDEN || isProjectionPausedByDevice) return false
+        val container = findViewById<FrameLayout>(R.id.container) ?: return false
+        if (container.width == 0 || container.height == 0) return false
+
+        val banner = layoutInflater.inflate(R.layout.maintenance_banner, container, false) as MaintenanceBannerView
+        val detail = MaintenanceTexts.noticeDetail(this, entry, miles)
+        val hint = getString(R.string.maintenance_banner_hint)
+        banner.bind(
+            MaintenanceTexts.noticeTitle(this, entry),
+            if (detail.isEmpty()) hint else getString(R.string.maintenance_item_value, detail, hint),
+            entry.due.state == MaintenanceDuePolicy.State.OVERDUE,
+        )
+        val placement = MaintenanceBannerPolicy.placement(
+            MaintenanceBannerPolicy.Position.fromName(settings.maintenanceBannerPosition), container.width, container.height)
+        // A HUD reflection flips the picture, so the passenger side flips with it.
+        val passengerOnLeft = MaintenanceBannerPolicy.passengerOnLeft(settings.rightHandDrive) != settings.hudMirroring
+        val params = banner.place(placement, passengerOnLeft, container.width, container.height)
+        if (settings.hudMirroring) banner.scaleX = -1f
+        // Under the night cover and the dimmer, so it dims with the picture.
+        val below = nightOverlay?.let { container.indexOfChild(it) } ?: -1
+        if (below >= 0) container.addView(banner, below, params) else container.addView(banner, params)
+        maintenanceBanner = banner
+        banner.enter(MaintenanceBannerPolicy.SHOW_MS)
+        banner.postDelayed({ hideMaintenanceBanner(banner) }, MaintenanceBannerPolicy.SHOW_MS)
+        MaintenanceChime.play(this, settings)
+        AppLog.i("AapProjectionActivity: maintenance banner up ($placement, passenger on the %s)",
+            if (passengerOnLeft) "left" else "right")
+        return true
+    }
+
+    private fun hideMaintenanceBanner(banner: MaintenanceBannerView) {
+        if (maintenanceBanner !== banner) return
+        banner.leave { removeMaintenanceBanner(banner) }
+    }
+
+    private fun removeMaintenanceBanner(banner: MaintenanceBannerView? = maintenanceBanner) {
+        banner ?: return
+        banner.animate().cancel()
+        (banner.parent as? FrameLayout)?.removeView(banner)
+        if (maintenanceBanner === banner) maintenanceBanner = null
     }
 
     private fun dismissRendererConfirmBanner() {
@@ -1351,6 +1413,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     override fun onPause() {
         clearTwoFingerTracking()
         isForeground = false
+        if (MaintenanceBannerHost.show === maintenanceBannerShower) MaintenanceBannerHost.show = null
+        removeMaintenanceBanner()
         AppLog.i("AapProjectionActivity: onPause")
         super.onPause()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setTurnScreenOn(false)
@@ -1420,6 +1484,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     override fun onResume() {
         super.onResume()
         isForeground = true
+        MaintenanceBannerHost.show = maintenanceBannerShower
         userLeftDeliberately = false
         closeCallRaiseEpisode("the projection is back in front")
         AppLog.i("AapProjectionActivity: onResume")

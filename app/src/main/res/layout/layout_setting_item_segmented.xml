@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- A choice of up to three options as a Material 3 segmented button. Colors and corner shapes
-     are set in code (SettingsAdapter.SegmentedButtonViewHolder). -->
+     are set in code (SettingsAdapter.SegmentedButtonViewHolder). WordFitButton shrinks a label
+     whose longest word is wider than its segment, so no word is split in two. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -60,7 +61,7 @@
         android:baselineAligned="false"
         android:orientation="horizontal">
 
-        <com.google.android.material.button.MaterialButton
+        <com.andrerinas.openheadunit.view.WordFitButton
             android:id="@+id/btnOption1"
             style="@style/SettingsSegment"
             android:layout_width="0dp"
@@ -68,7 +69,7 @@
             android:layout_weight="1"
             tools:text="Wireless Helper" />
 
-        <com.google.android.material.button.MaterialButton
+        <com.andrerinas.openheadunit.view.WordFitButton
             android:id="@+id/btnOption2"
             style="@style/SettingsSegment"
             android:layout_width="0dp"
@@ -78,7 +79,7 @@
             android:layout_weight="1"
             tools:text="Native" />
 
-        <com.google.android.material.button.MaterialButton
+        <com.andrerinas.openheadunit.view.WordFitButton
             android:id="@+id/btnOption3"
             style="@style/SettingsSegment"
             android:layout_width="0dp"

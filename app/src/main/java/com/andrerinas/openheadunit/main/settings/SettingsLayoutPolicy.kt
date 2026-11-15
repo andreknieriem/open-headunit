@@ -30,6 +30,14 @@ object SettingsLayoutPolicy {
     fun showValueInline(value: CharSequence): Boolean =
         value.isNotBlank() && value.length <= MAX_INLINE_VALUE_LENGTH && value.none { it == '\n' }
 
+    /**
+     * Whether a line of [text] that ends at [lineEnd] splits a word. A break after a space or a
+     * hyphen is a normal wrap; anywhere else the word ran out of width ("GPS-Korrekturfakt" over "or").
+     */
+    fun splitsWordAt(text: CharSequence, lineEnd: Int): Boolean =
+        lineEnd in 1 until text.length && !text[lineEnd - 1].isWhitespace() && text[lineEnd - 1] != '-' &&
+            !text[lineEnd].isWhitespace()
+
     /** What the note above the list says about settings the connection choice is hiding. */
     enum class ScopeNotice { NONE, WIFI_HIDDEN, USB_HIDDEN, USB_AND_WIFI_HIDDEN }
 

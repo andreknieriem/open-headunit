@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The banner over Android Auto: a dark translucent tint with a thin light edge, lighter along
+     the top. Plain shapes, so it draws the same from Android 4.1 up and costs nothing per frame. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/maintenance_banner_highlight" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item android:top="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/maintenance_banner_edge" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/maintenance_banner_tint" />
+            <corners android:radius="23dp" />
+        </shape>
+    </item>
+</layer-list>

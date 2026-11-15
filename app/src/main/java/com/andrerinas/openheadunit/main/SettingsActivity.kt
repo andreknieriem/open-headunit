@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
@@ -141,6 +142,13 @@ class SettingsActivity : BaseActivity() {
                 navController.navigate(restoredDestination)
             } catch (_: Exception) {}
         }
+        // One maintenance item, opened from the reminder notice, with the list behind it for Back.
+        val maintenanceItemId = intent?.getStringExtra(EXTRA_MAINTENANCE_ITEM_ID)
+        if (savedInstanceState == null && maintenanceItemId != null && requestedDestination == R.id.maintenanceFragment) {
+            try {
+                navController.navigate(R.id.maintenanceItemFragment, bundleOf(MaintenanceItemFragment.ARG_ITEM_ID to maintenanceItemId))
+            } catch (_: Exception) {}
+        }
 
         val root = findViewById<View>(R.id.settings_nav_host)
         // Never the projection: this window has a search box and its own decor, so its content area
@@ -252,6 +260,8 @@ class SettingsActivity : BaseActivity() {
         private const val KEY_CURRENT_DESTINATION = "current_nav_destination"
         // Optional destination id to open directly on launch (e.g. R.id.darkModeFragment).
         const val EXTRA_DESTINATION = "extra_destination"
+        /** With [EXTRA_DESTINATION] set to the maintenance list: the item to open on top of it. */
+        const val EXTRA_MAINTENANCE_ITEM_ID = "extra_maintenance_item_id"
 
         /**
          * Text to put in the settings search box on open, so a caller can land the user on one

@@ -58,11 +58,14 @@ class ProjectionActivityRequest: Intent(action) {
 
 /**
  * Broadcast sent when Open Headunit receives navigation updates from Android Auto
- * (from any nav app: Google Maps, Yandex Maps, etc.). Do not setPackage() — implicit broadcast
- * so any app can receive by registering for [action] with RECEIVER_EXPORTED.
+ * (from any nav app: Google Maps, Yandex Maps, etc.). It is implicit (no setPackage()), but it is sent
+ * with [BROADCAST_PERMISSION], a signature-level permission, so only apps signed with Open Headunit's
+ * own key receive it.
  *
- * Other apps: registerReceiver(receiver, IntentFilter(NavigationUpdateIntent.action), RECEIVER_EXPORTED)
- * No special permission required.
+ * Such an app: declare <uses-permission android:name="…permission.NAVIGATION_UPDATE"/>, then
+ * registerReceiver(receiver, IntentFilter(NavigationUpdateIntent.action), RECEIVER_EXPORTED).
+ * Apps signed by anyone else get the phone's navigation messages through frame forwarding instead
+ * (contract/README.md, "Frame forwarding"), once the user ticks them under Companion apps.
  *
  * @param nextEventType **Deprecated (legacy):** wire values for AA `NextTurnDetail.NextEvent` (see [EXTRA_NEXT_EVENT_TYPE]).
  *   Mapped from instrument-cluster `NavigationManeuver` when the old message is absent; scheduled for removal — migrate

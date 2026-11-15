@@ -541,6 +541,9 @@
     <string name="show_navigation_notifications">Navigációs értesítések</string>
     <string name="show_navigation_notifications_description">„X méter múlva Y\" és az aktuális utca megjelenítése az értesítésekben (hibakereséshez).</string>
     <string name="show_navigation_notifications_help">Az Android Auto navigáció következő kanyarját értesítésként mutatja az egységen, a távolsággal és az utcával. Ezzel ellenőrizheti, hogy a kanyaradatok megérkeznek a telefonról.</string>
+    <string name="full_navigation_data">Teljes navigációs adatok (sávok)</string>
+    <string name="full_navigation_data_description">Sávokat és a teljes következő lépést kér a telefontól</string>
+    <string name="full_navigation_data_help">A telefon kétféle formában küldi a navigációt. Annak az egységnek, amely az Android Auto 1.2-es protokollt kéri (ez az alapértelmezés), csak egy kanyarodási ikont, az utat és a távolságot küldi. Az 1.6-ostól a teljes következő lépést küldi: manőver, sávok, körforgalmi kijárat, úti cél és érkezési idő. Bekapcsolva az alkalmazás az 1.6-ost kéri, így a navigációs értesítés és a kísérőalkalmazások a teljes adatokat kapják. A következő csatlakozástól érvényes.</string>
     <string name="nav_notification_channel_name">Navigáció</string>
     <string name="nav_notification_channel_description">Részletes navigációs utasítások az Android Autótól.</string>
     <string name="nav_notification_title_format">%1$d m múlva — %2$s</string>

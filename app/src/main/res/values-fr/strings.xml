@@ -869,6 +869,9 @@
     <string name="show_navigation_notifications">Notifications de navigation</string>
     <string name="show_navigation_notifications_description">Afficher « Dans X mètres, faire Y » et la rue actuelle dans les notifications (pour le débogage).</string>
     <string name="show_navigation_notifications_help">Affiche le prochain virage de la navigation Android Auto sous forme de notification sur cet appareil, avec la distance et la rue. Utilisez-le pour vérifier que les données de virage arrivent du téléphone.</string>
+    <string name="full_navigation_data">Données de navigation complètes (voies)</string>
+    <string name="full_navigation_data_description">Demande au téléphone les voies et l\'étape suivante complète</string>
+    <string name="full_navigation_data_help">Le téléphone envoie la navigation sous l\'une de deux formes. À un appareil qui demande le protocole Android Auto 1.2, la valeur par défaut, il n\'envoie qu\'une icône de virage, la route et la distance. À partir de 1.6, il envoie l\'étape suivante complète : manœuvre, voies, sortie de rond-point, destination et heure d\'arrivée. Activé, l\'application demande 1.6, et la notification de navigation et les applications compagnons reçoivent les données complètes. Prend effet à la prochaine connexion.</string>
     <string name="media_session_aa_status_placeholder">Connecté</string>
     <string name="sync_media_session_aa_metadata">Lecture en cours d\'Android Auto dans la session média</string>
     <string name="sync_media_session_aa_metadata_description">Afficher le titre de la piste, l\'artiste, la durée et la pochette du téléphone dans la session média du système et la notification média.</string>

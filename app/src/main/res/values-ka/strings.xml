@@ -596,6 +596,9 @@
     <string name="show_navigation_notifications">ნავიგაციის შეტყობინებები</string>
     <string name="show_navigation_notifications_description">შეტყობინებებში მიმართულებების (\"X მეტრში მოუხვიეთ Y-ზე\") და მიმდინარე ქუჩის ჩვენება (გამართვისთვის).</string>
     <string name="show_navigation_notifications_help">Android Auto-ს ნავიგაციის შემდეგ მოსახვევს აჩვენებს ამ მოწყობილობაზე შეტყობინებად, მანძილითა და ქუჩით. გამოიყენეთ იმის შესამოწმებლად, რომ მოსახვევის მონაცემები ტელეფონიდან მოდის.</string>
+    <string name="full_navigation_data">ნავიგაციის სრული მონაცემები (ზოლები)</string>
+    <string name="full_navigation_data_description">ტელეფონს სთხოვს ზოლებს და სრულ შემდეგ ნაბიჯს</string>
+    <string name="full_navigation_data_help">ტელეფონი ნავიგაციას ორიდან ერთ-ერთი ფორმით აგზავნის. მოწყობილობას, რომელიც Android Auto-ს 1.2 პროტოკოლს ითხოვს (ნაგულისხმევი), ის მხოლოდ მოხვევის ხატულას, გზას და მანძილს უგზავნის. 1.6-დან ის სრულ შემდეგ ნაბიჯს აგზავნის: მანევრს, ზოლებს, წრიული გზიდან გასასვლელს, დანიშნულების ადგილს და ჩასვლის დროს. ჩართვისას აპი 1.6-ს ითხოვს და ნავიგაციის შეტყობინება და თანმხლები აპები სრულ მონაცემებს იღებენ. მოქმედებს შემდეგი დაკავშირებიდან.</string>
     <string name="media_session_aa_status_placeholder">დაკავშირებულია</string>
     <string name="sync_media_session_aa_metadata">AA მუსიკის სინქრონიზაცია მედიასესიასთან</string>
     <string name="sync_media_session_aa_metadata_description">ტელეფონიდან ტრეკის დასახელების, შემსრულებლის, ხანგრძლივობისა და ალბომის ყდის ჩვენება სისტემურ მედიასესიაში და მედიაშეტყობინებაში.</string>

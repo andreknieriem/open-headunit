@@ -540,6 +540,9 @@
     <string name="show_navigation_notifications">Notificações de navegação</string>
     <string name="show_navigation_notifications_description">Mostrar \"Em X metros Y\" e a rua atual nas notificações (para depuração).</string>
     <string name="show_navigation_notifications_help">Mostra a próxima curva da navegação do Android Auto como notificação nesta unidade, com a distância e a rua. Use para conferir se os dados da curva chegam do smartphone.</string>
+    <string name="full_navigation_data">Dados de navegação completos (faixas)</string>
+    <string name="full_navigation_data_description">Pede ao telefone as faixas e a próxima etapa completa</string>
+    <string name="full_navigation_data_help">O telefone envia a navegação em uma de duas formas. Para uma unidade que pede o protocolo 1.2 do Android Auto, o padrão, ele envia só um ícone de curva, a via e a distância. A partir do 1.6, envia a próxima etapa completa: manobra, faixas, saída da rotatória, destino e horário de chegada. Ativado, o app pede 1.6, e a notificação de navegação e os apps complementares recebem os dados completos. Vale a partir da próxima conexão.</string>
     <string name="nav_notification_channel_name">Navegação</string>
     <string name="nav_notification_channel_description">Indicações passo a passo do Android Auto.</string>
     <string name="nav_notification_title_format">Em %1$d m: %2$s</string>

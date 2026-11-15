@@ -607,6 +607,9 @@
     <string name="show_navigation_notifications">Navigationsbenachrichtigungen</string>
     <string name="show_navigation_notifications_description">„In X Metern Y\" und aktuelle Straße in Benachrichtigungen anzeigen (zum Debuggen).</string>
     <string name="show_navigation_notifications_help">Zeigt die nächste Abbiegung aus der Android-Auto-Navigation als Benachrichtigung auf diesem Gerät, mit Entfernung und Straße. Damit prüfst du, ob die Abbiegedaten vom Smartphone ankommen.</string>
+    <string name="full_navigation_data">Vollständige Navigationsdaten (Fahrspuren)</string>
+    <string name="full_navigation_data_description">Fragt das Handy nach Fahrspuren und dem ganzen nächsten Schritt</string>
+    <string name="full_navigation_data_help">Das Handy sendet die Navigation in einer von zwei Formen. Fragt ein Gerät nach Android-Auto-Protokoll 1.2, dem Standard, bekommt es nur ein Abbiegesymbol, die Straße und die Entfernung. Ab 1.6 sendet das Handy den ganzen nächsten Schritt: Manöver, Fahrspuren, Kreisverkehrsausfahrt, Ziel und Ankunftszeit. Ist dies an, fragt die App nach 1.6, und die Navigationsbenachrichtigung und Begleit-Apps erhalten die vollständigen Daten. Gilt ab der nächsten Verbindung.</string>
     <string name="nav_notification_channel_name">Navigation</string>
     <string name="nav_notification_channel_description">Abbiegehinweise von Android Auto.</string>
     <string name="nav_notification_title_format">In %1$d m — %2$s</string>

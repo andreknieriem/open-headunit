@@ -1060,6 +1060,9 @@
     <string name="show_navigation_notifications">Notificações de navegação</string>
     <string name="show_navigation_notifications_description">Mostrar \"Em X metros faça Y\" e a rua atual nas notificações (para depuração).</string>
     <string name="show_navigation_notifications_help">Mostra a próxima curva da navegação do Android Auto como notificação nesta unidade, com a distância e a rua. Use para verificar se os dados da curva chegam do telemóvel.</string>
+    <string name="full_navigation_data">Dados de navegação completos (vias)</string>
+    <string name="full_navigation_data_description">Pede ao telemóvel as vias e o passo seguinte completo</string>
+    <string name="full_navigation_data_help">O telemóvel envia a navegação numa de duas formas. A uma unidade que pede o protocolo 1.2 do Android Auto, o predefinido, envia apenas um ícone de mudança de direção, a estrada e a distância. A partir da 1.6, envia o passo seguinte completo: manobra, vias, saída da rotunda, destino e hora de chegada. Ativado, a app pede a 1.6, e a notificação de navegação e as apps complementares recebem os dados completos. Aplica-se na próxima ligação.</string>
     <string name="media_session_aa_status_placeholder">Ligado</string>
     <string name="sync_media_session_aa_metadata">Em reprodução do AA na sessão multimédia</string>
     <string name="sync_media_session_aa_metadata_description">Mostrar título da faixa, artista, duração e capa do álbum do telemóvel na sessão multimédia e notificação do sistema.</string>

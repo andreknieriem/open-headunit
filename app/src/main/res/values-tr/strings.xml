@@ -538,6 +538,9 @@
     <string name="show_navigation_notifications">Navigasyon bildirimleri</string>
     <string name="show_navigation_notifications_description">Bildirimlerde \"X metre sonra Y yap\" ve mevcut caddeyi göster (hata ayıklama için).</string>
     <string name="show_navigation_notifications_help">Android Auto navigasyonundaki sonraki dönüşü, mesafe ve sokak adıyla birlikte bu ünitede bildirim olarak gösterir. Dönüş verilerinin telefondan geldiğini denetlemek için kullanın.</string>
+    <string name="full_navigation_data">Tam navigasyon verisi (şeritler)</string>
+    <string name="full_navigation_data_description">Telefondan şeritleri ve bir sonraki adımın tamamını ister</string>
+    <string name="full_navigation_data_help">Telefon navigasyonu iki biçimden biriyle gönderir. Android Auto protokol 1.2 isteyen bir üniteye (varsayılan) yalnızca bir dönüş simgesi, yol ve mesafe gönderir. 1.6\'dan itibaren bir sonraki adımın tamamını gönderir: manevra, şeritler, döner kavşak çıkışı, varış noktası ve varış saati. Açıkken uygulama 1.6 ister; navigasyon bildirimi ve yardımcı uygulamalar tam veriyi alır. Bir sonraki bağlantıda geçerli olur.</string>
     <string name="media_session_aa_status_placeholder">Bağlı</string>
     <string name="sync_media_session_aa_metadata">Medya oturumunda AA\'da çalanı göster</string>
     <string name="sync_media_session_aa_metadata_description">Telefondaki parça adını, sanatçıyı, süreyi ve albüm kapağını sistem medya oturumunda ve medya bildiriminde gösterir.</string>

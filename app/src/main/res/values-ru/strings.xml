@@ -542,6 +542,9 @@ Open Headunit предоставляется «как есть» без каки
     <string name="show_navigation_notifications">Уведомления навигации</string>
     <string name="show_navigation_notifications_description">Показывать «Через X метров Y» и текущую улицу в уведомлениях (для отладки).</string>
     <string name="show_navigation_notifications_help">Показывает следующий поворот из навигации Android Auto в виде уведомления на этом устройстве, с расстоянием и названием улицы. Используйте это, чтобы проверить, что данные о поворотах приходят с телефона.</string>
+    <string name="full_navigation_data">Полные данные навигации (полосы)</string>
+    <string name="full_navigation_data_description">Запрашивает у телефона полосы и полный следующий шаг</string>
+    <string name="full_navigation_data_help">Телефон отправляет навигацию в одном из двух видов. Устройству, которое запрашивает протокол Android Auto 1.2 (по умолчанию), он отправляет только значок поворота, дорогу и расстояние. Начиная с 1.6 он отправляет полный следующий шаг: манёвр, полосы, съезд с кольца, пункт назначения и время прибытия. Если включено, приложение запрашивает 1.6, и уведомление навигации и приложения-компаньоны получают полные данные. Действует со следующего подключения.</string>
     <string name="media_session_aa_status_placeholder">Подключено</string>
     <string name="sync_media_session_aa_metadata">Текущий трек AA в медиасессии</string>
     <string name="sync_media_session_aa_metadata_description">Показывать с телефона название, исполнителя, длительность и обложку в системной медиасессии и медиа-уведомлении.</string>

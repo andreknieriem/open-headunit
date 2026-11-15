@@ -556,6 +556,9 @@
     <string name="show_navigation_notifications">Thông báo điều hướng</string>
     <string name="show_navigation_notifications_description">Hiển thị \"Trong X mét làm Y\" và tên đường hiện tại trong thông báo (để gỡ lỗi).</string>
     <string name="show_navigation_notifications_help">Hiện chỗ rẽ tiếp theo từ dẫn đường của Android Auto dưới dạng thông báo trên thiết bị này, kèm khoảng cách và tên đường. Dùng để kiểm tra dữ liệu chỗ rẽ có đến từ điện thoại không.</string>
+    <string name="full_navigation_data">Dữ liệu dẫn đường đầy đủ (làn đường)</string>
+    <string name="full_navigation_data_description">Yêu cầu điện thoại gửi làn đường và đầy đủ bước tiếp theo</string>
+    <string name="full_navigation_data_help">Điện thoại gửi dẫn đường theo một trong hai dạng. Với thiết bị yêu cầu giao thức Android Auto 1.2 (mặc định), điện thoại chỉ gửi biểu tượng rẽ, tên đường và khoảng cách. Từ 1.6 trở lên, điện thoại gửi đầy đủ bước tiếp theo: thao tác, làn đường, lối ra vòng xuyến, điểm đến và giờ đến. Khi bật, ứng dụng yêu cầu 1.6, nên thông báo dẫn đường và ứng dụng đồng hành nhận được dữ liệu đầy đủ. Có hiệu lực từ lần kết nối tiếp theo.</string>
     <string name="media_session_aa_status_placeholder">Đã kết nối</string>
     <string name="sync_media_session_aa_metadata">Bài đang phát trên AA hiển thị ở media session</string>
     <string name="sync_media_session_aa_metadata_description">Hiển thị tên bài, nghệ sĩ, thời lượng và ảnh album từ điện thoại trong media session và thông báo media của hệ thống.</string>

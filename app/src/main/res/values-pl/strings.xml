@@ -540,6 +540,9 @@
     <string name="show_navigation_notifications">Powiadomienia nawigacji</string>
     <string name="show_navigation_notifications_description">Pokaż „Za X metrów Y” i aktualną ulicę w powiadomieniach (do debugowania).</string>
     <string name="show_navigation_notifications_help">Pokazuje następny skręt z nawigacji Android Auto jako powiadomienie na tej stacji, z odległością i ulicą. Użyj tego, aby sprawdzić, czy dane o skręcie docierają z telefonu.</string>
+    <string name="full_navigation_data">Pełne dane nawigacji (pasy ruchu)</string>
+    <string name="full_navigation_data_description">Prosi telefon o pasy ruchu i pełny następny krok</string>
+    <string name="full_navigation_data_help">Telefon wysyła nawigację w jednej z dwóch postaci. Stacji, która prosi o protokół Android Auto 1.2 (domyślny), wysyła tylko ikonę skrętu, drogę i odległość. Od wersji 1.6 wysyła pełny następny krok: manewr, pasy ruchu, zjazd z ronda, cel i czas przyjazdu. Po włączeniu aplikacja prosi o 1.6, a powiadomienie nawigacji i aplikacje towarzyszące dostają pełne dane. Działa od następnego połączenia.</string>
     <string name="nav_notification_channel_name">Nawigacja</string>
     <string name="nav_notification_channel_description">Wskazówki nawigacyjne z Android Auto.</string>
     <string name="nav_notification_title_format">Za %1$d m — %2$s</string>

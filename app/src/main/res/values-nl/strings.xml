@@ -539,6 +539,9 @@
     <string name="show_navigation_notifications">Navigatiemeldingen</string>
     <string name="show_navigation_notifications_description">Toon \"Over X meter Y\" en huidige straat in meldingen (voor foutopsporing).</string>
     <string name="show_navigation_notifications_help">Toont de volgende afslag van de navigatie van Android Auto als melding op deze unit, met de afstand en de straat. Gebruik dit om te controleren of de afslaggegevens van de telefoon aankomen.</string>
+    <string name="full_navigation_data">Volledige navigatiegegevens (rijstroken)</string>
+    <string name="full_navigation_data_description">Vraagt de telefoon om rijstroken en de volledige volgende stap</string>
+    <string name="full_navigation_data_help">De telefoon stuurt navigatie in een van twee vormen. Aan een unit die om Android Auto-protocol 1.2 vraagt, de standaard, stuurt hij alleen een afslagpictogram, de weg en de afstand. Vanaf 1.6 stuurt hij de volledige volgende stap: manoeuvre, rijstroken, afslag van de rotonde, bestemming en aankomsttijd. Staat dit aan, dan vraagt de app om 1.6 en krijgen de navigatiemelding en begeleidende apps de volledige gegevens. Geldt vanaf de volgende verbinding.</string>
     <string name="nav_notification_channel_name">Navigatie</string>
     <string name="nav_notification_channel_description">Routebegeleiding van Android Auto.</string>
     <string name="nav_notification_title_format">Over %1$d m — %2$s</string>

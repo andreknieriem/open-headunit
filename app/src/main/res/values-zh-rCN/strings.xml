@@ -539,6 +539,9 @@
     <string name="show_navigation_notifications">导航通知</string>
     <string name="show_navigation_notifications_description">在通知中显示“X 米后执行 Y”和当前街道（用于调试）。</string>
     <string name="show_navigation_notifications_help">把 Android Auto 导航的下一个转弯以通知的形式显示在本机上，并附带距离和街道名称。可用来检查转弯数据是否从手机送达。</string>
+    <string name="full_navigation_data">完整导航数据（车道）</string>
+    <string name="full_navigation_data_description">向手机请求车道和完整的下一步</string>
+    <string name="full_navigation_data_help">手机以两种形式之一发送导航。对于请求 Android Auto 协议 1.2（默认）的设备，手机只发送转弯图标、道路和距离。从 1.6 起，手机发送完整的下一步：操作、车道、环岛出口、目的地和到达时间。开启后，应用会请求 1.6，导航通知和配套应用都能获得完整数据。从下次连接起生效。</string>
     <string name="nav_notification_channel_name">导航</string>
     <string name="nav_notification_channel_description">来自 Android Auto 的逐向导航更新。</string>
     <string name="nav_notification_title_format">%1$d 米后 — %2$s</string>

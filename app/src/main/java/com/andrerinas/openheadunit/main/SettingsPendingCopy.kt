@@ -17,6 +17,7 @@ import com.andrerinas.openheadunit.utils.Settings
 class SettingsPendingCopy {
     var useGps: Boolean? = null
     var showNavigationNotifications: Boolean? = null
+    var fullNavigationData: Boolean? = null
     var syncMediaSessionAaMetadata: Boolean? = null
     var autoResumePlaybackOnReconnect: Boolean? = null
     var resolution: Int? = null
@@ -109,6 +110,7 @@ class SettingsPendingCopy {
     fun loadFrom(settings: Settings) {
         useGps = settings.useGpsForNavigation
         showNavigationNotifications = settings.showNavigationNotifications
+        fullNavigationData = settings.fullNavigationData
         syncMediaSessionAaMetadata = settings.syncMediaSessionWithAaMetadata
         autoResumePlaybackOnReconnect = settings.autoResumePlaybackOnReconnect
         resolution = settings.resolutionId
@@ -202,6 +204,7 @@ class SettingsPendingCopy {
     fun differsFrom(settings: Settings): Boolean =
         useGps != settings.useGpsForNavigation ||
         showNavigationNotifications != settings.showNavigationNotifications ||
+        fullNavigationData != settings.fullNavigationData ||
         syncMediaSessionAaMetadata != settings.syncMediaSessionWithAaMetadata ||
         autoResumePlaybackOnReconnect != settings.autoResumePlaybackOnReconnect ||
         resolution != settings.resolutionId ||

@@ -614,6 +614,9 @@
     <string name="show_navigation_notifications">내비게이션 알림</string>
     <string name="show_navigation_notifications_description">100 m 후 우회전과 같은 길 안내와 현재 도로명을 알림에 표시합니다(디버깅용).</string>
     <string name="show_navigation_notifications_help">Android Auto 내비게이션의 다음 회전 정보를 거리와 도로 이름과 함께 이 기기에 알림으로 표시합니다. 회전 데이터가 휴대전화에서 제대로 도착하는지 확인할 때 사용하세요.</string>
+    <string name="full_navigation_data">전체 내비게이션 데이터(차로)</string>
+    <string name="full_navigation_data_description">휴대폰에 차로와 다음 안내 전체를 요청합니다</string>
+    <string name="full_navigation_data_help">휴대폰은 내비게이션을 두 가지 형식 중 하나로 보냅니다. Android Auto 프로토콜 1.2(기본값)를 요청하는 기기에는 회전 아이콘, 도로, 거리만 보냅니다. 1.6부터는 다음 안내 전체를 보냅니다: 동작, 차로, 회전교차로 출구, 목적지, 도착 시간. 켜면 앱이 1.6을 요청하므로 내비게이션 알림과 컴패니언 앱이 전체 데이터를 받습니다. 다음 연결부터 적용됩니다.</string>
     <string name="media_session_aa_status_placeholder">연결됨</string>
     <string name="sync_media_session_aa_metadata">Android Auto 재생 정보를 미디어 세션에 표시</string>
     <string name="sync_media_session_aa_metadata_description">휴대전화의 곡 제목, 아티스트, 재생 시간, 앨범 아트를 시스템 미디어 세션과 미디어 알림에 표시합니다.</string>

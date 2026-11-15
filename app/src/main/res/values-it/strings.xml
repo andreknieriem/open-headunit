@@ -547,6 +547,9 @@
     <string name="show_navigation_notifications">Notifiche di navigazione</string>
     <string name="show_navigation_notifications_description">Mostra \"Tra X metri fai Y\" e la strada attuale nelle notifiche (per il debug).</string>
     <string name="show_navigation_notifications_help">Mostra la prossima svolta della navigazione di Android Auto come notifica su questa unità, con distanza e strada. Usalo per verificare che i dati della svolta arrivino dal telefono.</string>
+    <string name="full_navigation_data">Dati di navigazione completi (corsie)</string>
+    <string name="full_navigation_data_description">Chiede al telefono le corsie e il passo successivo completo</string>
+    <string name="full_navigation_data_help">Il telefono invia la navigazione in una di due forme. A un\'unità che chiede il protocollo Android Auto 1.2, quello predefinito, invia solo un\'icona di svolta, la strada e la distanza. Dalla 1.6 invia il passo successivo completo: manovra, corsie, uscita della rotonda, destinazione e orario di arrivo. Se attivo, l\'app chiede la 1.6, e la notifica di navigazione e le app companion ricevono i dati completi. Vale dalla connessione successiva.</string>
     <string name="nav_notification_channel_name">Navigazione</string>
     <string name="nav_notification_channel_description">Indicazioni di navigazione passo passo da Android Auto.</string>
     <string name="nav_notification_title_format">Tra %1$d m: %2$s</string>

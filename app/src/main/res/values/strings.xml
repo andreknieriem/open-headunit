@@ -1153,6 +1153,9 @@
     <string name="show_navigation_notifications">Navigation notifications</string>
     <string name="show_navigation_notifications_description">Show \"In X meters do Y\" and current street in notifications (for debugging).</string>
     <string name="show_navigation_notifications_help">Shows the next turn from Android Auto navigation as a notification on this unit, with the distance and the street. Use it to check that turn data arrives from the phone.</string>
+    <string name="full_navigation_data">Full navigation data (lanes)</string>
+    <string name="full_navigation_data_description">Ask the phone for lanes and the full next step</string>
+    <string name="full_navigation_data_help">The phone sends navigation in one of two forms. To a unit that asks for Android Auto protocol 1.2, the default, it sends only a turn icon, the road and the distance. From 1.6 on it sends the full next step: maneuver, lanes, roundabout exit, destination and arrival time. On, this app asks for 1.6, so the navigation notification and companion apps get the full data. Takes effect on the next connection.</string>
     <string name="media_session_aa_status_placeholder">Connected</string>
     <string name="sync_media_session_aa_metadata">AA now playing on media session</string>
     <string name="sync_media_session_aa_metadata_description">Show track title, artist, duration and album art from the phone in the system media session and media notification.</string>

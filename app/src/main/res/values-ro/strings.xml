@@ -540,6 +540,9 @@
     <string name="show_navigation_notifications">Notificări de navigare</string>
     <string name="show_navigation_notifications_description">Afișează „Peste X metri Y” și strada curentă în notificări (pentru depanare).</string>
     <string name="show_navigation_notifications_help">Arată următoarea manevră din navigarea Android Auto ca notificare pe această unitate, cu distanța și strada. Folosește-o ca să verifici dacă datele despre manevre ajung de la telefon.</string>
+    <string name="full_navigation_data">Date de navigare complete (benzi)</string>
+    <string name="full_navigation_data_description">Cere telefonului benzile și pasul următor complet</string>
+    <string name="full_navigation_data_help">Telefonul trimite navigarea într-una din două forme. Unei unități care cere protocolul Android Auto 1.2, cel implicit, îi trimite doar o pictogramă de viraj, drumul și distanța. De la 1.6 trimite pasul următor complet: manevra, benzile, ieșirea din sensul giratoriu, destinația și ora sosirii. Activat, aplicația cere 1.6, iar notificarea de navigare și aplicațiile însoțitoare primesc datele complete. Se aplică de la următoarea conectare.</string>
     <string name="nav_notification_channel_name">Navigare</string>
     <string name="nav_notification_channel_description">Actualizări de navigare pas cu pas din Android Auto.</string>
     <string name="nav_notification_title_format">Peste %1$d m — %2$s</string>

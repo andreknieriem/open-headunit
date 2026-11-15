@@ -542,6 +542,9 @@
     <string name="show_navigation_notifications">Oznámení navigace</string>
     <string name="show_navigation_notifications_description">Zobrazit v oznámeních „Za X metrů Y“ a aktuální ulici (pro ladění).</string>
     <string name="show_navigation_notifications_help">Zobrazí další odbočku z navigace Android Auto jako oznámení na této jednotce, s vzdáleností a ulicí. Použijte to ke kontrole, že data o odbočkách z telefonu dorazí.</string>
+    <string name="full_navigation_data">Úplná navigační data (jízdní pruhy)</string>
+    <string name="full_navigation_data_description">Požádá telefon o jízdní pruhy a celý další krok</string>
+    <string name="full_navigation_data_help">Telefon posílá navigaci v jedné ze dvou podob. Jednotce, která žádá protokol Android Auto 1.2 (výchozí), posílá jen ikonu odbočení, silnici a vzdálenost. Od verze 1.6 posílá celý další krok: manévr, jízdní pruhy, výjezd z kruhového objezdu, cíl a čas příjezdu. Když je zapnuto, aplikace žádá 1.6 a oznámení navigace i doprovodné aplikace dostávají úplná data. Platí od dalšího připojení.</string>
     <string name="nav_notification_channel_name">Navigace</string>
     <string name="nav_notification_channel_description">Podrobné navigační pokyny z Android Auto.</string>
     <string name="nav_notification_title_format">Za %1$d m: %2$s</string>

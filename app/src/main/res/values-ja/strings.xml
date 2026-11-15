@@ -548,6 +548,9 @@
     <string name="show_navigation_notifications">ナビゲーション通知</string>
     <string name="show_navigation_notifications_description">「Xメートル先でY」の案内と現在の道路名を通知に表示します（デバッグ用）。</string>
     <string name="show_navigation_notifications_help">Android Auto のナビの次の曲がり角を、距離と道路名とともに、この機器に通知として表示します。曲がり角のデータがスマートフォンから届いているかを確認するときに使います。</string>
+    <string name="full_navigation_data">完全なナビデータ（車線）</string>
+    <string name="full_navigation_data_description">車線と次の案内の全情報をスマートフォンに要求します</string>
+    <string name="full_navigation_data_help">スマートフォンはナビを2つの形式のどちらかで送ります。Android Auto プロトコル 1.2（既定）を要求する機器には、曲がり角のアイコン、道路、距離だけを送ります。1.6 以降では次の案内をすべて送ります：操作、車線、ロータリーの出口、目的地、到着時刻。オンにするとアプリは 1.6 を要求し、ナビ通知とコンパニオンアプリが完全なデータを受け取ります。次回の接続から有効です。</string>
     <string name="nav_notification_channel_name">ナビゲーション</string>
     <string name="nav_notification_channel_description">Android Autoからのターンバイターンのナビゲーション案内。</string>
     <string name="nav_notification_title_format">%1$d m先: %2$s</string>

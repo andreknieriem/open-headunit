@@ -8,7 +8,9 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Control
  *
  * Payload after the 6 byte AAP header is major, minor and status as big-endian shorts, then an
  * optional VersionResponseOptions proto carrying the connection parameters the phone wants us to
- * use. The phone selects the minor version, so it is the negotiated one, not the one we asked for.
+ * use. The version in it is the phone's own (current phones answer 1.7 whatever we ask for). Which
+ * messages the phone sends follows the version we asked for instead: it sends the navigation state
+ * with lanes only to a head unit that asked for 1.6 or later (see FullNavigationProfile).
  */
 object AapVersionNegotiation {
 
@@ -16,7 +18,7 @@ object AapVersionNegotiation {
     const val ANNOUNCED_MAJOR = 1
     const val ANNOUNCED_MINOR = 2
 
-    /** Messages added in 1.6 must not be sent to a phone that selected less. */
+    /** The minor version that added the 1.6 message set (the navigation state with lanes among them). */
     const val FEATURE_MINOR_1_6 = 6
 
     data class Result(
@@ -31,7 +33,7 @@ object AapVersionNegotiation {
          */
         val accepted: Boolean get() = status != Common.MessageStatus.STATUS_NO_COMPATIBLE_VERSION_VALUE
 
-        /** True once the negotiated version carries the 1.6 message set. */
+        /** True when the phone's own version has the 1.6 message set (says nothing about what we asked for). */
         val supports16: Boolean get() = major > 1 || (major == 1 && minor >= FEATURE_MINOR_1_6)
 
         val statusName: String

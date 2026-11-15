@@ -543,6 +543,9 @@
     <string name="show_navigation_notifications">Notificaciones de navegación</string>
     <string name="show_navigation_notifications_description">Muestra \"En X metros, haz Y\" y la calle actual en las notificaciones (para depuración).</string>
     <string name="show_navigation_notifications_help">Muestra el próximo giro de la navegación de Android Auto como notificación en esta unidad, con la distancia y la calle. Úsalo para comprobar que los datos del giro llegan desde el móvil.</string>
+    <string name="full_navigation_data">Datos de navegación completos (carriles)</string>
+    <string name="full_navigation_data_description">Pide al teléfono los carriles y el siguiente paso completo</string>
+    <string name="full_navigation_data_help">El teléfono envía la navegación de una de dos formas. A una unidad que pide el protocolo 1.2 de Android Auto, el predeterminado, solo le envía un icono de giro, la vía y la distancia. Desde 1.6 envía el siguiente paso completo: maniobra, carriles, salida de rotonda, destino y hora de llegada. Activado, la app pide 1.6, y la notificación de navegación y las apps complementarias reciben los datos completos. Se aplica en la próxima conexión.</string>
     <string name="nav_notification_channel_name">Navegación</string>
     <string name="nav_notification_channel_description">Indicaciones paso a paso de Android Auto.</string>
     <string name="nav_notification_title_format">En %1$d m — %2$s</string>

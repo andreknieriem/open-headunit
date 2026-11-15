@@ -180,6 +180,7 @@ class SettingsFragment : Fragment() {
     private var pendingEsp32RelayEnabled: Boolean? = null
     private var pendingUseGps by pending::useGps
     private var pendingShowNavigationNotifications by pending::showNavigationNotifications
+    private var pendingFullNavigationData by pending::fullNavigationData
     private var pendingSyncMediaSessionAaMetadata by pending::syncMediaSessionAaMetadata
     private var pendingAutoResumePlaybackOnReconnect by pending::autoResumePlaybackOnReconnect
     private var pendingResolution by pending::resolution
@@ -618,6 +619,7 @@ class SettingsFragment : Fragment() {
 
         pendingUseGps?.let { if (it != settings.useGpsForNavigation) settings.useGpsForNavigation = it }
         pendingShowNavigationNotifications?.let { if (it != settings.showNavigationNotifications) settings.showNavigationNotifications = it }
+        pendingFullNavigationData?.let { if (it != settings.fullNavigationData) settings.fullNavigationData = it }
         pendingSyncMediaSessionAaMetadata?.let { if (it != settings.syncMediaSessionWithAaMetadata) settings.syncMediaSessionWithAaMetadata = it }
         pendingAutoResumePlaybackOnReconnect?.let { if (it != settings.autoResumePlaybackOnReconnect) settings.autoResumePlaybackOnReconnect = it }
         // The way back from a link the app measured as too slow: it lowered the profile after three
@@ -2253,6 +2255,20 @@ class SettingsFragment : Fragment() {
             isChecked = pendingShowNavigationNotifications ?: settings.showNavigationNotifications,
             onCheckedChanged = { isChecked ->
                 pendingShowNavigationNotifications = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // Protocol 1.6 instead of 1.2: the phone then sends the full next step with lanes (see FullNavigationProfile).
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "fullNavigationData",
+            nameResId = R.string.full_navigation_data,
+            descriptionResId = R.string.full_navigation_data_description,
+            helpResId = R.string.full_navigation_data_help,
+            isChecked = pendingFullNavigationData ?: settings.fullNavigationData,
+            onCheckedChanged = { isChecked ->
+                pendingFullNavigationData = isChecked
                 checkChanges()
                 updateSettingsList()
             }

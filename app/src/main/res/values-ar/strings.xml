@@ -542,6 +542,9 @@
     <string name="show_navigation_notifications">إشعارات الملاحة</string>
     <string name="show_navigation_notifications_description">عرض \"بعد X متر Y\" والشارع الحالي في الإشعارات (للتصحيح).</string>
     <string name="show_navigation_notifications_help">يعرض المنعطف التالي من ملاحة Android Auto كإشعار على هذه الوحدة، مع المسافة واسم الشارع. استخدمه للتأكد من وصول بيانات المنعطفات من الهاتف.</string>
+    <string name="full_navigation_data">بيانات الملاحة الكاملة (المسارات)</string>
+    <string name="full_navigation_data_description">يطلب من الهاتف المسارات والخطوة التالية كاملة</string>
+    <string name="full_navigation_data_help">يرسل الهاتف الملاحة بأحد شكلين. إلى الوحدة التي تطلب بروتوكول Android Auto 1.2 (الافتراضي) يرسل فقط رمز المنعطف والطريق والمسافة. ومن الإصدار 1.6 يرسل الخطوة التالية كاملة: المناورة والمسارات ومخرج الدوار والوجهة ووقت الوصول. عند التفعيل يطلب التطبيق 1.6، فيحصل إشعار الملاحة والتطبيقات المرافقة على البيانات الكاملة. يسري من الاتصال التالي.</string>
     <string name="nav_notification_channel_name">الملاحة</string>
     <string name="nav_notification_channel_description">توجيهات الملاحة من Android Auto.</string>
     <string name="nav_notification_title_format">بعد %1$d م — %2$s</string>

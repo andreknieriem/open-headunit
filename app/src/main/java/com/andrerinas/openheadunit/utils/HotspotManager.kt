@@ -643,6 +643,9 @@ object HotspotManager {
             val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
             val method = wm.javaClass.getMethod("setWifiApEnabled", android.net.wifi.WifiConfiguration::class.java, Boolean::class.javaPrimitiveType)
             return method.invoke(wm, null, enabled) as Boolean
-        } catch (_: Exception) { return false }
+        } catch (e: Exception) {
+            AppLog.e("HotspotManager: legacy WifiManager path failed", e)
+            return false
+        }
     }
 }

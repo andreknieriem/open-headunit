@@ -1140,6 +1140,14 @@
     <string name="media_key_routing_never">Nigdy</string>
     <string name="media_key_routing_help">Zawsze: Przyciski następnego, poprzedniego utworu i odtwarzania/pauzy są zawsze wysyłane do Android Auto. Używaj tej opcji, chyba że jedno naciśnięcie pomija dwa utwory.\n\nAutomatycznie: Blokuje przesyłanie poleceń sterowania, gdy stacja jest połączona z telefonem przez profil multimedialny Bluetooth (ponieważ ten profil obsługuje już sterowanie). Wybierz tę opcję, jeśli pojedyncze naciśnięcie przycisku pomija dwa utwory naraz, a telefon jest sparowany ze stacją.\n\nNigdy: Nigdy nie przesyła sygnałów przycisków do Android Auto, pozostawiając sterowanie przez Bluetooth. Wybierz tę opcję, jeśli pojedyncze naciśnięcie pomija dwa utwory, a telefon jest sparowany z fabrycznym systemem auta zamiast z tą stacją (tryb „Automatycznie” nie wykrywa takiego połączenia).</string>
     <string name="media_key_routing_hint_common">Dotyczy wyłącznie przycisków sterowania multimediami. Pokrętła, D-Pad, przyciski Wstecz i Enter zawsze trafiają do Android Auto.</string>
+    <string name="volume_keys_to_phone">Wysyłaj przyciski głośności do telefonu</string>
+    <string name="volume_keys_to_phone_summary">Przyciski głośności zmieniają głośność telefonu, a nie tej stacji.</string>
+    <string name="volume_keys_to_phone_help">Wysyła przyciski głośności tej stacji do telefonu przez Android Auto zamiast zmieniać głośność tutaj. Używaj, gdy dźwięk odtwarza sam telefon: Wyjście dźwięku jest wyłączone albo telefon jest połączony z Bluetooth samochodu.\n\nDziała, gdy Android Auto jest na ekranie, i tylko jeśli Android Auto w telefonie reaguje na przyciski głośności.</string>
+    <string name="speed_volume">Głośność zależna od prędkości</string>
+    <string name="speed_volume_off">Wyłączone</string>
+    <string name="speed_volume_low">Niska</string>
+    <string name="speed_volume_high">Wysoka</string>
+    <string name="speed_volume_help">Podnosi głośność o jeden krok naraz, gdy samochód przyspiesza, korzystając z GPS tej stacji, i cofa te kroki, gdy zwalnia.\n\nWyłączone: Głośność zostaje tam, gdzie ją ustawiono.\n\nNiska: Jeden krok co 30 km/h, maksymalnie 3 kroki.\n\nWysoka: Jeden krok co 20 km/h, maksymalnie 5 kroków.\n\nKroki trafiają do telefonu, gdy włączone jest Wysyłaj przyciski głośności do telefonu, a w przeciwnym razie do głośności multimediów tej stacji.</string>
     <string name="playback_focus_mode">Wstrzymuj inny dźwięk podczas odtwarzania</string>
     <string name="playback_focus_mode_auto">Automatycznie</string>
     <string name="playback_focus_mode_always">Zawsze</string>

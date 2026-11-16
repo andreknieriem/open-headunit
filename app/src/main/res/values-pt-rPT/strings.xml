@@ -756,6 +756,14 @@
     <string name="media_key_routing_never">Nunca</string>
     <string name="media_key_routing_help">Sempre: Seguinte, anterior e reproduzir/pausa são sempre enviados para o Android Auto. Utilize esta opção, a menos que um toque salte duas faixas.\n\nAutomático: Deixa de os enviar enquanto esta unidade tiver uma ligação multimédia Bluetooth ao telemóvel, pois essa ligação já executa a ação. Escolha esta opção se um toque saltar duas faixas e o telemóvel estiver emparelhado com esta unidade.\n\nNunca: Nunca os envia e deixa os botões a cargo do Bluetooth. Escolha esta opção se um toque saltar duas faixas e o telemóvel estiver emparelhado com o sistema do próprio carro e não com esta unidade, pois o modo Automático não deteta essa ligação.</string>
     <string name="media_key_routing_hint_common">Apenas os botões multimédia são afetados. Controladores rotativos, D-pad, Voltar e Enter chegam sempre ao Android Auto.</string>
+    <string name="volume_keys_to_phone">Enviar botões de volume para o telemóvel</string>
+    <string name="volume_keys_to_phone_summary">Os botões de volume alteram o volume do telemóvel, não o desta unidade.</string>
+    <string name="volume_keys_to_phone_help">Envia os botões de volume desta unidade para o telemóvel através do Android Auto em vez de alterar o volume aqui. Utilize quando o próprio telemóvel reproduz o som: Recetor de áudio (Audio Sink) desativado, ou telemóvel ligado ao Bluetooth do carro.\n\nFunciona enquanto o Android Auto está no ecrã, e só se o Android Auto do telemóvel responder às teclas de volume.</string>
+    <string name="speed_volume">Volume conforme a velocidade</string>
+    <string name="speed_volume_off">Desativado</string>
+    <string name="speed_volume_low">Baixo</string>
+    <string name="speed_volume_high">Alto</string>
+    <string name="speed_volume_help">Aumenta o volume um passo de cada vez à medida que o carro acelera, através do GPS desta unidade, e retira esses passos quando abranda.\n\nDesativado: O volume fica onde o definiu.\n\nBaixo: Um passo a cada 30 km/h, até 3 passos.\n\nAlto: Um passo a cada 20 km/h, até 5 passos.\n\nOs passos vão para o telemóvel quando Enviar botões de volume para o telemóvel está ativado e, caso contrário, para o volume multimédia desta unidade.</string>
     <string name="playback_focus_mode">Pausar outro áudio durante a reprodução</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Sempre</string>

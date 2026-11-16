@@ -54,4 +54,14 @@ class ProjectionKeyPolicyTest {
         assertFalse(ProjectionKeyPolicy.isHomeKey(KeyEvent.KEYCODE_VOLUME_UP))
         assertFalse(ProjectionKeyPolicy.isHomeKey(KeyEvent.KEYCODE_DPAD_CENTER))
     }
+
+    @Test
+    fun `isVolumeKey covers up, down and mute only`() {
+        assertTrue(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_VOLUME_UP))
+        assertTrue(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_VOLUME_DOWN))
+        assertTrue(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_VOLUME_MUTE))
+        assertFalse(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_MUTE))
+        assertFalse(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_BACK))
+        assertFalse(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_MEDIA_NEXT))
+    }
 }

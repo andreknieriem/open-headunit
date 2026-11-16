@@ -638,6 +638,14 @@
     <string name="media_key_routing_never">Jamais</string>
     <string name="media_key_routing_help">Toujours: Suivant, précédent et lecture/pause sont toujours envoyés à Android Auto. Choisissez ce mode, sauf si un seul appui saute deux pistes.\n\nAutomatique: Cesse de les envoyer tant que cet autoradio a une connexion multimédia Bluetooth avec le téléphone, car cette connexion exécute déjà l\'action. Choisissez ce mode si un seul appui saute deux pistes et que votre téléphone est associé à cet autoradio.\n\nJamais: Ne les envoie jamais et laisse les boutons au Bluetooth. Choisissez ce mode si un seul appui saute deux pistes et que votre téléphone est associé au système propre de la voiture plutôt qu\'à cet autoradio. Le mode Automatique ne peut pas détecter cette connexion.</string>
     <string name="media_key_routing_hint_common">Seuls les boutons multimédia sont affectés. Les contrôleurs rotatifs, la croix directionnelle, Retour et Entrée atteignent toujours Android Auto.</string>
+    <string name="volume_keys_to_phone">Envoyer les boutons de volume au téléphone</string>
+    <string name="volume_keys_to_phone_summary">Les boutons de volume règlent le téléphone, pas cet appareil.</string>
+    <string name="volume_keys_to_phone_help">Envoie les boutons de volume de cet appareil au téléphone via Android Auto au lieu de changer le volume ici. Utilisez-le quand le téléphone diffuse le son lui-même: Sortie audio désactivée, ou téléphone connecté au Bluetooth de la voiture.\n\nFonctionne tant qu\'Android Auto est à l\'écran, et seulement si Android Auto sur le téléphone réagit aux touches de volume.</string>
+    <string name="speed_volume">Volume selon la vitesse</string>
+    <string name="speed_volume_off">Désactivé</string>
+    <string name="speed_volume_low">Faible</string>
+    <string name="speed_volume_high">Élevé</string>
+    <string name="speed_volume_help">Monte le volume d\'un cran à la fois quand la voiture accélère, grâce au GPS de cet appareil, et retire ces crans quand elle ralentit.\n\nDésactivé: Le volume reste là où vous l\'avez réglé.\n\nFaible: Un cran tous les 30 km/h, jusqu\'à 3 crans.\n\nÉlevé: Un cran tous les 20 km/h, jusqu\'à 5 crans.\n\nLes crans vont au téléphone quand Envoyer les boutons de volume au téléphone est activé, sinon au volume multimédia de cet appareil.</string>
     <string name="playback_focus_mode">Mettre en pause les autres audios pendant la lecture</string>
     <string name="playback_focus_mode_auto">Automatique</string>
     <string name="playback_focus_mode_always">Toujours</string>

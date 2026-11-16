@@ -1633,12 +1633,17 @@
     <string name="home_title_self_ready">Android Auto auf diesem Autoradio</string>
     <string name="home_subtitle_searching">Öffne Android Auto auf dem Handy, falls es nicht erscheint</string>
     <string name="home_subtitle_usb">Über USB-Kabel</string>
+    <string name="home_subtitle_usb_dongle">Kabellos</string>
     <string name="home_subtitle_wifi">Über WLAN</string>
     <string name="home_subtitle_self">Führt Android Auto direkt auf dem Autoradio aus</string>
     <string name="home_action_back_to_android_auto">Zurück zu Android Auto</string>
     <string name="home_action_connect_now">Jetzt verbinden</string>
     <string name="home_action_search_again">Erneut suchen</string>
     <string name="home_action_connect_usb">Über USB verbinden</string>
+    <string name="home_action_connect_wireless_dongle">Kabellos verbinden</string>
+    <string name="usb_wireless_dongle_label">Kabelloser USB-Dongle</string>
+    <string name="usb_wireless_dongle_summary">Zeigt auf dem Startbildschirm kabellos statt Kabel für USB-Verbindungen an.</string>
+    <string name="usb_wireless_dongle_help">Aktiviere diese Option, wenn du einen kabellosen USB-Adapter (z. B. AAWireless oder Carlinkit) nutzt. Open Headunit kann einen Dongle nicht von einem Kabel unterscheiden – diese Option ändert die Anzeige auf dem Startbildschirm von Kabel auf kabellos.</string>
     <string name="home_action_connect_wifi">Über WLAN verbinden</string>
     <string name="home_action_start_self_mode">Self Mode starten</string>
     <string name="home_all_apps">Alle</string>

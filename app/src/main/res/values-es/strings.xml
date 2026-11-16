@@ -1851,4 +1851,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Cerrar la sesión si el relé no responde dos veces seguidas</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Esta unidad envía una comprobación al relé cada 2 segundos. Si dos comprobaciones seguidas no reciben respuesta, la sesión de Android Auto se cierra.</string>
     <string name="esp32_relay_phase_failed">Error: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB inalámbrico</string>
+    <string name="usb_wireless_dongle_summary">Muestra texto inalámbrico en lugar de cable en la pantalla de inicio para USB.</string>
+    <string name="usb_wireless_dongle_help">Actívalo si te conectas mediante un adaptador USB inalámbrico como AAWireless o Carlinkit. Open Headunit no puede distinguir un dongle de un cable, por lo que esta opción cambia las etiquetas de la pantalla de inicio a inalámbrico.</string>
+    <string name="home_subtitle_usb_dongle">De forma inalámbrica</string>
+    <string name="home_action_connect_wireless_dongle">Conectar de forma inalámbrica</string>
 </resources>

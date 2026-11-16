@@ -1891,4 +1891,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Akhiri sesi jika relay tidak merespons dua kali berturut-turut</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Unit ini mengirim pemeriksaan status ke relay setiap 2 detik. Jika dua pemeriksaan berturut-turut tidak dijawab, sesi Android Auto berakhir.</string>
     <string name="esp32_relay_phase_failed">Gagal: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB nirkabel</string>
+    <string name="usb_wireless_dongle_summary">Tampilkan teks nirkabel alih-alih kabel di layar utama untuk koneksi USB.</string>
+    <string name="usb_wireless_dongle_help">Aktifkan ini jika Anda terhubung melalui adaptor USB nirkabel seperti AAWireless atau Carlinkit. Open Headunit tidak dapat membedakan dongle dari kabel, jadi opsi ini mengubah label layar utama dari kabel menjadi nirkabel.</string>
+    <string name="home_subtitle_usb_dongle">Secara nirkabel</string>
+    <string name="home_action_connect_wireless_dongle">Hubungkan secara nirkabel</string>
 </resources>

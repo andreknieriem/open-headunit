@@ -1829,4 +1829,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">სესიის დასრულება, თუ რელე ზედიზედ ორჯერ არ უპასუხებს</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">ეს მოწყობილობა რელეს ყოველ 2 წამში უგზავნის მდგომარეობის შემოწმებას. თუ ზედიზედ ორ შემოწმებას პასუხი არ მოჰყვა, Android Auto-ს სესია სრულდება.</string>
     <string name="esp32_relay_phase_failed">ვერ მოხერხდა: %1$s</string>
+    <string name="usb_wireless_dongle_label">უსადენო USB დონგლი</string>
+    <string name="usb_wireless_dongle_summary">USB კავშირისთვის მთავარ ეკრანზე კაბელის ნაცვლად უსადენო ტექსტის ჩვენება.</string>
+    <string name="usb_wireless_dongle_help">ჩართეთ, თუ უკავშირდებით უსადენო USB ადაპტერით (მაგ. AAWireless ან Carlinkit). Open Headunit ვერ ასხვავებს დონგლს კაბელისგან, ამიტომ ეს პარამეტრი მთავარ ეკრანზე წარწერებს კაბელიდან უსადენოზე ცვლის.</string>
+    <string name="home_subtitle_usb_dongle">უსადენოდ</string>
+    <string name="home_action_connect_wireless_dongle">უსადენოდ დაკავშირება</string>
 </resources>

@@ -1842,4 +1842,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">中继器连续两次无响应时结束会话</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">本主机每 2 秒向中继器发送一次状态检查。如果连续两次检查都没有响应,Android Auto 会话将结束。</string>
     <string name="esp32_relay_phase_failed">失败:%1$s</string>
+    <string name="usb_wireless_dongle_label">无线 USB 适配器</string>
+    <string name="usb_wireless_dongle_summary">在主屏幕上将 USB 连接显示为无线而不是有线。</string>
+    <string name="usb_wireless_dongle_help">如果您通过 AAWireless 或 Carlinkit 等无线 USB 适配器连接，请开启此选项。Open Headunit 无法区分适配器与数据线，开启后会将主屏幕上的文字从有线更改为无线。</string>
+    <string name="home_subtitle_usb_dongle">无线连接</string>
+    <string name="home_action_connect_wireless_dongle">无线连接</string>
 </resources>

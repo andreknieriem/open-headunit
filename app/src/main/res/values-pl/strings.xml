@@ -1849,4 +1849,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Zakończ sesję, gdy przekaźnik nie odpowie dwa razy z rzędu</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Ta jednostka co 2 sekundy wysyła do przekaźnika kontrolę stanu. Jeśli dwie kontrole z rzędu zostaną bez odpowiedzi, sesja Android Auto kończy się.</string>
     <string name="esp32_relay_phase_failed">Niepowodzenie: %1$s</string>
+    <string name="usb_wireless_dongle_label">Bezprzewodowy klucz USB</string>
+    <string name="usb_wireless_dongle_summary">Wyświetlaj na ekranie głównym napis bezprzewodowo zamiast kabla dla USB.</string>
+    <string name="usb_wireless_dongle_help">Włącz tę opcję, jeśli łączysz się przez bezprzewodowy adapter USB, np. AAWireless lub Carlinkit. Open Headunit nie odróżnia adaptera od kabla, więc ta opcja zmienia etykiety na ekranie głównym z kablowych na bezprzewodowe.</string>
+    <string name="home_subtitle_usb_dongle">Bezprzewodowo</string>
+    <string name="home_action_connect_wireless_dongle">Połącz bezprzewodowo</string>
 </resources>

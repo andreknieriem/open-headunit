@@ -1847,4 +1847,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Завершувати сеанс, якщо ретранслятор двічі не відповів</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Пристрій кожні 2 секунди надсилає ретранслятору перевірку стану. Якщо на дві перевірки поспіль немає відповіді, сеанс Android Auto завершується.</string>
     <string name="esp32_relay_phase_failed">Помилка: %1$s</string>
+    <string name="usb_wireless_dongle_label">Бездротовий USB-адаптер</string>
+    <string name="usb_wireless_dongle_summary">Показувати бездротовий текст замість кабелю на головному екрані для USB.</string>
+    <string name="usb_wireless_dongle_help">Увімкніть, якщо підключаєтеся через бездротовий USB-адаптер, як-от AAWireless або Carlinkit. Open Headunit не може відрізнити адаптер від кабелю, тому цей параметр змінює підписи на головному екрані з кабелю на бездротове з’єднання.</string>
+    <string name="home_subtitle_usb_dongle">Бездротово</string>
+    <string name="home_action_connect_wireless_dongle">Підключити бездротово</string>
 </resources>

@@ -1839,4 +1839,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Röle art arda iki kez yanıt vermezse oturumu bitir</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Bu ünite röleye her 2 saniyede bir durum denetimi gönderir. Art arda iki denetim yanıtsız kalırsa Android Auto oturumu sona erer.</string>
     <string name="esp32_relay_phase_failed">Başarısız: %1$s</string>
+    <string name="usb_wireless_dongle_label">Kablosuz USB dongle</string>
+    <string name="usb_wireless_dongle_summary">USB bağlantıları için ana ekranda kablo yerine kablosuz metni gösterir.</string>
+    <string name="usb_wireless_dongle_help">AAWireless veya Carlinkit gibi bir kablosuz USB adaptörü ile bağlanıyorsanız bunu açın. Open Headunit bir dongle’ı kablodan ayırt edemez, bu yüzden bu seçenek ana ekran etiketlerini kablodan kablosuza çevirir.</string>
+    <string name="home_subtitle_usb_dongle">Kablosuz</string>
+    <string name="home_action_connect_wireless_dongle">Kablosuz bağlan</string>
 </resources>

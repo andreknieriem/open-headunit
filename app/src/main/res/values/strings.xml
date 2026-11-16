@@ -573,6 +573,9 @@
     <string name="listen_for_usb_attach_label">Detect plugged-in phones/AA dongles</string>
     <string name="listen_for_usb_attach_description">Lets Android offer Open Headunit for a plugged-in phone or Android Auto dongle and remember your choice. When off, Android does not offer it. Use the USB button and answer a dialog each time.</string>
     <string name="listen_for_usb_attach_summary">Lets Android offer this app when a phone or dongle is plugged in.</string>
+    <string name="usb_wireless_dongle_label">Wireless USB dongle</string>
+    <string name="usb_wireless_dongle_summary">Show wireless labels on the home screen instead of cable for USB connections.</string>
+    <string name="usb_wireless_dongle_help">Turn this on if you connect via a wireless USB adapter such as AAWireless or Carlinkit. Open Headunit cannot tell a dongle apart from a direct cable, so this changes the home screen labels from cable to wireless.</string>
     <string name="show_toast_messages">Show Toast Messages</string>
     <string name="show_toast_messages_description">Display status toast popups on connection, disconnect, and mode switching.</string>
     <string name="show_toast_messages_help">Shows short pop-up messages when a phone connects or disconnects, and when the connection mode changes. Turn it off to keep the screen clear. Messages about a failure or a refusal still show.</string>
@@ -1774,12 +1777,14 @@
     <string name="home_title_self_ready">Android Auto on this unit</string>
     <string name="home_subtitle_searching">Open Android Auto on the phone if it does not show up</string>
     <string name="home_subtitle_usb">Over USB cable</string>
+    <string name="home_subtitle_usb_dongle">Wirelessly</string>
     <string name="home_subtitle_wifi">Over WiFi</string>
     <string name="home_subtitle_self">Runs Android Auto on the radio itself</string>
     <string name="home_action_back_to_android_auto">Back to Android Auto</string>
     <string name="home_action_connect_now">Connect now</string>
     <string name="home_action_search_again">Search again</string>
     <string name="home_action_connect_usb">Connect over USB</string>
+    <string name="home_action_connect_wireless_dongle">Connect wirelessly</string>
     <string name="home_action_connect_wifi">Connect over WiFi</string>
     <string name="home_action_start_self_mode">Start Self Mode</string>
     <string name="home_all_apps">All</string>

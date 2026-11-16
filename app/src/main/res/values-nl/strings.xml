@@ -1848,4 +1848,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Sessie beëindigen als de relay twee keer niet reageert</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Deze headunit stuurt elke 2 seconden een statuscontrole naar de relay. Krijgen twee controles achter elkaar geen antwoord, dan eindigt de Android Auto-sessie.</string>
     <string name="esp32_relay_phase_failed">Mislukt: %1$s</string>
+    <string name="usb_wireless_dongle_label">Draadloze USB-dongle</string>
+    <string name="usb_wireless_dongle_summary">Toon draadloze tekst in plaats van kabel op het startscherm voor USB.</string>
+    <string name="usb_wireless_dongle_help">Schakel dit in als je verbindt via een draadloze USB-adapter zoals AAWireless of Carlinkit. Open Headunit kan een dongle niet van een kabel onderscheiden, dus deze optie verandert de startschermteksten van kabel naar draadloos.</string>
+    <string name="home_subtitle_usb_dongle">Draadloos</string>
+    <string name="home_action_connect_wireless_dongle">Draadloos verbinden</string>
 </resources>

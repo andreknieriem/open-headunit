@@ -1488,6 +1488,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("listen-for-usb-devices", true)
         set(value) { prefs.edit().putBoolean("listen-for-usb-devices", value).apply() }
 
+    /** When true, the home screen presents USB connections as wireless (for USB wireless dongles). */
+    var usbWirelessDongle: Boolean
+        get() = prefs.getBoolean(KEY_USB_WIRELESS_DONGLE, false)
+        set(value) { prefs.edit().putBoolean(KEY_USB_WIRELESS_DONGLE, value).apply() }
+
     /** "Connect when plugged in": whether a plug-in switches the phone. Off, the plug-in opens the app. */
     var usbConnectOnPlugIn: Boolean
         get() = prefs.getBoolean(KEY_USB_CONNECT_ON_PLUG_IN, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
@@ -2201,6 +2206,7 @@ class Settings(private val context: Context) {
         private const val KEY_AUTO_START_ON_USB = "auto-start-on-usb"
         const val KEY_SCREEN_ORIENTATION = "screen-orientation"
         private const val KEY_LISTEN_FOR_USB_DEVICES = "listen-for-usb-devices"
+        private const val KEY_USB_WIRELESS_DONGLE = "usb-wireless-dongle"
         private const val KEY_AUTO_START_BT_MAC = "auto-start-bt-mac"
         private const val KEY_AUTO_START_BT_MACS = "auto-start-bt-macs"
 

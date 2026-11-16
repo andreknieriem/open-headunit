@@ -1897,4 +1897,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">สิ้นสุดเซสชันเมื่อรีเลย์ไม่ตอบสนองติดกันสองครั้ง</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">เครื่องนี้ส่งการตรวจสอบสถานะไปยังรีเลย์ทุก 2 วินาที หากไม่มีการตอบกลับสองครั้งติดกัน เซสชัน Android Auto จะสิ้นสุดลง</string>
     <string name="esp32_relay_phase_failed">ล้มเหลว: %1$s</string>
+    <string name="usb_wireless_dongle_label">ดองเกิล USB ไร้สาย</string>
+    <string name="usb_wireless_dongle_summary">แสดงข้อความไร้สายแทนสายเคเบิลบนหน้าจอหลักสำหรับการเชื่อมต่อ USB</string>
+    <string name="usb_wireless_dongle_help">เปิดใช้งานตัวเลือกนี้หากคุณเชื่อมต่อผ่านอะแดปเตอร์ USB ไร้สาย เช่น AAWireless หรือ Carlinkit Open Headunit ไม่สามารถแยกดองเกิลออกจากสายเคเบิลได้ ตัวเลือกนี้จึงเปลี่ยนข้อความบนหน้าจอหลักจากสายเคเบิลเป็นไร้สาย</string>
+    <string name="home_subtitle_usb_dongle">แบบไร้สาย</string>
+    <string name="home_action_connect_wireless_dongle">เชื่อมต่อแบบไร้สาย</string>
 </resources>

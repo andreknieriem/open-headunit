@@ -200,6 +200,10 @@ object SettingsBackupManager {
         // Same reasoning: read through MediaKeyRoutingPolicy.Mode.fromInt, which falls back to
         // ALWAYS for anything out of range.
         "media-key-routing" to ValueType.INT,
+        "volume-keys-to-phone" to ValueType.BOOLEAN,
+        // Enum-backed like playback-focus-mode: read through SpeedVolumePolicy.Mode.fromInt, which
+        // falls back to OFF for anything out of range.
+        "speed-volume-mode" to ValueType.INT,
         "separate-audio-streams" to ValueType.BOOLEAN,
         // AudioManager.STREAM_* constants; AudioStreamTester falls back to the media stream
         // for anything it does not recognise, so an out-of-range value cannot break playback.
@@ -227,6 +231,7 @@ object SettingsBackupManager {
         "auto-start-on-wifi" to ValueType.BOOLEAN,
         "auto-start-wifi-ssid" to ValueType.STRING,
         "listen-for-usb-devices" to ValueType.BOOLEAN,
+        "usb-wireless-dongle" to ValueType.BOOLEAN,
         "reopen-on-reconnection" to ValueType.BOOLEAN,
         "auto-connect-priority-order" to ValueType.STRING,
         "auto-start-bt-macs" to ValueType.STRING_SET,

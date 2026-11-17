@@ -49,4 +49,13 @@ object LockedInputPolicy {
      */
     fun allows(engaged: Boolean, keycode: Int?): Boolean =
         !engaged || keycode == KEYCODE_AA_NAVIGATION
+
+    /**
+     * Whether a key bound to an action on this unit may run it. Opening another app would take
+     * the projection off a locked unit's screen, so it waits for the unlock. Changes to this
+     * screen (dimmer, full screen, overlay) stay allowed; the exit menu has its own check, and
+     * Android Auto keys go through [allows] when they are sent.
+     */
+    fun allowsBoundAction(engaged: Boolean, action: InputAction): Boolean =
+        !engaged || action !is InputAction.LaunchApp
 }

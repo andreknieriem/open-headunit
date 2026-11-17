@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.input
 
 import android.view.KeyEvent
+import com.andrerinas.openheadunit.main.FavoriteTarget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -66,5 +67,15 @@ class LockedInputPolicyTest {
             65536, 65537
         ).forEach { assertFalse("keycode $it", LockedInputPolicy.allows(engaged = true, keycode = it)) }
         assertTrue(LockedInputPolicy.allows(engaged = true, keycode = LockedInputPolicy.KEYCODE_AA_NAVIGATION))
+    }
+
+    @Test
+    fun `engaged holds app launches from bound keys and keeps screen actions`() {
+        val launch = InputAction.LaunchApp(FavoriteTarget.App("com.example"))
+        assertFalse(LockedInputPolicy.allowsBoundAction(engaged = true, action = launch))
+        assertTrue(LockedInputPolicy.allowsBoundAction(engaged = false, action = launch))
+        LocalAction.values().forEach {
+            assertTrue("$it", LockedInputPolicy.allowsBoundAction(engaged = true, action = InputAction.Local(it)))
+        }
     }
 }

@@ -165,6 +165,56 @@
 
             </LinearLayout>
 
+            <!-- Own background color: also paints the system panels -->
+            <LinearLayout
+                android:id="@+id/row_bg_color"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/bg_setting_single"
+                android:gravity="center_vertical">
+
+                <View
+                    android:id="@+id/indicator_bg_color"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginRight="16dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/bg_color_title"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/txt_bg_color_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/bg_color_summary"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    app:srcCompat="@drawable/ic_chevron_right"
+                    app:tint="?android:attr/textColorSecondary" />
+
+            </LinearLayout>
+
             <!-- Background Night Behavior (Always visible) -->
             <LinearLayout
                 android:id="@+id/layout_bg_night_behavior"

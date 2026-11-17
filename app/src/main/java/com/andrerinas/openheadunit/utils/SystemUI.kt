@@ -137,10 +137,7 @@ object SystemUI {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
                 if (Build.VERSION.SDK_INT < 35) {
-                    window.statusBarColor = Color.BLACK
-                    if (mode == Settings.FullscreenMode.NONE || mode == Settings.FullscreenMode.STATUS_ONLY) {
-                        window.navigationBarColor = Color.BLACK
-                    }
+                    applyBarColors(window, Settings(window.context).customBackgroundColor, mode)
                 }
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
@@ -150,6 +147,20 @@ object SystemUI {
             }
             controllerCompat.isAppearanceLightStatusBars = false
             controllerCompat.isAppearanceLightNavigationBars = false
+        }
+    }
+
+    /**
+     * Paints the bars with [color], black when it is 0. The home launcher of some head units
+     * takes its own bottom panel from the navigation bar color, so this is what colors that panel.
+     */
+    fun applyBarColors(window: Window, color: Int, mode: Settings.FullscreenMode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || Build.VERSION.SDK_INT >= 35) return
+        if (mode == Settings.FullscreenMode.IMMERSIVE || mode == Settings.FullscreenMode.IMMERSIVE_WITH_NOTCH) return
+        val bar = if (color != 0) color else Color.BLACK
+        window.statusBarColor = bar
+        if (mode == Settings.FullscreenMode.NONE || mode == Settings.FullscreenMode.STATUS_ONLY) {
+            window.navigationBarColor = bar
         }
     }
 

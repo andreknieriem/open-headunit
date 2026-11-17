@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:text="@string/bg_color_title"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/bgc_preview"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Red -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:text="@string/bg_color_red"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/bgc_slider_r"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:valueFrom="0"
+                android:valueTo="255"
+                android:stepSize="1" />
+
+            <EditText
+                android:id="@+id/bgc_value_r"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:maxLength="3"
+                android:gravity="center"
+                android:imeOptions="flagNoExtractUi"
+                android:textColor="?android:attr/textColorPrimary" />
+        </LinearLayout>
+
+        <!-- Green -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:text="@string/bg_color_green"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/bgc_slider_g"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:valueFrom="0"
+                android:valueTo="255"
+                android:stepSize="1" />
+
+            <EditText
+                android:id="@+id/bgc_value_g"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:maxLength="3"
+                android:gravity="center"
+                android:imeOptions="flagNoExtractUi"
+                android:textColor="?android:attr/textColorPrimary" />
+        </LinearLayout>
+
+        <!-- Blue -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:text="@string/bg_color_blue"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/bgc_slider_b"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:valueFrom="0"
+                android:valueTo="255"
+                android:stepSize="1" />
+
+            <EditText
+                android:id="@+id/bgc_value_b"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:maxLength="3"
+                android:gravity="center"
+                android:imeOptions="flagNoExtractUi"
+                android:textColor="?android:attr/textColorPrimary" />
+        </LinearLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/bg_color_hex_hint">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/bgc_hex"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:digits="#0123456789abcdefABCDEF"
+                android:importantForAutofill="no"
+                android:imeOptions="flagNoExtractUi"
+                android:inputType="textCapCharacters|textNoSuggestions"
+                android:maxLength="7"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+</ScrollView>

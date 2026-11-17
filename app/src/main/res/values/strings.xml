@@ -1933,4 +1933,11 @@
     <string name="audio_matching_phase_gradient_hint">Slow playback</string>
     <string name="audio_matching_option" translatable="false">%1$s\n(%2$s)</string>
     <string name="audio_matching_description">OHU remains the default. WSOLA aligns overlapping waveforms; Phase Vocoder adjusts spectral phases. Short uses a shorter analysis window. Phase Gradient integrates phase gradients to reconstruct phases. These independent methods add processing latency; their names do not rank sound quality.\n\nNative methods: PCM music. Navigation, voice responses, system sounds and AAC use OHU.\nReconnect to apply. Removed engine preferences reset to OHU.</string>
+    <string name="bg_color_title">Panel background color</string>
+    <string name="bg_color_summary">Own color for the system panels</string>
+    <string name="bg_color_default_value">Default</string>
+    <string name="bg_color_red">Red</string>
+    <string name="bg_color_green">Green</string>
+    <string name="bg_color_blue">Blue</string>
+    <string name="bg_color_hex_hint">Color (#RRGGBB)</string>
 </resources>

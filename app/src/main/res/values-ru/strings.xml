@@ -1856,4 +1856,11 @@ Open Headunit предоставляется «как есть» без каки
     <string name="usb_wireless_dongle_help">Включите, если подключаетесь через беспроводной USB-адаптер (например, AAWireless или Carlinkit). Open Headunit не может отличить адаптер от кабеля, поэтому эта настройка меняет подписи на главном экране с кабельных на беспроводные.</string>
     <string name="home_subtitle_usb_dongle">Без проводов</string>
     <string name="home_action_connect_wireless_dongle">Подключить без проводов</string>
+    <string name="bg_color_title">Цвет фона панелей</string>
+    <string name="bg_color_summary">Свой цвет системных панелей</string>
+    <string name="bg_color_default_value">По умолчанию</string>
+    <string name="bg_color_red">Красный</string>
+    <string name="bg_color_green">Зелёный</string>
+    <string name="bg_color_blue">Синий</string>
+    <string name="bg_color_hex_hint">Цвет (#RRGGBB)</string>
 </resources>

@@ -292,6 +292,9 @@
     <string name="car_launcher_autostart_info">Az Open Headunit autós indítóként van beállítva. A rendszer indításakor automatikusan elindul.</string>
     <string name="auto_start_on_boot_label">Indítás rendszerindításkor</string>
     <string name="auto_start_on_boot_description">Az alkalmazás automatikus megnyitása az eszköz indításakor. Android 10 vagy újabb rendszeren a „Megjelenítés a többi alkalmazás fölött” engedély szükséges.</string>
+    <string name="auto_start_on_boot_background_label">Várakozás a háttérben</string>
+    <string name="auto_start_on_boot_background_description">Rendszerindításkor csak a szolgáltatás indul el, az alkalmazás nem nyílik meg. Az alkalmazás akkor jelenik meg, amikor a telefon csatlakozik.</string>
+    <string name="auto_start_on_boot_background_summary">Csak a szolgáltatást indítja, az alkalmazás megnyitása nélkül.</string>
     <string name="auto_start_on_boot_summary">Megnyitja az alkalmazást az eszköz indulásakor.</string>
     <string name="auto_start_screen_on_label">Indítás képernyő bekapcsolásakor</string>
     <string name="auto_start_screen_on_description">Az alkalmazás megnyitása minden alkalommal, amikor a képernyő bekapcsol. Ideális olyan fejegységekhez, amelyek soha nem kapcsolnak ki teljesen, vagy gyorsindítási módot használnak, ahol a többi automatikus indítási lehetőség nem működik. Telefonokhoz és táblagépekhez nem ajánlott.</string>
@@ -339,7 +342,7 @@
     <string name="auto_connect_help">Ezek a módszerek automatikusan futnak az alkalmazás megnyitásakor. Engedélyezze a kívántakat, majd húzással állítsa be a sorrendjüket. Az alkalmazás az első sikeres, engedélyezett módszert használja.</string>
     <string name="auto_connect_screen_help">Megadja, hogyan csatlakozik az alkalmazás magától megnyitáskor. Kapcsolja be a kívánt módszereket, és húzza őket a kipróbálás sorrendjébe. Az első sikeres módszer lesz használva. A késleltetés időt ad a Wi-Fi-nek az ébredésre egy lassú fejegységen. Semmi sem módosítja az Ön által indított csatlakozást. A Mentés alkalmazza a módosításokat.</string>
     <string name="dpi_screen_help">Megadja a képsűrűséget, amellyel az Android Auto rajzol. A magasabb DPI nagyobbra veszi az ikonokat és a szöveget, így kevesebb fér a képernyőre. Az alacsonyabb DPI kisebbre veszi őket, így több fér rá. Az Automatikus ennek az eszköznek a sűrűségét használja. Az új érték a következő csatlakozáskor lép érvénybe.</string>
-    <string name="keymap_screen_help">A fejegység billentyűit és gombjait Android Auto műveletekhez rendeli. Koppintson egy sorra, majd nyomja meg a hozzárendelendő billentyűt. A Visszaállítás törli az összes hozzárendelést, és visszatér az alapértékekhez. Használja, ha egy kormány- vagy panelbillentyű rossz műveletet hajt végre.</string>
+    <string name="keymap_screen_help">A fejegység billentyűit és gombjait műveletekhez rendeli: Android Auto gombhoz, a kivetítési képernyő egy műveletéhez vagy egy alkalmazás indításához. Koppintson a Gomb hozzárendelése elemre, nyomja meg a gombot, majd válassza ki a műveletet. Egy hozzárendelésre koppintva módosíthatja vagy törölheti. A Visszaállítás minden hozzárendelést töröl.</string>
     <string name="customization_screen_help">Módosítja az alkalmazás kezdőképernyőjének megjelenését: a háttérképet, a négy gomb színeit és méretét, valamint a szövegméretet. Az éjszakai beállítás a sötét mód hátterét szabályozza. Ezek egyike sem változtatja meg, amit az Android Auto a kivetítésen mutat.</string>
     <string name="loading_screen_screen_help">Megadja az Android Auto indulásakor látható képet vagy rövid videót. Válasszon legfeljebb 10 MB-os képet vagy videót, igazítsa a képernyőhöz, és ismételje a rövid animációkat. Az induló szöveget is elrejtheti. Az Eltávolítás visszaállítja az alapértelmezett képernyőt.</string>
     <string name="auto_connect_priority">Prioritás %d</string>
@@ -442,6 +445,22 @@
     <string name="key_mappings_reset">Gombkiosztás visszaállítva</string>
     <string name="press_key_to_assign">Nyomjon meg egy gombot a(z) \'%s\' hozzárendeléséhez…</string>
     <string name="key_assigned">\'%1$s\' hozzárendelve ehhez: \'%2$s\'</string>
+    <string name="action_picker_title">Művelet kiválasztása</string>
+    <string name="action_remove_binding">Hozzárendelés törlése</string>
+    <string name="action_section_projection">Kivetítési képernyő</string>
+    <string name="action_section_aa_keys">Android Auto gombok</string>
+    <string name="action_section_apps">Alkalmazások</string>
+    <string name="action_launch_app">Alkalmazás indítása…</string>
+    <string name="action_launch_named_app">%s indítása</string>
+    <string name="action_aa_key_code">Android Auto gomb: %d</string>
+    <string name="action_selected">Kiválasztva</string>
+    <string name="action_search_keywords">művelet indítás megnyitás alkalmazás parancsikon</string>
+    <string name="keymap_add_binding">Gomb hozzárendelése</string>
+    <string name="keymap_press_new_key">Nyomja meg a hozzárendelendő billentyűt vagy gombot…</string>
+    <string name="keymap_no_bindings">Még nincs hozzárendelt gomb. Koppintson a Gomb hozzárendelése elemre, nyomjon meg egy gombot, majd válassza ki, mit csináljon.</string>
+    <string name="keymap_bindings_header">Gombhozzárendelések</string>
+    <string name="keymap_tester_hint">Nyomjon meg bármely billentyűt vagy kormánygombot, és itt látja a nevét és a kódját.</string>
+    <string name="keymap_tester_last">Utolsó gomb: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Utoljára megnyomott gomb: %1$s (%2$d)</string>
     <string name="scan">Keresés</string>
     <string name="scanning_network">Hálózat keresése…</string>
@@ -782,6 +801,7 @@
     <string name="export_settings">Beállítások exportálása</string>
     <string name="export_settings_description">Beállítások biztonsági mentése JSON-fájlként.</string>
     <string name="export_settings_app_folder">Mentés az alkalmazás mentési mappájába</string>
+    <string name="onb_restore_settings">Beállítások visszaállítása biztonsági mentésből</string>
     <string name="export_settings_downloads">Mentés a Letöltésekbe</string>
     <string name="export_settings_choose_location">Mentési hely kiválasztása</string>
     <string name="settings_exported">Beállítások exportálva</string>
@@ -1131,6 +1151,14 @@
     <string name="media_key_routing_never">Soha</string>
     <string name="media_key_routing_help">Mindig: A következő, az előző és a lejátszás/szünet gomb jelét mindig megkapja az Android Auto. Ezt használja, kivéve ha egy gombnyomás két számot ugrik át.\n\nAutomatikus: Nem küldi el őket, amíg a fejegységnek Bluetooth médiakapcsolata van a telefonnal, mert ez a kapcsolat már elvégzi a műveletet. Ezt válassza, ha egy gombnyomás két számot ugrik át, és a telefon ehhez a fejegységhez van párosítva.\n\nSoha: Soha nem küldi el őket, a gombokat a Bluetoothra hagyja. Ezt válassza, ha egy gombnyomás két számot ugrik át, és a telefon az autó saját rendszeréhez van párosítva, nem ehhez a fejegységhez, mert az Automatikus mód ezt a kapcsolatot nem tudja észlelni.</string>
     <string name="media_key_routing_hint_common">Csak a médiagombokat érinti. A forgókapcsolók, a D-pad, a Vissza és az Enter gomb mindig eljut az Android Autóhoz.</string>
+    <string name="volume_keys_to_phone">Hangerőgombok küldése a telefonnak</string>
+    <string name="volume_keys_to_phone_summary">A hangerőgombok a telefon hangerejét állítják, nem a fejegységét.</string>
+    <string name="volume_keys_to_phone_help">Az Android Autón keresztül a telefonnak küldi a fejegység hangerőgombjait, ahelyett hogy itt változtatná a hangerőt. Akkor használja, ha a hangot maga a telefon játssza le: a Hang fogadása ki van kapcsolva, vagy a telefon az autó Bluetooth-jához csatlakozik.\n\nAkkor működik, amikor az Android Auto a képernyőn van, és csak ha a telefonon futó Android Auto reagál a hangerőgombokra.</string>
+    <string name="speed_volume">Sebességfüggő hangerő</string>
+    <string name="speed_volume_off">Ki</string>
+    <string name="speed_volume_low">Alacsony</string>
+    <string name="speed_volume_high">Magas</string>
+    <string name="speed_volume_help">A fejegység GPS-e alapján lépésenként növeli a hangerőt, ahogy az autó gyorsul, és lassuláskor visszaveszi ezeket a lépéseket.\n\nKi: A hangerő ott marad, ahová beállította.\n\nAlacsony: 30 km/h-nként egy lépés, legfeljebb 3 lépés.\n\nMagas: 20 km/h-nként egy lépés, legfeljebb 5 lépés.\n\nA lépések a telefonra kerülnek, ha a Hangerőgombok küldése a telefonnak be van kapcsolva, különben a fejegység médiahangerejére.</string>
     <string name="playback_focus_mode">Más hangok szüneteltetése lejátszás közben</string>
     <string name="playback_focus_mode_auto">Automatikus</string>
     <string name="playback_focus_mode_always">Mindig</string>
@@ -1844,4 +1872,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Munkamenet vége, ha a relé kétszer egymás után nem válaszol</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">A fejegység 2 másodpercenként állapotellenőrzést küld a relének. Ha két egymást követő ellenőrzésre nem érkezik válasz, az Android Auto munkamenet véget ér.</string>
     <string name="esp32_relay_phase_failed">Sikertelen: %1$s</string>
+    <string name="usb_wireless_dongle_label">Vezeték nélküli USB-kulcs</string>
+    <string name="usb_wireless_dongle_summary">Kábel helyett vezeték nélküli felirat megjelenítése a kezdőképernyőn USB-nél.</string>
+    <string name="usb_wireless_dongle_help">Kapcsold be, ha vezeték nélküli USB-adapterrel (például AAWireless vagy Carlinkit) csatlakozol. Az Open Headunit nem tudja megkülönböztetni az adaptert a kábeltől, ezért ez az opció vezeték nélkülire cseréli a kezdőképernyő feliratait.</string>
+    <string name="home_subtitle_usb_dongle">Vezeték nélkül</string>
+    <string name="home_action_connect_wireless_dongle">Csatlakozás vezeték nélkül</string>
 </resources>

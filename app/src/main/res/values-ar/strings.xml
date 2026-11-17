@@ -293,6 +293,9 @@
     <string name="car_launcher_autostart_info">تم تكوين Open Headunit كمشغل للسيارة. يبدأ تلقائيًا عند تشغيل النظام.</string>
     <string name="auto_start_on_boot_label">التشغيل عند الإقلاع</string>
     <string name="auto_start_on_boot_description">فتح التطبيق تلقائيًا عند بدء تشغيل الجهاز. يتطلب إذن \"الإظهار فوق التطبيقات الأخرى\" على Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">الانتظار في الخلفية</string>
+    <string name="auto_start_on_boot_background_description">عند الإقلاع، شغّل الخدمة فقط دون فتح التطبيق. يظهر التطبيق عند اتصال هاتفك.</string>
+    <string name="auto_start_on_boot_background_summary">تشغيل الخدمة فقط دون فتح التطبيق.</string>
     <string name="auto_start_on_boot_summary">يفتح التطبيق عند تشغيل الجهاز.</string>
     <string name="auto_start_screen_on_label">التشغيل عند تشغيل الشاشة</string>
     <string name="auto_start_screen_on_description">فتح التطبيق في كل مرة تُشغَّل فيها الشاشة. مثالي لوحدات السيارة التي لا تنطفئ تمامًا أو تستخدم أوضاع التشغيل السريع حيث لا تعمل خيارات التشغيل التلقائي الأخرى. غير موصى به للهواتف أو الأجهزة اللوحية.</string>
@@ -339,7 +342,7 @@
     <string name="auto_connect_help">تعمل هذه الطرق تلقائيا عند فتح التطبيق. قم بتمكين الطرق التي تريدها، ثم اسحب لضبط الترتيب. سيتم استخدام أول طريقة ممكّنة تنجح.</string>
     <string name="auto_connect_screen_help">يحدد كيف يتصل التطبيق تلقائيًا عند فتحه. فعّل الطرق التي تريدها واسحبها إلى ترتيب المحاولة. تُستخدم أول طريقة تنجح. يمنح التأخير شبكة Wi-Fi وقتًا للاستيقاظ على وحدة بطيئة. لا شيء هنا يغيّر اتصالًا تبدأه بنفسك. يطبّق «حفظ» التغييرات.</string>
     <string name="dpi_screen_help">يحدد كثافة البكسلات التي يرسم بها Android Auto. تكبّر قيمة DPI الأعلى الأيقونات والنص فيتسع أقل على الشاشة. تصغّرها قيمة DPI الأدنى فيتسع أكثر. «تلقائي» يستخدم كثافة هذا الجهاز. تُطبَّق القيمة الجديدة عند الاتصال التالي.</string>
-    <string name="keymap_screen_help">يربط مفاتيح هذه الوحدة وأزرارها بإجراءات Android Auto. المس صفًا ثم اضغط المفتاح المراد تعيينه. تحذف «إعادة تعيين» كل تعييناتك وتعود إلى الإعدادات الافتراضية. استخدمها عندما ينفذ مفتاح في عجلة القيادة أو اللوحة إجراءً خاطئًا.</string>
+    <string name="keymap_screen_help">يربط مفاتيح هذه الوحدة وأزرارها بإجراءات: مفتاح Android Auto، أو إجراء على شاشة الإسقاط، أو تشغيل تطبيق. المس «إضافة ربط مفتاح»، واضغط المفتاح، ثم اختر الإجراء. المس ربطًا لتغييره أو إزالته. تحذف «إعادة تعيين» كل الروابط.</string>
     <string name="customization_screen_help">يغيّر مظهر الشاشة الرئيسية لهذا التطبيق: صورة الخلفية وألوان الأزرار الأربعة وحجمها وحجم النص. يتحكم الإعداد الليلي في الخلفية في الوضع الداكن. لا يغيّر أيٌّ من هذا ما يعرضه Android Auto في الإسقاط.</string>
     <string name="loading_screen_screen_help">يحدد الصورة أو الفيديو القصير المعروض أثناء بدء Android Auto. اختر صورة أو فيديو حتى 10 ميغابايت، وكيّفه ليناسب الشاشة، وكرّر الرسوم المتحركة القصيرة. يمكنك أيضًا إخفاء نص البدء. تعيد «إزالة» الشاشة الافتراضية.</string>
     <string name="auto_connect_priority">الأولوية %d</string>
@@ -443,6 +446,22 @@
     <string name="key_mappings_reset">تمت إعادة تعيين اختصارات المفاتيح</string>
     <string name="press_key_to_assign">اضغط على مفتاح لتعيينه إلى \'%s\'…</string>
     <string name="key_assigned">تم تعيين \'%1$s\' إلى \'%2$s\'</string>
+    <string name="action_picker_title">اختر إجراءً</string>
+    <string name="action_remove_binding">إزالة الربط</string>
+    <string name="action_section_projection">شاشة الإسقاط</string>
+    <string name="action_section_aa_keys">مفاتيح Android Auto</string>
+    <string name="action_section_apps">التطبيقات</string>
+    <string name="action_launch_app">تشغيل تطبيق…</string>
+    <string name="action_launch_named_app">تشغيل %s</string>
+    <string name="action_aa_key_code">مفتاح Android Auto %d</string>
+    <string name="action_selected">محدد</string>
+    <string name="action_search_keywords">إجراء تشغيل فتح تطبيق اختصار</string>
+    <string name="keymap_add_binding">إضافة ربط مفتاح</string>
+    <string name="keymap_press_new_key">اضغط المفتاح أو الزر الذي تريد ربطه…</string>
+    <string name="keymap_no_bindings">لا توجد مفاتيح مربوطة بعد. المس «إضافة ربط مفتاح»، واضغط مفتاحًا، ثم اختر ما يفعله.</string>
+    <string name="keymap_bindings_header">ربط المفاتيح</string>
+    <string name="keymap_tester_hint">اضغط أي مفتاح أو زر في عجلة القيادة لترى اسمه ورمزه هنا.</string>
+    <string name="keymap_tester_last">آخر مفتاح: %1$s (%2$d)، %3$s</string>
     <string name="last_key_press">آخر ضغطة مفتاح: %1$s (%2$d)</string>
     <string name="scan">فحص</string>
     <string name="scanning_network">جارٍ فحص الشبكة…</string>
@@ -789,6 +808,7 @@
     <string name="export_settings">تصدير الإعدادات</string>
     <string name="export_settings_description">حفظ نسخة احتياطية من الإعدادات كملف JSON.</string>
     <string name="export_settings_app_folder">حفظ في مجلد نسخ التطبيق</string>
+    <string name="onb_restore_settings">استعادة الإعدادات من نسخة احتياطية</string>
     <string name="export_settings_downloads">حفظ في التنزيلات</string>
     <string name="export_settings_choose_location">اختر موقع الحفظ</string>
     <string name="settings_exported">تم تصدير الإعدادات</string>
@@ -1133,6 +1153,14 @@
     <string name="media_key_routing_never">أبدًا</string>
     <string name="media_key_routing_help">دائمًا: يُرسل زر التالي والسابق والتشغيل/الإيقاف المؤقت دائمًا إلى Android Auto. استخدم هذا الخيار ما لم تؤدِّ ضغطة واحدة إلى تخطي مقطعين.\n\nتلقائي: يتوقف الإرسال أثناء وجود اتصال وسائط عبر Bluetooth بين وحدة الرأس والهاتف، لأن هذا الاتصال ينفّذ الإجراء بنفسه. اختر هذا الخيار إذا كانت ضغطة واحدة تتخطى مقطعين وكان هاتفك مقترنًا بوحدة الرأس هذه.\n\nأبدًا: لا يُرسل الأزرار أبدًا، وتتولاها وصلة Bluetooth. اختر هذا الخيار إذا كانت ضغطة واحدة تتخطى مقطعين وكان هاتفك مقترنًا بنظام السيارة نفسه لا بوحدة الرأس هذه، فالخيار التلقائي لا يستطيع اكتشاف هذا الاتصال.</string>
     <string name="media_key_routing_hint_common">يقتصر التأثير على أزرار الوسائط فقط. أما مفاتيح التحكم الدوّارة وأزرار الاتجاهات وزرا الرجوع والإدخال فتصل دائمًا إلى Android Auto.</string>
+    <string name="volume_keys_to_phone">إرسال أزرار الصوت إلى الهاتف</string>
+    <string name="volume_keys_to_phone_summary">تغيّر أزرار الصوت صوت الهاتف بدلًا من صوت هذه الوحدة.</string>
+    <string name="volume_keys_to_phone_help">يرسل أزرار الصوت في هذه الوحدة إلى الهاتف عبر Android Auto بدلًا من تغيير مستوى الصوت هنا. استخدمه عندما يشغّل الهاتف الصوت بنفسه: عند إيقاف «مخرج الصوت»، أو عند اتصال الهاتف ببلوتوث السيارة.\n\nيعمل أثناء ظهور Android Auto على الشاشة، وفقط إذا كان Android Auto على الهاتف يستجيب لمفاتيح الصوت.</string>
+    <string name="speed_volume">مستوى الصوت حسب السرعة</string>
+    <string name="speed_volume_off">إيقاف</string>
+    <string name="speed_volume_low">منخفض</string>
+    <string name="speed_volume_high">مرتفع</string>
+    <string name="speed_volume_help">يرفع مستوى الصوت درجةً واحدة في كل مرة مع ازدياد سرعة السيارة، باستخدام GPS هذه الوحدة، ويعيد تلك الدرجات عند التباطؤ.\n\nإيقاف: يبقى مستوى الصوت كما ضبطته.\n\nمنخفض: درجة واحدة كل 30 كم/س، حتى 3 درجات.\n\nمرتفع: درجة واحدة كل 20 كم/س، حتى 5 درجات.\n\nتذهب الدرجات إلى الهاتف عند تشغيل «إرسال أزرار الصوت إلى الهاتف»، وإلا فإلى مستوى صوت الوسائط في هذه الوحدة.</string>
     <string name="playback_focus_mode">إيقاف الصوت الآخر مؤقتًا أثناء التشغيل</string>
     <string name="playback_focus_mode_auto">تلقائي</string>
     <string name="playback_focus_mode_always">دائمًا</string>
@@ -1845,4 +1873,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">إنهاء الجلسة إذا لم يستجب المرحّل مرتين متتاليتين</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">يرسل هذا الجهاز فحص حالة إلى المرحّل كل ثانيتين. إذا لم يردّ المرحّل على فحصين متتاليين، تنتهي جلسة Android Auto.</string>
     <string name="esp32_relay_phase_failed">فشل: %1$s</string>
+    <string name="usb_wireless_dongle_label">دونجل USB لاسلكي</string>
+    <string name="usb_wireless_dongle_summary">عرض نصوص الاتصال اللاسلكي بدلاً من الكابل لاتصالات USB.</string>
+    <string name="usb_wireless_dongle_help">فعّل هذا الخيار إذا كنت تتصل عبر محول USB لاسلكي مثل AAWireless أو Carlinkit. لا يستطيع Open Headunit التمييز بين الدونجل والكابل، لذا يغيّر هذا الخيار تسميات الشاشة الرئيسية من سلكي إلى لاسلكي.</string>
+    <string name="home_subtitle_usb_dongle">لاسلكياً</string>
+    <string name="home_action_connect_wireless_dongle">الاتصال لاسلكياً</string>
 </resources>

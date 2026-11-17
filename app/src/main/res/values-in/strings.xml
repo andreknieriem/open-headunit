@@ -563,6 +563,9 @@
     <string name="car_launcher_autostart_info">Open Headunit diatur sebagai peluncur mobil Anda. Aplikasi ini dimulai otomatis saat sistem menyala.</string>
     <string name="auto_start_on_boot_label">Mulai saat boot</string>
     <string name="auto_start_on_boot_description">Buka aplikasi secara otomatis saat perangkat menyala. Memerlukan izin \'Tampilkan di atas aplikasi lain\' di Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">Tunggu di latar belakang</string>
+    <string name="auto_start_on_boot_background_description">Saat boot, jalankan layanan saja tanpa membuka aplikasi. Aplikasi muncul saat ponsel Anda terhubung.</string>
+    <string name="auto_start_on_boot_background_summary">Hanya memulai layanan, tanpa membuka aplikasi.</string>
     <string name="auto_start_on_boot_summary">Membuka aplikasi saat perangkat menyala.</string>
     <string name="auto_start_screen_on_label">Mulai saat layar menyala</string>
     <string name="auto_start_screen_on_description">Buka aplikasi setiap kali layar menyala. Ideal untuk head unit yang tidak pernah mati sepenuhnya atau menggunakan mode boot cepat di mana opsi mulai otomatis lainnya tidak berfungsi. Tidak disarankan untuk ponsel atau tablet.</string>
@@ -665,7 +668,7 @@
     <string name="auto_connect_help">Metode ini berjalan otomatis saat aplikasi dibuka. Aktifkan metode yang diinginkan, lalu seret untuk mengatur urutan. Metode aktif pertama yang berhasil akan digunakan.</string>
     <string name="auto_connect_screen_help">Mengatur cara aplikasi terhubung sendiri saat dibuka. Aktifkan metode yang diinginkan dan seret ke urutan percobaan. Metode pertama yang berhasil dipakai. Jeda memberi waktu bagi Wi-Fi untuk aktif di unit yang lambat. Tidak ada yang di sini mengubah koneksi yang Anda mulai sendiri. Simpan menerapkan perubahan.</string>
     <string name="dpi_screen_help">Mengatur kepadatan piksel yang dipakai Android Auto untuk menggambar. DPI lebih tinggi membuat ikon dan teks lebih besar, jadi lebih sedikit yang muat di layar. DPI lebih rendah membuatnya lebih kecil, jadi lebih banyak yang muat. Otomatis memakai kepadatan perangkat ini. Nilai baru berlaku pada koneksi berikutnya.</string>
-    <string name="keymap_screen_help">Memetakan tombol unit ini ke tindakan Android Auto. Ketuk satu baris, lalu tekan tombol yang akan ditetapkan. Atur Ulang menghapus semua pemetaan Anda dan kembali ke bawaan. Gunakan saat tombol kemudi atau panel melakukan hal yang salah.</string>
+    <string name="keymap_screen_help">Menetapkan tombol unit ini ke tindakan: tombol Android Auto, tindakan layar proyeksi, atau membuka aplikasi. Ketuk Tambah penetapan tombol, tekan tombolnya, lalu pilih tindakan. Ketuk penetapan untuk mengubah atau menghapusnya. Atur Ulang menghapus semua penetapan.</string>
     <string name="customization_screen_help">Mengubah tampilan layar utama aplikasi ini: gambar latar, warna dan ukuran empat tombol, serta ukuran teks. Setelan malam mengatur latar di mode gelap. Tidak satu pun mengubah apa yang ditampilkan Android Auto pada proyeksi.</string>
     <string name="loading_screen_screen_help">Mengatur gambar atau video singkat yang ditampilkan saat Android Auto dimulai. Pilih gambar atau video hingga 10 MB, skalakan agar pas dengan layar, dan ulang animasi pendek. Anda juga bisa menyembunyikan teks awal. Hapus kembali ke layar bawaan.</string>
     <string name="auto_connect_priority">Prioritas %d</string>
@@ -752,6 +755,14 @@
     <string name="media_key_routing_never">Tidak Pernah</string>
     <string name="media_key_routing_help">Selalu: Berikutnya, sebelumnya, dan putar/jeda selalu dikirim ke Android Auto. Gunakan ini kecuali satu tekanan melewati dua trek.\n\nOtomatis: Berhenti mengirimkannya saat headunit ini memiliki koneksi media Bluetooth ke ponsel, karena koneksi tersebut sudah menjalankan tindakan itu. Pilih ini jika satu tekanan melewati dua trek dan ponsel Anda dipasangkan ke headunit ini.\n\nTidak Pernah: Tidak pernah mengirimkannya, sehingga tombol ditangani oleh Bluetooth. Pilih ini jika satu tekanan melewati dua trek dan ponsel Anda dipasangkan ke sistem bawaan mobil, bukan ke headunit ini. Mode Otomatis tidak dapat mendeteksi koneksi tersebut.</string>
     <string name="media_key_routing_hint_common">Hanya tombol media yang terpengaruh. Pengontrol putar, D-pad, Kembali, dan Enter selalu diteruskan ke Android Auto.</string>
+    <string name="volume_keys_to_phone">Kirim Tombol Volume Ke Ponsel</string>
+    <string name="volume_keys_to_phone_summary">Tombol volume mengubah volume ponsel, bukan volume unit ini.</string>
+    <string name="volume_keys_to_phone_help">Mengirim tombol volume unit ini ke ponsel melalui Android Auto alih-alih mengubah volume di sini. Gunakan ini saat ponsel memutar suaranya sendiri: Audio Sink nonaktif, atau ponsel terhubung ke Bluetooth mobil.\n\nBerfungsi saat Android Auto tampil di layar, dan hanya jika Android Auto di ponsel merespons tombol volume.</string>
+    <string name="speed_volume">Volume Berdasarkan Kecepatan</string>
+    <string name="speed_volume_off">Nonaktif</string>
+    <string name="speed_volume_low">Rendah</string>
+    <string name="speed_volume_high">Tinggi</string>
+    <string name="speed_volume_help">Menaikkan volume satu langkah demi satu langkah saat mobil melaju lebih cepat, menggunakan GPS unit ini, dan menurunkannya kembali saat melambat.\n\nNonaktif: Volume tetap seperti yang Anda atur.\n\nRendah: Satu langkah setiap 30 km/jam, hingga 3 langkah.\n\nTinggi: Satu langkah setiap 20 km/jam, hingga 5 langkah.\n\nLangkah dikirim ke ponsel saat Kirim Tombol Volume Ke Ponsel aktif, dan ke volume media unit ini jika tidak.</string>
     <string name="playback_focus_mode">Jeda Audio Lain Selama Pemutaran</string>
     <string name="playback_focus_mode_auto">Otomatis</string>
     <string name="playback_focus_mode_always">Selalu</string>
@@ -927,6 +938,22 @@
     <string name="key_mappings_reset">Pemetaan tombol diatur ulang</string>
     <string name="press_key_to_assign">Tekan tombol untuk menetapkan ke \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' ditetapkan ke \'%2$s\'</string>
+    <string name="action_picker_title">Pilih tindakan</string>
+    <string name="action_remove_binding">Hapus penetapan</string>
+    <string name="action_section_projection">Layar proyeksi</string>
+    <string name="action_section_aa_keys">Tombol Android Auto</string>
+    <string name="action_section_apps">Aplikasi</string>
+    <string name="action_launch_app">Buka aplikasi…</string>
+    <string name="action_launch_named_app">Buka %s</string>
+    <string name="action_aa_key_code">Tombol Android Auto %d</string>
+    <string name="action_selected">Dipilih</string>
+    <string name="action_search_keywords">tindakan buka luncurkan aplikasi pintasan</string>
+    <string name="keymap_add_binding">Tambah penetapan tombol</string>
+    <string name="keymap_press_new_key">Tekan tombol yang ingin ditetapkan…</string>
+    <string name="keymap_no_bindings">Belum ada tombol yang ditetapkan. Ketuk Tambah penetapan tombol, tekan tombol, lalu pilih tindakannya.</string>
+    <string name="keymap_bindings_header">Penetapan tombol</string>
+    <string name="keymap_tester_hint">Tekan tombol apa pun atau tombol kemudi untuk melihat nama dan kodenya di sini.</string>
+    <string name="keymap_tester_last">Tombol terakhir: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Tombol Terakhir Ditekan: %1$s (%2$d)</string>
     <string name="scan">Pindai</string>
     <string name="scanning_network">Memindai Jaringan…</string>
@@ -945,6 +972,7 @@
     <string name="export_settings_choose_location">Pilih lokasi penyimpanan</string>
     <string name="export_settings_downloads">Simpan ke Unduhan</string>
     <string name="export_settings_app_folder">Simpan ke folder cadangan aplikasi</string>
+    <string name="onb_restore_settings">Pulihkan pengaturan dari cadangan</string>
     <string name="import_settings">Impor setelan</string>
     <string name="import_settings_description">Pulihkan setelan dari cadangan Open Headunit.</string>
     <string name="import_settings_choose_file">Pilih file cadangan</string>
@@ -1891,4 +1919,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Akhiri sesi jika relay tidak merespons dua kali berturut-turut</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Unit ini mengirim pemeriksaan status ke relay setiap 2 detik. Jika dua pemeriksaan berturut-turut tidak dijawab, sesi Android Auto berakhir.</string>
     <string name="esp32_relay_phase_failed">Gagal: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB nirkabel</string>
+    <string name="usb_wireless_dongle_summary">Tampilkan teks nirkabel alih-alih kabel di layar utama untuk koneksi USB.</string>
+    <string name="usb_wireless_dongle_help">Aktifkan ini jika Anda terhubung melalui adaptor USB nirkabel seperti AAWireless atau Carlinkit. Open Headunit tidak dapat membedakan dongle dari kabel, jadi opsi ini mengubah label layar utama dari kabel menjadi nirkabel.</string>
+    <string name="home_subtitle_usb_dongle">Secara nirkabel</string>
+    <string name="home_action_connect_wireless_dongle">Hubungkan secara nirkabel</string>
 </resources>

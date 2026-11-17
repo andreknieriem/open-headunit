@@ -316,6 +316,9 @@
     <string name="car_launcher_autostart_info">Open Headunit დაყენებულია თქვენი მანქანის ლანჩერად. ის სისტემის ჩატვირთვისას ავტომატურად იწყება.</string>
     <string name="auto_start_on_boot_label">გაშვება ჩატვირთვისას</string>
     <string name="auto_start_on_boot_description">აპის ავტომატური გახსნა მოწყობილობის ჩართვისას. Android 10+ ვერსიაზე საჭიროა „სხვა აპების ზემოდან გამოჩენის“ ნებართვა.</string>
+    <string name="auto_start_on_boot_background_label">ფონურ რეჟიმში ლოდინი</string>
+    <string name="auto_start_on_boot_background_description">ჩატვირთვისას გაეშვება მხოლოდ სერვისი, აპის გახსნის გარეშე. აპი გამოჩნდება, როცა ტელეფონი დაუკავშირდება.</string>
+    <string name="auto_start_on_boot_background_summary">მხოლოდ სერვისის გაშვება, აპის გახსნის გარეშე.</string>
     <string name="auto_start_on_boot_summary">მოწყობილობის ჩართვისას ხსნის აპს.</string>
     <string name="auto_start_screen_on_label">გაშვება ეკრანის ჩართვისას</string>
     <string name="auto_start_screen_on_description">აპის გახსნა ეკრანის ყოველ ჩართვაზე. იდეალურია მაგნიტოლებისთვის, რომლებიც არასდროს ითიშება სრულად ან იყენებენ სწრაფი ჩატვირთვის რეჟიმებს, სადაც ავტომატური გაშვების სხვა ვარიანტები არ მუშაობს. ტელეფონებისა და ტაბლეტებისთვის რეკომენდებული არ არის.</string>
@@ -374,7 +377,7 @@
     <string name="auto_connect_help">ეს მეთოდები ავტომატურად ეშვება აპის გახსნისას. ჩართეთ სასურველი მეთოდები, შემდეგ გადაათრიეთ რიგითობის დასაყენებლად. გამოყენებული იქნება პირველივე ჩართული მეთოდი, რომელიც წარმატებით დაუკავშირდება.</string>
     <string name="auto_connect_screen_help">განსაზღვრავს, როგორ უკავშირდება აპი თავისით გახსნისას. ჩართეთ სასურველი მეთოდები და გადაათრიეთ საცდელი თანმიმდევრობით. გამოიყენება პირველი წარმატებული მეთოდი. შეყოვნება Wi-Fi-ს აძლევს გაღვიძების დროს ნელ მოწყობილობაზე. აქ არაფერი ცვლის თქვენ მიერ დაწყებულ კავშირს. „შენახვა“ ცვლილებებს ამოქმედებს.</string>
     <string name="dpi_screen_help">ადგენს პიქსელების სიმკვრივეს, რომლითაც Android Auto ხატავს. მაღალი DPI ზრდის ხატულებსა და ტექსტს, ამიტომ ეკრანზე ნაკლები ეტევა. დაბალი DPI მათ ამცირებს, ამიტომ მეტი ეტევა. „ავტომატური“ იყენებს ამ მოწყობილობის სიმკვრივეს. ახალი მნიშვნელობა მოქმედებს შემდეგი კავშირიდან.</string>
-    <string name="keymap_screen_help">ამ მოწყობილობის კლავიშებსა და ღილაკებს აკავშირებს Android Auto-ს მოქმედებებთან. შეეხეთ სტრიქონს და დააჭირეთ მისანიჭებელ კლავიშს. „გადაყენება“ შლის თქვენს ყველა მინიჭებას და აბრუნებს ნაგულისხმევს. გამოიყენეთ, როცა საჭის ან პანელის კლავიში არასწორად მუშაობს.</string>
+    <string name="keymap_screen_help">ამ მოწყობილობის კლავიშებსა და ღილაკებს ანიჭებს მოქმედებებს: Android Auto-ს კლავიშს, პროექციის ეკრანის მოქმედებას ან აპის გაშვებას. შეეხეთ „კლავიშის მინიჭების დამატებას“, დააჭირეთ კლავიშს და აირჩიეთ მოქმედება. შეეხეთ მინიჭებას მის შესაცვლელად ან წასაშლელად. „გადაყენება“ შლის ყველა მინიჭებას.</string>
     <string name="customization_screen_help">ცვლის ამ აპის მთავარი ეკრანის იერს: ფონის სურათს, ოთხი ღილაკის ფერებსა და ზომას და ტექსტის ზომას. ღამის პარამეტრი მართავს ფონს მუქ რეჟიმში. ეს არაფერი ცვლის იმას, რასაც Android Auto პროექციაზე აჩვენებს.</string>
     <string name="loading_screen_screen_help">ადგენს სურათს ან მოკლე ვიდეოს, რომელიც Android Auto-ს გაშვებისას გამოჩნდება. აირჩიეთ სურათი ან ვიდეო 10 მბ-მდე, მოარგეთ ეკრანს და მოკლე ანიმაციები ციკლში გაუშვით. ასევე შეგიძლიათ საწყისი ტექსტის დამალვა. „წაშლა“ აბრუნებს ნაგულისხმევ ეკრანს.</string>
     <string name="auto_connect_priority">პრიორიტეტი %d</string>
@@ -493,6 +496,22 @@
     <string name="key_mappings_reset">ღილაკების მინიჭებები განულდა</string>
     <string name="press_key_to_assign">დააჭირეთ ღილაკს \'%s\' ფუნქციის მისანიჭებლად…</string>
     <string name="key_assigned">\'%1$s\' მიენიჭა ღილაკს \'%2$s\'</string>
+    <string name="action_picker_title">აირჩიეთ მოქმედება</string>
+    <string name="action_remove_binding">მინიჭების წაშლა</string>
+    <string name="action_section_projection">პროექციის ეკრანი</string>
+    <string name="action_section_aa_keys">Android Auto-ს კლავიშები</string>
+    <string name="action_section_apps">აპები</string>
+    <string name="action_launch_app">აპის გაშვება…</string>
+    <string name="action_launch_named_app">%s-ის გაშვება</string>
+    <string name="action_aa_key_code">Android Auto-ს კლავიში %d</string>
+    <string name="action_selected">არჩეულია</string>
+    <string name="action_search_keywords">მოქმედება გაშვება გახსნა აპი მალსახმობი</string>
+    <string name="keymap_add_binding">კლავიშის მინიჭების დამატება</string>
+    <string name="keymap_press_new_key">დააჭირეთ კლავიშს ან ღილაკს, რომლის მინიჭებაც გსურთ…</string>
+    <string name="keymap_no_bindings">კლავიშები ჯერ არ არის მინიჭებული. შეეხეთ „კლავიშის მინიჭების დამატებას“, დააჭირეთ კლავიშს და აირჩიეთ, რას გააკეთებს.</string>
+    <string name="keymap_bindings_header">კლავიშების მინიჭებები</string>
+    <string name="keymap_tester_hint">დააჭირეთ ნებისმიერ კლავიშს ან საჭის ღილაკს, რომ აქ მისი სახელი და კოდი ნახოთ.</string>
+    <string name="keymap_tester_last">ბოლო კლავიში: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">ბოლო დაჭერილი ღილაკი: %1$s (%2$d)</string>
     <string name="scan">სკანირება</string>
     <string name="scanning_network">მიმდინარეობს ქსელის სკანირება…</string>
@@ -511,6 +530,7 @@
     <string name="export_settings_choose_location">აირჩიეთ შენახვის ადგილი</string>
     <string name="export_settings_downloads">შენახვა ჩამოტვირთვებში</string>
     <string name="export_settings_app_folder">აპის სარეზერვო საქაღალდეში შენახვა</string>
+    <string name="onb_restore_settings">პარამეტრების აღდგენა სარეზერვო ასლიდან</string>
     <string name="import_settings">პარამეტრების იმპორტი</string>
     <string name="import_settings_description">პარამეტრების აღდგენა Open Headunit-ის სარეზერვო ასლიდან.</string>
     <string name="import_settings_choose_file">აირჩიეთ სარეზერვო ფაილი</string>
@@ -1058,6 +1078,14 @@
     <string name="media_key_routing_never">არასოდეს</string>
     <string name="media_key_routing_help">ყოველთვის: შემდეგი, წინა და დაკვრა/პაუზა ყოველთვის იგზავნება Android Auto-ში. გამოიყენეთ ეს რეჟიმი, თუ ერთი დაჭერა ორ ტრეკს არ გამოტოვებს.\n\nავტომატურად: ღილაკების გაგზავნა წყდება, სანამ მაგნიტოლას ტელეფონთან Bluetooth მედია კავშირი აქვს, რადგან ეს კავშირი მოქმედებას თავად ასრულებს. აირჩიეთ, თუ ერთი დაჭერა ორ ტრეკს გამოტოვებს და ტელეფონი ამ მაგნიტოლასთანაა დაწყვილებული.\n\nარასოდეს: ღილაკები არასოდეს იგზავნება და Bluetooth-ს რჩება. აირჩიეთ, თუ ერთი დაჭერა ორ ტრეკს გამოტოვებს და ტელეფონი ამ მაგნიტოლასთან კი არა, მანქანის საკუთარ სისტემასთანაა დაწყვილებული: რეჟიმი „ავტომატურად“ ამ კავშირს ვერ აღმოაჩენს.</string>
     <string name="media_key_routing_hint_common">მხოლოდ მედია ღილაკებზე მოქმედებს. მბრუნავი მართვის ელემენტები, D-pad, „უკან“ და Enter ყოველთვის Android Auto-ში იგზავნება.</string>
+    <string name="volume_keys_to_phone">ხმის ღილაკების გაგზავნა ტელეფონზე</string>
+    <string name="volume_keys_to_phone_summary">ხმის ღილაკები ტელეფონის ხმას ცვლის და არა ამ მოწყობილობის.</string>
+    <string name="volume_keys_to_phone_help">აგზავნის ამ მოწყობილობის ხმის ღილაკებს ტელეფონზე Android Auto-ს მეშვეობით, ნაცვლად იმისა, რომ ხმა აქ შეცვალოს. გამოიყენეთ, როცა ხმას თავად ტელეფონი უკრავს: აუდიო მიმღები (Audio Sink) გამორთულია, ან ტელეფონი მანქანის Bluetooth-ზეა მიერთებული.\n\nმუშაობს, როცა Android Auto ეკრანზეა, და მხოლოდ მაშინ, თუ ტელეფონის Android Auto ხმის ღილაკებზე რეაგირებს.</string>
+    <string name="speed_volume">სიჩქარეზე დამოკიდებული ხმა</string>
+    <string name="speed_volume_off">გამორთულია</string>
+    <string name="speed_volume_low">დაბალი</string>
+    <string name="speed_volume_high">მაღალი</string>
+    <string name="speed_volume_help">ამ მოწყობილობის GPS-ით ხმას ნაბიჯ-ნაბიჯ უწევს, როცა მანქანა აჩქარდება, და შენელებისას ამ ნაბიჯებს უკან აკლებს.\n\nგამორთულია: ხმა რჩება ისე, როგორც დააყენეთ.\n\nდაბალი: ერთი ნაბიჯი ყოველ 30 კმ/სთ-ზე, მაქსიმუმ 3 ნაბიჯი.\n\nმაღალი: ერთი ნაბიჯი ყოველ 20 კმ/სთ-ზე, მაქსიმუმ 5 ნაბიჯი.\n\nნაბიჯები ტელეფონზე მიდის, როცა „ხმის ღილაკების გაგზავნა ტელეფონზე“ ჩართულია, სხვა შემთხვევაში — ამ მოწყობილობის მედიის ხმაზე.</string>
     <string name="playback_focus_mode">სხვა აუდიოს პაუზა დაკვრისას</string>
     <string name="playback_focus_mode_auto">ავტომატურად</string>
     <string name="playback_focus_mode_always">ყოველთვის</string>
@@ -1829,4 +1857,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">სესიის დასრულება, თუ რელე ზედიზედ ორჯერ არ უპასუხებს</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">ეს მოწყობილობა რელეს ყოველ 2 წამში უგზავნის მდგომარეობის შემოწმებას. თუ ზედიზედ ორ შემოწმებას პასუხი არ მოჰყვა, Android Auto-ს სესია სრულდება.</string>
     <string name="esp32_relay_phase_failed">ვერ მოხერხდა: %1$s</string>
+    <string name="usb_wireless_dongle_label">უსადენო USB დონგლი</string>
+    <string name="usb_wireless_dongle_summary">USB კავშირისთვის მთავარ ეკრანზე კაბელის ნაცვლად უსადენო ტექსტის ჩვენება.</string>
+    <string name="usb_wireless_dongle_help">ჩართეთ, თუ უკავშირდებით უსადენო USB ადაპტერით (მაგ. AAWireless ან Carlinkit). Open Headunit ვერ ასხვავებს დონგლს კაბელისგან, ამიტომ ეს პარამეტრი მთავარ ეკრანზე წარწერებს კაბელიდან უსადენოზე ცვლის.</string>
+    <string name="home_subtitle_usb_dongle">უსადენოდ</string>
+    <string name="home_action_connect_wireless_dongle">უსადენოდ დაკავშირება</string>
 </resources>

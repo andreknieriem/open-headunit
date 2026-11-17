@@ -563,6 +563,9 @@
     <string name="car_launcher_autostart_info">Open Headunit ถูกตั้งเป็นตัวเปิดแอปหลัก (Launcher) ของรถคุณ และจะเริ่มทำงานอัตโนมัติเมื่อระบบบูต</string>
     <string name="auto_start_on_boot_label">เริ่มเมื่อเปิดเครื่อง</string>
     <string name="auto_start_on_boot_description">เปิดแอปอัตโนมัติเมื่ออุปกรณ์เริ่มทำงาน ต้องใช้สิทธิ์ \"แสดงทับบนแอปอื่นๆ\" บน Android 10 ขึ้นไป</string>
+    <string name="auto_start_on_boot_background_label">รอในเบื้องหลัง</string>
+    <string name="auto_start_on_boot_background_description">เมื่อเปิดเครื่อง ให้เริ่มเฉพาะบริการโดยไม่เปิดแอป แอปจะแสดงขึ้นเมื่อโทรศัพท์เชื่อมต่อ</string>
+    <string name="auto_start_on_boot_background_summary">เริ่มเฉพาะบริการโดยไม่เปิดแอป</string>
     <string name="auto_start_on_boot_summary">เปิดแอปเมื่ออุปกรณ์เริ่มทำงาน</string>
     <string name="auto_start_screen_on_label">เริ่มเมื่อเปิดหน้าจอ</string>
     <string name="auto_start_screen_on_description">เปิดแอปทุกครั้งที่หน้าจอติด เหมาะกับเฮดยูนิตที่ไม่ได้ปิดเครื่องสนิท หรือใช้โหมดบูตเร็วที่ตัวเลือกเริ่มอัตโนมัติอื่นใช้ไม่ได้ ไม่แนะนำให้ใช้กับโทรศัพท์หรือแท็บเล็ต</string>
@@ -665,7 +668,7 @@
     <string name="auto_connect_help">วิธีเหล่านี้ทำงานอัตโนมัติเมื่อเปิดแอป เปิดวิธีที่ต้องการ แล้วลากเพื่อจัดลำดับ ระบบจะใช้วิธีแรกที่เปิดอยู่และเชื่อมต่อสำเร็จ</string>
     <string name="auto_connect_screen_help">กำหนดวิธีที่แอปเชื่อมต่อเองเมื่อเปิด เปิดวิธีที่ต้องการแล้วลากเรียงตามลำดับที่จะลอง ระบบจะใช้วิธีแรกที่สำเร็จ การหน่วงเวลาให้ Wi-Fi มีเวลาตื่นบนเครื่องที่ช้า ไม่มีส่วนใดในนี้เปลี่ยนการเชื่อมต่อที่คุณเริ่มเอง แตะบันทึกเพื่อใช้การเปลี่ยนแปลง</string>
     <string name="dpi_screen_help">กำหนดความหนาแน่นพิกเซลที่ Android Auto ใช้วาด DPI สูงทำให้ไอคอนและข้อความใหญ่ขึ้น จึงแสดงได้น้อยลง DPI ต่ำทำให้เล็กลง จึงแสดงได้มากขึ้น อัตโนมัติจะใช้ความหนาแน่นของอุปกรณ์นี้ ค่าใหม่จะมีผลในการเชื่อมต่อครั้งถัดไป</string>
-    <string name="keymap_screen_help">กำหนดปุ่มของเครื่องนี้ให้ทำงานใน Android Auto แตะแถวหนึ่ง แล้วกดปุ่มที่ต้องการกำหนด รีเซ็ตจะลบการกำหนดทั้งหมดของคุณและกลับเป็นค่าเริ่มต้น ใช้เมื่อปุ่มบนพวงมาลัยหรือแผงทำงานผิด</string>
+    <string name="keymap_screen_help">กำหนดการทำงานให้ปุ่มของเครื่องนี้: ปุ่ม Android Auto การทำงานบนหน้าจอฉายภาพ หรือการเปิดแอป แตะ เพิ่มการกำหนดปุ่ม กดปุ่ม แล้วเลือกการทำงาน แตะการกำหนดเพื่อเปลี่ยนหรือลบ รีเซ็ตจะลบการกำหนดทั้งหมด</string>
     <string name="customization_screen_help">เปลี่ยนรูปลักษณ์ของหน้าจอหลักของแอปนี้ ได้แก่ รูปพื้นหลัง สีและขนาดของปุ่มทั้งสี่ และขนาดข้อความ การตั้งค่ากลางคืนควบคุมพื้นหลังในโหมดมืด ทั้งหมดนี้ไม่เปลี่ยนสิ่งที่ Android Auto แสดงในการฉายภาพ</string>
     <string name="loading_screen_screen_help">กำหนดรูปภาพหรือวิดีโอสั้นที่แสดงขณะ Android Auto เริ่มทำงาน เลือกรูปภาพหรือวิดีโอไม่เกิน 10 MB ปรับขนาดให้พอดีหน้าจอ และวนซ้ำภาพเคลื่อนไหวสั้น ๆ นอกจากนี้ยังซ่อนข้อความตอนเริ่มได้ ลบจะกลับไปที่หน้าจอเริ่มต้น</string>
     <string name="auto_connect_priority">ลำดับความสำคัญ %d</string>
@@ -752,6 +755,14 @@
     <string name="media_key_routing_never">ไม่เคย</string>
     <string name="media_key_routing_help">เสมอ: ปุ่มถัดไป ก่อนหน้า และเล่น/หยุดชั่วคราวจะส่งไปยัง Android Auto เสมอ ใช้ตัวเลือกนี้ เว้นแต่การกดครั้งเดียวข้ามสองเพลง\n\nอัตโนมัติ: จะหยุดส่งปุ่มเหล่านี้ขณะที่เฮดยูนิตนี้มีการเชื่อมต่อสื่อบลูทูธกับโทรศัพท์ เพราะการเชื่อมต่อนั้นทำงานตามปุ่มอยู่แล้ว เลือกตัวเลือกนี้หากกดครั้งเดียวแล้วข้ามสองเพลง และโทรศัพท์จับคู่กับเฮดยูนิตนี้\n\nไม่เคย: ไม่ส่งปุ่มเหล่านี้เลย และปล่อยให้บลูทูธจัดการ เลือกตัวเลือกนี้หากกดครั้งเดียวแล้วข้ามสองเพลง และโทรศัพท์จับคู่กับระบบของรถเอง ไม่ใช่เฮดยูนิตนี้ เพราะโหมดอัตโนมัติตรวจไม่พบการเชื่อมต่อนั้น</string>
     <string name="media_key_routing_hint_common">มีผลเฉพาะปุ่มควบคุมสื่อ ปุ่มหมุน D-pad ปุ่มย้อนกลับ และปุ่ม Enter จะส่งไปยัง Android Auto เสมอ</string>
+    <string name="volume_keys_to_phone">ส่งปุ่มปรับเสียงไปยังโทรศัพท์</string>
+    <string name="volume_keys_to_phone_summary">ปุ่มปรับเสียงจะปรับเสียงของโทรศัพท์ แทนเสียงของเครื่องนี้</string>
+    <string name="volume_keys_to_phone_help">ส่งปุ่มปรับเสียงของเครื่องนี้ไปยังโทรศัพท์ผ่าน Android Auto แทนการปรับระดับเสียงที่นี่ ใช้เมื่อโทรศัพท์เล่นเสียงเอง: ปิดตัวรับสัญญาณเสียง (Audio Sink) อยู่ หรือโทรศัพท์เชื่อมต่อกับบลูทูธของรถ\n\nทำงานขณะที่ Android Auto แสดงอยู่บนหน้าจอ และเฉพาะเมื่อ Android Auto บนโทรศัพท์ตอบสนองต่อปุ่มปรับเสียง</string>
+    <string name="speed_volume">ระดับเสียงตามความเร็ว</string>
+    <string name="speed_volume_off">ปิด</string>
+    <string name="speed_volume_low">ต่ำ</string>
+    <string name="speed_volume_high">สูง</string>
+    <string name="speed_volume_help">เพิ่มระดับเสียงทีละขั้นเมื่อรถเร็วขึ้น โดยใช้ GPS ของเครื่องนี้ และลดขั้นเหล่านั้นกลับเมื่อรถช้าลง\n\nปิด: ระดับเสียงคงอยู่ตามที่คุณตั้งไว้\n\nต่ำ: เพิ่มหนึ่งขั้นทุก 30 กม./ชม. สูงสุด 3 ขั้น\n\nสูง: เพิ่มหนึ่งขั้นทุก 20 กม./ชม. สูงสุด 5 ขั้น\n\nขั้นเสียงจะส่งไปยังโทรศัพท์เมื่อเปิด “ส่งปุ่มปรับเสียงไปยังโทรศัพท์” มิฉะนั้นจะใช้กับระดับเสียงสื่อของเครื่องนี้</string>
     <string name="playback_focus_mode">หยุดเสียงอื่นชั่วคราวขณะเล่น</string>
     <string name="playback_focus_mode_auto">อัตโนมัติ</string>
     <string name="playback_focus_mode_always">เสมอ</string>
@@ -927,6 +938,22 @@
     <string name="key_mappings_reset">รีเซ็ตการแมปปุ่มแล้ว</string>
     <string name="press_key_to_assign">กดปุ่มเพื่อกำหนดให้กับ \'%s\'…</string>
     <string name="key_assigned">กำหนด \'%1$s\' ให้กับ \'%2$s\' แล้ว</string>
+    <string name="action_picker_title">เลือกการทำงาน</string>
+    <string name="action_remove_binding">ลบการกำหนด</string>
+    <string name="action_section_projection">หน้าจอฉายภาพ</string>
+    <string name="action_section_aa_keys">ปุ่ม Android Auto</string>
+    <string name="action_section_apps">แอปพลิเคชัน</string>
+    <string name="action_launch_app">เปิดแอป…</string>
+    <string name="action_launch_named_app">เปิด %s</string>
+    <string name="action_aa_key_code">ปุ่ม Android Auto %d</string>
+    <string name="action_selected">เลือกอยู่</string>
+    <string name="action_search_keywords">การทำงาน เปิด แอป ทางลัด</string>
+    <string name="keymap_add_binding">เพิ่มการกำหนดปุ่ม</string>
+    <string name="keymap_press_new_key">กดปุ่มที่ต้องการกำหนด…</string>
+    <string name="keymap_no_bindings">ยังไม่มีปุ่มที่กำหนด แตะ เพิ่มการกำหนดปุ่ม กดปุ่ม แล้วเลือกว่าจะให้ทำอะไร</string>
+    <string name="keymap_bindings_header">การกำหนดปุ่ม</string>
+    <string name="keymap_tester_hint">กดปุ่มใดก็ได้หรือปุ่มบนพวงมาลัยเพื่อดูชื่อและรหัสที่นี่</string>
+    <string name="keymap_tester_last">ปุ่มล่าสุด: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">การกดปุ่มล่าสุด: %1$s (%2$d)</string>
     <string name="scan">สแกน</string>
     <string name="scanning_network">กำลังสแกนเครือข่าย…</string>
@@ -945,6 +972,7 @@
     <string name="export_settings_choose_location">เลือกตำแหน่งที่บันทึก</string>
     <string name="export_settings_downloads">บันทึกลงในดาวน์โหลด</string>
     <string name="export_settings_app_folder">บันทึกลงในโฟลเดอร์สำรองของแอป</string>
+    <string name="onb_restore_settings">คืนค่าการตั้งค่าจากข้อมูลสำรอง</string>
     <string name="import_settings">นำเข้าการตั้งค่า</string>
     <string name="import_settings_description">กู้คืนการตั้งค่าจากข้อมูลสำรอง Open Headunit</string>
     <string name="import_settings_choose_file">เลือกไฟล์สำรอง</string>
@@ -1897,4 +1925,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">สิ้นสุดเซสชันเมื่อรีเลย์ไม่ตอบสนองติดกันสองครั้ง</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">เครื่องนี้ส่งการตรวจสอบสถานะไปยังรีเลย์ทุก 2 วินาที หากไม่มีการตอบกลับสองครั้งติดกัน เซสชัน Android Auto จะสิ้นสุดลง</string>
     <string name="esp32_relay_phase_failed">ล้มเหลว: %1$s</string>
+    <string name="usb_wireless_dongle_label">ดองเกิล USB ไร้สาย</string>
+    <string name="usb_wireless_dongle_summary">แสดงข้อความไร้สายแทนสายเคเบิลบนหน้าจอหลักสำหรับการเชื่อมต่อ USB</string>
+    <string name="usb_wireless_dongle_help">เปิดใช้งานตัวเลือกนี้หากคุณเชื่อมต่อผ่านอะแดปเตอร์ USB ไร้สาย เช่น AAWireless หรือ Carlinkit Open Headunit ไม่สามารถแยกดองเกิลออกจากสายเคเบิลได้ ตัวเลือกนี้จึงเปลี่ยนข้อความบนหน้าจอหลักจากสายเคเบิลเป็นไร้สาย</string>
+    <string name="home_subtitle_usb_dongle">แบบไร้สาย</string>
+    <string name="home_action_connect_wireless_dongle">เชื่อมต่อแบบไร้สาย</string>
 </resources>

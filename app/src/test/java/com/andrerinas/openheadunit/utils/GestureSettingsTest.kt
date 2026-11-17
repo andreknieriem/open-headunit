@@ -2,6 +2,9 @@ package com.andrerinas.openheadunit.utils
 
 import android.app.Application
 import android.content.Context
+import com.andrerinas.openheadunit.input.InputAction
+import com.andrerinas.openheadunit.input.LocalAction
+import com.andrerinas.openheadunit.main.FavoriteTarget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
@@ -92,6 +95,57 @@ class GestureSettingsTest {
         assertEquals(Settings.GestureAction.EXIT_DIALOG, settings.leftTwoFingerGesture)
         assertEquals(50, settings.dimOpacityPercent)
         assertEquals(true, settings.nightOverlayShowClock)
+    }
+
+    @Test fun gestureActionsFollowTheOldValuesUntilChanged() {
+        raw.edit().clear().putInt("down-two-finger-gesture", Settings.GestureAction.DIM_SCREEN.value).commit()
+        val settings = Settings(context)
+        assertEquals(InputAction.Local(LocalAction.EXIT_DIALOG), settings.gestureAction(Settings.GestureSlot.LEFT))
+        assertEquals(InputAction.Local(LocalAction.TOGGLE_FULLSCREEN), settings.gestureAction(Settings.GestureSlot.RIGHT))
+        assertEquals(InputAction.Local(LocalAction.DIM_SCREEN), settings.gestureAction(Settings.GestureSlot.DOWN))
+        assertEquals(InputAction.Local(LocalAction.DIM_SCREEN), settings.gestureAction(Settings.GestureSlot.LEFT_TAP))
+        assertEquals(InputAction.Local(LocalAction.NIGHT_OVERLAY), settings.gestureAction(Settings.GestureSlot.RIGHT_TAP))
+        assertEquals(InputAction.None, settings.gestureAction(Settings.GestureSlot.LONG_PRESS))
+        assertEquals(1, raw.all.size)
+    }
+
+    @Test fun aGestureCanLaunchAnAppOrSendAKey() {
+        raw.edit().clear().commit()
+        val settings = Settings(context)
+        val app = InputAction.LaunchApp(FavoriteTarget.App("com.example"))
+        settings.setGestureAction(Settings.GestureSlot.LONG_PRESS, app)
+        settings.setGestureAction(Settings.GestureSlot.LEFT, InputAction.AaKey(85))
+        settings.setGestureAction(Settings.GestureSlot.RIGHT, InputAction.None)
+        assertEquals(app, Settings(context).gestureAction(Settings.GestureSlot.LONG_PRESS))
+        assertEquals(InputAction.AaKey(85), Settings(context).gestureAction(Settings.GestureSlot.LEFT))
+        assertEquals(InputAction.None, Settings(context).gestureAction(Settings.GestureSlot.RIGHT))
+        settings.resetGestureSettings()
+        assertEquals(0, raw.all.size)
+        assertEquals(InputAction.Local(LocalAction.TOGGLE_FULLSCREEN), settings.gestureAction(Settings.GestureSlot.RIGHT))
+    }
+
+    @Test fun learnedKeysBecomeBindingsOnce() {
+        raw.edit().clear().putStringSet("key-codes", setOf("87-131")).commit()
+        val settings = Settings(context)
+        assertEquals(mapOf(131 to InputAction.AaKey(87)), settings.keyBindings)
+        assertEquals(true, raw.contains(Settings.KEY_BINDINGS))
+        // Cleared bindings stay cleared: the old map is not read again.
+        settings.keyBindings = emptyMap()
+        assertEquals(emptyMap<Int, InputAction>(), Settings(context).keyBindings)
+    }
+
+    @Test fun keyBindingsRoundTripAndSkipNothing() {
+        raw.edit().clear().commit()
+        val settings = Settings(context)
+        assertEquals(emptyMap<Int, InputAction>(), settings.keyBindings)
+        assertEquals(0, raw.all.size)
+        val bindings = mapOf(
+            131 to InputAction.LaunchApp(FavoriteTarget.Shortcut("com.example", "id=1")),
+            132 to InputAction.Local(LocalAction.NIGHT_OVERLAY),
+            133 to InputAction.None,
+        )
+        settings.keyBindings = bindings
+        assertEquals(bindings - 133, Settings(context).keyBindings)
     }
 
     @Test fun resetWritesNothingWhenNothingWasStored() {

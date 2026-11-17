@@ -324,6 +324,9 @@
     <string name="car_launcher_autostart_info">Open Headunitはカーランチャーとして設定されています。システムの起動時に自動的に開始されます。</string>
     <string name="auto_start_on_boot_label">起動時に開始</string>
     <string name="auto_start_on_boot_description">端末の起動時にアプリを自動的に開きます。Android 10以降では「他のアプリの上に重ねて表示」の権限が必要です。</string>
+    <string name="auto_start_on_boot_background_label">バックグラウンドで待機</string>
+    <string name="auto_start_on_boot_background_description">起動時はアプリを開かずにサービスだけを開始します。スマートフォンが接続されるとアプリが表示されます。</string>
+    <string name="auto_start_on_boot_background_summary">アプリを開かずにサービスだけを開始します。</string>
     <string name="auto_start_on_boot_summary">機器の起動時にアプリを開きます。</string>
     <string name="auto_start_screen_on_label">画面ON時に開始</string>
     <string name="auto_start_screen_on_description">画面がONになるたびにアプリを起動します。完全にシャットダウンしないヘッドユニットや、他の自動起動オプションが機能しない高速起動モードのヘッドユニットに最適です。スマートフォンやタブレットには推奨しません。</string>
@@ -370,7 +373,7 @@
     <string name="auto_connect_help">これらの方法はアプリを開くと自動的に実行されます。使う方法を有効にし、ドラッグして順番を決めてください。有効にした方法のうち、最初に成功したものが使われます。</string>
     <string name="auto_connect_screen_help">アプリを開いたときに自動で接続する方法を設定します。使う方法をオンにして、試す順番にドラッグします。最初に成功した方法が使われます。遅延は、動作の遅い機器で Wi-Fi が起動するまでの時間を確保します。自分で開始した接続はここでは変わりません。保存で変更を適用します。</string>
     <string name="dpi_screen_help">Android Auto が描画する画素密度を設定します。DPI を上げるとアイコンと文字が大きくなり、画面に入る量は減ります。DPI を下げると小さくなり、多く入ります。自動はこの機器の密度を使います。新しい値は次回の接続から有効です。</string>
-    <string name="keymap_screen_help">この機器のキーやボタンを Android Auto の操作に割り当てます。行をタップし、割り当てるキーを押します。リセットは割り当てをすべて削除して初期状態に戻します。ステアリングやパネルのキーが誤動作するときに使ってください。</string>
+    <string name="keymap_screen_help">この機器のキーやボタンに操作を割り当てます。Android Auto のキー、投影画面の操作、アプリの起動から選べます。「キー割り当てを追加」をタップしてキーを押し、操作を選びます。割り当てをタップすると変更や解除ができます。リセットはすべての割り当てを削除します。</string>
     <string name="customization_screen_help">このアプリのホーム画面の見た目を変更します。背景画像、4 つのボタンの色とサイズ、文字サイズが対象です。夜間設定はダークモードの背景を制御します。Android Auto の投影内容は変わりません。</string>
     <string name="loading_screen_screen_help">Android Auto の起動中に表示する画像または短い動画を設定します。10 MB までの画像か動画を選び、画面に合わせて拡大縮小し、短いアニメーションはループさせます。起動テキストを非表示にもできます。削除でデフォルトの画面に戻ります。</string>
     <string name="auto_connect_priority">優先度 %d</string>
@@ -475,6 +478,22 @@
     <string name="key_mappings_reset">キーマップをリセットしました</string>
     <string name="press_key_to_assign">「%s」に割り当てるキーを押してください…</string>
     <string name="key_assigned">「%1$s」を「%2$s」に割り当てました</string>
+    <string name="action_picker_title">操作を選択</string>
+    <string name="action_remove_binding">割り当てを解除</string>
+    <string name="action_section_projection">投影画面</string>
+    <string name="action_section_aa_keys">Android Auto のキー</string>
+    <string name="action_section_apps">アプリ</string>
+    <string name="action_launch_app">アプリを起動…</string>
+    <string name="action_launch_named_app">%s を起動</string>
+    <string name="action_aa_key_code">Android Auto キー %d</string>
+    <string name="action_selected">選択中</string>
+    <string name="action_search_keywords">操作 アクション アプリ 起動 開く ショートカット</string>
+    <string name="keymap_add_binding">キー割り当てを追加</string>
+    <string name="keymap_press_new_key">割り当てるキーまたはボタンを押してください…</string>
+    <string name="keymap_no_bindings">まだキーが割り当てられていません。「キー割り当てを追加」をタップし、キーを押して、動作を選んでください。</string>
+    <string name="keymap_bindings_header">キー割り当て</string>
+    <string name="keymap_tester_hint">キーやステアリングのボタンを押すと、ここに名前とコードが表示されます。</string>
+    <string name="keymap_tester_last">最後のキー: %1$s (%2$d)、%3$s</string>
     <string name="last_key_press">最後に押されたキー: %1$s (%2$d)</string>
     <string name="scan">スキャン</string>
     <string name="scanning_network">ネットワークを検索しています…</string>
@@ -798,6 +817,7 @@
     <string name="export_settings">設定をエクスポート</string>
     <string name="export_settings_description">設定のバックアップを JSON ファイルとして保存。</string>
     <string name="export_settings_app_folder">アプリのバックアップフォルダに保存</string>
+    <string name="onb_restore_settings">バックアップから設定を復元</string>
     <string name="export_settings_downloads">ダウンロードに保存</string>
     <string name="export_settings_choose_location">保存場所を選択</string>
     <string name="settings_exported">設定をエクスポートしました</string>
@@ -1135,6 +1155,14 @@
     <string name="media_key_routing_never">送信しない</string>
     <string name="media_key_routing_help">常に送信：次へ、前へ、再生/一時停止のボタン操作を常に Android Auto に送信します。1 回押すと 2 曲飛ばされる場合を除き、この設定を使ってください。\n\n自動：このヘッドユニットがスマートフォンと Bluetooth のメディア接続を持っている間は、送信を止めます。その接続がすでに同じ操作を行うためです。1 回押すと 2 曲飛ばされ、スマートフォンがこのヘッドユニットとペアリングされている場合に選んでください。\n\n送信しない：送信せず、ボタン操作を Bluetooth に任せます。1 回押すと 2 曲飛ばされ、スマートフォンがこのヘッドユニットではなく車載システムにペアリングされている場合に選んでください。「自動」ではその接続を検出できません。</string>
     <string name="media_key_routing_hint_common">影響を受けるのはメディアボタンだけです。ロータリーコントローラー、十字キー、戻る、決定は常に Android Auto に届きます。</string>
+    <string name="volume_keys_to_phone">音量ボタンをスマートフォンに送信</string>
+    <string name="volume_keys_to_phone_summary">音量ボタンでこの機器ではなくスマートフォンの音量を変えます。</string>
+    <string name="volume_keys_to_phone_help">このヘッドユニットの音量ボタンを、ここで音量を変える代わりに Android Auto 経由でスマートフォンに送ります。スマートフォン自体が音を再生しているとき（オーディオシンクがオフのとき、またはスマートフォンが車の Bluetooth に接続されているとき）に使ってください。\n\nAndroid Auto が画面に表示されている間だけ動作し、スマートフォンの Android Auto が音量キーに反応する場合に限ります。</string>
+    <string name="speed_volume">車速連動音量</string>
+    <string name="speed_volume_off">オフ</string>
+    <string name="speed_volume_low">弱</string>
+    <string name="speed_volume_high">強</string>
+    <string name="speed_volume_help">このヘッドユニットの GPS を使い、車が速くなるにつれて音量を 1 段階ずつ上げ、減速すると上げた分を戻します。\n\nオフ：音量は設定したままです。\n\n弱：30 km/h ごとに 1 段階、最大 3 段階。\n\n強：20 km/h ごとに 1 段階、最大 5 段階。\n\n「音量ボタンをスマートフォンに送信」がオンのときはスマートフォンに、オフのときはこのヘッドユニットのメディア音量に適用されます。</string>
     <string name="playback_focus_mode">再生中は他の音声を一時停止</string>
     <string name="playback_focus_mode_auto">自動</string>
     <string name="playback_focus_mode_always">常に一時停止</string>
@@ -1846,4 +1874,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">リレーが2回連続で応答しないとセッションを終了します</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">このユニットは2秒ごとにリレーへ状態確認を送ります。2回続けて応答がない場合、Android Autoのセッションを終了します。</string>
     <string name="esp32_relay_phase_failed">失敗: %1$s</string>
+    <string name="usb_wireless_dongle_label">ワイヤレス USB ドングル</string>
+    <string name="usb_wireless_dongle_summary">USB 接続時にホーム画面でケーブルではなくワイヤレス表記を表示します。</string>
+    <string name="usb_wireless_dongle_help">AAWireless や Carlinkit などのワイヤレス USB アダプターで接続する場合に有効にします。Open Headunit はドングルとケーブルを判別できないため、ホーム画面の表示をケーブルからワイヤレスに切り替えます。</string>
+    <string name="home_subtitle_usb_dongle">ワイヤレス接続</string>
+    <string name="home_action_connect_wireless_dongle">ワイヤレスで接続</string>
 </resources>

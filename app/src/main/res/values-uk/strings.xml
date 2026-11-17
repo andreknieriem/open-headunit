@@ -293,6 +293,9 @@
     <string name="car_launcher_autostart_info">Open Headunit налаштовано як лаунчер автомобіля. Він запускається автоматично під час завантаження системи.</string>
     <string name="auto_start_on_boot_label">Запуск під час завантаження</string>
     <string name="auto_start_on_boot_description">Автоматично відкривати застосунок під час запуску пристрою. Для Android 10+ потрібен дозвіл «Показувати поверх інших застосунків».</string>
+    <string name="auto_start_on_boot_background_label">Чекати у фоні</string>
+    <string name="auto_start_on_boot_background_description">Під час завантаження запускати лише службу, не відкриваючи застосунок. Застосунок з\'явиться, коли підключиться телефон.</string>
+    <string name="auto_start_on_boot_background_summary">Запускати лише службу, не відкриваючи застосунок.</string>
     <string name="auto_start_on_boot_summary">Відкриває застосунок під час увімкнення пристрою.</string>
     <string name="auto_start_screen_on_label">Запуск після ввімкнення екрана</string>
     <string name="auto_start_screen_on_description">Відкривати застосунок щоразу, коли вмикається екран. Підходить для автомагнітол, які ніколи не вимикаються повністю або використовують режими швидкого запуску, де інші параметри автозапуску не працюють. Не рекомендовано для телефонів і планшетів.</string>
@@ -339,7 +342,7 @@
     <string name="auto_connect_help">Ці методи запускаються автоматично при відкритті застосунку. Увімкніть потрібні та перетягніть для встановлення порядку. Буде використано перший увімкнений метод, який спрацює.</string>
     <string name="auto_connect_screen_help">Визначає, як застосунок підключається сам під час відкриття. Увімкніть потрібні способи й перетягніть їх у порядку спроб. Використовується перший успішний. Затримка дає Wi-Fi час прокинутися на повільному пристрої. Ніщо тут не змінює підключення, яке ви запускаєте самі. Кнопка «Зберегти» застосовує зміни.</string>
     <string name="dpi_screen_help">Задає щільність пікселів, з якою малює Android Auto. Більший DPI збільшує значки й текст, тому на екрані вміщується менше. Менший DPI зменшує їх, і вміщується більше. «Автоматично» бере щільність цього пристрою. Нове значення діє з наступного підключення.</string>
-    <string name="keymap_screen_help">Призначає клавіші й кнопки цього пристрою на дії Android Auto. Торкніться рядка й натисніть клавішу для призначення. «Скинути» видаляє всі ваші призначення й повертає типові значення. Скористайтеся цим, якщо клавіша на кермі чи панелі робить не те.</string>
+    <string name="keymap_screen_help">Призначає клавіші й кнопки цього пристрою на дії: клавішу Android Auto, дію екрана проєкції або запуск додатка. Торкніться «Додати призначення клавіші», натисніть клавішу й виберіть дію. Торкніться призначення, щоб змінити або видалити його. «Скинути» видаляє всі призначення.</string>
     <string name="customization_screen_help">Змінює вигляд головного екрана застосунку: фонове зображення, кольори та розмір чотирьох кнопок і розмір тексту. Нічне налаштування задає тло в темному режимі. Ніщо з цього не змінює того, що Android Auto показує в проєкції.</string>
     <string name="loading_screen_screen_help">Задає зображення або коротке відео, що показується під час запуску Android Auto. Виберіть зображення чи відео до 10 МБ, масштабуйте його під екран і ввімкніть повтор для короткої анімації. Можна також сховати текст запуску. «Видалити» повертає типовий екран.</string>
     <string name="auto_connect_priority">Пріоритет %d</string>
@@ -443,6 +446,22 @@
     <string name="key_mappings_reset">Розкладку клавіш скинуто</string>
     <string name="press_key_to_assign">Натисніть клавішу, яку потрібно призначити для «%s»…</string>
     <string name="key_assigned">Клавішу «%1$s» призначено для «%2$s»</string>
+    <string name="action_picker_title">Виберіть дію</string>
+    <string name="action_remove_binding">Видалити призначення</string>
+    <string name="action_section_projection">Екран проєкції</string>
+    <string name="action_section_aa_keys">Клавіші Android Auto</string>
+    <string name="action_section_apps">Додатки</string>
+    <string name="action_launch_app">Запустити додаток…</string>
+    <string name="action_launch_named_app">Запустити %s</string>
+    <string name="action_aa_key_code">Клавіша Android Auto %d</string>
+    <string name="action_selected">Вибрано</string>
+    <string name="action_search_keywords">дія запустити відкрити додаток ярлик</string>
+    <string name="keymap_add_binding">Додати призначення клавіші</string>
+    <string name="keymap_press_new_key">Натисніть клавішу або кнопку, яку хочете призначити…</string>
+    <string name="keymap_no_bindings">Клавіші ще не призначено. Торкніться «Додати призначення клавіші», натисніть клавішу й виберіть, що вона робить.</string>
+    <string name="keymap_bindings_header">Призначення клавіш</string>
+    <string name="keymap_tester_hint">Натисніть будь-яку клавішу або кнопку на кермі, щоб побачити тут її назву й код.</string>
+    <string name="keymap_tester_last">Остання клавіша: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Останнє натискання: %1$s (%2$d)</string>
     <string name="scan">Сканувати</string>
     <string name="scanning_network">Сканування мережі…</string>
@@ -790,6 +809,7 @@
     <string name="export_settings">Експортувати налаштування</string>
     <string name="export_settings_description">Зберегти резервну копію налаштувань як файл JSON.</string>
     <string name="export_settings_app_folder">Зберегти у папку резервних копій застосунку</string>
+    <string name="onb_restore_settings">Відновити налаштування з резервної копії</string>
     <string name="export_settings_downloads">Зберегти у Завантаження</string>
     <string name="export_settings_choose_location">Виберіть місце збереження</string>
     <string name="settings_exported">Налаштування експортовано</string>
@@ -1134,6 +1154,14 @@
     <string name="media_key_routing_never">Ніколи</string>
     <string name="media_key_routing_help">Завжди: Кнопки «Наступний», «Попередній» і «Відтворити/Пауза» завжди надсилаються в Android Auto. Використовуйте цей режим, якщо одне натискання не пропускає два треки.\n\nАвтоматично: Не надсилає їх, поки ця магнітола має з’єднання Bluetooth для медіа з телефоном, бо це з’єднання вже виконує дію. Виберіть цей режим, якщо одне натискання пропускає два треки, а телефон спарено з цією магнітолою.\n\nНіколи: Ніколи не надсилає їх, залишаючи кнопки для Bluetooth. Виберіть цей режим, якщо одне натискання пропускає два треки, а телефон спарено з власною системою автомобіля, а не з цією магнітолою: режим «Автоматично» не може виявити таке з’єднання.</string>
     <string name="media_key_routing_hint_common">Це стосується лише медіакнопок. Поворотні контролери, D-pad, «Назад» і Enter завжди надходять до Android Auto.</string>
+    <string name="volume_keys_to_phone">Надсилати кнопки гучності на телефон</string>
+    <string name="volume_keys_to_phone_summary">Кнопки гучності змінюють гучність телефона, а не цього пристрою.</string>
+    <string name="volume_keys_to_phone_help">Надсилає кнопки гучності цього пристрою на телефон через Android Auto замість зміни гучності тут. Використовуйте, коли звук відтворює сам телефон: Аудіоприймач вимкнено або телефон підключено до Bluetooth автомобіля.\n\nПрацює, поки Android Auto на екрані, і лише якщо Android Auto на телефоні реагує на клавіші гучності.</string>
+    <string name="speed_volume">Гучність залежно від швидкості</string>
+    <string name="speed_volume_off">Вимкнено</string>
+    <string name="speed_volume_low">Низький</string>
+    <string name="speed_volume_high">Високий</string>
+    <string name="speed_volume_help">Підвищує гучність на один крок, коли автомобіль розганяється, за GPS цього пристрою, і прибирає ці кроки, коли він сповільнюється.\n\nВимкнено: Гучність залишається такою, як ви її встановили.\n\nНизький: Один крок кожні 30 км/год, не більше 3 кроків.\n\nВисокий: Один крок кожні 20 км/год, не більше 5 кроків.\n\nКроки йдуть на телефон, коли ввімкнено «Надсилати кнопки гучності на телефон», інакше — на гучність медіа цього пристрою.</string>
     <string name="playback_focus_mode">Призупиняти інший звук під час відтворення</string>
     <string name="playback_focus_mode_auto">Автоматично</string>
     <string name="playback_focus_mode_always">Завжди</string>
@@ -1847,4 +1875,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Завершувати сеанс, якщо ретранслятор двічі не відповів</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Пристрій кожні 2 секунди надсилає ретранслятору перевірку стану. Якщо на дві перевірки поспіль немає відповіді, сеанс Android Auto завершується.</string>
     <string name="esp32_relay_phase_failed">Помилка: %1$s</string>
+    <string name="usb_wireless_dongle_label">Бездротовий USB-адаптер</string>
+    <string name="usb_wireless_dongle_summary">Показувати бездротовий текст замість кабелю на головному екрані для USB.</string>
+    <string name="usb_wireless_dongle_help">Увімкніть, якщо підключаєтеся через бездротовий USB-адаптер, як-от AAWireless або Carlinkit. Open Headunit не може відрізнити адаптер від кабелю, тому цей параметр змінює підписи на головному екрані з кабелю на бездротове з’єднання.</string>
+    <string name="home_subtitle_usb_dongle">Бездротово</string>
+    <string name="home_action_connect_wireless_dongle">Підключити бездротово</string>
 </resources>

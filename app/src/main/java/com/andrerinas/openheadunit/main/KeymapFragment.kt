@@ -19,9 +19,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
+import com.andrerinas.openheadunit.main.settings.SettingItem
+import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.input.BydPanelKey
-import com.andrerinas.openheadunit.input.KeyCode
+import com.andrerinas.openheadunit.input.InputAction
+import com.andrerinas.openheadunit.input.InputActionCodec
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.IntentFilters
 import com.andrerinas.openheadunit.utils.Settings
@@ -34,42 +37,29 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var recyclerView: RecyclerView
-    private lateinit var keypressDebuggerTextView: TextView
-    private lateinit var adapter: KeymapAdapter
+    private lateinit var adapter: SettingsAdapter
+    /** What the key tester banner shows: the last key seen, or null for the hint. */
+    private var testerText: String? = null
     private lateinit var settings: Settings
     private val RESET_ITEM_ID = 1003
 
-    private var assignTargetCode = KeyEvent.KEYCODE_UNKNOWN
+    /** True while the "press a key" dialog waits for the key to bind. */
+    private var assigning = false
     private var assignDialog: androidx.appcompat.app.AlertDialog? = null
 
-    data class KeymapItem(val nameResId: Int, val keyCode: Int)
-
-    private val keyList = listOf(
-        KeymapItem(R.string.key_soft_left, KeyEvent.KEYCODE_SOFT_LEFT),
-        KeymapItem(R.string.key_soft_right, KeyEvent.KEYCODE_SOFT_RIGHT),
-        KeymapItem(R.string.key_back, KeyEvent.KEYCODE_BACK),
-        KeymapItem(R.string.key_dpad_up, KeyEvent.KEYCODE_DPAD_UP),
-        KeymapItem(R.string.key_dpad_down, KeyEvent.KEYCODE_DPAD_DOWN),
-        KeymapItem(R.string.key_dpad_left, KeyEvent.KEYCODE_DPAD_LEFT),
-        KeymapItem(R.string.key_dpad_right, KeyEvent.KEYCODE_DPAD_RIGHT),
-        KeymapItem(R.string.key_dpad_center, KeyEvent.KEYCODE_DPAD_CENTER),
-        KeymapItem(R.string.key_media_play, KeyEvent.KEYCODE_MEDIA_PLAY),
-        KeymapItem(R.string.key_media_pause, KeyEvent.KEYCODE_MEDIA_PAUSE),
-        KeymapItem(R.string.key_media_play_pause, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE),
-        KeymapItem(R.string.key_media_next, KeyEvent.KEYCODE_MEDIA_NEXT),
-        KeymapItem(R.string.key_media_prev, KeyEvent.KEYCODE_MEDIA_PREVIOUS),
-        KeymapItem(R.string.key_search, KeyEvent.KEYCODE_SEARCH),
-        KeymapItem(R.string.key_call, KeyEvent.KEYCODE_CALL),
-        KeymapItem(R.string.key_endcall, KeyEvent.KEYCODE_ENDCALL),
-        KeymapItem(R.string.key_music, KeyEvent.KEYCODE_MUSIC),
-        KeymapItem(R.string.key_nav, 65538),
-        KeymapItem(R.string.key_night, KeyCode.KEY_NIGHT_MODE),
-        KeymapItem(R.string.key_enter, KeyEvent.KEYCODE_ENTER),
-        KeymapItem(R.string.key_home, KeyEvent.KEYCODE_HOME),
-        KeymapItem(R.string.key_app_switch, KeyEvent.KEYCODE_APP_SWITCH),
-        KeymapItem(R.string.key_button_a, KeyEvent.KEYCODE_BUTTON_A),
-        KeymapItem(R.string.key_button_b, KeyEvent.KEYCODE_BUTTON_B)
-    )
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        parentFragmentManager.setFragmentResultListener(REQUEST_KEY, this) { _, result ->
+            val physical = result.getString(ActionPickerFragment.RESULT_TAG)?.toIntOrNull()
+                ?: return@setFragmentResultListener
+            val action = InputActionCodec.decode(result.getString(ActionPickerFragment.RESULT_ACTION))
+            val settings = Settings(requireContext())
+            val bindings = settings.keyBindings.toMutableMap()
+            if (action == InputAction.None) bindings.remove(physical) else bindings[physical] = action
+            settings.keyBindings = bindings
+            if (::adapter.isInitialized) render()
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_keymap, container, false)
@@ -80,15 +70,13 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         
         settings = Settings(requireContext())
         
-        keypressDebuggerTextView = view.findViewById(R.id.keypress_debugger_text)
         toolbar = view.findViewById(R.id.toolbar)
         recyclerView = view.findViewById(R.id.recycler_view)
         
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = KeymapAdapter(keyList, settings.keyCodes) { item ->
-            showAssignDialog(item)
-        }
+        adapter = SettingsAdapter()
         recyclerView.adapter = adapter
+        render()
 
         setupToolbar()
 
@@ -113,25 +101,22 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         val resetButton = resetItem.actionView?.findViewById<MaterialButton>(R.id.reset_button_widget)
         resetButton?.setOnClickListener {
             settings.keyCodes = mutableMapOf()
-            adapter.updateCodes(settings.keyCodes)
+            settings.keyBindings = emptyMap()
+            render()
             ToastUtils.showToast(requireContext(), getString(R.string.key_mappings_reset), Toast.LENGTH_SHORT, force = true)
         }
     }
 
-    private fun showAssignDialog(item: KeymapItem) {
-        assignTargetCode = item.keyCode
-        val name = getString(item.nameResId)
-        
+    private fun showAssignDialog() {
+        assigning = true
+
         // Using MaterialAlertDialogBuilder with DarkAlertDialog style for consistency and compatibility
         assignDialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(name)
-            .setMessage(getString(R.string.press_key_to_assign, name))
-            .setNegativeButton(R.string.cancel) { dialog, _ ->
-                assignTargetCode = KeyEvent.KEYCODE_UNKNOWN
-                dialog.dismiss()
-            }
+            .setTitle(R.string.keymap_add_binding)
+            .setMessage(R.string.keymap_press_new_key)
+            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setOnDismissListener {
-                assignTargetCode = KeyEvent.KEYCODE_UNKNOWN
+                assigning = false
                 assignDialog = null
             }
             .create()
@@ -142,6 +127,21 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         }
 
         assignDialog?.show()
+    }
+
+    private fun openActionPicker(physicalKey: Int) {
+        val controller = findNavController()
+        if (controller.currentDestination?.id != R.id.keymapFragment) return
+        controller.navigate(
+            R.id.action_keymapFragment_to_actionPickerFragment,
+            ActionPickerFragment.args(
+                requestKey = REQUEST_KEY,
+                tag = physicalKey.toString(),
+                title = physicalKeyName(physicalKey),
+                current = settings.keyBindings[physicalKey] ?: InputAction.None,
+                noneLabelResId = R.string.action_remove_binding
+            )
+        )
     }
 
     private val keyCodeReceiver = object : BroadcastReceiver() {
@@ -162,8 +162,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
                 val codeText = if (extractedCode != null) "CODE: $extractedCode" else "NO CODE"
                 val displayText = "Action: $action\n$codeText\n$extras"
                 
-                keypressDebuggerTextView.text = displayText
-                keypressDebuggerTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.brand_primary))
+                showTester(displayText)
                 return
             }
 
@@ -208,35 +207,25 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
     }
 
     override fun onKeyEvent(event: KeyEvent?): Boolean {
-        if (event == null) return false
+        // Still attached while the action picker is on top of it: keys are not ours then.
+        if (event == null || view == null) return false
 
         val keyCode = event.keyCode
         // Only ignore BACK if we are NOT in assignment mode
-        if (keyCode == KeyEvent.KEYCODE_BACK && assignTargetCode == KeyEvent.KEYCODE_UNKNOWN) return false
+        if (keyCode == KeyEvent.KEYCODE_BACK && !assigning) return false
 
         val keyName = physicalKeyName(keyCode)
         val actionName = if (event.action == KeyEvent.ACTION_DOWN) "DOWN" else "UP"
         
         AppLog.i("KeymapFragment: Captured $keyName ($keyCode) $actionName")
         
-        keypressDebuggerTextView.text = "Key: $keyName ($keyCode) - $actionName"
-        keypressDebuggerTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.brand_primary))
+        showTester(getString(R.string.keymap_tester_last, keyName, keyCode, actionName))
 
-        if (assignTargetCode != KeyEvent.KEYCODE_UNKNOWN) {
-            // Only finalize assignment on ACTION_UP to avoid accidental multiple mappings
+        if (assigning) {
+            // Only finish on ACTION_UP, so the release of the key never reaches the next screen.
             if (event.action == KeyEvent.ACTION_UP) {
-                val codesMap = settings.keyCodes
-                
-                // Map: Logical (AA) -> Physical (HW)
-                codesMap[assignTargetCode] = keyCode
-                
-                settings.keyCodes = codesMap
-                adapter.updateCodes(codesMap)
-                
-                val targetName = getString(keyList.find { it.keyCode == assignTargetCode }?.nameResId ?: R.string.keymap)
-                ToastUtils.showToast(requireContext(), getString(R.string.key_assigned, keyName, targetName), Toast.LENGTH_SHORT, force = true)
-                
                 assignDialog?.dismiss()
+                openActionPicker(keyCode)
             }
             return true
         }
@@ -258,43 +247,40 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         }
     }
 
-    inner class KeymapAdapter(
-        private val items: List<KeymapItem>,
-        private var codesMap: Map<Int, Int>,
-        private val onClick: (KeymapItem) -> Unit
-    ) : RecyclerView.Adapter<KeymapAdapter.ViewHolder>() {
+    private fun showTester(text: String) {
+        testerText = text
+        render()
+    }
 
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val nameText: TextView = view.findViewById(R.id.key_name)
-            val valueText: TextView = view.findViewById(R.id.key_value)
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_keymap, parent, false)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val item = items[position]
-            holder.nameText.text = getString(item.nameResId)
-            
-            // Map: Logical -> Physical
-            val physicalKey = codesMap[item.keyCode]
-            
-            if (physicalKey != null) {
-                holder.valueText.text = physicalKeyName(physicalKey)
-            } else {
-                holder.valueText.text = getString(R.string.not_set)
+    /** Key tester first, then the bindings sorted by key code, then the button that adds one. */
+    private fun render() {
+        val bindings = settings.keyBindings
+        val items = mutableListOf<SettingItem>(
+            SettingItem.InfoBanner(
+                stableId = "tester",
+                textResId = R.string.keymap_tester_hint,
+                text = testerText
+            ),
+            SettingItem.CategoryHeader("bindings", R.string.keymap_bindings_header)
+        )
+        if (bindings.isEmpty()) {
+            items += SettingItem.InfoBanner("empty", R.string.keymap_no_bindings)
+        } else {
+            bindings.keys.sorted().forEach { physical ->
+                items += SettingItem.SettingEntry(
+                    stableId = "key_$physical",
+                    nameResId = R.string.keymap,
+                    nameOverride = physicalKeyName(physical),
+                    value = ActionCatalog.label(requireContext(), bindings.getValue(physical)),
+                    onClick = { openActionPicker(physical) }
+                )
             }
-
-            holder.itemView.setOnClickListener { onClick(item) }
         }
+        items += SettingItem.ActionButton("add", R.string.keymap_add_binding) { showAssignDialog() }
+        adapter.submitList(items)
+    }
 
-        override fun getItemCount() = items.size
-        
-        fun updateCodes(newMap: Map<Int, Int>) {
-            codesMap = newMap
-            notifyDataSetChanged()
-        }
+    companion object {
+        private const val REQUEST_KEY = "keymap_action"
     }
 }

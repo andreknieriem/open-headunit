@@ -523,6 +523,9 @@
     <string name="car_launcher_autostart_info">Open Headunit est configuré comme lanceur de voiture. Il démarre automatiquement au démarrage du système.</string>
     <string name="auto_start_on_boot_label">Démarrer au lancement du système</string>
     <string name="auto_start_on_boot_description">Ouvrir l\'application automatiquement au démarrage de l\'appareil. Nécessite l\'autorisation « Superposition sur d\'autres applis » sous Android 10 et versions ultérieures.</string>
+    <string name="auto_start_on_boot_background_label">Attendre en arrière-plan</string>
+    <string name="auto_start_on_boot_background_description">Au démarrage, lancer seulement le service sans ouvrir l\'application. L\'application apparaît quand votre téléphone se connecte.</string>
+    <string name="auto_start_on_boot_background_summary">Démarre seulement le service, sans ouvrir l\'app.</string>
     <string name="auto_start_on_boot_summary">Ouvre l\'application au démarrage de l\'appareil.</string>
     <string name="auto_start_screen_on_label">Démarrer à l\'allumage de l\'écran</string>
     <string name="auto_start_screen_on_description">Ouvrir l\'application chaque fois que l\'écran s\'allume. Idéal pour les autoradios qui ne s\'éteignent jamais complètement ou qui utilisent des modes de démarrage rapide où les autres options de démarrage auto ne fonctionnent pas. Non recommandé pour les téléphones ou tablettes.</string>
@@ -589,7 +592,7 @@
     <string name="auto_connect_help">Ces méthodes s\'exécutent automatiquement à l\'ouverture de l\'application. Activez celles que vous souhaitez, puis faites-les glisser pour définir l\'ordre. La première méthode activée qui réussit est utilisée.</string>
     <string name="auto_connect_screen_help">Définit comment l\'application se connecte seule à son ouverture. Activez les méthodes voulues et faites-les glisser dans l\'ordre d\'essai. La première qui réussit est utilisée. Le délai laisse au WiFi le temps de se réveiller sur un appareil lent. Rien ici ne modifie une connexion que vous lancez vous-même. Enregistrer applique les changements.</string>
     <string name="dpi_screen_help">Définit la densité de pixels utilisée par Android Auto pour dessiner. Un DPI plus élevé agrandit les icônes et le texte, donc moins de contenu tient à l\'écran. Un DPI plus bas les réduit, donc plus de contenu tient. Automatique utilise la densité de cet appareil. La nouvelle valeur s\'applique à la prochaine connexion.</string>
-    <string name="keymap_screen_help">Associe les touches et boutons de cet appareil à des actions d\'Android Auto. Touchez une ligne, puis appuyez sur la touche à assigner. Réinitialiser supprime toutes vos associations et rétablit les valeurs par défaut. Utilisez-le quand une touche du volant ou du panneau fait autre chose que prévu.</string>
+    <string name="keymap_screen_help">Associe les touches et boutons de cet appareil à des actions : une touche Android Auto, une action de l\'écran de projection ou le lancement d\'une app. Touchez « Ajouter une association de touche », appuyez sur la touche, puis choisissez l\'action. Touchez une association pour la modifier ou la supprimer. Réinitialiser supprime toutes les associations.</string>
     <string name="customization_screen_help">Change l\'apparence de l\'écran d\'accueil de cette application : l\'image de fond, les couleurs et la taille des quatre boutons, et la taille du texte. Le réglage nuit gère le fond en mode sombre. Rien de cela ne change ce qu\'Android Auto affiche dans la projection.</string>
     <string name="loading_screen_screen_help">Définit l\'image ou la courte vidéo affichée pendant le démarrage d\'Android Auto. Choisissez une image ou une vidéo de 10 Mo maximum, adaptez-la à l\'écran et mettez les courtes animations en boucle. Vous pouvez aussi masquer le texte de démarrage. Supprimer rétablit l\'écran par défaut.</string>
     <string name="auto_connect_priority">Priorité %d</string>
@@ -635,6 +638,14 @@
     <string name="media_key_routing_never">Jamais</string>
     <string name="media_key_routing_help">Toujours: Suivant, précédent et lecture/pause sont toujours envoyés à Android Auto. Choisissez ce mode, sauf si un seul appui saute deux pistes.\n\nAutomatique: Cesse de les envoyer tant que cet autoradio a une connexion multimédia Bluetooth avec le téléphone, car cette connexion exécute déjà l\'action. Choisissez ce mode si un seul appui saute deux pistes et que votre téléphone est associé à cet autoradio.\n\nJamais: Ne les envoie jamais et laisse les boutons au Bluetooth. Choisissez ce mode si un seul appui saute deux pistes et que votre téléphone est associé au système propre de la voiture plutôt qu\'à cet autoradio. Le mode Automatique ne peut pas détecter cette connexion.</string>
     <string name="media_key_routing_hint_common">Seuls les boutons multimédia sont affectés. Les contrôleurs rotatifs, la croix directionnelle, Retour et Entrée atteignent toujours Android Auto.</string>
+    <string name="volume_keys_to_phone">Envoyer les boutons de volume au téléphone</string>
+    <string name="volume_keys_to_phone_summary">Les boutons de volume règlent le téléphone, pas cet appareil.</string>
+    <string name="volume_keys_to_phone_help">Envoie les boutons de volume de cet appareil au téléphone via Android Auto au lieu de changer le volume ici. Utilisez-le quand le téléphone diffuse le son lui-même: Sortie audio désactivée, ou téléphone connecté au Bluetooth de la voiture.\n\nFonctionne tant qu\'Android Auto est à l\'écran, et seulement si Android Auto sur le téléphone réagit aux touches de volume.</string>
+    <string name="speed_volume">Volume selon la vitesse</string>
+    <string name="speed_volume_off">Désactivé</string>
+    <string name="speed_volume_low">Faible</string>
+    <string name="speed_volume_high">Élevé</string>
+    <string name="speed_volume_help">Monte le volume d\'un cran à la fois quand la voiture accélère, grâce au GPS de cet appareil, et retire ces crans quand elle ralentit.\n\nDésactivé: Le volume reste là où vous l\'avez réglé.\n\nFaible: Un cran tous les 30 km/h, jusqu\'à 3 crans.\n\nÉlevé: Un cran tous les 20 km/h, jusqu\'à 5 crans.\n\nLes crans vont au téléphone quand Envoyer les boutons de volume au téléphone est activé, sinon au volume multimédia de cet appareil.</string>
     <string name="playback_focus_mode">Mettre en pause les autres audios pendant la lecture</string>
     <string name="playback_focus_mode_auto">Automatique</string>
     <string name="playback_focus_mode_always">Toujours</string>
@@ -761,6 +772,22 @@
     <string name="key_mappings_reset">Raccourcis clavier réinitialisés</string>
     <string name="press_key_to_assign">Appuyez sur une touche à assigner à « %s »…</string>
     <string name="key_assigned">« %1$s » assignée à « %2$s »</string>
+    <string name="action_picker_title">Choisir une action</string>
+    <string name="action_remove_binding">Supprimer l\'association</string>
+    <string name="action_section_projection">Écran de projection</string>
+    <string name="action_section_aa_keys">Touches Android Auto</string>
+    <string name="action_section_apps">Applications</string>
+    <string name="action_launch_app">Lancer une app…</string>
+    <string name="action_launch_named_app">Lancer %s</string>
+    <string name="action_aa_key_code">Touche Android Auto %d</string>
+    <string name="action_selected">Sélectionné</string>
+    <string name="action_search_keywords">action lancer ouvrir app application raccourci</string>
+    <string name="keymap_add_binding">Ajouter une association de touche</string>
+    <string name="keymap_press_new_key">Appuyez sur la touche ou le bouton à associer…</string>
+    <string name="keymap_no_bindings">Aucune touche n\'est associée. Touchez « Ajouter une association de touche », appuyez sur une touche, puis choisissez son action.</string>
+    <string name="keymap_bindings_header">Associations de touches</string>
+    <string name="keymap_tester_hint">Appuyez sur une touche ou un bouton du volant pour voir ici son nom et son code.</string>
+    <string name="keymap_tester_last">Dernière touche : %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Dernière touche pressée : %1$s (%2$d)</string>
     <string name="scan">Scanner</string>
     <string name="scanning_network">Analyse du réseau…</string>
@@ -779,6 +806,7 @@
     <string name="export_settings_choose_location">Choisir où enregistrer</string>
     <string name="export_settings_downloads">Enregistrer dans Téléchargements</string>
     <string name="export_settings_app_folder">Enregistrer dans le dossier de sauvegarde de l\'appli</string>
+    <string name="onb_restore_settings">Restaurer les paramètres depuis une sauvegarde</string>
     <string name="import_settings">Importer les paramètres</string>
     <string name="import_settings_description">Restaurer les paramètres depuis une sauvegarde Open Headunit.</string>
     <string name="import_settings_choose_file">Choisir le fichier de sauvegarde</string>
@@ -1889,4 +1917,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Arrêter la session après deux contrôles sans réponse du relais</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Cet appareil envoie un contrôle d’état au relais toutes les 2 secondes. Si deux contrôles de suite restent sans réponse, la session Android Auto s’arrête.</string>
     <string name="esp32_relay_phase_failed">Échec : %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB sans fil</string>
+    <string name="usb_wireless_dongle_summary">Afficher sans fil au lieu de câble sur l’écran d’accueil pour l’USB.</string>
+    <string name="usb_wireless_dongle_help">Activez cette option si vous utilisez un adaptateur USB sans fil comme AAWireless ou Carlinkit. Open Headunit ne peut pas différencier un dongle d’un câble ; cette option remplace donc les libellés câble par sans fil sur l’écran d’accueil.</string>
+    <string name="home_subtitle_usb_dongle">Sans fil</string>
+    <string name="home_action_connect_wireless_dongle">Connecter sans fil</string>
 </resources>

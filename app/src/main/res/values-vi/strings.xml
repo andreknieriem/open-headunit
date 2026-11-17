@@ -303,6 +303,9 @@
     <string name="car_launcher_autostart_info">Open Headunit được định cấu hình làm trình khởi chạy trên xe. Ứng dụng sẽ tự động khởi động khi hệ thống khởi động.</string>
     <string name="auto_start_on_boot_label">Khởi động khi mở máy</string>
     <string name="auto_start_on_boot_description">Tự động mở ứng dụng khi thiết bị khởi động. Cần quyền \"Hiện trên các ứng dụng khác\" trên Android 10 trở lên.</string>
+    <string name="auto_start_on_boot_background_label">Chờ ở chế độ nền</string>
+    <string name="auto_start_on_boot_background_description">Khi mở máy, chỉ khởi động dịch vụ mà không mở ứng dụng. Ứng dụng sẽ hiện ra khi điện thoại kết nối.</string>
+    <string name="auto_start_on_boot_background_summary">Chỉ khởi động dịch vụ, không mở ứng dụng.</string>
     <string name="auto_start_on_boot_summary">Mở ứng dụng khi thiết bị khởi động.</string>
     <string name="auto_start_screen_on_label">Khởi động khi bật màn hình</string>
     <string name="auto_start_screen_on_description">Mở ứng dụng mỗi lần màn hình bật. Phù hợp với headunit không bao giờ tắt hẳn hoặc dùng khởi động nhanh khi các tuỳ chọn tự khởi động khác không hoạt động. Không khuyến nghị cho điện thoại hay máy tính bảng.</string>
@@ -359,7 +362,7 @@
     <string name="auto_connect_help">Các phương thức này chạy tự động khi mở ứng dụng. Bật các mục mong muốn rồi kéo để sắp thứ tự. Phương thức đầu tiên thành công sẽ được dùng.</string>
     <string name="auto_connect_screen_help">Đặt cách ứng dụng tự kết nối khi mở. Bật các phương thức bạn muốn và kéo chúng theo thứ tự thử. Phương thức thành công đầu tiên được dùng. Độ trễ cho Wi-Fi thời gian khởi động trên thiết bị chậm. Không mục nào ở đây thay đổi kết nối do bạn tự bắt đầu. Lưu sẽ áp dụng các thay đổi.</string>
     <string name="dpi_screen_help">Đặt mật độ điểm ảnh mà Android Auto dùng để vẽ. DPI cao hơn làm biểu tượng và chữ lớn hơn, nên màn hình chứa được ít hơn. DPI thấp hơn làm chúng nhỏ hơn, nên chứa được nhiều hơn. Tự động dùng mật độ của thiết bị này. Giá trị mới áp dụng từ lần kết nối tiếp theo.</string>
-    <string name="keymap_screen_help">Gán các phím và nút của thiết bị này cho thao tác của Android Auto. Chạm vào một hàng rồi nhấn phím cần gán. Đặt lại xóa mọi phép gán của bạn và về mặc định. Dùng khi phím trên vô lăng hoặc bảng điều khiển làm sai việc.</string>
+    <string name="keymap_screen_help">Gán các phím và nút của thiết bị này cho thao tác: một phím Android Auto, một thao tác trên màn hình chiếu hoặc mở một ứng dụng. Chạm Thêm phép gán phím, nhấn phím rồi chọn thao tác. Chạm vào một phép gán để đổi hoặc xóa. Đặt lại xóa mọi phép gán.</string>
     <string name="customization_screen_help">Đổi giao diện màn hình chính của ứng dụng này: ảnh nền, màu sắc và kích thước của bốn nút, cùng cỡ chữ. Cài đặt ban đêm điều khiển nền ở chế độ tối. Không mục nào đổi những gì Android Auto hiển thị trên màn hình chiếu.</string>
     <string name="loading_screen_screen_help">Đặt hình ảnh hoặc video ngắn hiển thị khi Android Auto khởi động. Chọn hình ảnh hoặc video tối đa 10 MB, co giãn cho vừa màn hình và lặp lại các hoạt ảnh ngắn. Bạn cũng có thể ẩn chữ khởi động. Xóa sẽ về màn hình mặc định.</string>
     <string name="auto_connect_priority">Ưu tiên %d</string>
@@ -483,6 +486,22 @@
     <string name="key_mappings_reset">Đã đặt lại gán phím</string>
     <string name="press_key_to_assign">Bấm phím để gán cho \'%s\'…</string>
     <string name="key_assigned">Đã gán \'%1$s\' cho \'%2$s\'</string>
+    <string name="action_picker_title">Chọn thao tác</string>
+    <string name="action_remove_binding">Xóa phép gán</string>
+    <string name="action_section_projection">Màn hình chiếu</string>
+    <string name="action_section_aa_keys">Phím Android Auto</string>
+    <string name="action_section_apps">Ứng dụng</string>
+    <string name="action_launch_app">Mở ứng dụng…</string>
+    <string name="action_launch_named_app">Mở %s</string>
+    <string name="action_aa_key_code">Phím Android Auto %d</string>
+    <string name="action_selected">Đã chọn</string>
+    <string name="action_search_keywords">thao tác mở khởi chạy ứng dụng lối tắt</string>
+    <string name="keymap_add_binding">Thêm phép gán phím</string>
+    <string name="keymap_press_new_key">Nhấn phím hoặc nút bạn muốn gán…</string>
+    <string name="keymap_no_bindings">Chưa có phím nào được gán. Chạm Thêm phép gán phím, nhấn một phím rồi chọn việc nó làm.</string>
+    <string name="keymap_bindings_header">Phép gán phím</string>
+    <string name="keymap_tester_hint">Nhấn phím bất kỳ hoặc nút trên vô lăng để xem tên và mã của nó tại đây.</string>
+    <string name="keymap_tester_last">Phím cuối: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Phím bấm gần nhất: %1$s (%2$d)</string>
     <string name="scan">Quét</string>
     <string name="scanning_network">Đang quét mạng…</string>
@@ -762,6 +781,7 @@
     <string name="export_settings">Xuất cài đặt</string>
     <string name="export_settings_description">Lưu bản sao lưu cài đặt dưới dạng tệp JSON.</string>
     <string name="export_settings_app_folder">Lưu vào thư mục sao lưu của ứng dụng</string>
+    <string name="onb_restore_settings">Khôi phục cài đặt từ bản sao lưu</string>
     <string name="export_settings_downloads">Lưu vào Tải xuống</string>
     <string name="export_settings_choose_location">Chọn vị trí lưu</string>
     <string name="settings_exported">Đã xuất cài đặt</string>
@@ -1133,6 +1153,14 @@
     <string name="media_key_routing_never">Không bao giờ</string>
     <string name="media_key_routing_help">Luôn luôn: Phím chuyển bài tiếp theo, quay lại và phát/tạm dừng luôn được gửi tới Android Auto. Hãy dùng chế độ này, trừ khi một lần bấm làm nhảy qua hai bài.\n\nTự động: Ngừng gửi các phím này khi đầu máy có kết nối âm thanh Bluetooth với điện thoại, vì kết nối đó đã thực hiện thao tác rồi. Hãy chọn chế độ này nếu một lần bấm nhảy qua hai bài và điện thoại của bạn đã ghép nối với đầu máy này.\n\nKhông bao giờ: Không bao giờ gửi các phím này, để Bluetooth xử lý. Hãy chọn chế độ này nếu một lần bấm nhảy qua hai bài và điện thoại của bạn được ghép nối với hệ thống của chính xe thay vì đầu máy này, vì chế độ Tự động không phát hiện được kết nối đó.</string>
     <string name="media_key_routing_hint_common">Chỉ các phím đa phương tiện bị ảnh hưởng. Núm xoay, D-pad, phím Quay lại và phím Enter luôn được gửi tới Android Auto.</string>
+    <string name="volume_keys_to_phone">Gửi phím âm lượng tới điện thoại</string>
+    <string name="volume_keys_to_phone_summary">Phím âm lượng chỉnh âm lượng điện thoại thay vì thiết bị này.</string>
+    <string name="volume_keys_to_phone_help">Gửi phím âm lượng của thiết bị này tới điện thoại qua Android Auto thay vì chỉnh âm lượng tại đây. Dùng khi điện thoại tự phát âm thanh: Nhận âm thanh trên đầu máy đang tắt, hoặc điện thoại kết nối với Bluetooth của xe.\n\nChỉ hoạt động khi Android Auto đang hiển thị trên màn hình, và chỉ khi Android Auto trên điện thoại phản hồi phím âm lượng.</string>
+    <string name="speed_volume">Âm lượng theo tốc độ</string>
+    <string name="speed_volume_off">Tắt</string>
+    <string name="speed_volume_low">Thấp</string>
+    <string name="speed_volume_high">Cao</string>
+    <string name="speed_volume_help">Tăng âm lượng từng nấc khi xe chạy nhanh hơn, dựa trên GPS của thiết bị này, và giảm lại các nấc đó khi xe chạy chậm lại.\n\nTắt: Âm lượng giữ nguyên như bạn đã đặt.\n\nThấp: Một nấc mỗi 30 km/h, tối đa 3 nấc.\n\nCao: Một nấc mỗi 20 km/h, tối đa 5 nấc.\n\nCác nấc được gửi tới điện thoại khi bật Gửi phím âm lượng tới điện thoại, nếu không sẽ áp dụng cho âm lượng đa phương tiện của thiết bị này.</string>
     <string name="playback_focus_mode">Tạm dừng âm thanh khác khi đang phát</string>
     <string name="playback_focus_mode_auto">Tự động</string>
     <string name="playback_focus_mode_always">Luôn luôn</string>
@@ -1846,4 +1874,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Kết thúc phiên nếu rơ-le không phản hồi hai lần liên tiếp</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Thiết bị này gửi kiểm tra trạng thái đến rơ-le mỗi 2 giây. Nếu hai lần kiểm tra liên tiếp không có phản hồi, phiên Android Auto sẽ kết thúc.</string>
     <string name="esp32_relay_phase_failed">Thất bại: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB không dây</string>
+    <string name="usb_wireless_dongle_summary">Hiển thị văn bản không dây thay vì cáp trên màn hình chính cho USB.</string>
+    <string name="usb_wireless_dongle_help">Bật tùy chọn này nếu bạn kết nối qua bộ chuyển đổi USB không dây như AAWireless hoặc Carlinkit. Open Headunit không thể phân biệt dongle với cáp, nên tùy chọn này đổi nhãn màn hình chính từ cáp sang không dây.</string>
+    <string name="home_subtitle_usb_dongle">Không dây</string>
+    <string name="home_action_connect_wireless_dongle">Kết nối không dây</string>
 </resources>

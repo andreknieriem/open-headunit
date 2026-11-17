@@ -319,6 +319,9 @@
     <string name="car_launcher_autostart_info">Open Headunit este configurat ca lansator auto. Pornește automat la pornirea sistemului.</string>
     <string name="auto_start_on_boot_label">Pornire la boot</string>
     <string name="auto_start_on_boot_description">Deschide aplicația automat când dispozitivul pornește. Necesită permisiunea \'Afișare peste alte aplicații\' pe Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">Așteaptă în fundal</string>
+    <string name="auto_start_on_boot_background_description">La pornire, pornește doar serviciul, fără a deschide aplicația. Aplicația apare când se conectează telefonul.</string>
+    <string name="auto_start_on_boot_background_summary">Pornește doar serviciul, fără a deschide aplicația.</string>
     <string name="auto_start_on_boot_summary">Deschide aplicația la pornirea dispozitivului.</string>
     <string name="auto_start_screen_on_label">Pornire la aprinderea ecranului</string>
     <string name="auto_start_screen_on_description">Deschide aplicația de fiecare dată când ecranul se aprinde. Ideal pentru unitățile auto care nu se opresc niciodată complet sau folosesc moduri de pornire rapidă unde celelalte opțiuni de pornire automată nu funcționează. Nu este recomandat pentru telefoane sau tablete.</string>
@@ -365,7 +368,7 @@
     <string name="auto_connect_help">Aceste metode rulează automat la deschiderea aplicației. Activează-le pe cele dorite, apoi trage de ele pentru a le ordona. Se va folosi prima metodă reușită.</string>
     <string name="auto_connect_screen_help">Stabilește cum se conectează aplicația singură la deschidere. Activează metodele dorite și trage-le în ordinea de încercare. Se folosește prima care reușește. Întârzierea dă timp Wi-Fi-ului să se trezească pe o unitate lentă. Nimic de aici nu schimbă o conexiune pornită de tine. Cu Salvează se aplică modificările.</string>
     <string name="dpi_screen_help">Stabilește densitatea de pixeli cu care desenează Android Auto. Un DPI mai mare mărește pictogramele și textul, deci încape mai puțin pe ecran. Un DPI mai mic le micșorează, deci încape mai mult. Automat folosește densitatea acestui dispozitiv. Valoarea nouă se aplică la următoarea conectare.</string>
-    <string name="keymap_screen_help">Asociază tastele și butoanele acestei unități cu acțiuni Android Auto. Atinge un rând, apoi apasă tasta de atribuit. Cu Resetează se șterg toate atribuirile tale și se revine la valorile implicite. Folosește-l când o tastă de pe volan sau de pe panou face altceva decât trebuie.</string>
+    <string name="keymap_screen_help">Asociază tastele și butoanele acestei unități cu acțiuni: o tastă Android Auto, o acțiune a ecranului de proiecție sau deschiderea unei aplicații. Atinge Adaugă asociere de tastă, apasă tasta, apoi alege acțiunea. Atinge o asociere ca s-o modifici sau s-o elimini. Resetează șterge toate asocierile.</string>
     <string name="customization_screen_help">Schimbă aspectul ecranului de start al acestei aplicații: imaginea de fundal, culorile și dimensiunea celor patru butoane și dimensiunea textului. Setarea de noapte controlează fundalul în modul întunecat. Nimic din toate acestea nu schimbă ce afișează Android Auto în proiecție.</string>
     <string name="loading_screen_screen_help">Stabilește imaginea sau videoclipul scurt afișat cât pornește Android Auto. Alege o imagine sau un videoclip de până la 10 MB, scalează-l pe ecran și repetă animațiile scurte în buclă. Poți ascunde și textul de pornire. Cu Elimină se revine la ecranul implicit.</string>
     <string name="auto_connect_priority">Prioritate %d</string>
@@ -469,6 +472,22 @@
     <string name="key_mappings_reset">Asocierile de taste au fost resetate</string>
     <string name="press_key_to_assign">Apasă o tastă pentru a o asocia cu \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' a fost asociat cu \'%2$s\'</string>
+    <string name="action_picker_title">Alege acțiunea</string>
+    <string name="action_remove_binding">Elimină asocierea</string>
+    <string name="action_section_projection">Ecran de proiecție</string>
+    <string name="action_section_aa_keys">Taste Android Auto</string>
+    <string name="action_section_apps">Aplicații</string>
+    <string name="action_launch_app">Deschide aplicația…</string>
+    <string name="action_launch_named_app">Deschide %s</string>
+    <string name="action_aa_key_code">Tastă Android Auto %d</string>
+    <string name="action_selected">Selectat</string>
+    <string name="action_search_keywords">acțiune deschide pornește aplicație comandă rapidă</string>
+    <string name="keymap_add_binding">Adaugă asociere de tastă</string>
+    <string name="keymap_press_new_key">Apasă tasta sau butonul pe care vrei să-l asociezi…</string>
+    <string name="keymap_no_bindings">Nicio tastă asociată încă. Atinge Adaugă asociere de tastă, apasă o tastă, apoi alege ce face.</string>
+    <string name="keymap_bindings_header">Asocieri de taste</string>
+    <string name="keymap_tester_hint">Apasă orice tastă sau buton de pe volan ca să vezi aici numele și codul lui.</string>
+    <string name="keymap_tester_last">Ultima tastă: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Ultima tastă apăsată: %1$s (%2$d)</string>
     <string name="scan">Scanează</string>
     <string name="scanning_network">Se scanează rețeaua…</string>
@@ -790,6 +809,7 @@
     <string name="export_settings">Exportă setările</string>
     <string name="export_settings_description">Salvează o copie de rezervă a setărilor ca fișier JSON.</string>
     <string name="export_settings_app_folder">Salvează în folderul de copii al aplicației</string>
+    <string name="onb_restore_settings">Restabilește setările dintr-o copie de rezervă</string>
     <string name="export_settings_downloads">Salvează în Descărcări</string>
     <string name="export_settings_choose_location">Alege locația de salvare</string>
     <string name="settings_exported">Setări exportate</string>
@@ -1129,6 +1149,14 @@
     <string name="media_key_routing_never">Niciodată</string>
     <string name="media_key_routing_help">Întotdeauna: Butoanele următorul, anteriorul și redare/pauză sunt trimise întotdeauna către Android Auto. Folosește această opțiune, cu excepția cazului în care o apăsare sare peste două melodii.\n\nAutomat: Nu le mai trimite cât timp unitatea auto are o conexiune media Bluetooth cu telefonul, deoarece acea conexiune execută deja acțiunea. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu această unitate auto.\n\nNiciodată: Nu le trimite niciodată și lasă butoanele în seama Bluetooth. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu sistemul propriu al mașinii, nu cu această unitate auto. Modul Automat nu poate detecta acea conexiune.</string>
     <string name="media_key_routing_hint_common">Sunt afectate doar butoanele media. Controalele rotative, D-pad, Înapoi și Enter ajung întotdeauna la Android Auto.</string>
+    <string name="volume_keys_to_phone">Trimite butoanele de volum către telefon</string>
+    <string name="volume_keys_to_phone_summary">Butoanele de volum schimbă volumul telefonului, nu al acestei unități.</string>
+    <string name="volume_keys_to_phone_help">Trimite butoanele de volum ale acestei unități către telefon prin Android Auto, în loc să schimbe volumul aici. Folosește-l când telefonul redă singur sunetul: Receptor audio dezactivat sau telefonul conectat la Bluetooth-ul mașinii.\n\nFuncționează cât timp Android Auto este pe ecran și doar dacă Android Auto de pe telefon răspunde la tastele de volum.</string>
+    <string name="speed_volume">Volum în funcție de viteză</string>
+    <string name="speed_volume_off">Dezactivat</string>
+    <string name="speed_volume_low">Redus</string>
+    <string name="speed_volume_high">Ridicat</string>
+    <string name="speed_volume_help">Crește volumul câte un pas pe măsură ce mașina accelerează, folosind GPS-ul acestei unități, și retrage acești pași când încetinește.\n\nDezactivat: Volumul rămâne unde l-ai setat.\n\nRedus: Un pas la fiecare 30 km/h, până la 3 pași.\n\nRidicat: Un pas la fiecare 20 km/h, până la 5 pași.\n\nPașii merg la telefon când Trimite butoanele de volum către telefon este activat, altfel la volumul media al acestei unități.</string>
     <string name="playback_focus_mode">Pune pe pauză alt sunet în timpul redării</string>
     <string name="playback_focus_mode_auto">Automat</string>
     <string name="playback_focus_mode_always">Întotdeauna</string>
@@ -1842,4 +1870,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Încheie sesiunea dacă releul nu răspunde de două ori la rând</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Această unitate trimite releului o verificare de stare la fiecare 2 secunde. Dacă două verificări la rând rămân fără răspuns, sesiunea Android Auto se încheie.</string>
     <string name="esp32_relay_phase_failed">Eșuat: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB wireless</string>
+    <string name="usb_wireless_dongle_summary">Afișează text wireless în loc de cablu pe ecranul principal pentru USB.</string>
+    <string name="usb_wireless_dongle_help">Activează această opțiune dacă te conectezi printr-un adaptor USB wireless precum AAWireless sau Carlinkit. Open Headunit nu poate deosebi un dongle de un cablu, așa că această opțiune schimbă etichetele de pe ecranul principal din cablu în wireless.</string>
+    <string name="home_subtitle_usb_dongle">Wireless</string>
+    <string name="home_action_connect_wireless_dongle">Conectează wireless</string>
 </resources>

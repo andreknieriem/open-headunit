@@ -294,6 +294,9 @@
     <string name="car_launcher_autostart_info">Open Headunit está configurado como el launcher de tu vehículo. Se inicia automáticamente al encender el sistema.</string>
     <string name="auto_start_on_boot_label">Iniciar al arrancar</string>
     <string name="auto_start_on_boot_description">Abrir la app automáticamente cuando se enciende el dispositivo. Requiere el permiso \'Mostrar sobre otras apps\' en Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">Esperar en segundo plano</string>
+    <string name="auto_start_on_boot_background_description">Al arrancar, inicia solo el servicio sin abrir la aplicación. La aplicación aparece cuando se conecta tu teléfono.</string>
+    <string name="auto_start_on_boot_background_summary">Inicia solo el servicio, sin abrir la app.</string>
     <string name="auto_start_on_boot_summary">Abre la app cuando el dispositivo se enciende.</string>
     <string name="auto_start_screen_on_label">Iniciar al encender la pantalla</string>
     <string name="auto_start_screen_on_description">Abre la app cada vez que se enciende la pantalla. Ideal para unidades que nunca se apagan por completo o que usan modos de inicio rápido en los que las otras opciones de inicio automático no funcionan. No se recomienda para teléfonos ni tablets.</string>
@@ -340,7 +343,7 @@
     <string name="auto_connect_help">Estos métodos se ejecutan automáticamente al abrir la app. Activa los que quieras y arrastra para definir el orden. Se usará el primer método activado que funcione.</string>
     <string name="auto_connect_screen_help">Define cómo se conecta la app por sí sola al abrirse. Activa los métodos que quieras y arrástralos al orden en que se probarán. Se usa el primero que funcione. El retraso da tiempo a que el WiFi se active en una unidad lenta. Nada de esto cambia una conexión que inicies tú. Guardar aplica los cambios.</string>
     <string name="dpi_screen_help">Define la densidad de píxeles con la que dibuja Android Auto. Un DPI más alto agranda los íconos y el texto, y cabe menos en pantalla. Un DPI más bajo los reduce, y cabe más. Automático usa la densidad de este dispositivo. El nuevo valor se aplica en la próxima conexión.</string>
-    <string name="keymap_screen_help">Asigna las teclas y botones de esta unidad a acciones de Android Auto. Toca una fila y presiona la tecla que quieres asignar. Restablecer borra todas tus asignaciones y vuelve a los valores predeterminados. Úsalo cuando una tecla del volante o del panel haga algo incorrecto.</string>
+    <string name="keymap_screen_help">Asigna las teclas y botones de esta unidad a acciones: una tecla de Android Auto, una acción de la pantalla de proyección o abrir una app. Toca Agregar asignación de tecla, presiona la tecla y elige la acción. Toca una asignación para cambiarla o quitarla. Restablecer borra todas las asignaciones.</string>
     <string name="customization_screen_help">Cambia el aspecto de la pantalla de inicio de esta app: la imagen de fondo, los colores y el tamaño de los cuatro botones, y el tamaño del texto. El ajuste nocturno controla el fondo en modo oscuro. Nada de esto cambia lo que Android Auto muestra en la proyección.</string>
     <string name="loading_screen_screen_help">Define la imagen o el video corto que se muestra mientras inicia Android Auto. Elige una imagen o un video de hasta 10 MB, escálalo para ajustarlo a la pantalla y repite las animaciones cortas en bucle. También puedes ocultar el texto de inicio. Eliminar vuelve a la pantalla predeterminada.</string>
     <string name="auto_connect_priority">Prioridad %d</string>
@@ -444,6 +447,22 @@
     <string name="key_mappings_reset">Asignaciones de teclas restablecidas</string>
     <string name="press_key_to_assign">Presiona una tecla para asignarla a \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' asignado a \'%2$s\'</string>
+    <string name="action_picker_title">Elegir acción</string>
+    <string name="action_remove_binding">Quitar asignación</string>
+    <string name="action_section_projection">Pantalla de proyección</string>
+    <string name="action_section_aa_keys">Teclas de Android Auto</string>
+    <string name="action_section_apps">Aplicaciones</string>
+    <string name="action_launch_app">Abrir app…</string>
+    <string name="action_launch_named_app">Abrir %s</string>
+    <string name="action_aa_key_code">Tecla de Android Auto %d</string>
+    <string name="action_selected">Seleccionado</string>
+    <string name="action_search_keywords">acción abrir iniciar app aplicación atajo</string>
+    <string name="keymap_add_binding">Agregar asignación de tecla</string>
+    <string name="keymap_press_new_key">Presiona la tecla o el botón que quieres asignar…</string>
+    <string name="keymap_no_bindings">Aún no hay teclas asignadas. Toca Agregar asignación de tecla, presiona una tecla y elige qué hace.</string>
+    <string name="keymap_bindings_header">Asignaciones de teclas</string>
+    <string name="keymap_tester_hint">Presiona cualquier tecla o botón del volante para ver aquí su nombre y código.</string>
+    <string name="keymap_tester_last">Última tecla: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Última tecla presionada: %1$s (%2$d)</string>
     <string name="scan">Escanear</string>
     <string name="scanning_network">Buscando en la red…</string>
@@ -795,6 +814,7 @@
     <string name="export_settings_choose_location">Elegir ubicación para guardar</string>
     <string name="export_settings_downloads">Guardar en Descargas</string>
     <string name="export_settings_app_folder">Guardar en la carpeta de copias de la app</string>
+    <string name="onb_restore_settings">Restaurar ajustes desde una copia de seguridad</string>
     <string name="import_settings">Importar configuración</string>
     <string name="import_settings_description">Restaurar configuración desde una copia de seguridad de Open Headunit.</string>
     <string name="import_settings_choose_file">Elegir archivo de copia</string>
@@ -1141,6 +1161,14 @@
     <string name="media_key_routing_never">Nunca</string>
     <string name="media_key_routing_help">Siempre: Siguiente, anterior y reproducir/pausa se envían siempre a Android Auto. Usa esta opción, salvo que al presionar una vez se salten dos canciones.\n\nAutomático: Deja de enviarlos mientras esta unidad central tenga una conexión de medios Bluetooth con el teléfono, porque esa conexión ya ejecuta la acción. Elige esta opción si al presionar una vez se saltan dos canciones y tu teléfono está vinculado a esta unidad central.\n\nNunca: Nunca los envía y deja los botones a cargo de Bluetooth. Elige esta opción si al presionar una vez se saltan dos canciones y tu teléfono está vinculado al sistema propio del auto y no a esta unidad central. El modo Automático no puede detectar esa conexión.</string>
     <string name="media_key_routing_hint_common">Solo afecta a los botones multimedia. Los controles giratorios, el D-pad, Atrás y Enter siempre llegan a Android Auto.</string>
+    <string name="volume_keys_to_phone">Enviar botones de volumen al teléfono</string>
+    <string name="volume_keys_to_phone_summary">Los botones de volumen cambian el volumen del teléfono, no el de esta unidad.</string>
+    <string name="volume_keys_to_phone_help">Envía los botones de volumen de esta unidad al teléfono a través de Android Auto en lugar de cambiar el volumen aquí. Úsalo cuando el teléfono reproduce el sonido por sí mismo: Receptor de audio desactivado, o el teléfono conectado al Bluetooth del auto.\n\nFunciona mientras Android Auto está en pantalla, y solo si Android Auto en el teléfono responde a las teclas de volumen.</string>
+    <string name="speed_volume">Volumen según la velocidad</string>
+    <string name="speed_volume_off">Desactivado</string>
+    <string name="speed_volume_low">Bajo</string>
+    <string name="speed_volume_high">Alto</string>
+    <string name="speed_volume_help">Sube el volumen un paso a la vez a medida que el auto acelera, usando el GPS de esta unidad, y quita esos pasos cuando reduce la velocidad.\n\nDesactivado: El volumen se queda donde lo dejaste.\n\nBajo: Un paso cada 30 km/h, hasta 3 pasos.\n\nAlto: Un paso cada 20 km/h, hasta 5 pasos.\n\nLos pasos van al teléfono cuando Enviar botones de volumen al teléfono está activado y, si no, al volumen multimedia de esta unidad.</string>
     <string name="playback_focus_mode">Pausar otro audio durante la reproducción</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Siempre</string>
@@ -1851,4 +1879,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Cerrar la sesión si el relé no responde dos veces seguidas</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Esta unidad envía una comprobación al relé cada 2 segundos. Si dos comprobaciones seguidas no reciben respuesta, la sesión de Android Auto se cierra.</string>
     <string name="esp32_relay_phase_failed">Error: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB inalámbrico</string>
+    <string name="usb_wireless_dongle_summary">Muestra texto inalámbrico en lugar de cable en la pantalla de inicio para USB.</string>
+    <string name="usb_wireless_dongle_help">Actívalo si te conectas mediante un adaptador USB inalámbrico como AAWireless o Carlinkit. Open Headunit no puede distinguir un dongle de un cable, por lo que esta opción cambia las etiquetas de la pantalla de inicio a inalámbrico.</string>
+    <string name="home_subtitle_usb_dongle">De forma inalámbrica</string>
+    <string name="home_action_connect_wireless_dongle">Conectar de forma inalámbrica</string>
 </resources>

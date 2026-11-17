@@ -292,6 +292,9 @@
     <string name="car_launcher_autostart_info">Open Headunit is ingesteld als launcher van je auto. De app start automatisch bij het opstarten van het systeem.</string>
     <string name="auto_start_on_boot_label">Starten bij opstarten</string>
     <string name="auto_start_on_boot_description">Open de app automatisch wanneer het apparaat opstart. Vereist de machtiging \'Weergeven vóór andere apps\' op Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">Wachten op de achtergrond</string>
+    <string name="auto_start_on_boot_background_description">Start bij het opstarten alleen de service, zonder de app te openen. De app verschijnt zodra je telefoon verbinding maakt.</string>
+    <string name="auto_start_on_boot_background_summary">Alleen de dienst starten, zonder de app te openen.</string>
     <string name="auto_start_on_boot_summary">Opent de app wanneer het apparaat opstart.</string>
     <string name="auto_start_screen_on_label">Starten bij scherm aan</string>
     <string name="auto_start_screen_on_description">Open de app telkens wanneer het scherm aangaat. Handig voor headunits die nooit volledig uitschakelen of een snelle opstartmodus gebruiken, waardoor de andere opties voor automatisch starten niet werken. Niet aanbevolen voor telefoons of tablets.</string>
@@ -338,7 +341,7 @@
     <string name="auto_connect_help">Deze methoden worden automatisch uitgevoerd bij het openen van de app. Schakel de gewenste in en sleep om de volgorde te bepalen. De eerste ingeschakelde methode die slaagt, wordt gebruikt.</string>
     <string name="auto_connect_screen_help">Bepaalt hoe de app zichzelf verbindt bij het openen. Schakel de gewenste methoden in en sleep ze in de volgorde waarin ze worden geprobeerd. De eerste die lukt wordt gebruikt. De vertraging geeft wifi tijd om wakker te worden op een traag apparaat. Niets hier verandert een verbinding die je zelf start. Met Opslaan worden de wijzigingen toegepast.</string>
     <string name="dpi_screen_help">Bepaalt de pixeldichtheid waarmee Android Auto tekent. Een hogere DPI maakt pictogrammen en tekst groter, zodat er minder op het scherm past. Een lagere DPI maakt ze kleiner, zodat er meer op past. Automatisch gebruikt de dichtheid van dit apparaat. De nieuwe waarde geldt bij de volgende verbinding.</string>
-    <string name="keymap_screen_help">Koppelt de toetsen en knoppen van dit apparaat aan acties van Android Auto. Tik op een rij en druk dan op de toets die je wilt toewijzen. Reset verwijdert al je toewijzingen en herstelt de standaardwaarden. Gebruik dit als een stuur- of paneeltoets het verkeerde doet.</string>
+    <string name="keymap_screen_help">Wijst de toetsen en knoppen van dit apparaat toe aan acties: een Android Auto-toets, een actie van het projectiescherm of het starten van een app. Tik op Toetstoewijzing toevoegen, druk op de toets en kies de actie. Tik op een toewijzing om die te wijzigen of te verwijderen. Reset verwijdert alle toewijzingen.</string>
     <string name="customization_screen_help">Verandert hoe het startscherm van deze app eruitziet: de achtergrondafbeelding, de kleuren en grootte van de vier knoppen en de tekstgrootte. De nachtinstelling bepaalt de achtergrond in de donkere modus. Niets hiervan verandert wat Android Auto in de projectie toont.</string>
     <string name="loading_screen_screen_help">Bepaalt de afbeelding of korte video die wordt getoond terwijl Android Auto start. Kies een afbeelding of video tot 10 MB, schaal die naar het scherm en laat korte animaties herhalen. Je kunt ook de starttekst verbergen. Verwijderen herstelt het standaardscherm.</string>
     <string name="auto_connect_priority">Prioriteit %d</string>
@@ -442,6 +445,22 @@
     <string name="key_mappings_reset">Toetstoewijzingen opnieuw ingesteld</string>
     <string name="press_key_to_assign">Druk op een toets om toe te wijzen aan \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' toegewezen aan \'%2$s\'</string>
+    <string name="action_picker_title">Actie kiezen</string>
+    <string name="action_remove_binding">Toewijzing verwijderen</string>
+    <string name="action_section_projection">Projectiescherm</string>
+    <string name="action_section_aa_keys">Android Auto-toetsen</string>
+    <string name="action_section_apps">Apps</string>
+    <string name="action_launch_app">App starten…</string>
+    <string name="action_launch_named_app">%s starten</string>
+    <string name="action_aa_key_code">Android Auto-toets %d</string>
+    <string name="action_selected">Geselecteerd</string>
+    <string name="action_search_keywords">actie app starten openen snelkoppeling</string>
+    <string name="keymap_add_binding">Toetstoewijzing toevoegen</string>
+    <string name="keymap_press_new_key">Druk op de toets of knop die je wilt toewijzen…</string>
+    <string name="keymap_no_bindings">Er zijn nog geen toetsen toegewezen. Tik op Toetstoewijzing toevoegen, druk op een toets en kies wat die doet.</string>
+    <string name="keymap_bindings_header">Toetstoewijzingen</string>
+    <string name="keymap_tester_hint">Druk op een toets of stuurknop om hier de naam en code te zien.</string>
+    <string name="keymap_tester_last">Laatste toets: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Laatste toetsaanslag: %1$s (%2$d)</string>
     <string name="scan">Scannen</string>
     <string name="scanning_network">Netwerk scannen…</string>
@@ -789,6 +808,7 @@
     <string name="export_settings">Instellingen exporteren</string>
     <string name="export_settings_description">Sla een back-up van je instellingen op als JSON-bestand.</string>
     <string name="export_settings_app_folder">Opslaan in back-upmap van app</string>
+    <string name="onb_restore_settings">Instellingen herstellen vanuit een back-up</string>
     <string name="export_settings_downloads">Opslaan in Downloads</string>
     <string name="export_settings_choose_location">Kies opslaglocatie</string>
     <string name="settings_exported">Instellingen geëxporteerd</string>
@@ -1135,6 +1155,14 @@
     <string name="media_key_routing_never">Nooit</string>
     <string name="media_key_routing_help">Altijd: Volgende, vorige en afspelen/pauzeren worden altijd naar Android Auto gestuurd. Kies dit, tenzij één druk twee nummers overslaat.\n\nAutomatisch: Stuurt ze niet door zolang deze headunit een Bluetooth-mediaverbinding met de telefoon heeft, omdat die verbinding de actie al uitvoert. Kies dit als één druk twee nummers overslaat en je telefoon met deze headunit is gekoppeld.\n\nNooit: Stuurt ze nooit door en laat de toetsen aan Bluetooth over. Kies dit als één druk twee nummers overslaat en je telefoon is gekoppeld met het eigen systeem van de auto en niet met deze headunit. Automatisch kan die verbinding niet herkennen.</string>
     <string name="media_key_routing_hint_common">Dit geldt alleen voor de mediatoetsen. Draaiknoppen, D-pad, Terug en Enter bereiken Android Auto altijd.</string>
+    <string name="volume_keys_to_phone">Volumetoetsen naar de telefoon sturen</string>
+    <string name="volume_keys_to_phone_summary">Volumetoetsen regelen het volume van de telefoon, niet van dit apparaat.</string>
+    <string name="volume_keys_to_phone_help">Stuurt de volumetoetsen van dit apparaat via Android Auto naar de telefoon in plaats van het volume hier te wijzigen. Gebruik dit als de telefoon het geluid zelf afspeelt: Audio-sink uit, of de telefoon verbonden met de Bluetooth van de auto.\n\nWerkt zolang Android Auto op het scherm staat, en alleen als Android Auto op de telefoon op volumetoetsen reageert.</string>
+    <string name="speed_volume">Snelheidsafhankelijk volume</string>
+    <string name="speed_volume_off">Uit</string>
+    <string name="speed_volume_low">Laag</string>
+    <string name="speed_volume_high">Hoog</string>
+    <string name="speed_volume_help">Zet het volume stap voor stap hoger naarmate de auto sneller rijdt, met de GPS van dit apparaat, en haalt die stappen er weer af als hij afremt.\n\nUit: Het volume blijft waar je het hebt ingesteld.\n\nLaag: Eén stap per 30 km/u, maximaal 3 stappen.\n\nHoog: Eén stap per 20 km/u, maximaal 5 stappen.\n\nDe stappen gaan naar de telefoon als Volumetoetsen naar de telefoon sturen aan staat, en anders naar het mediavolume van dit apparaat.</string>
     <string name="playback_focus_mode">Andere audio pauzeren tijdens afspelen</string>
     <string name="playback_focus_mode_auto">Automatisch</string>
     <string name="playback_focus_mode_always">Altijd</string>
@@ -1848,4 +1876,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Sessie beëindigen als de relay twee keer niet reageert</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Deze headunit stuurt elke 2 seconden een statuscontrole naar de relay. Krijgen twee controles achter elkaar geen antwoord, dan eindigt de Android Auto-sessie.</string>
     <string name="esp32_relay_phase_failed">Mislukt: %1$s</string>
+    <string name="usb_wireless_dongle_label">Draadloze USB-dongle</string>
+    <string name="usb_wireless_dongle_summary">Toon draadloze tekst in plaats van kabel op het startscherm voor USB.</string>
+    <string name="usb_wireless_dongle_help">Schakel dit in als je verbindt via een draadloze USB-adapter zoals AAWireless of Carlinkit. Open Headunit kan een dongle niet van een kabel onderscheiden, dus deze optie verandert de startschermteksten van kabel naar draadloos.</string>
+    <string name="home_subtitle_usb_dongle">Draadloos</string>
+    <string name="home_action_connect_wireless_dongle">Draadloos verbinden</string>
 </resources>

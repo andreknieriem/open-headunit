@@ -39,6 +39,7 @@ import com.andrerinas.openheadunit.app.AccPowerState
 import com.andrerinas.openheadunit.app.ActivityLaunchPolicy
 import com.andrerinas.openheadunit.app.BootCompleteReceiver
 import com.andrerinas.openheadunit.app.BootLoopPolicy
+import com.andrerinas.openheadunit.app.BootScreenPolicy
 import com.andrerinas.openheadunit.app.BtAutoDisconnectArm
 import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
 import com.andrerinas.openheadunit.app.ExternalPowerArm
@@ -905,9 +906,11 @@ class AapService : Service() {
 
         val settings = App.provide(this).settings
 
-        if (settings.autoStartOnBoot) {
+        if (BootScreenPolicy.opensScreen(settings.autoStartOnBoot, settings.autoStartOnBootInBackground)) {
             AppLog.i("WakeDetect: launching UI (trigger=$trigger)")
             launchMainActivityOnBoot()
+        } else if (settings.autoStartOnBoot) {
+            AppLog.i("WakeDetect: waiting in the background, the screen opens when a phone connects (trigger=$trigger)")
         }
 
         if (settings.effectiveAutoStartOnUsb) {
@@ -3776,7 +3779,12 @@ class AapService : Service() {
         if (intent?.getBooleanExtra(BootCompleteReceiver.EXTRA_BOOT_START, false) == true) {
             // Mark wake as handled so the dynamic wakeDetectReceiver doesn't double-trigger
             lastWakeHandledTimestamp = SystemClock.elapsedRealtime()
-            launchMainActivityOnBoot()
+            val settings = App.provide(this).settings
+            if (BootScreenPolicy.opensScreen(settings.autoStartOnBoot, settings.autoStartOnBootInBackground)) {
+                launchMainActivityOnBoot()
+            } else {
+                AppLog.i("Boot auto-start: waiting in the background, the screen opens when a phone connects")
+            }
         }
 
         when (intent?.action) {

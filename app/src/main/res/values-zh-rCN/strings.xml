@@ -292,6 +292,9 @@
     <string name="car_launcher_autostart_info">Open Headunit 已设为车机桌面，会在系统启动时自动启动。</string>
     <string name="auto_start_on_boot_label">开机时启动</string>
     <string name="auto_start_on_boot_description">设备启动时自动打开应用。Android 10 及以上版本需要“显示在其他应用的上层”权限。</string>
+    <string name="auto_start_on_boot_background_label">在后台等待</string>
+    <string name="auto_start_on_boot_background_description">开机时只启动服务，不打开应用。手机连接后应用才会出现。</string>
+    <string name="auto_start_on_boot_background_summary">仅启动服务，不打开应用。</string>
     <string name="auto_start_on_boot_summary">设备启动时打开应用。</string>
     <string name="auto_start_screen_on_label">亮屏时启动</string>
     <string name="auto_start_screen_on_description">每次屏幕亮起时打开应用。适用于从不完全关机，或使用快速启动模式导致其他自动启动选项无效的车机。不建议用于手机或平板电脑。</string>
@@ -338,7 +341,7 @@
     <string name="auto_connect_help">这些方式会在应用打开时自动执行。启用您想要的方式，然后拖动以设置顺序。系统会使用第一个成功的已启用方式。</string>
     <string name="auto_connect_screen_help">设置应用打开时如何自动连接。开启所需的方式，并拖动排列尝试顺序。使用第一个成功的方式。延迟可让速度较慢的车机有时间唤醒 Wi-Fi。这里的设置不会影响你自己发起的连接。点按“保存”即可应用更改。</string>
     <string name="dpi_screen_help">设置 Android Auto 绘制时使用的像素密度。DPI 越高，图标和文字越大，屏幕容纳的内容越少。DPI 越低，图标和文字越小，容纳的内容越多。“自动”使用本设备的密度。新值将在下次连接时生效。</string>
-    <string name="keymap_screen_help">将本车机的按键映射到 Android Auto 操作。点按一行，然后按下要分配的按键。“重置”会删除你的所有映射并恢复默认值。方向盘或面板按键响应错误时可使用。</string>
+    <string name="keymap_screen_help">将本车机的按键绑定到操作：Android Auto 按键、投屏界面操作或启动应用。点按“添加按键绑定”，按下按键，然后选择操作。点按某个绑定可更改或移除它。“重置”会移除所有绑定。</string>
     <string name="customization_screen_help">更改本应用主屏幕的外观：背景图片、四个按钮的颜色和大小，以及文字大小。夜间设置控制深色模式下的背景。这些都不会改变 Android Auto 在投屏中显示的内容。</string>
     <string name="loading_screen_screen_help">设置 Android Auto 启动时显示的图片或短视频。可选择不超过 10 MB 的图片或视频，缩放以适应屏幕，并循环播放短动画。也可以隐藏启动文字。“移除”会恢复默认屏幕。</string>
     <string name="auto_connect_priority">优先级 %d</string>
@@ -442,6 +445,22 @@
     <string name="key_mappings_reset">按键映射已重置</string>
     <string name="press_key_to_assign">按下按键以分配给 \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' 已分配给 \'%2$s\'</string>
+    <string name="action_picker_title">选择操作</string>
+    <string name="action_remove_binding">移除绑定</string>
+    <string name="action_section_projection">投屏界面</string>
+    <string name="action_section_aa_keys">Android Auto 按键</string>
+    <string name="action_section_apps">应用</string>
+    <string name="action_launch_app">启动应用…</string>
+    <string name="action_launch_named_app">启动 %s</string>
+    <string name="action_aa_key_code">Android Auto 按键 %d</string>
+    <string name="action_selected">已选择</string>
+    <string name="action_search_keywords">操作 启动 打开 应用 快捷方式</string>
+    <string name="keymap_add_binding">添加按键绑定</string>
+    <string name="keymap_press_new_key">请按下要绑定的按键或按钮…</string>
+    <string name="keymap_no_bindings">尚未绑定任何按键。点按“添加按键绑定”，按下按键，然后选择它的操作。</string>
+    <string name="keymap_bindings_header">按键绑定</string>
+    <string name="keymap_tester_hint">按下任意按键或方向盘按钮，即可在此查看其名称和代码。</string>
+    <string name="keymap_tester_last">最后按键：%1$s（%2$d），%3$s</string>
     <string name="last_key_press">上次按键：%1$s (%2$d)</string>
     <string name="scan">扫描</string>
     <string name="scanning_network">正在扫描网络…</string>
@@ -789,6 +808,7 @@
     <string name="export_settings">导出设置</string>
     <string name="export_settings_description">将设置备份保存为 JSON 文件。</string>
     <string name="export_settings_app_folder">保存到应用备份文件夹</string>
+    <string name="onb_restore_settings">从备份恢复设置</string>
     <string name="export_settings_downloads">保存到“下载”</string>
     <string name="export_settings_choose_location">选择保存位置</string>
     <string name="settings_exported">设置已导出</string>
@@ -1129,6 +1149,14 @@
     <string name="media_key_routing_never">从不</string>
     <string name="media_key_routing_help">始终：上一首、下一首和播放/暂停始终发送到 Android Auto。除非按一次会跳过两首曲目，否则请使用此项。\n\n自动：当此车机与手机建立了蓝牙媒体连接时，不再发送这些按键，因为该连接已经执行了相应操作。如果按一次会跳过两首曲目，且手机已与此车机配对，请选择此项。\n\n从不：从不发送这些按键，交由蓝牙处理。如果按一次会跳过两首曲目，且手机配对的是车辆自带系统而非此车机，请选择此项（“自动”无法检测到该连接）。</string>
     <string name="media_key_routing_hint_common">仅影响媒体按键。旋钮控制器、方向键、返回键和确认键始终会传到 Android Auto。</string>
+    <string name="volume_keys_to_phone">将音量按键发送到手机</string>
+    <string name="volume_keys_to_phone_summary">音量按键调节手机的音量，而不是本车机的音量。</string>
+    <string name="volume_keys_to_phone_help">将此车机的音量按键通过 Android Auto 发送到手机，而不是在这里调节音量。适用于由手机自己播放声音的情况：音频接收器已关闭，或手机连接的是汽车的蓝牙。\n\n仅在 Android Auto 显示在屏幕上时有效，并且需要手机上的 Android Auto 响应音量键。</string>
+    <string name="speed_volume">随车速调节音量</string>
+    <string name="speed_volume_off">关闭</string>
+    <string name="speed_volume_low">低</string>
+    <string name="speed_volume_high">高</string>
+    <string name="speed_volume_help">使用本车机的 GPS，随着车速提高逐级调高音量，减速时再把调高的级数降回来。\n\n关闭：音量保持在您设置的位置。\n\n低：每 30 km/h 调高一级，最多 3 级。\n\n高：每 20 km/h 调高一级，最多 5 级。\n\n开启“将音量按键发送到手机”时，调节作用于手机；否则作用于本车机的媒体音量。</string>
     <string name="playback_focus_mode">播放时暂停其他音频</string>
     <string name="playback_focus_mode_auto">自动</string>
     <string name="playback_focus_mode_always">始终</string>
@@ -1842,4 +1870,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">中继器连续两次无响应时结束会话</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">本主机每 2 秒向中继器发送一次状态检查。如果连续两次检查都没有响应,Android Auto 会话将结束。</string>
     <string name="esp32_relay_phase_failed">失败:%1$s</string>
+    <string name="usb_wireless_dongle_label">无线 USB 适配器</string>
+    <string name="usb_wireless_dongle_summary">在主屏幕上将 USB 连接显示为无线而不是有线。</string>
+    <string name="usb_wireless_dongle_help">如果您通过 AAWireless 或 Carlinkit 等无线 USB 适配器连接，请开启此选项。Open Headunit 无法区分适配器与数据线，开启后会将主屏幕上的文字从有线更改为无线。</string>
+    <string name="home_subtitle_usb_dongle">无线连接</string>
+    <string name="home_action_connect_wireless_dongle">无线连接</string>
 </resources>

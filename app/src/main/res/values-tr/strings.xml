@@ -321,6 +321,9 @@
     <string name="car_launcher_autostart_info">Open Headunit araç başlatıcısı olarak yapılandırıldı. Sistem açılışında otomatik olarak başlar.</string>
     <string name="auto_start_on_boot_label">Açılışta başlat</string>
     <string name="auto_start_on_boot_description">Cihaz açıldığında uygulamayı otomatik olarak açar. Android 10+ sürümlerinde \'Diğer uygulamaların üzerinde göster\' izni gerektirir.</string>
+    <string name="auto_start_on_boot_background_label">Arka planda bekle</string>
+    <string name="auto_start_on_boot_background_description">Açılışta uygulamayı açmadan yalnızca hizmeti başlat. Telefonunuz bağlandığında uygulama görünür.</string>
+    <string name="auto_start_on_boot_background_summary">Uygulamayı açmadan yalnızca hizmeti başlatır.</string>
     <string name="auto_start_on_boot_summary">Cihaz açıldığında uygulamayı açar.</string>
     <string name="auto_start_screen_on_label">Ekran açıldığında başlat</string>
     <string name="auto_start_screen_on_description">Ekran her açıldığında uygulamayı açar. Tamamen kapanmayan veya diğer otomatik başlatma seçeneklerinin çalışmadığı hızlı önyükleme modlarını kullanan sistemler için idealdir. Telefonlar veya tabletler için önerilmez.</string>
@@ -366,7 +369,7 @@
     <string name="auto_connect_help">Bu yöntemler uygulama açıldığında otomatik olarak çalışır. İstediklerinizi etkinleştirin, ardından sırayı ayarlamak için sürükleyin. Başarılı olan ilk etkin yöntem kullanılacaktır.</string>
     <string name="auto_connect_screen_help">Uygulamanın açılışta kendi kendine nasıl bağlanacağını belirler. İstediğiniz yöntemleri açın ve denenecekleri sıraya sürükleyin. Başarılı olan ilk yöntem kullanılır. Gecikme, yavaş bir ünitede Wi-Fi\'ye uyanma süresi tanır. Burada hiçbir şey sizin başlattığınız bağlantıyı değiştirmez. Kaydet değişiklikleri uygular.</string>
     <string name="dpi_screen_help">Android Auto\'nun çizim yaptığı piksel yoğunluğunu belirler. Yüksek DPI simgeleri ve metni büyütür, ekrana daha az şey sığar. Düşük DPI bunları küçültür, daha fazla şey sığar. Otomatik, bu cihazın yoğunluğunu kullanır. Yeni değer bir sonraki bağlantıda uygulanır.</string>
-    <string name="keymap_screen_help">Bu ünitenin tuşlarını ve düğmelerini Android Auto eylemlerine atar. Bir satıra dokunun, sonra atamak istediğiniz tuşa basın. Sıfırla, yaptığınız tüm atamaları kaldırır ve varsayılanlara döner. Direksiyon veya panel tuşu yanlış iş yapıyorsa kullanın.</string>
+    <string name="keymap_screen_help">Bu ünitenin tuşlarını ve düğmelerini eylemlere atar: bir Android Auto tuşu, yansıtma ekranı eylemi veya bir uygulamayı başlatma. Tuş ataması ekle\'ye dokunun, tuşa basın, ardından eylemi seçin. Değiştirmek veya kaldırmak için bir atamaya dokunun. Sıfırla tüm atamaları kaldırır.</string>
     <string name="customization_screen_help">Bu uygulamanın ana ekranının görünümünü değiştirir: arka plan resmi, dört düğmenin renkleri ve boyutu ile metin boyutu. Gece ayarı, karanlık moddaki arka planı belirler. Bunların hiçbiri Android Auto\'nun yansıtmada gösterdiklerini değiştirmez.</string>
     <string name="loading_screen_screen_help">Android Auto başlarken gösterilen resmi veya kısa videoyu belirler. 10 MB\'a kadar bir resim ya da video seçin, ekrana sığacak şekilde ölçekleyin ve kısa animasyonları döngüye alın. Başlangıç metnini de gizleyebilirsiniz. Kaldır, varsayılan ekrana döner.</string>
     <string name="auto_connect_priority">Öncelik %d</string>
@@ -466,6 +469,22 @@
     <string name="key_mappings_reset">Tuş atamaları sıfırlandı</string>
     <string name="press_key_to_assign">\'%s\' için atamak istediğiniz tuşa basın…</string>
     <string name="key_assigned">\'%1$s\', \'%2$s\' tuşuna atandı</string>
+    <string name="action_picker_title">Eylem seç</string>
+    <string name="action_remove_binding">Atamayı kaldır</string>
+    <string name="action_section_projection">Yansıtma ekranı</string>
+    <string name="action_section_aa_keys">Android Auto tuşları</string>
+    <string name="action_section_apps">Uygulamalar</string>
+    <string name="action_launch_app">Uygulama başlat…</string>
+    <string name="action_launch_named_app">%s başlat</string>
+    <string name="action_aa_key_code">Android Auto tuşu %d</string>
+    <string name="action_selected">Seçili</string>
+    <string name="action_search_keywords">eylem uygulama başlat aç kısayol</string>
+    <string name="keymap_add_binding">Tuş ataması ekle</string>
+    <string name="keymap_press_new_key">Atamak istediğiniz tuşa veya düğmeye basın…</string>
+    <string name="keymap_no_bindings">Henüz atanmış tuş yok. Tuş ataması ekle\'ye dokunun, bir tuşa basın ve ne yapacağını seçin.</string>
+    <string name="keymap_bindings_header">Tuş atamaları</string>
+    <string name="keymap_tester_hint">Adını ve kodunu burada görmek için herhangi bir tuşa veya direksiyon düğmesine basın.</string>
+    <string name="keymap_tester_last">Son tuş: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Son Tuş Basımı: %1$s (%2$d)</string>
     <string name="scan">Tara</string>
     <string name="scanning_network">Ağ Taranıyor…</string>
@@ -763,6 +782,7 @@
     <string name="export_settings">Ayarları dışa aktar</string>
     <string name="export_settings_description">Ayarların yedeğini bir JSON dosyası olarak kaydet.</string>
     <string name="export_settings_app_folder">Uygulama yedek klasörüne kaydet</string>
+    <string name="onb_restore_settings">Ayarları yedekten geri yükle</string>
     <string name="export_settings_downloads">İndirilenlere kaydet</string>
     <string name="export_settings_choose_location">Kayıt konumunu seç</string>
     <string name="settings_exported">Ayarlar dışa aktarıldı</string>
@@ -1126,6 +1146,14 @@
     <string name="media_key_routing_never">Hiçbir zaman</string>
     <string name="media_key_routing_help">Her zaman: Sonraki, önceki ve oynat/duraklat tuşları her zaman Android Auto\'ya gönderilir. Tek basışta iki parça atlanmıyorsa bunu kullanın.\n\nOtomatik: Bu ana ünitenin telefonla Bluetooth medya bağlantısı olduğu sürece tuşları göndermez, çünkü işlemi zaten bu bağlantı yapar. Tek basışta iki parça atlanıyorsa ve telefonunuz bu ana üniteyle eşleştirilmişse bunu seçin.\n\nHiçbir zaman: Tuşları hiç göndermez, tuşları Bluetooth\'a bırakır. Tek basışta iki parça atlanıyorsa ve telefonunuz bu ana üniteyle değil aracın kendi sistemiyle eşleştirilmişse bunu seçin; Otomatik mod bu bağlantıyı algılayamaz.</string>
     <string name="media_key_routing_hint_common">Yalnızca medya tuşları etkilenir. Döner kumandalar, yön tuşları, Geri ve Enter her zaman Android Auto\'ya iletilir.</string>
+    <string name="volume_keys_to_phone">Ses düğmelerini telefona gönder</string>
+    <string name="volume_keys_to_phone_summary">Ses düğmeleri bu ünitenin değil, telefonun sesini değiştirir.</string>
+    <string name="volume_keys_to_phone_help">Bu ünitenin ses düğmelerini, sesi burada değiştirmek yerine Android Auto üzerinden telefona gönderir. Sesi telefonun kendisi çalıyorsa kullanın: Ses alıcı (Audio Sink) kapalıysa veya telefon aracın Bluetooth\'una bağlıysa.\n\nAndroid Auto ekrandayken ve yalnızca telefondaki Android Auto ses tuşlarına yanıt veriyorsa çalışır.</string>
+    <string name="speed_volume">Hıza bağlı ses seviyesi</string>
+    <string name="speed_volume_off">Kapalı</string>
+    <string name="speed_volume_low">Düşük</string>
+    <string name="speed_volume_high">Yüksek</string>
+    <string name="speed_volume_help">Bu ünitenin GPS\'ini kullanarak araç hızlandıkça sesi birer adım yükseltir ve yavaşladıkça bu adımları geri alır.\n\nKapalı: Ses, ayarladığınız yerde kalır.\n\nDüşük: Hız her 30 km/sa arttığında bir adım, en fazla 3 adım.\n\nYüksek: Hız her 20 km/sa arttığında bir adım, en fazla 5 adım.\n\nSes düğmelerini telefona gönder açıksa adımlar telefona, değilse bu ünitenin medya ses seviyesine gider.</string>
     <string name="playback_focus_mode">Oynatma sırasında diğer sesleri duraklat</string>
     <string name="playback_focus_mode_auto">Otomatik</string>
     <string name="playback_focus_mode_always">Her zaman</string>
@@ -1839,4 +1867,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Röle art arda iki kez yanıt vermezse oturumu bitir</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Bu ünite röleye her 2 saniyede bir durum denetimi gönderir. Art arda iki denetim yanıtsız kalırsa Android Auto oturumu sona erer.</string>
     <string name="esp32_relay_phase_failed">Başarısız: %1$s</string>
+    <string name="usb_wireless_dongle_label">Kablosuz USB dongle</string>
+    <string name="usb_wireless_dongle_summary">USB bağlantıları için ana ekranda kablo yerine kablosuz metni gösterir.</string>
+    <string name="usb_wireless_dongle_help">AAWireless veya Carlinkit gibi bir kablosuz USB adaptörü ile bağlanıyorsanız bunu açın. Open Headunit bir dongle’ı kablodan ayırt edemez, bu yüzden bu seçenek ana ekran etiketlerini kablodan kablosuza çevirir.</string>
+    <string name="home_subtitle_usb_dongle">Kablosuz</string>
+    <string name="home_action_connect_wireless_dongle">Kablosuz bağlan</string>
 </resources>

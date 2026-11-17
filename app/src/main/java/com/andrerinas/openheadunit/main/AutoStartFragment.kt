@@ -45,6 +45,7 @@ class AutoStartFragment : Fragment() {
     private var saveButton: MaterialButton? = null
 
     private var pendingAutoStartOnBoot: Boolean? = null
+    private var pendingAutoStartOnBootInBackground: Boolean? = null
     private var pendingAutoStartOnScreenOn: Boolean? = null
     private var pendingUsbConnectOnPlugIn: Boolean? = null
     private var pendingAutoStartOnUsb: Boolean? = null
@@ -93,6 +94,7 @@ class AutoStartFragment : Fragment() {
         settings = App.provide(requireContext()).settings
 
         pendingAutoStartOnBoot = settings.autoStartOnBoot
+        pendingAutoStartOnBootInBackground = settings.autoStartOnBootInBackground
         pendingAutoStartOnScreenOn = settings.autoStartOnScreenOn
         pendingUsbConnectOnPlugIn = settings.usbConnectOnPlugIn
         pendingAutoStartOnUsb = settings.autoStartOnUsb
@@ -176,6 +178,9 @@ class AutoStartFragment : Fragment() {
         pendingAutoStartOnBoot?.let {
             if (it != settings.autoStartOnBoot) settings.autoStartOnBoot = it
             Settings.syncAutoStartOnBootToDeviceStorage(requireContext(), it)
+        }
+        pendingAutoStartOnBootInBackground?.let {
+            if (it != settings.autoStartOnBootInBackground) settings.autoStartOnBootInBackground = it
         }
         pendingAutoStartOnScreenOn?.let {
             if (it != settings.autoStartOnScreenOn) settings.autoStartOnScreenOn = it
@@ -279,6 +284,7 @@ class AutoStartFragment : Fragment() {
 
     private fun checkChanges() {
         hasChanges = pendingAutoStartOnBoot != settings.autoStartOnBoot ||
+                pendingAutoStartOnBootInBackground != settings.autoStartOnBootInBackground ||
                 pendingAutoStartOnScreenOn != settings.autoStartOnScreenOn ||
                 pendingUsbConnectOnPlugIn != settings.usbConnectOnPlugIn ||
                 pendingAutoStartOnUsb != settings.autoStartOnUsb ||
@@ -327,6 +333,20 @@ class AutoStartFragment : Fragment() {
                     updateSettingsList()
                 }
             ))
+
+            if (pendingAutoStartOnBoot == true) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "autoStartOnBootInBackground",
+                    nameResId = R.string.auto_start_on_boot_background_label,
+                    descriptionResId = R.string.auto_start_on_boot_background_summary,
+                    helpResId = R.string.auto_start_on_boot_background_description,
+                    isChecked = pendingAutoStartOnBootInBackground == true,
+                    onCheckedChanged = { isChecked ->
+                        pendingAutoStartOnBootInBackground = isChecked
+                        checkChanges()
+                    }
+                ))
+            }
         }
 
         items.add(SettingItem.ToggleSettingEntry(

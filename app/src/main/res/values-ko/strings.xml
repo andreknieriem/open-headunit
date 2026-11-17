@@ -330,6 +330,9 @@
     <string name="car_launcher_autostart_info">Open Headunit이 차량용 런처로 설정되어 있습니다. 시스템 부팅 시 자동으로 시작됩니다.</string>
     <string name="auto_start_on_boot_label">부팅 시 자동 시작</string>
     <string name="auto_start_on_boot_description">기기가 부팅될 때 앱을 자동으로 실행합니다. Android 10 이상에서는 \'다른 앱 위에 표시\' 권한이 필요합니다.</string>
+    <string name="auto_start_on_boot_background_label">백그라운드에서 대기</string>
+    <string name="auto_start_on_boot_background_description">부팅 시 앱을 열지 않고 서비스만 시작합니다. 휴대폰이 연결되면 앱이 나타납니다.</string>
+    <string name="auto_start_on_boot_background_summary">앱을 열지 않고 서비스만 시작합니다.</string>
     <string name="auto_start_on_boot_summary">기기가 시작되면 앱을 엽니다.</string>
     <string name="auto_start_screen_on_label">화면 켜짐 시 자동 시작</string>
     <string name="auto_start_screen_on_description">화면이 켜질 때마다 앱을 실행합니다. 완전히 종료되지 않거나 빠른 부팅 모드를 사용해 다른 자동 시작 옵션이 작동하지 않는 헤드유닛에 적합합니다. 휴대전화나 태블릿에서는 권장하지 않습니다.</string>
@@ -386,7 +389,7 @@
     <string name="auto_connect_help">앱을 열면 이 연결 방법들이 자동으로 실행됩니다. 원하는 방법을 사용 설정한 뒤 드래그하여 순서를 정하세요. 사용 설정된 방법 중 가장 먼저 연결에 성공한 방법을 사용합니다.</string>
     <string name="auto_connect_screen_help">앱을 열 때 스스로 연결하는 방법을 설정합니다. 원하는 방법을 사용 설정하고 시도할 순서대로 끌어 놓으세요. 처음으로 성공한 방법이 사용됩니다. 지연 시간은 느린 기기에서 Wi-Fi가 깨어날 시간을 줍니다. 직접 시작한 연결은 여기서 바뀌지 않습니다. 저장을 누르면 변경사항이 적용됩니다.</string>
     <string name="dpi_screen_help">Android Auto가 화면을 그릴 때 쓰는 픽셀 밀도를 설정합니다. DPI가 높으면 아이콘과 글자가 커져서 화면에 들어가는 내용이 줄어듭니다. DPI가 낮으면 작아져서 더 많이 들어갑니다. 자동은 이 기기의 밀도를 사용합니다. 새 값은 다음 연결부터 적용됩니다.</string>
-    <string name="keymap_screen_help">이 기기의 키와 버튼을 Android Auto 동작에 할당합니다. 행을 탭한 다음 할당할 키를 누르세요. 초기화하면 지정한 할당이 모두 삭제되고 기본값으로 돌아갑니다. 핸들이나 패널의 키가 잘못 동작할 때 사용하세요.</string>
+    <string name="keymap_screen_help">이 기기의 키와 버튼에 동작을 할당합니다. Android Auto 키, 프로젝션 화면 동작, 앱 실행 중에서 고를 수 있습니다. 키 할당 추가를 탭하고 키를 누른 다음 동작을 선택하세요. 할당을 탭하면 변경하거나 해제할 수 있습니다. 초기화하면 모든 할당이 삭제됩니다.</string>
     <string name="customization_screen_help">이 앱 홈 화면의 모양을 변경합니다. 배경 이미지, 버튼 4개의 색상과 크기, 글자 크기가 해당됩니다. 야간 설정은 다크 모드의 배경을 제어합니다. 이 중 어느 것도 Android Auto가 투사 화면에 표시하는 내용을 바꾸지 않습니다.</string>
     <string name="loading_screen_screen_help">Android Auto가 시작되는 동안 표시할 이미지나 짧은 동영상을 설정합니다. 10MB 이하의 이미지나 동영상을 선택하고, 화면에 맞게 크기를 조정하며, 짧은 애니메이션은 반복 재생할 수 있습니다. 시작 문구를 숨길 수도 있습니다. 제거하면 기본 화면으로 돌아갑니다.</string>
     <string name="auto_connect_priority">우선순위 %d</string>
@@ -510,6 +513,22 @@
     <string name="key_mappings_reset">키 매핑을 초기화했습니다.</string>
     <string name="press_key_to_assign">\'%s\'에 할당할 키를 누르세요…</string>
     <string name="key_assigned">\'%2$s\'에 \'%1$s\' 키를 할당했습니다.</string>
+    <string name="action_picker_title">동작 선택</string>
+    <string name="action_remove_binding">할당 해제</string>
+    <string name="action_section_projection">프로젝션 화면</string>
+    <string name="action_section_aa_keys">Android Auto 키</string>
+    <string name="action_section_apps">앱</string>
+    <string name="action_launch_app">앱 실행…</string>
+    <string name="action_launch_named_app">%s 실행</string>
+    <string name="action_aa_key_code">Android Auto 키 %d</string>
+    <string name="action_selected">선택됨</string>
+    <string name="action_search_keywords">동작 실행 열기 앱 바로가기</string>
+    <string name="keymap_add_binding">키 할당 추가</string>
+    <string name="keymap_press_new_key">할당할 키나 버튼을 누르세요…</string>
+    <string name="keymap_no_bindings">아직 할당된 키가 없습니다. 키 할당 추가를 탭하고 키를 누른 다음 동작을 선택하세요.</string>
+    <string name="keymap_bindings_header">키 할당</string>
+    <string name="keymap_tester_hint">아무 키나 핸들 버튼을 누르면 여기에 이름과 코드가 표시됩니다.</string>
+    <string name="keymap_tester_last">마지막 키: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">마지막으로 누른 키: %1$s(%2$d)</string>
     <string name="scan">검색</string>
     <string name="scanning_network">네트워크 검색 중…</string>
@@ -528,6 +547,7 @@
     <string name="export_settings_choose_location">저장 위치 선택</string>
     <string name="export_settings_downloads">다운로드 폴더에 저장</string>
     <string name="export_settings_app_folder">앱 백업 폴더에 저장</string>
+    <string name="onb_restore_settings">백업에서 설정 복원</string>
     <string name="import_settings">설정 가져오기</string>
     <string name="import_settings_description">Open Headunit 백업에서 설정을 복원합니다.</string>
     <string name="import_settings_choose_file">백업 파일 선택</string>
@@ -1128,6 +1148,14 @@
     <string name="media_key_routing_never">사용 안 함</string>
     <string name="media_key_routing_help">항상: 다음 곡, 이전 곡, 재생/일시중지 버튼의 입력을 항상 Android Auto로 전달합니다. 버튼을 한 번 눌렀을 때 두 곡이 넘어가는 경우가 아니라면 이 옵션을 사용하세요.\n\n자동: 휴대전화와 이 헤드유닛이 블루투스 오디오로 연결되어 있는 동안에는 버튼 입력을 Android Auto로 전달하지 않습니다. 같은 버튼 입력이 블루투스를 통해 이미 처리되기 때문입니다. 버튼을 한 번 눌렀을 때 두 곡이 넘어가고 휴대전화가 이 헤드유닛과 페어링되어 있다면 이 옵션을 선택하세요.\n\n사용 안 함: 버튼 신호를 보내지 않고 블루투스가 처리하도록 합니다. 버튼을 한 번 눌렀을 때 두 곡이 넘어가고 휴대전화가 이 헤드유닛이 아닌 차량 자체 시스템과 페어링되어 있다면 이 옵션을 선택하세요. 자동 모드는 그 연결을 감지하지 못합니다.</string>
     <string name="media_key_routing_hint_common">미디어 버튼에만 적용됩니다. 로터리 컨트롤러, 방향 패드, 뒤로 가기, 엔터 키는 항상 Android Auto로 전달됩니다.</string>
+    <string name="volume_keys_to_phone">볼륨 버튼 입력을 휴대전화로 전달</string>
+    <string name="volume_keys_to_phone_summary">볼륨 버튼으로 이 기기 대신 휴대전화의 볼륨을 조절합니다.</string>
+    <string name="volume_keys_to_phone_help">이 헤드유닛의 볼륨 버튼 입력을 여기서 볼륨을 바꾸는 대신 Android Auto를 통해 휴대전화로 전달합니다. 휴대전화가 직접 소리를 재생할 때 사용하세요. 오디오 수신이 꺼져 있거나 휴대전화가 차량 블루투스에 연결된 경우입니다.\n\nAndroid Auto가 화면에 표시되어 있을 때만 작동하며, 휴대전화의 Android Auto가 볼륨 키에 반응하는 경우에만 적용됩니다.</string>
+    <string name="speed_volume">속도 연동 볼륨</string>
+    <string name="speed_volume_off">사용 안 함</string>
+    <string name="speed_volume_low">낮음</string>
+    <string name="speed_volume_high">높음</string>
+    <string name="speed_volume_help">이 헤드유닛의 GPS를 사용해 차량 속도가 빨라질수록 볼륨을 한 단계씩 올리고, 속도가 줄면 올린 단계를 다시 내립니다.\n\n사용 안 함: 볼륨이 설정한 그대로 유지됩니다.\n\n낮음: 30km/h마다 한 단계, 최대 3단계.\n\n높음: 20km/h마다 한 단계, 최대 5단계.\n\n“볼륨 버튼 입력을 휴대전화로 전달”이 켜져 있으면 휴대전화로, 꺼져 있으면 이 헤드유닛의 미디어 볼륨에 적용됩니다.</string>
     <string name="playback_focus_mode">재생 중 다른 오디오 일시중지</string>
     <string name="playback_focus_mode_auto">자동</string>
     <string name="playback_focus_mode_always">항상</string>
@@ -1838,4 +1866,9 @@
     <string name="hct_aa_wake_unconfirmed">헤드유닛이 Android Auto 연결을 완료하지 못했습니다. 휴대전화를 다시 선택해 재시도하거나, 휴대전화의 블루투스 설정에서 다시 연결하세요. Open Headunit은 계속 Android Auto를 기다리는 중입니다.</string>
     <string name="wifi_restart_failed">Wi-Fi를 다시 시작하지 못했습니다. 여기서 Wi-Fi를 껐다가 켜세요.</string>
     <string name="wifi_restart_running">Wi-Fi를 다시 시작하는 중…</string>
+    <string name="usb_wireless_dongle_label">무선 USB 동글</string>
+    <string name="usb_wireless_dongle_summary">USB 연결 시 홈 화면에 유선 대신 무선 문구를 표시합니다.</string>
+    <string name="usb_wireless_dongle_help">AAWireless 또는 Carlinkit 같은 무선 USB 어댑터를 통해 연결하는 경우 켜세요. Open Headunit은 동글과 일반 케이블을 구분할 수 없으므로, 이 옵션으로 홈 화면 표시를 유선에서 무선으로 바꿉니다.</string>
+    <string name="home_subtitle_usb_dongle">무선으로</string>
+    <string name="home_action_connect_wireless_dongle">무선으로 연결</string>
 </resources>

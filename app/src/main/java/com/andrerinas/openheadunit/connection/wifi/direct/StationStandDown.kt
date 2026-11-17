@@ -320,7 +320,7 @@ object StationStandDown {
                         record(StationStandDownOutcome.JOINED)
                         AppLog.i(
                             "StationStandDown: " + StationStandDownPolicy.describeSkipped(
-                                mode, supports5Ghz, stationFrequency, groupBand
+                                mode, Build.VERSION.SDK_INT, supports5Ghz, stationFrequency, groupBand
                             )
                         )
                     }

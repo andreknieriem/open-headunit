@@ -24,6 +24,7 @@ import com.andrerinas.openheadunit.main.HomePagesPolicy
 import com.andrerinas.openheadunit.main.HomeSurfaceOpacityPolicy
 import com.andrerinas.openheadunit.main.HomeWidgetsPolicy
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
+import com.andrerinas.openheadunit.location.SpeedVolumePolicy
 import com.andrerinas.openheadunit.view.PerformanceOverlayField
 import com.andrerinas.openheadunit.view.PerformanceOverlayPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
@@ -1411,6 +1412,23 @@ class Settings(private val context: Context) {
         )
         set(value) { prefs.edit().putInt("media-key-routing", value.value).apply() }
 
+    // Whether the hardware volume buttons go to the phone through Android Auto instead of changing
+    // this head unit's own volume. For a phone that keeps its audio (Audio Sink off, or playing to
+    // the car over Bluetooth), where the local volume controls nothing Android Auto plays. Off is
+    // the stored default, so an unset preference keeps the behaviour every existing install has.
+    // Speed-dependent volume sends its steps the same way.
+    var volumeKeysToPhone: Boolean
+        get() = prefs.getBoolean("volume-keys-to-phone", false)
+        set(value) { prefs.edit().putBoolean("volume-keys-to-phone", value).apply() }
+
+    // Speed-dependent volume from this head unit's GPS; see SpeedVolumePolicy. OFF is the stored
+    // zero value, so an unset preference leaves the volume alone.
+    var speedVolumeMode: SpeedVolumePolicy.Mode
+        get() = SpeedVolumePolicy.Mode.fromInt(
+            prefs.getInt("speed-volume-mode", SpeedVolumePolicy.Mode.OFF.value)
+        )
+        set(value) { prefs.edit().putInt("speed-volume-mode", value.value).apply() }
+
     var separateAudioStreams: Boolean
         get() = prefs.getBoolean("separate-audio-streams", false)
         set(value) { prefs.edit().putBoolean("separate-audio-streams", value).apply() }
@@ -1536,6 +1554,11 @@ class Settings(private val context: Context) {
     var listenForUsbDevices: Boolean
         get() = prefs.getBoolean("listen-for-usb-devices", true)
         set(value) { prefs.edit().putBoolean("listen-for-usb-devices", value).apply() }
+
+    /** When true, the home screen presents USB connections as wireless (for USB wireless dongles). */
+    var usbWirelessDongle: Boolean
+        get() = prefs.getBoolean(KEY_USB_WIRELESS_DONGLE, false)
+        set(value) { prefs.edit().putBoolean(KEY_USB_WIRELESS_DONGLE, value).apply() }
 
     /** "Connect when plugged in": whether a plug-in switches the phone. Off, the plug-in opens the app. */
     var usbConnectOnPlugIn: Boolean
@@ -2253,6 +2276,7 @@ class Settings(private val context: Context) {
         private const val KEY_AUTO_START_ON_USB = "auto-start-on-usb"
         const val KEY_SCREEN_ORIENTATION = "screen-orientation"
         private const val KEY_LISTEN_FOR_USB_DEVICES = "listen-for-usb-devices"
+        private const val KEY_USB_WIRELESS_DONGLE = "usb-wireless-dongle"
         private const val KEY_AUTO_START_BT_MAC = "auto-start-bt-mac"
         private const val KEY_AUTO_START_BT_MACS = "auto-start-bt-macs"
 

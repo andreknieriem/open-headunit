@@ -23,6 +23,10 @@
     <usb-device vendor-id="6353" product-id="11520" />  <!-- 0x18D1:0x2D00 accessory -->
     <usb-device vendor-id="6353" product-id="11521" />  <!-- 0x18D1:0x2D01 accessory + ADB -->
 
+    <!-- 0x18D1:0x4EE1 is the idle identity of wireless AA adapters (AAWireless) before the AOA
+         switch. Without this entry the app was never launched when one was attached (#1261). -->
+    <usb-device vendor-id="6353" product-id="20193" />  <!-- 0x18D1:0x4EE1 wireless AA adapter, idle -->
+
     <!--
         Vendor class. This is the accessory interface, and also how modern Android presents MTP,
         so it is what catches a phone in charging-only or file-transfer mode. It is the loosest

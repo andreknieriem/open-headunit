@@ -78,6 +78,13 @@ class StationStandDownPolicyTest {
     }
 
     @Test
+    fun `auto stands down a known 2_4 GHz-only station on legacy Android`() {
+        assertTrue(decide(sdkInt = 25, supports5Ghz = false, stationFrequencyMhz = 2412))
+        assertTrue(decide(sdkInt = 24, supports5Ghz = false, stationFrequencyMhz = 2412))
+        assertFalse(decide(sdkInt = 26, supports5Ghz = false, stationFrequencyMhz = 2412))
+    }
+
+    @Test
     fun `a 2_4 GHz group on a radio with no 5 GHz band still keeps the station, which would only scan`() {
         assertFalse(
             decide(
@@ -163,16 +170,24 @@ class StationStandDownPolicyTest {
 
     @Test
     fun `a reason is given exactly when the mode leaves the station joined`() {
-        for (mode in StationStandDownMode.values()) {
-            for (band in listOf(null, false, true)) {
-                for (freq in listOf(0, 2437, 5500)) {
-                    for (group in P2pBandPreference.values()) {
-                        val stands = decide(
-                            mode = mode, supports5Ghz = band,
-                            stationFrequencyMhz = freq, groupBand = group
-                        )
-                        val why = StationStandDownPolicy.describeSkipped(mode, band, freq, group)
-                        assertEquals("$mode band=$band freq=$freq group=$group", stands, why == null)
+        for (sdkInt in listOf(25, 26, 27)) {
+            for (mode in StationStandDownMode.values()) {
+                for (band in listOf(null, false, true)) {
+                    for (freq in listOf(0, 2437, 5500)) {
+                        for (group in P2pBandPreference.values()) {
+                            val stands = decide(
+                                mode = mode, sdkInt = sdkInt, supports5Ghz = band,
+                                stationFrequencyMhz = freq, groupBand = group
+                            )
+                            val why = StationStandDownPolicy.describeSkipped(
+                                mode, sdkInt, band, freq, group
+                            )
+                            assertEquals(
+                                "$mode api=$sdkInt band=$band freq=$freq group=$group",
+                                stands,
+                                why == null
+                            )
+                        }
                     }
                 }
             }
@@ -183,17 +198,17 @@ class StationStandDownPolicyTest {
     fun `the reasons name what decided`() {
         assertTrue(
             StationStandDownPolicy.describeSkipped(
-                StationStandDownMode.AUTO, false, 2437, P2pBandPreference.AUTO
+                StationStandDownMode.AUTO, 27, false, 2437, P2pBandPreference.AUTO
             )!!.contains("no 5 GHz band")
         )
         assertTrue(
             StationStandDownPolicy.describeSkipped(
-                StationStandDownMode.AUTO, true, 5500, P2pBandPreference.AUTO
+                StationStandDownMode.AUTO, 27, true, 5500, P2pBandPreference.AUTO
             )!!.contains("5500 MHz")
         )
         assertTrue(
             StationStandDownPolicy.describeSkipped(
-                StationStandDownMode.NEVER, true, 2437, P2pBandPreference.AUTO
+                StationStandDownMode.NEVER, 27, true, 2437, P2pBandPreference.AUTO
             )!!.contains("setting")
         )
     }

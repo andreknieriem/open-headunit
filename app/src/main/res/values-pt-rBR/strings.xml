@@ -1153,6 +1153,14 @@
     <string name="media_key_routing_never">Nunca</string>
     <string name="media_key_routing_help">Sempre: Próxima, anterior e reproduzir/pausar sempre são enviados ao Android Auto. Use esta opção, a menos que um toque pule duas faixas.\n\nAutomático: Para de enviá-los enquanto esta central tiver uma conexão de mídia Bluetooth com o smartphone, porque essa conexão já executa a ação. Escolha esta opção se um toque pular duas faixas e o smartphone estiver pareado com esta central.\n\nNunca: Nunca os envia e deixa os botões para o Bluetooth. Escolha esta opção se um toque pular duas faixas e o smartphone estiver pareado com o sistema do próprio carro, e não com esta central. O modo Automático não detecta essa conexão.</string>
     <string name="media_key_routing_hint_common">Só os botões de mídia são afetados. Controles rotativos, direcional, Voltar e Enter sempre chegam ao Android Auto.</string>
+    <string name="volume_keys_to_phone">Enviar botões de volume ao celular</string>
+    <string name="volume_keys_to_phone_summary">Os botões de volume mudam o volume do celular, não o desta unidade.</string>
+    <string name="volume_keys_to_phone_help">Envia os botões de volume desta unidade ao celular pelo Android Auto em vez de mudar o volume aqui. Use quando o próprio celular toca o som: Receptor de áudio desativado, ou celular conectado ao Bluetooth do carro.\n\nFunciona enquanto o Android Auto está na tela, e só se o Android Auto do celular responder às teclas de volume.</string>
+    <string name="speed_volume">Volume conforme a velocidade</string>
+    <string name="speed_volume_off">Desativado</string>
+    <string name="speed_volume_low">Baixo</string>
+    <string name="speed_volume_high">Alto</string>
+    <string name="speed_volume_help">Aumenta o volume um passo de cada vez conforme o carro acelera, usando o GPS desta unidade, e retira esses passos quando ele desacelera.\n\nDesativado: O volume fica onde você deixou.\n\nBaixo: Um passo a cada 30 km/h, até 3 passos.\n\nAlto: Um passo a cada 20 km/h, até 5 passos.\n\nOs passos vão para o celular quando Enviar botões de volume ao celular está ativado e, caso contrário, para o volume de mídia desta unidade.</string>
     <string name="playback_focus_mode">Pausar outros áudios durante a reprodução</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Sempre</string>
@@ -1251,7 +1259,7 @@
     <string name="stand_down_station_auto">Automático</string>
     <string name="stand_down_station_always">Sempre</string>
     <string name="stand_down_station_never">Nunca</string>
-    <string name="stand_down_station_hint">Decide se esta unidade sai da própria rede Wi-Fi enquanto o celular conecta, para o grupo WiFi Direct poder usar um canal de 5 GHz. Auto sai só quando o rádio tem banda de 5 GHz e a rede está em 2,4 GHz, ou quando o grupo é forçado a 2,4 GHz ao lado de uma rede de 5 GHz. Uma unidade só de 2,4 GHz continua conectada, porque sair só faz a unidade procurar redes. A rede é reconectada ao fim da sessão. Tente Sempre ou Nunca se a imagem travar.</string>
+    <string name="stand_down_station_hint">Decide se esta unidade sai da própria rede Wi-Fi enquanto o celular conecta, para o grupo WiFi Direct poder usar o rádio. Auto sai quando o grupo pode ganhar outra banda ou, no Android 7.1 ou anterior, quando um rádio somente 2,4 GHz precisa liberar a conexão da estação para o WiFi Direct legado. Nas versões mais novas do Android, uma unidade somente 2,4 GHz continua conectada, pois sair apenas inicia uma busca por redes. A rede é reconectada quando o modo sem fio é encerrado. Tente Sempre ou Nunca se a imagem travar.</string>
     <string name="stand_down_station_needs_overlay">Requer a permissão \"Exibir sobre outros apps\" nesta versão do Android.</string>
     <string name="connection_issue_banner_bt_silent">Seu celular conectou via Bluetooth, mas o Bluetooth desta unidade não conseguiu enviar nada. Toque para escolher um modo que não precise disso, como o Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">O celular não recebeu a informação de qual rede usar, porque esta unidade não compartilhou seu endereço Wi-Fi. Ative a localização ou toque para digitar o endereço manualmente.</string>
@@ -1860,4 +1868,9 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Encerrar a sessão se o relé não responder duas vezes seguidas</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Esta central envia uma verificação de estado ao relé a cada 2 segundos. Se duas verificações seguidas ficarem sem resposta, a sessão do Android Auto é encerrada.</string>
     <string name="esp32_relay_phase_failed">Falha: %1$s</string>
+    <string name="usb_wireless_dongle_label">Dongle USB sem fio</string>
+    <string name="usb_wireless_dongle_summary">Exibir texto sem fio em vez de cabo na tela inicial para conexões USB.</string>
+    <string name="usb_wireless_dongle_help">Ative se você se conecta por um adaptador USB sem fio como AAWireless ou Carlinkit. O Open Headunit não consegue diferenciar um dongle de um cabo, então esta opção muda os rótulos da tela inicial de cabo para sem fio.</string>
+    <string name="home_subtitle_usb_dongle">Sem fio</string>
+    <string name="home_action_connect_wireless_dongle">Conectar sem fio</string>
 </resources>

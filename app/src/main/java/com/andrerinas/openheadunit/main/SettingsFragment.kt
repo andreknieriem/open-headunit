@@ -2203,6 +2203,11 @@ class SettingsFragment : Fragment() {
             stableId = "keymap",
             nameResId = R.string.keymap,
             value = getString(R.string.keymap_description),
+            searchKeywords = kw(
+                R.string.action_search_keywords, R.string.action_launch_app,
+                R.string.gesture_action_exit_dialog, R.string.gesture_action_toggle_fullscreen,
+                R.string.gesture_action_night_overlay, R.string.gesture_action_dim_screen
+            ),
             onClick = { _ ->
                 try {
                     findNavController().navigate(R.id.action_settingsFragment_to_keymapFragment)
@@ -2216,6 +2221,11 @@ class SettingsFragment : Fragment() {
             stableId = "gestures",
             nameResId = R.string.gestures,
             value = getString(R.string.gestures_description),
+            searchKeywords = kw(
+                R.string.action_search_keywords, R.string.action_launch_app,
+                R.string.gesture_action_exit_dialog, R.string.gesture_action_toggle_fullscreen,
+                R.string.gesture_action_night_overlay, R.string.gesture_action_dim_screen
+            ),
             onClick = { _ ->
                 findNavController().navigate(R.id.action_settingsFragment_to_gesturesFragment)
             }

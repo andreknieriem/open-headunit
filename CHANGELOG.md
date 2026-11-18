@@ -5,6 +5,7 @@
 - Allow embedding the projection activity, thanks to @codepdbh
 - Feat: Send volume buttons to the phone, and add speed-dependent volume, thanks to @Megalodon-sharky
 - Feat(usb): add wireless dongle display option for home screen
+- Enable selected Bluetooth adapter before Native AA startup, thanks to @KingHavok
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

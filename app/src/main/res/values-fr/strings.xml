@@ -1922,4 +1922,19 @@
     <string name="usb_wireless_dongle_help">Activez cette option si vous utilisez un adaptateur USB sans fil comme AAWireless ou Carlinkit. Open Headunit ne peut pas différencier un dongle d’un câble ; cette option remplace donc les libellés câble par sans fil sur l’écran d’accueil.</string>
     <string name="home_subtitle_usb_dongle">Sans fil</string>
     <string name="home_action_connect_wireless_dongle">Connecter sans fil</string>
+    <string name="home_wifi_not_connected">Wi-Fi non connecté</string>
+    <string name="home_wifi_off">Le Wi-Fi est désactivé</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi connecté</string>
+    <string name="home_wifi_scanning">Recherche…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_scan_started">Recherche de réseaux Wi-Fi…</string>
+    <string name="home_wifi_scan_refused">Android n’autorise pas de recherche pour le moment. Réessayez dans un instant.</string>
+    <string name="home_wifi_status_description">Wi-Fi : %1$s</string>
+    <string name="home_wifi_scan_button">Rechercher le Wi-Fi</string>
+    <string name="home_wifi_hotspot_hint">Le point d’accès du téléphone est-il activé ?</string>
+    <string name="home_wifi_off_hint">Touchez Rechercher le Wi-Fi pour l’activer</string>
+    <string name="home_wifi_scan_description">Rechercher des réseaux Wi-Fi. Appui long pour les réglages Wi-Fi.</string>
 </resources>

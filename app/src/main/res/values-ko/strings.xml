@@ -1871,4 +1871,19 @@
     <string name="usb_wireless_dongle_help">AAWireless 또는 Carlinkit 같은 무선 USB 어댑터를 통해 연결하는 경우 켜세요. Open Headunit은 동글과 일반 케이블을 구분할 수 없으므로, 이 옵션으로 홈 화면 표시를 유선에서 무선으로 바꿉니다.</string>
     <string name="home_subtitle_usb_dongle">무선으로</string>
     <string name="home_action_connect_wireless_dongle">무선으로 연결</string>
+    <string name="home_wifi_not_connected">Wi-Fi 연결 안 됨</string>
+    <string name="home_wifi_off">Wi-Fi 꺼짐</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi 연결됨</string>
+    <string name="home_wifi_scanning">검색 중…</string>
+    <string name="home_wifi_band_24">2.4GHz</string>
+    <string name="home_wifi_band_5">5GHz</string>
+    <string name="home_wifi_band_6">6GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Wi-Fi 네트워크 검색 중…</string>
+    <string name="home_wifi_scan_refused">지금은 Android가 검색을 허용하지 않습니다. 잠시 후 다시 시도하세요.</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_wifi_scan_button">Wi-Fi 검색</string>
+    <string name="home_wifi_hotspot_hint">휴대폰 핫스팟이 켜져 있나요?</string>
+    <string name="home_wifi_off_hint">켜려면 Wi-Fi 검색을 누르세요</string>
+    <string name="home_wifi_scan_description">Wi-Fi 네트워크를 검색합니다. 길게 누르면 Wi-Fi 설정이 열립니다.</string>
 </resources>

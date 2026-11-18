@@ -1875,4 +1875,19 @@
     <string name="usb_wireless_dongle_help">Activează această opțiune dacă te conectezi printr-un adaptor USB wireless precum AAWireless sau Carlinkit. Open Headunit nu poate deosebi un dongle de un cablu, așa că această opțiune schimbă etichetele de pe ecranul principal din cablu în wireless.</string>
     <string name="home_subtitle_usb_dongle">Wireless</string>
     <string name="home_action_connect_wireless_dongle">Conectează wireless</string>
+    <string name="home_wifi_not_connected">WiFi neconectat</string>
+    <string name="home_wifi_off">WiFi este oprit</string>
+    <string name="home_wifi_connected_unnamed">WiFi conectat</string>
+    <string name="home_wifi_scanning">Se caută…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Se caută rețele WiFi…</string>
+    <string name="home_wifi_scan_refused">Android nu permite o căutare acum. Încearcă din nou puțin mai târziu.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">Caută WiFi</string>
+    <string name="home_wifi_hotspot_hint">Este pornit hotspotul telefonului?</string>
+    <string name="home_wifi_off_hint">Atinge Caută WiFi pentru a-l porni</string>
+    <string name="home_wifi_scan_description">Caută rețele WiFi. Apasă lung pentru setările WiFi.</string>
 </resources>

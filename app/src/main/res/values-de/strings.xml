@@ -1880,4 +1880,19 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Sitzung beenden, wenn das Relay zweimal nicht antwortet</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Dieses Gerät sendet alle 2 Sekunden eine Statusprüfung an das Relay. Bleiben zwei Prüfungen in Folge ohne Antwort, endet die Android-Auto-Sitzung.</string>
     <string name="esp32_relay_phase_failed">Fehlgeschlagen: %1$s</string>
+    <string name="home_wifi_not_connected">WLAN nicht verbunden</string>
+    <string name="home_wifi_off">WLAN ist aus</string>
+    <string name="home_wifi_connected_unnamed">WLAN verbunden</string>
+    <string name="home_wifi_scanning">Suche läuft…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_scan_started">Suche nach WLAN-Netzen…</string>
+    <string name="home_wifi_scan_refused">Android erlaubt gerade keine Suche. Versuche es gleich noch einmal.</string>
+    <string name="home_wifi_status_description">WLAN: %1$s</string>
+    <string name="home_wifi_scan_button">WLAN suchen</string>
+    <string name="home_wifi_hotspot_hint">Ist der Hotspot des Handys an?</string>
+    <string name="home_wifi_off_hint">Zum Einschalten auf WLAN suchen tippen</string>
+    <string name="home_wifi_scan_description">Nach WLAN-Netzen suchen. Lange drücken für die WLAN-Einstellungen.</string>
 </resources>

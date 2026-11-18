@@ -1877,4 +1877,19 @@
     <string name="usb_wireless_dongle_help">Kapcsold be, ha vezeték nélküli USB-adapterrel (például AAWireless vagy Carlinkit) csatlakozol. Az Open Headunit nem tudja megkülönböztetni az adaptert a kábeltől, ezért ez az opció vezeték nélkülire cseréli a kezdőképernyő feliratait.</string>
     <string name="home_subtitle_usb_dongle">Vezeték nélkül</string>
     <string name="home_action_connect_wireless_dongle">Csatlakozás vezeték nélkül</string>
+    <string name="home_wifi_not_connected">A Wi-Fi nincs csatlakoztatva</string>
+    <string name="home_wifi_off">A Wi-Fi ki van kapcsolva</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi csatlakoztatva</string>
+    <string name="home_wifi_scanning">Keresés…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Wi-Fi-hálózatok keresése…</string>
+    <string name="home_wifi_scan_refused">Az Android most nem enged keresést. Próbáld újra kicsit később.</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_wifi_scan_button">Wi-Fi keresése</string>
+    <string name="home_wifi_hotspot_hint">Be van kapcsolva a telefon hotspotja?</string>
+    <string name="home_wifi_off_hint">Bekapcsoláshoz koppints a Wi-Fi keresésére</string>
+    <string name="home_wifi_scan_description">Wi-Fi-hálózatok keresése. Hosszan nyomva a Wi-Fi-beállítások nyílnak meg.</string>
 </resources>

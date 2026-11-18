@@ -1955,4 +1955,19 @@
     <string name="audio_matching_phase_gradient_hint">Slow playback</string>
     <string name="audio_matching_option" translatable="false">%1$s\n(%2$s)</string>
     <string name="audio_matching_description">OHU remains the default. WSOLA aligns overlapping waveforms; Phase Vocoder adjusts spectral phases. Short uses a shorter analysis window. Phase Gradient integrates phase gradients to reconstruct phases. These independent methods add processing latency; their names do not rank sound quality.\n\nNative methods: PCM music. Navigation, voice responses, system sounds and AAC use OHU.\nReconnect to apply. Removed engine preferences reset to OHU.</string>
+    <string name="home_wifi_not_connected">WiFi not connected</string>
+    <string name="home_wifi_off">WiFi is off</string>
+    <string name="home_wifi_connected_unnamed">WiFi connected</string>
+    <string name="home_wifi_scanning">Scanning…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Scanning for WiFi networks…</string>
+    <string name="home_wifi_scan_refused">Android does not allow a scan right now. Try again in a little while.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">Scan WiFi</string>
+    <string name="home_wifi_hotspot_hint">Is the phone’s hotspot on?</string>
+    <string name="home_wifi_off_hint">Tap Scan WiFi to turn it on</string>
+    <string name="home_wifi_scan_description">Scan for WiFi networks. Long press for WiFi settings.</string>
 </resources>

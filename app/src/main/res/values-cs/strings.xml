@@ -1877,4 +1877,19 @@
     <string name="usb_wireless_dongle_help">Zapněte, pokud se připojujete přes bezdrátový USB adaptér, například AAWireless nebo Carlinkit. Open Headunit nerozezná adaptér od kabelu, proto tato volba změní popisky na domovské obrazovce na bezdrátové.</string>
     <string name="home_subtitle_usb_dongle">Bezdrátově</string>
     <string name="home_action_connect_wireless_dongle">Připojit bezdrátově</string>
+    <string name="home_wifi_not_connected">Wi-Fi není připojeno</string>
+    <string name="home_wifi_off">Wi-Fi je vypnuté</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi připojeno</string>
+    <string name="home_wifi_scanning">Hledání…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_scan_started">Hledání sítí Wi-Fi…</string>
+    <string name="home_wifi_scan_refused">Android teď hledání nepovoluje. Zkuste to za chvíli znovu.</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_wifi_scan_button">Hledat Wi-Fi</string>
+    <string name="home_wifi_hotspot_hint">Je hotspot telefonu zapnutý?</string>
+    <string name="home_wifi_off_hint">Klepnutím na Hledat Wi-Fi ho zapnete</string>
+    <string name="home_wifi_scan_description">Hledat sítě Wi-Fi. Podržením otevřete nastavení Wi-Fi.</string>
 </resources>

@@ -9,6 +9,7 @@
 - Add "Show over lock screen": map and directions while locked, no input to the phone, thanks to @DukeShank
 - Feat(home): move All Apps button to sidebar in launcher mode
 - Display: reconnect in the remembered shape, and redraw instead of stretching when the screen turns, thanks to @tamer1an
+- Feat(home): Headunit Server shows the WiFi network, band and signal on the main card, with a Scan WiFi button that gets a slow unit onto the phone's hotspot; the main button becomes a pill led by an icon
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

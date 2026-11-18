@@ -1924,4 +1924,19 @@
     <string name="usb_wireless_dongle_help">Aktifkan ini jika Anda terhubung melalui adaptor USB nirkabel seperti AAWireless atau Carlinkit. Open Headunit tidak dapat membedakan dongle dari kabel, jadi opsi ini mengubah label layar utama dari kabel menjadi nirkabel.</string>
     <string name="home_subtitle_usb_dongle">Secara nirkabel</string>
     <string name="home_action_connect_wireless_dongle">Hubungkan secara nirkabel</string>
+    <string name="home_wifi_not_connected">WiFi tidak terhubung</string>
+    <string name="home_wifi_off">WiFi mati</string>
+    <string name="home_wifi_connected_unnamed">WiFi terhubung</string>
+    <string name="home_wifi_scanning">Memindai…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Memindai jaringan WiFi…</string>
+    <string name="home_wifi_scan_refused">Android belum mengizinkan pemindaian sekarang. Coba lagi sebentar lagi.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">Pindai WiFi</string>
+    <string name="home_wifi_hotspot_hint">Apakah hotspot ponsel menyala?</string>
+    <string name="home_wifi_off_hint">Ketuk Pindai WiFi untuk menyalakannya</string>
+    <string name="home_wifi_scan_description">Pindai jaringan WiFi. Tekan lama untuk pengaturan WiFi.</string>
 </resources>

@@ -1878,4 +1878,19 @@
     <string name="usb_wireless_dongle_help">فعّل هذا الخيار إذا كنت تتصل عبر محول USB لاسلكي مثل AAWireless أو Carlinkit. لا يستطيع Open Headunit التمييز بين الدونجل والكابل، لذا يغيّر هذا الخيار تسميات الشاشة الرئيسية من سلكي إلى لاسلكي.</string>
     <string name="home_subtitle_usb_dongle">لاسلكياً</string>
     <string name="home_action_connect_wireless_dongle">الاتصال لاسلكياً</string>
+    <string name="home_wifi_not_connected">شبكة WiFi غير متصلة</string>
+    <string name="home_wifi_off">WiFi مغلق</string>
+    <string name="home_wifi_connected_unnamed">WiFi متصل</string>
+    <string name="home_wifi_scanning">جارٍ البحث…</string>
+    <string name="home_wifi_band_24">2.4 غيغاهرتز</string>
+    <string name="home_wifi_band_5">5 غيغاهرتز</string>
+    <string name="home_wifi_band_6">6 غيغاهرتز</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">جارٍ البحث عن شبكات WiFi…</string>
+    <string name="home_wifi_scan_refused">لا يسمح Android بالبحث الآن. حاول مرة أخرى بعد قليل.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">البحث عن WiFi</string>
+    <string name="home_wifi_hotspot_hint">هل نقطة اتصال الهاتف مفعّلة؟</string>
+    <string name="home_wifi_off_hint">المس البحث عن WiFi لتشغيله</string>
+    <string name="home_wifi_scan_description">البحث عن شبكات WiFi. اضغط مطولًا لفتح إعدادات WiFi.</string>
 </resources>

@@ -1884,4 +1884,19 @@
     <string name="usb_wireless_dongle_help">Actívalo si te conectas mediante un adaptador USB inalámbrico como AAWireless o Carlinkit. Open Headunit no puede distinguir un dongle de un cable, por lo que esta opción cambia las etiquetas de la pantalla de inicio a inalámbrico.</string>
     <string name="home_subtitle_usb_dongle">De forma inalámbrica</string>
     <string name="home_action_connect_wireless_dongle">Conectar de forma inalámbrica</string>
+    <string name="home_wifi_not_connected">Wi-Fi no conectado</string>
+    <string name="home_wifi_off">El Wi-Fi está apagado</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi conectado</string>
+    <string name="home_wifi_scanning">Buscando…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_scan_started">Buscando redes Wi-Fi…</string>
+    <string name="home_wifi_scan_refused">Android no permite una búsqueda ahora. Vuelve a intentarlo en un momento.</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_wifi_scan_button">Buscar Wi-Fi</string>
+    <string name="home_wifi_hotspot_hint">¿Está activa la zona Wi-Fi del teléfono?</string>
+    <string name="home_wifi_off_hint">Toca Buscar Wi-Fi para activarlo</string>
+    <string name="home_wifi_scan_description">Buscar redes Wi-Fi. Mantén pulsado para los ajustes de Wi-Fi.</string>
 </resources>

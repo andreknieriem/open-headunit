@@ -1879,4 +1879,19 @@
     <string name="usb_wireless_dongle_help">Attiva questa opzione se ti colleghi tramite un adattatore USB wireless come AAWireless o Carlinkit. Open Headunit non può distinguere un dongle da un cavo, quindi questa opzione cambia le etichette della schermata iniziale da cavo a wireless.</string>
     <string name="home_subtitle_usb_dongle">In modalità wireless</string>
     <string name="home_action_connect_wireless_dongle">Connetti in modalità wireless</string>
+    <string name="home_wifi_not_connected">WiFi non connesso</string>
+    <string name="home_wifi_off">Il WiFi è spento</string>
+    <string name="home_wifi_connected_unnamed">WiFi connesso</string>
+    <string name="home_wifi_scanning">Ricerca…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Ricerca di reti WiFi…</string>
+    <string name="home_wifi_scan_refused">Android non consente una ricerca in questo momento. Riprova tra poco.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">Cerca WiFi</string>
+    <string name="home_wifi_hotspot_hint">L’hotspot del telefono è attivo?</string>
+    <string name="home_wifi_off_hint">Tocca Cerca WiFi per accenderlo</string>
+    <string name="home_wifi_scan_description">Cerca reti WiFi. Tieni premuto per le impostazioni WiFi.</string>
 </resources>

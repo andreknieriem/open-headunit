@@ -1881,4 +1881,19 @@
     <string name="usb_wireless_dongle_help">Schakel dit in als je verbindt via een draadloze USB-adapter zoals AAWireless of Carlinkit. Open Headunit kan een dongle niet van een kabel onderscheiden, dus deze optie verandert de startschermteksten van kabel naar draadloos.</string>
     <string name="home_subtitle_usb_dongle">Draadloos</string>
     <string name="home_action_connect_wireless_dongle">Draadloos verbinden</string>
+    <string name="home_wifi_not_connected">Wifi niet verbonden</string>
+    <string name="home_wifi_off">Wifi staat uit</string>
+    <string name="home_wifi_connected_unnamed">Wifi verbonden</string>
+    <string name="home_wifi_scanning">Zoeken…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Zoeken naar wifinetwerken…</string>
+    <string name="home_wifi_scan_refused">Android staat nu geen zoekactie toe. Probeer het zo opnieuw.</string>
+    <string name="home_wifi_status_description">Wifi: %1$s</string>
+    <string name="home_wifi_scan_button">Wifi zoeken</string>
+    <string name="home_wifi_hotspot_hint">Staat de hotspot van de telefoon aan?</string>
+    <string name="home_wifi_off_hint">Tik op Wifi zoeken om het aan te zetten</string>
+    <string name="home_wifi_scan_description">Zoeken naar wifinetwerken. Lang indrukken voor de wifi-instellingen.</string>
 </resources>

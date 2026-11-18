@@ -1930,4 +1930,19 @@
     <string name="usb_wireless_dongle_help">เปิดใช้งานตัวเลือกนี้หากคุณเชื่อมต่อผ่านอะแดปเตอร์ USB ไร้สาย เช่น AAWireless หรือ Carlinkit Open Headunit ไม่สามารถแยกดองเกิลออกจากสายเคเบิลได้ ตัวเลือกนี้จึงเปลี่ยนข้อความบนหน้าจอหลักจากสายเคเบิลเป็นไร้สาย</string>
     <string name="home_subtitle_usb_dongle">แบบไร้สาย</string>
     <string name="home_action_connect_wireless_dongle">เชื่อมต่อแบบไร้สาย</string>
+    <string name="home_wifi_not_connected">ไม่ได้เชื่อมต่อ Wi-Fi</string>
+    <string name="home_wifi_off">Wi-Fi ปิดอยู่</string>
+    <string name="home_wifi_connected_unnamed">เชื่อมต่อ Wi-Fi แล้ว</string>
+    <string name="home_wifi_scanning">กำลังสแกน…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">กำลังสแกนหาเครือข่าย Wi-Fi…</string>
+    <string name="home_wifi_scan_refused">ขณะนี้ Android ไม่อนุญาตให้สแกน โปรดลองอีกครั้งในอีกสักครู่</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_wifi_scan_button">สแกน Wi-Fi</string>
+    <string name="home_wifi_hotspot_hint">ฮอตสปอตของโทรศัพท์เปิดอยู่หรือไม่</string>
+    <string name="home_wifi_off_hint">แตะ สแกน Wi-Fi เพื่อเปิด</string>
+    <string name="home_wifi_scan_description">สแกนหาเครือข่าย Wi-Fi กดค้างเพื่อเปิดการตั้งค่า Wi-Fi</string>
 </resources>

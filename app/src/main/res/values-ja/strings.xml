@@ -1879,4 +1879,19 @@
     <string name="usb_wireless_dongle_help">AAWireless や Carlinkit などのワイヤレス USB アダプターで接続する場合に有効にします。Open Headunit はドングルとケーブルを判別できないため、ホーム画面の表示をケーブルからワイヤレスに切り替えます。</string>
     <string name="home_subtitle_usb_dongle">ワイヤレス接続</string>
     <string name="home_action_connect_wireless_dongle">ワイヤレスで接続</string>
+    <string name="home_wifi_not_connected">Wi-Fi未接続</string>
+    <string name="home_wifi_off">Wi-Fiはオフです</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi接続済み</string>
+    <string name="home_wifi_scanning">スキャン中…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Wi-Fiネットワークをスキャンしています…</string>
+    <string name="home_wifi_scan_refused">Androidは今スキャンを許可していません。少ししてからもう一度お試しください。</string>
+    <string name="home_wifi_status_description">Wi-Fi：%1$s</string>
+    <string name="home_wifi_scan_button">Wi-Fiをスキャン</string>
+    <string name="home_wifi_hotspot_hint">スマートフォンのテザリングはオンですか？</string>
+    <string name="home_wifi_off_hint">オンにするには［Wi-Fiをスキャン］をタップ</string>
+    <string name="home_wifi_scan_description">Wi-Fiネットワークをスキャンします。長押しでWi-Fi設定を開きます。</string>
 </resources>

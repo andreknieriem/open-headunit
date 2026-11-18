@@ -1872,4 +1872,19 @@
     <string name="usb_wireless_dongle_help">AAWireless veya Carlinkit gibi bir kablosuz USB adaptörü ile bağlanıyorsanız bunu açın. Open Headunit bir dongle’ı kablodan ayırt edemez, bu yüzden bu seçenek ana ekran etiketlerini kablodan kablosuza çevirir.</string>
     <string name="home_subtitle_usb_dongle">Kablosuz</string>
     <string name="home_action_connect_wireless_dongle">Kablosuz bağlan</string>
+    <string name="home_wifi_not_connected">WiFi bağlı değil</string>
+    <string name="home_wifi_off">WiFi kapalı</string>
+    <string name="home_wifi_connected_unnamed">WiFi bağlı</string>
+    <string name="home_wifi_scanning">Taranıyor…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%%%1$d</string>
+    <string name="home_wifi_scan_started">WiFi ağları taranıyor…</string>
+    <string name="home_wifi_scan_refused">Android şu an taramaya izin vermiyor. Biraz sonra tekrar deneyin.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">WiFi tara</string>
+    <string name="home_wifi_hotspot_hint">Telefonun erişim noktası açık mı?</string>
+    <string name="home_wifi_off_hint">Açmak için WiFi tara’ya dokunun</string>
+    <string name="home_wifi_scan_description">WiFi ağlarını tara. WiFi ayarları için uzun basın.</string>
 </resources>

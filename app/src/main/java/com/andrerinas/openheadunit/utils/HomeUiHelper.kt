@@ -40,6 +40,7 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.main.BarFitPolicy
 import com.andrerinas.openheadunit.main.HomeColorPolicy
+import com.andrerinas.openheadunit.main.HomeWifiStatusPolicy
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Connection
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Decision
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Status
@@ -565,7 +566,8 @@ object HomeUiHelper {
         kicker?.text = context.getString(kickerRes(decision, usbAsWireless))
         title?.text = title(context, decision, phoneName, usbAsWireless)
         subtitle?.text = stage?.let { context.getString(it.label) } ?: context.getString(subtitleRes(decision, usbAsWireless))
-        action?.text = context.getString(actionRes(decision, usbAsWireless))
+        val actionLabel = context.getString(actionRes(decision, usbAsWireless))
+        action?.contentDescription = actionLabel
         // Nothing to start while a connection is on its way; Cancel is the one thing left to do.
         action?.visibility = if (connecting) View.GONE else View.VISIBLE
         icon?.setImageResource(iconRes(decision.primary))
@@ -593,7 +595,8 @@ object HomeUiHelper {
         val resources = context.resources
         val panelRadius = resources.getDimension(R.dimen.home_panel_radius)
         val tileRadius = resources.getDimension(R.dimen.home_tile_radius)
-        val ctaRadius = resources.getDimension(R.dimen.home_cta_height) / 3.5f
+        // A pill, like Scan WiFi beside it.
+        val ctaRadius = resources.getDimension(R.dimen.home_cta_height) / 2f
         val cancelRadius = resources.getDimension(R.dimen.home_secondary_cta_height) / 2f
         val iconTile = rootView.findViewById<View>(R.id.home_primary_icon_tile)
 
@@ -605,8 +608,11 @@ object HomeUiHelper {
             icon?.clearColorFilter()
             listOf(kicker, title, subtitle, detail).forEach { it?.setTextColor(Color.WHITE) }
             action?.apply {
-                background = pressable(Color.WHITE, ctaRadius, palette)
-                setTextColor(ColorUtils.darkenColor(color, 0.66f))
+                // White with a breath of the connection's color, so it belongs to the card.
+                background = pressable(blend(Color.WHITE, color, ACTION_TINT), ctaRadius, palette)
+                val labelColor = ColorUtils.darkenColor(color, 0.66f)
+                setTextColor(labelColor)
+                text = withLeadingIcon(context, actionIconRes(decision, usbAsWireless), actionLabel, labelColor)
             }
             cancel?.apply {
                 background = pressable(shade, cancelRadius, palette)
@@ -636,9 +642,11 @@ object HomeUiHelper {
                     mask = { rounded(Color.WHITE, ctaRadius) }
                 )
                 setTextColor(color)
+                text = withLeadingIcon(context, actionIconRes(decision, usbAsWireless), actionLabel, color)
             } else {
                 background = pressable(color, ctaRadius, palette)
                 setTextColor(readableOn(color))
+                text = withLeadingIcon(context, actionIconRes(decision, usbAsWireless), actionLabel, readableOn(color))
             }
         }
         cancel?.apply {
@@ -650,6 +658,347 @@ object HomeUiHelper {
             setTextColor(palette.text)
         }
     }
+
+    /**
+     * Headunit Server's WiFi line beside the main button's icon, and the Scan WiFi button beside the
+     * main button. Runs after [applyPrimaryCard], whose icon it swaps for "WiFi off" while this unit
+     * is not on WiFi. A HIDDEN line hides both. Painted with the same helpers as Cancel, so the day,
+     * night and extreme dark palettes and a custom WiFi color carry over.
+     */
+    fun applyWifiStatus(
+        context: Context,
+        rootView: View,
+        settings: Settings,
+        decision: Decision,
+        palette: Palette,
+        line: HomeWifiStatusPolicy.Line,
+        scanning: Boolean,
+    ) {
+        val status = rootView.findViewById<View>(R.id.home_wifi_status) ?: return
+        val scan = rootView.findViewById<View>(R.id.home_wifi_scan)
+        val shown = line.kind != HomeWifiStatusPolicy.Kind.HIDDEN
+        val contentWidth = contentWidthOf(rootView)
+        // fitWifiStatus() may have taken Scan WiFi off a card too narrow for it; that holds for
+        // as long as the card keeps the width it was taken off at.
+        val fittedOff = scan?.getTag(R.id.home_wifi_scan_icon) == contentWidth
+        status.visibility = if (shown) View.VISIBLE else View.GONE
+        scan?.visibility =
+            if (!fittedOff && HomeWifiStatusPolicy.showsScanButton(line, HomeWifiStatusPolicy.cardIdle(decision.status))) View.VISIBLE
+            else View.GONE
+        if (!shown) return
+
+        val name = rootView.findViewById<TextView>(R.id.home_wifi_name)
+        val warning = rootView.findViewById<View>(R.id.home_wifi_warning)
+        val band = rootView.findViewById<TextView>(R.id.home_wifi_band)
+        val bars = rootView.findViewById<ImageView>(R.id.home_wifi_bars)
+        val meta = rootView.findViewById<TextView>(R.id.home_wifi_meta)
+        val icon = rootView.findViewById<ImageView>(R.id.home_primary_icon)
+        val connected = line.kind == HomeWifiStatusPolicy.Kind.CONNECTED
+
+        name?.text = when (line.kind) {
+            HomeWifiStatusPolicy.Kind.OFF -> context.getString(R.string.home_wifi_off)
+            HomeWifiStatusPolicy.Kind.NOT_CONNECTED -> context.getString(R.string.home_wifi_not_connected)
+            else -> line.ssid ?: context.getString(R.string.home_wifi_connected_unnamed)
+        }
+        warning?.visibility = if (line.needsAttention) View.VISIBLE else View.GONE
+        val bandText = when (line.band) {
+            HomeWifiStatusPolicy.Band.GHZ_2_4 -> context.getString(R.string.home_wifi_band_24)
+            HomeWifiStatusPolicy.Band.GHZ_5 -> context.getString(R.string.home_wifi_band_5)
+            HomeWifiStatusPolicy.Band.GHZ_6 -> context.getString(R.string.home_wifi_band_6)
+            null -> null
+        }
+        band?.text = bandText
+        band?.visibility = if (connected && bandText != null) View.VISIBLE else View.GONE
+        bars?.setImageResource(WIFI_BARS[line.bars])
+        // fitWifiStatus() may have taken the bars off a narrow card; the percentage says the same.
+        val barsFittedOff = meta?.getTag(R.id.home_wifi_meta_fit) == contentWidth &&
+            bars?.getTag(R.id.home_wifi_meta_fit) == true
+        if (!barsFittedOff) bars?.setTag(R.id.home_wifi_meta_fit, null)
+        bars?.visibility = if (connected && line.signalPercent != null && !barsFittedOff) View.VISIBLE else View.GONE
+        meta?.text = when (line.kind) {
+            HomeWifiStatusPolicy.Kind.OFF -> context.getString(R.string.home_wifi_off_hint)
+            HomeWifiStatusPolicy.Kind.NOT_CONNECTED -> context.getString(R.string.home_wifi_hotspot_hint)
+            else -> line.signalPercent?.let { context.getString(R.string.home_wifi_signal, it) } ?: ""
+        }
+        if (!connected) icon?.setImageResource(R.drawable.ic_wifi_off_white)
+        status.contentDescription = context.getString(
+            R.string.home_wifi_status_description,
+            listOfNotNull(name?.text, bandText, meta?.text?.takeIf { it.isNotEmpty() }).joinToString(", ")
+        )
+
+        val scanIcon = rootView.findViewById<ImageView>(R.id.home_wifi_scan_icon)
+        val label = rootView.findViewById<TextView>(R.id.home_wifi_scan_label)
+        scanIcon?.let { spinScanIcon(context, it, scanning) }
+        // Full size again, unless fitWifiStatus() stepped down for the width the card still has:
+        // undoing that on every render would make a narrow card jump each time the home redraws.
+        val res = context.resources
+        rootView.findViewById<View>(R.id.home_primary_header_spacer)?.let { spacer ->
+            if (spacer.getTag(R.id.home_wifi_meta_fit) != contentWidth) {
+                spacer.setTag(R.id.home_wifi_meta_fit, null)
+                spacer.visibility = View.VISIBLE
+            }
+        }
+        if (name?.getTag(R.id.home_wifi_name) != contentWidth) {
+            name?.setTag(R.id.home_wifi_name, null)
+            name?.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimension(R.dimen.home_wifi_name_text))
+            name?.maxLines = 1
+        }
+        if (meta?.getTag(R.id.home_wifi_meta_fit) != contentWidth) {
+            meta?.setTag(R.id.home_wifi_meta_fit, null)
+            meta?.maxLines = 1
+        }
+        if (scan?.getTag(R.id.home_wifi_scan) != contentWidth) {
+            scan?.setTag(R.id.home_wifi_scan, null)
+            val scanPad = res.getDimensionPixelSize(R.dimen.home_wifi_scan_padding_h)
+            scan?.setPadding(scanPad, 0, scanPad, 0)
+            label?.visibility = View.VISIBLE
+        }
+        label?.apply {
+            val idle = context.getString(R.string.home_wifi_scan_button)
+            val busy = context.getString(R.string.home_wifi_scanning)
+            text = if (scanning) busy else idle
+            // Wide enough for either label, so the button does not jump while it scans.
+            minWidth = maxOf(paint.measureText(idle), paint.measureText(busy)).toInt() + 1
+        }
+        scan?.contentDescription = context.getString(R.string.home_wifi_scan_description)
+
+        val color = connectionColor(settings, decision.primary, palette)
+        val radius = context.resources.getDimension(R.dimen.home_cta_height) / 2f
+        val emphasisPx = dp(context, 2)
+        val textColor: Int
+        val mutedColor: Int
+        if (!palette.isDark) {
+            textColor = Color.WHITE
+            mutedColor = withAlpha(Color.WHITE, 0xCC)
+            band?.setTextColor(Color.WHITE)
+            band?.background = rounded(withAlpha(Color.WHITE, 0x24), radius)
+            // See-through white with a fine outline; not on WiFi, the scan is the next thing to
+            // do, so it gets a brighter fill and a firmer outline.
+            val fill = if (line.needsAttention) SCAN_FILL_ATTENTION else SCAN_FILL
+            val stroke = withAlpha(Color.WHITE, if (line.needsAttention) SCAN_STROKE_ATTENTION else SCAN_STROKE)
+            val strokeWidth = if (line.needsAttention) dp(context, 3) else emphasisPx
+            scan?.background = pressable(
+                RIPPLE_COLOR,
+                { shape(withAlpha(Color.WHITE, fill), radius, stroke, strokeWidth) },
+                { shape(withAlpha(Color.WHITE, fill + SCAN_FILL_PRESSED_STEP), radius, stroke, strokeWidth) },
+                mask = { rounded(Color.WHITE, radius) }
+            )
+        } else {
+            val strokePx = dp(context, 1)
+            textColor = palette.text
+            mutedColor = palette.textMuted
+            // The connection's color washes the chip; the label stays the readable text color.
+            band?.setTextColor(palette.text)
+            band?.background = rounded(withAlpha(color, BAND_WASH_ALPHA_DARK), radius)
+            val stroke = if (line.needsAttention) palette.fill(color) else palette.tileStroke
+            val strokeWidth = if (line.needsAttention) emphasisPx else strokePx
+            scan?.background = pressable(
+                palette.ripple,
+                { shape(palette.tile, radius, stroke, strokeWidth) },
+                { shape(palette.tilePressed, radius, stroke, strokeWidth) },
+                mask = { rounded(Color.WHITE, radius) }
+            )
+        }
+        name?.setTextColor(textColor)
+        meta?.setTextColor(mutedColor)
+        bars?.setColorFilter(mutedColor, PorterDuff.Mode.SRC_IN)
+        scanIcon?.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
+        label?.setTextColor(textColor)
+    }
+
+    /**
+     * While a scan is out the magnifier gives way to an open ring that turns, a turn every 0.9 s;
+     * with animations off it stands still. One animator per icon, kept on the view.
+     */
+    private fun spinScanIcon(context: Context, icon: ImageView, scanning: Boolean) {
+        val running = icon.getTag(R.id.home_wifi_scan_spin) as? ValueAnimator
+        if (!scanning) {
+            running?.cancel()
+            icon.setTag(R.id.home_wifi_scan_spin, null)
+            icon.rotation = 0f
+            icon.setImageResource(R.drawable.ic_wifi_find_white)
+            return
+        }
+        icon.setImageResource(R.drawable.ic_wifi_scanning_white)
+        if (running != null || !animationsEnabled(context)) return
+        val spin = ValueAnimator.ofFloat(0f, 360f).apply {
+            duration = SCAN_SPIN_MS
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = android.view.animation.LinearInterpolator()
+            addUpdateListener { icon.rotation = it.animatedValue as Float }
+        }
+        icon.setTag(R.id.home_wifi_scan_spin, spin)
+        spin.start()
+    }
+
+    /**
+     * After layout, for a card narrower than the WiFi line and Scan WiFi were drawn for, one step
+     * per layout: Scan WiFi drops its label for its icon alone (see
+     * [HomeWifiStatusPolicy.scanCompact]), then steps off the card if even that cuts the main
+     * button's label; a WiFi line that does not fit first takes the header spacer's share, then
+     * its name steps down to the subtitle size and takes two lines, and the line under it drops
+     * the bars and (a hint, never a single word) takes two lines. Each holds while
+     * the card keeps its width. Returns whether anything changed, so the caller lays out again.
+     */
+    fun fitWifiStatus(context: Context, rootView: View): Boolean {
+        val res = context.resources
+        val scan = rootView.findViewById<View>(R.id.home_wifi_scan)
+        val label = rootView.findViewById<TextView>(R.id.home_wifi_scan_label)
+        val action = rootView.findViewById<TextView>(R.id.home_primary_action)
+        val row = rootView.findViewById<ViewGroup>(R.id.home_primary_actions)
+        val content = row?.parent as? View
+        val width = contentWidthOf(rootView)
+        if (scan?.visibility == View.VISIBLE && label?.visibility == View.VISIBLE && action != null &&
+            row != null && content != null && content.width > 0
+        ) {
+            val gap = res.getDimensionPixelSize(R.dimen.home_gap)
+            val text = action.text ?: ""
+            val actionNeeded = action.paddingLeft + action.paddingRight +
+                kotlin.math.ceil(android.text.Layout.getDesiredWidth(text, action.paint)).toInt()
+            var others = 0
+            for (i in 0 until row.childCount) {
+                val child = row.getChildAt(i)
+                if (child === action || child === scan || child.visibility != View.VISIBLE) continue
+                others += child.width + gap
+            }
+            val available = content.width - content.paddingLeft - content.paddingRight
+            if (HomeWifiStatusPolicy.scanCompact(available, actionNeeded, gap, scan.width, others)) {
+                label.visibility = View.GONE
+                val icon = res.getDimensionPixelSize(R.dimen.home_cta_icon)
+                val side = ((res.getDimensionPixelSize(R.dimen.home_cta_height) - icon) / 2).coerceAtLeast(0)
+                scan.setPadding(side, 0, side, 0)
+                scan.setTag(R.id.home_wifi_scan, width)
+                // One step per layout: the next one has to be judged on the layout this one makes.
+                return true
+            }
+        }
+        // Its icon alone still squeezes the main button's label into an ellipsis (a portrait phone):
+        // the main button matters more, and the WiFi line above still tells the state.
+        if (scan?.visibility == View.VISIBLE && label?.visibility == View.GONE && action?.layout != null &&
+            (0 until action.layout.lineCount).any { action.layout.getEllipsisCount(it) > 0 }
+        ) {
+            scan.visibility = View.GONE
+            scan.setTag(R.id.home_wifi_scan_icon, width)
+            return true
+        }
+        val name = rootView.findViewById<TextView>(R.id.home_wifi_name)
+        val smaller = res.getDimension(R.dimen.home_card_subtitle)
+        val nameCut = name?.visibility == View.VISIBLE && name.layout != null &&
+            (0 until name.layout.lineCount).any { name.layout.getEllipsisCount(it) > 0 }
+        val meta = rootView.findViewById<TextView>(R.id.home_wifi_meta)
+        val bars = rootView.findViewById<View>(R.id.home_wifi_bars)
+        val metaCut = meta?.visibility == View.VISIBLE && meta.layout != null && meta.text.isNotEmpty() &&
+            (meta.width == 0 || (0 until meta.layout.lineCount).any { meta.layout.getEllipsisCount(it) > 0 })
+        // First the WiFi line takes the spacer's share of the header row (a portrait card).
+        val spacer = rootView.findViewById<View>(R.id.home_primary_header_spacer)
+        if ((nameCut || metaCut) && spacer?.visibility == View.VISIBLE) {
+            spacer.visibility = View.GONE
+            spacer.setTag(R.id.home_wifi_meta_fit, width)
+            return true
+        }
+        if (nameCut && name!!.textSize > smaller) {
+            name.setTextSize(TypedValue.COMPLEX_UNIT_PX, smaller)
+            name.setTag(R.id.home_wifi_name, width)
+            return true
+        }
+        if (nameCut && name!!.maxLines < 2) {
+            // Still too long at the smaller size (a portrait phone): two lines rather than a cut.
+            name.maxLines = 2
+            name.setTag(R.id.home_wifi_name, width)
+            return true
+        }
+        // The line under the name: the bars go first, since the percentage beside them says the
+        // same; then a hint may take two lines. A single word (the percentage) is never broken.
+        if (metaCut && bars?.visibility == View.VISIBLE) {
+            bars.visibility = View.GONE
+            bars.setTag(R.id.home_wifi_meta_fit, true)
+            meta!!.setTag(R.id.home_wifi_meta_fit, width)
+            return true
+        }
+        if (metaCut && meta!!.maxLines < 2 && meta.text.trim().contains(' ')) {
+            meta.maxLines = 2
+            meta.setTag(R.id.home_wifi_meta_fit, width)
+            return true
+        }
+        return false
+    }
+
+    private fun contentWidthOf(rootView: View): Int =
+        (rootView.findViewById<View>(R.id.home_primary_actions)?.parent as? View)?.width ?: 0
+
+    private const val SCAN_SPIN_MS = 900L
+    private const val ACTION_TINT = 0.07f
+    private const val BAND_WASH_ALPHA_DARK = 0x59
+    private const val SCAN_FILL = 0x24
+    private const val SCAN_FILL_ATTENTION = 0x3D
+    private const val SCAN_FILL_PRESSED_STEP = 0x18
+    private const val SCAN_STROKE = 0x47
+    private const val SCAN_STROKE_ATTENTION = 0xBF
+
+    /** What the main button leads with: the link for a connect, the arrow back to a session. */
+    internal fun actionIconRes(decision: Decision, usbAsWireless: Boolean = false): Int = when (decision.status) {
+        Status.ACTIVE_SESSION -> R.drawable.ic_launch_white
+        Status.SEARCHING -> R.drawable.ic_refresh_white
+        Status.RECONNECTING -> R.drawable.ic_link_white
+        else -> when (decision.primary) {
+            Connection.USB -> if (usbAsWireless) R.drawable.ic_link_white else R.drawable.ic_usb_white
+            Connection.WIFI -> R.drawable.ic_link_white
+            Connection.SELF -> R.drawable.ic_launch_white
+        }
+    }
+
+    /**
+     * [label] led by the icon [iconRes] in [color], the size of the main button's icon dimen. In
+     * the text rather than a compound drawable, so the pair stays centered together and still
+     * breaks onto two lines on a narrow phone.
+     */
+    private fun withLeadingIcon(context: Context, iconRes: Int, label: String, @ColorInt color: Int): CharSequence {
+        val icon = androidx.appcompat.content.res.AppCompatResources.getDrawable(context, iconRes)?.mutate()
+            ?: return label
+        val size = context.resources.getDimensionPixelSize(R.dimen.home_cta_icon)
+        icon.setBounds(0, 0, size, size)
+        androidx.core.graphics.drawable.DrawableCompat.setTint(icon, color)
+        val gap = context.resources.getDimensionPixelSize(R.dimen.home_wifi_meta_gap)
+        return android.text.SpannableStringBuilder("\uFFFC").apply {
+            setSpan(LeadingIconSpan(icon, gap), 0, 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            append(label)
+        }
+    }
+
+    /** Draws [icon] centered on the text's line, followed by [gap]. */
+    private class LeadingIconSpan(private val icon: Drawable, private val gap: Int) : android.text.style.ReplacementSpan() {
+        override fun getSize(paint: Paint, text: CharSequence?, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
+            fm?.let { paint.getFontMetricsInt(it) }
+            return icon.bounds.width() + gap
+        }
+
+        override fun draw(
+            canvas: Canvas, text: CharSequence?, start: Int, end: Int,
+            x: Float, top: Int, y: Int, bottom: Int, paint: Paint
+        ) {
+            val fm = paint.fontMetricsInt
+            val centerY = y + (fm.ascent + fm.descent) / 2f
+            canvas.save()
+            canvas.translate(x, centerY - icon.bounds.height() / 2f)
+            icon.draw(canvas)
+            canvas.restore()
+        }
+    }
+
+    /** [from] moved [amount] (0..1) of the way to [to], channel by channel. */
+    private fun blend(@ColorInt from: Int, @ColorInt to: Int, amount: Float): Int {
+        fun ch(shift: Int): Int {
+            val a = (from shr shift) and 0xFF
+            val b = (to shr shift) and 0xFF
+            return (a + (b - a) * amount).toInt().coerceIn(0, 255)
+        }
+        return (0xFF shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
+    private val WIFI_BARS = intArrayOf(
+        R.drawable.ic_wifi_bars_0, R.drawable.ic_wifi_bars_1, R.drawable.ic_wifi_bars_2,
+        R.drawable.ic_wifi_bars_3, R.drawable.ic_wifi_bars_4,
+    )
 
     /**
      * The apps row, and the area holding it and the widgets, exist only while Open Headunit is the

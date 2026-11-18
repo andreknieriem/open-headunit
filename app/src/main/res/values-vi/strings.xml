@@ -1879,4 +1879,19 @@
     <string name="usb_wireless_dongle_help">Bật tùy chọn này nếu bạn kết nối qua bộ chuyển đổi USB không dây như AAWireless hoặc Carlinkit. Open Headunit không thể phân biệt dongle với cáp, nên tùy chọn này đổi nhãn màn hình chính từ cáp sang không dây.</string>
     <string name="home_subtitle_usb_dongle">Không dây</string>
     <string name="home_action_connect_wireless_dongle">Kết nối không dây</string>
+    <string name="home_wifi_not_connected">Chưa kết nối WiFi</string>
+    <string name="home_wifi_off">WiFi đang tắt</string>
+    <string name="home_wifi_connected_unnamed">Đã kết nối WiFi</string>
+    <string name="home_wifi_scanning">Đang quét…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">Đang quét mạng WiFi…</string>
+    <string name="home_wifi_scan_refused">Android hiện chưa cho phép quét. Hãy thử lại sau ít phút.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">Quét WiFi</string>
+    <string name="home_wifi_hotspot_hint">Điểm phát của điện thoại đã bật chưa?</string>
+    <string name="home_wifi_off_hint">Chạm Quét WiFi để bật</string>
+    <string name="home_wifi_scan_description">Quét mạng WiFi. Nhấn giữ để mở cài đặt WiFi.</string>
 </resources>

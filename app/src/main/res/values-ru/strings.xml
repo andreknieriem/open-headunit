@@ -1876,4 +1876,19 @@ Open Headunit предоставляется «как есть» без каки
     <string name="usb_wireless_dongle_help">Включите, если подключаетесь через беспроводной USB-адаптер (например, AAWireless или Carlinkit). Open Headunit не может отличить адаптер от кабеля, поэтому эта настройка меняет подписи на главном экране с кабельных на беспроводные.</string>
     <string name="home_subtitle_usb_dongle">Без проводов</string>
     <string name="home_action_connect_wireless_dongle">Подключить без проводов</string>
+    <string name="home_wifi_not_connected">Wi‑Fi не подключён</string>
+    <string name="home_wifi_off">Wi‑Fi выключен</string>
+    <string name="home_wifi_connected_unnamed">Wi‑Fi подключён</string>
+    <string name="home_wifi_scanning">Поиск…</string>
+    <string name="home_wifi_band_24">2,4 ГГц</string>
+    <string name="home_wifi_band_5">5 ГГц</string>
+    <string name="home_wifi_band_6">6 ГГц</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_scan_started">Поиск сетей Wi‑Fi…</string>
+    <string name="home_wifi_scan_refused">Android сейчас не разрешает поиск. Попробуйте чуть позже.</string>
+    <string name="home_wifi_status_description">Wi‑Fi: %1$s</string>
+    <string name="home_wifi_scan_button">Найти Wi‑Fi</string>
+    <string name="home_wifi_hotspot_hint">Включена ли точка доступа телефона?</string>
+    <string name="home_wifi_off_hint">Нажмите «Найти Wi‑Fi», чтобы включить</string>
+    <string name="home_wifi_scan_description">Поиск сетей Wi‑Fi. Долгое нажатие откроет настройки Wi‑Fi.</string>
 </resources>

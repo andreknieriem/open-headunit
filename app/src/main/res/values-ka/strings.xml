@@ -1862,4 +1862,19 @@
     <string name="usb_wireless_dongle_help">ჩართეთ, თუ უკავშირდებით უსადენო USB ადაპტერით (მაგ. AAWireless ან Carlinkit). Open Headunit ვერ ასხვავებს დონგლს კაბელისგან, ამიტომ ეს პარამეტრი მთავარ ეკრანზე წარწერებს კაბელიდან უსადენოზე ცვლის.</string>
     <string name="home_subtitle_usb_dongle">უსადენოდ</string>
     <string name="home_action_connect_wireless_dongle">უსადენოდ დაკავშირება</string>
+    <string name="home_wifi_not_connected">WiFi არ არის დაკავშირებული</string>
+    <string name="home_wifi_off">WiFi გამორთულია</string>
+    <string name="home_wifi_connected_unnamed">WiFi დაკავშირებულია</string>
+    <string name="home_wifi_scanning">ძებნა…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">WiFi ქსელების ძებნა…</string>
+    <string name="home_wifi_scan_refused">Android ახლა ძებნის უფლებას არ იძლევა. ცოტა ხანში სცადეთ.</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_wifi_scan_button">WiFi-ს ძებნა</string>
+    <string name="home_wifi_hotspot_hint">ჩართულია ტელეფონის ჰოტსპოტი?</string>
+    <string name="home_wifi_off_hint">ჩასართავად შეეხეთ WiFi-ს ძებნას</string>
+    <string name="home_wifi_scan_description">WiFi ქსელების ძებნა. ხანგრძლივი დაჭერით WiFi პარამეტრები გაიხსნება.</string>
 </resources>

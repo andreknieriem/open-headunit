@@ -1929,4 +1929,19 @@
     <string name="usb_wireless_dongle_help">Ative esta opção se utiliza um adaptador USB sem fios como AAWireless ou Carlinkit. O Open Headunit não distingue um dongle de um cabo, pelo que esta opção altera os textos do ecrã inicial de cabo para sem fios.</string>
     <string name="home_subtitle_usb_dongle">Sem fios</string>
     <string name="home_action_connect_wireless_dongle">Ligar sem fios</string>
+    <string name="home_wifi_not_connected">Wi-Fi não ligado</string>
+    <string name="home_wifi_off">O Wi-Fi está desligado</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi ligado</string>
+    <string name="home_wifi_scanning">A procurar…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">A procurar redes Wi-Fi…</string>
+    <string name="home_wifi_scan_refused">O Android não permite uma procura agora. Tente novamente daqui a pouco.</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_wifi_scan_button">Procurar Wi-Fi</string>
+    <string name="home_wifi_hotspot_hint">A zona Wi-Fi do telemóvel está ativa?</string>
+    <string name="home_wifi_off_hint">Toque em Procurar Wi-Fi para o ligar</string>
+    <string name="home_wifi_scan_description">Procurar redes Wi-Fi. Toque sem soltar para as definições de Wi-Fi.</string>
 </resources>

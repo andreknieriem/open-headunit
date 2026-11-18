@@ -1923,4 +1923,19 @@
     <string name="usb_wireless_dongle_help">यदि आप AAWireless या Carlinkit जैसे वायरलेस USB अडैप्टर से कनेक्ट करते हैं तो इसे चालू करें। Open Headunit डोंगल और केबल में अंतर नहीं कर सकता, इसलिए यह विकल्प होम स्क्रीन के लेबल को केबल से वायरलेस में बदल देता है।</string>
     <string name="home_subtitle_usb_dongle">वायरलेस रूप से</string>
     <string name="home_action_connect_wireless_dongle">वायरलेस कनेक्ट करें</string>
+    <string name="home_wifi_not_connected">वाई-फ़ाई कनेक्ट नहीं है</string>
+    <string name="home_wifi_off">वाई-फ़ाई बंद है</string>
+    <string name="home_wifi_connected_unnamed">वाई-फ़ाई कनेक्ट है</string>
+    <string name="home_wifi_scanning">खोज रहे हैं…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">वाई-फ़ाई नेटवर्क खोजे जा रहे हैं…</string>
+    <string name="home_wifi_scan_refused">Android अभी खोज की अनुमति नहीं देता। थोड़ी देर बाद फिर कोशिश करें।</string>
+    <string name="home_wifi_status_description">वाई-फ़ाई: %1$s</string>
+    <string name="home_wifi_scan_button">वाई-फ़ाई खोजें</string>
+    <string name="home_wifi_hotspot_hint">क्या फ़ोन का हॉटस्पॉट चालू है?</string>
+    <string name="home_wifi_off_hint">चालू करने के लिए वाई-फ़ाई खोजें पर टैप करें</string>
+    <string name="home_wifi_scan_description">वाई-फ़ाई नेटवर्क खोजें। वाई-फ़ाई सेटिंग के लिए देर तक दबाएँ।</string>
 </resources>

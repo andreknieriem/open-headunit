@@ -1875,4 +1875,19 @@
     <string name="usb_wireless_dongle_help">如果您通过 AAWireless 或 Carlinkit 等无线 USB 适配器连接，请开启此选项。Open Headunit 无法区分适配器与数据线，开启后会将主屏幕上的文字从有线更改为无线。</string>
     <string name="home_subtitle_usb_dongle">无线连接</string>
     <string name="home_action_connect_wireless_dongle">无线连接</string>
+    <string name="home_wifi_not_connected">WLAN 未连接</string>
+    <string name="home_wifi_off">WLAN 已关闭</string>
+    <string name="home_wifi_connected_unnamed">WLAN 已连接</string>
+    <string name="home_wifi_scanning">正在扫描…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_scan_started">正在扫描 WLAN 网络…</string>
+    <string name="home_wifi_scan_refused">Android 现在不允许扫描，请稍后再试。</string>
+    <string name="home_wifi_status_description">WLAN：%1$s</string>
+    <string name="home_wifi_scan_button">扫描 WLAN</string>
+    <string name="home_wifi_hotspot_hint">手机热点已开启吗？</string>
+    <string name="home_wifi_off_hint">点按“扫描 WLAN”以开启</string>
+    <string name="home_wifi_scan_description">扫描 WLAN 网络。长按打开 WLAN 设置。</string>
 </resources>

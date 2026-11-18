@@ -275,6 +275,8 @@ object SettingsBackupManager {
         "kill-on-disconnect" to ValueType.BOOLEAN,
         "show-over-lock-screen" to ValueType.BOOLEAN,
         "auto-enable-hotspot" to ValueType.BOOLEAN,
+        "headunit-server-network" to ValueType.INT,
+        "headunit-server-auto-wifi-scan" to ValueType.BOOLEAN,
         "wait-for-wifi-before-wifi-direct" to ValueType.BOOLEAN,
         "wait-for-wifi-timeout" to ValueType.INT,
         "helper-connection-strategy" to ValueType.INT,

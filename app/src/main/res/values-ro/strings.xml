@@ -700,6 +700,14 @@
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Auto</string>
     <string name="server_mode_help">Auto caută în rețea serverul unității pe telefon și se conectează singur. Manual nu caută. Te conectezi din lista de rețele sau cu adresa telefonului.</string>
+    <string name="headunit_server_network_label">Metodă de conectare</string>
+    <string name="headunit_server_network_phone">Hotspot telefon</string>
+    <string name="headunit_server_network_unit">Hotspot unitate</string>
+    <string name="headunit_server_network_shared">WiFi comun</string>
+    <string name="headunit_server_network_help">Ce WiFi împart telefonul și această unitate. Hotspot telefon: această unitate se conectează la hotspotul telefonului. Până atunci, căutarea telefonului așteaptă, iar Conectează prin WiFi caută întâi hotspotul. Hotspot unitate: telefonul se conectează la punctul de acces al acestei unități. WiFi comun: ambele sunt pe același router și nu se schimbă nimic.</string>
+    <string name="headunit_server_auto_wifi_scan">Caută hotspotul automat</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Cât timp ecranul principal e afișat și nu e conectat niciun WiFi.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Cât timp ecranul principal este afișat și această unitate nu este în nicio rețea WiFi, cere Android o căutare WiFi: imediat, la fiecare 35 de secunde timp de două minute, apoi o dată pe minut. Astfel unitatea se conectează mai devreme la hotspotul telefonului. Android permite patru căutări în două minute și niciuna în fundal.</string>
 
     <string name="helper_strategy_label">Metoda de conectare Helper</string>
     <string name="helper_strategy_help">Alege cum împart telefonul și această unitate o rețea în modul Wireless Helper. WiFi Comun folosește o rețea pe care ambele o au deja. WiFi Direct creează o legătură privată. Dispozitive în apropiere sunt în beta. Hotspot telefon se alătură hotspotului telefonului. Hotspot unitate face din această unitate punctul de acces. Schimbă-l dacă telefonul nu găsește această unitate.</string>
@@ -1883,11 +1891,9 @@
     <string name="home_wifi_band_5">5 GHz</string>
     <string name="home_wifi_band_6">6 GHz</string>
     <string name="home_wifi_signal">%1$d%%</string>
-    <string name="home_wifi_scan_started">Se caută rețele WiFi…</string>
-    <string name="home_wifi_scan_refused">Android nu permite o căutare acum. Încearcă din nou puțin mai târziu.</string>
     <string name="home_wifi_status_description">WiFi: %1$s</string>
-    <string name="home_wifi_scan_button">Caută WiFi</string>
+    <string name="home_hotspot_waiting">Se așteaptă hotspotul telefonului…</string>
+    <string name="home_hotspot_not_found">Niciun WiFi conectat. Este pornit hotspotul telefonului?</string>
     <string name="home_wifi_hotspot_hint">Este pornit hotspotul telefonului?</string>
-    <string name="home_wifi_off_hint">Atinge Caută WiFi pentru a-l porni</string>
-    <string name="home_wifi_scan_description">Caută rețele WiFi. Apasă lung pentru setările WiFi.</string>
+    <string name="home_wifi_off_hint">Pornește-l pentru conectare</string>
 </resources>

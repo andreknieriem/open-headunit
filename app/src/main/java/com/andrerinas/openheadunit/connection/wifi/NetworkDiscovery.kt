@@ -197,6 +197,17 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             reportedIps.clear()
             probeHelperPort = readProbeHelperPort()
             try {
+                // On the phone's hotspot with no WiFi joined there is nobody to find: skip the
+                // sweep, and let the loop come back as it always does. Joining the hotspot kicks
+                // a sweep at once (AapService.onWifiJoinDetected), so this costs no time.
+                if (waitsForPhoneHotspot()) {
+                    if (!waitingForWifiLogged) {
+                        waitingForWifiLogged = true
+                        AppLog.i("NetworkDiscovery: on the phone's hotspot and on no WiFi network yet; not sweeping until the unit joins it")
+                    }
+                    return@launch
+                }
+                waitingForWifiLogged = false
                 // 1. Quick Scan: Check likely Gateways first
                 AppLog.i("NetworkDiscovery: Step 1 - Quick Gateway Scan")
                 val gatewayFound = scanGateways()
@@ -229,6 +240,25 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
     } catch (e: Exception) {
         AppLog.d("NetworkDiscovery: could not read the wireless mode, probing 5289 anyway")
         true
+    }
+
+    /** Logged once per wait, not once per loop turn. */
+    @Volatile
+    private var waitingForWifiLogged = false
+
+    /**
+     * Whether this sweep waits for the phone's hotspot (see [HeadunitServerNetwork.sweepWaitsForWifi]),
+     * read once per scan. Unreadable settings sweep, as before.
+     */
+    private fun waitsForPhoneHotspot(): Boolean = try {
+        val settings = App.provide(context).settings
+        HeadunitServerNetwork.sweepWaitsForWifi(
+            settings.wifiConnectionMode, settings.headunitServerNetwork,
+            wifiJoined = NetworkAddresses.stationIpv4(context) != null
+        )
+    } catch (e: Exception) {
+        AppLog.d("NetworkDiscovery: could not read the Headunit Server network, sweeping anyway")
+        false
     }
 
     /** The DHCP server we were given an address by, which on a phone hotspot is the phone. */

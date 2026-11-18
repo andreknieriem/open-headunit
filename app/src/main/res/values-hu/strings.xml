@@ -698,6 +698,14 @@
     <string name="server_mode_manual">Kézi</string>
     <string name="server_mode_auto">Automatikus</string>
     <string name="server_mode_help">Az Automatikus a hálózaton keresi a telefonon futó fejegység-szervert, és magától csatlakozik. A Kézi nem keres. A hálózatok listájából vagy a telefon címével csatlakozhat.</string>
+    <string name="headunit_server_network_label">Kapcsolódási mód</string>
+    <string name="headunit_server_network_phone">Telefon hotspot</string>
+    <string name="headunit_server_network_unit">Egység hotspot</string>
+    <string name="headunit_server_network_shared">Közös Wi-Fi</string>
+    <string name="headunit_server_network_help">Melyik Wi-Fi-t használja közösen a telefon és ez az egység. Telefon hotspot: ez az egység a telefon hotspotjához csatlakozik. Addig a telefon keresése vár, a Csatlakozás WiFi-n pedig először a hotspotot keresi. Egység hotspot: a telefon ennek az egységnek a hozzáférési pontjához csatlakozik. Közös Wi-Fi: mindkettő ugyanazon a routeren van, és semmi sem változik.</string>
+    <string name="headunit_server_auto_wifi_scan">Hotspot automatikus keresése</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Amíg a kezdőképernyő látszik, és nincs Wi-Fi kapcsolat.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Amíg a kezdőképernyő látszik, és ez az egység nincs Wi-Fi hálózaton, Wi-Fi keresést kér az Androidtól: azonnal, két percig 35 másodpercenként, utána percenként egyszer. Így az egység hamarabb csatlakozik a telefon hotspotjához. Az Android két perc alatt négy keresést enged, a háttérben egyet sem.</string>
 
     <string name="helper_strategy_label">Csatlakozási stratégia (Helper)</string>
     <string name="helper_strategy_help">Kiválasztja, hogyan osztozik a telefon és a fejegység hálózaton Wireless Helper módban. A Közös Wifi olyan hálózatot használ, amelyen mindkettő már osztozik. A WiFi Direct privát kapcsolatot hoz létre. A Közeli eszközök béta. A Telefon hotspot a telefon hotspotjához csatlakozik. A Fejegység hotspot a fejegységet teszi hozzáférési ponttá. Módosítsa, ha a telefon nem találja a fejegységet.</string>
@@ -1885,11 +1893,9 @@
     <string name="home_wifi_band_5">5 GHz</string>
     <string name="home_wifi_band_6">6 GHz</string>
     <string name="home_wifi_signal">%1$d%%</string>
-    <string name="home_wifi_scan_started">Wi-Fi-hálózatok keresése…</string>
-    <string name="home_wifi_scan_refused">Az Android most nem enged keresést. Próbáld újra kicsit később.</string>
     <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
-    <string name="home_wifi_scan_button">Wi-Fi keresése</string>
+    <string name="home_hotspot_waiting">Várakozás a telefon hotspotjára…</string>
+    <string name="home_hotspot_not_found">Nincs Wi-Fi kapcsolat. Be van kapcsolva a telefon hotspotja?</string>
     <string name="home_wifi_hotspot_hint">Be van kapcsolva a telefon hotspotja?</string>
-    <string name="home_wifi_off_hint">Bekapcsoláshoz koppints a Wi-Fi keresésére</string>
-    <string name="home_wifi_scan_description">Wi-Fi-hálózatok keresése. Hosszan nyomva a Wi-Fi-beállítások nyílnak meg.</string>
+    <string name="home_wifi_off_hint">Kapcsold be a csatlakozáshoz</string>
 </resources>

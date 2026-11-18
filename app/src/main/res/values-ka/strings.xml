@@ -756,6 +756,14 @@
     <string name="server_mode_manual">ხელით</string>
     <string name="server_mode_auto">ავტო</string>
     <string name="server_mode_help">ავტო ქსელში ეძებს ტელეფონზე არსებულ Headunit სერვერს და თავისით უკავშირდება. ხელით არ ეძებს. უკავშირდებით ქსელების სიიდან ან ტელეფონის მისამართით.</string>
+    <string name="headunit_server_network_label">დაკავშირების მეთოდი</string>
+    <string name="headunit_server_network_phone">ტელეფონი</string>
+    <string name="headunit_server_network_unit">ერთეული</string>
+    <string name="headunit_server_network_shared">საერთო WiFi</string>
+    <string name="headunit_server_network_help">რომელ WiFi-ს იზიარებენ ტელეფონი და ეს მოწყობილობა. ტელეფონი: ეს მოწყობილობა უერთდება ტელეფონის ჰოტსპოტს. მანამდე ტელეფონის ძებნა ელოდება, ხოლო WiFi-ით დაკავშირება ჯერ ჰოტსპოტს ეძებს. ერთეული: ტელეფონი უერთდება ამ მოწყობილობის წვდომის წერტილს. საერთო WiFi: ორივე ერთ როუტერზეა და არაფერი იცვლება.</string>
+    <string name="headunit_server_auto_wifi_scan">ჰოტსპოტის ავტომატური ძებნა</string>
+    <string name="headunit_server_auto_wifi_scan_summary">სანამ მთავარი ეკრანი ჩანს და WiFi დაკავშირებული არ არის.</string>
+    <string name="headunit_server_auto_wifi_scan_help">სანამ მთავარი ეკრანი ჩანს და ეს მოწყობილობა არცერთ WiFi ქსელს არ უერთდება, ის Android-ს WiFi-ის სკანირებას სთხოვს: მაშინვე, ორი წუთის განმავლობაში ყოველ 35 წამში, შემდეგ წუთში ერთხელ. ასე მოწყობილობა ტელეფონის ჰოტსპოტს უფრო ადრე უერთდება. Android ორ წუთში ოთხ სკანირებას უშვებს, ფონურ რეჟიმში კი არცერთს.</string>
 
     <string name="helper_strategy_label">დამხმარე კავშირის სტრატეგია</string>
     <string name="helper_strategy_help">ირჩევს, როგორ იზიარებენ ტელეფონი და ეს მოწყობილობა ქსელს Wireless Helper-ის რეჟიმში. „საერთო Wi-Fi“ იყენებს ქსელს, რომელშიც ორივე უკვე არის. WiFi Direct ქმნის კერძო კავშირს. Google Nearby ბეტაა. „ტელეფონის ჰოტსპოტი“ უერთდება ტელეფონის ჰოტსპოტს. „ჰედუნიტის ჰოტსპოტი“ ამ მოწყობილობას წვდომის წერტილად აქცევს. შეცვალეთ, თუ ტელეფონი ამ მოწყობილობას ვერ პოულობს.</string>
@@ -1862,7 +1870,7 @@
     <string name="usb_wireless_dongle_help">ჩართეთ, თუ უკავშირდებით უსადენო USB ადაპტერით (მაგ. AAWireless ან Carlinkit). Open Headunit ვერ ასხვავებს დონგლს კაბელისგან, ამიტომ ეს პარამეტრი მთავარ ეკრანზე წარწერებს კაბელიდან უსადენოზე ცვლის.</string>
     <string name="home_subtitle_usb_dongle">უსადენოდ</string>
     <string name="home_action_connect_wireless_dongle">უსადენოდ დაკავშირება</string>
-    <string name="home_wifi_not_connected">WiFi არ არის დაკავშირებული</string>
+    <string name="home_wifi_not_connected">WiFi გათიშულია</string>
     <string name="home_wifi_off">WiFi გამორთულია</string>
     <string name="home_wifi_connected_unnamed">WiFi დაკავშირებულია</string>
     <string name="home_wifi_scanning">ძებნა…</string>
@@ -1870,11 +1878,9 @@
     <string name="home_wifi_band_5">5 GHz</string>
     <string name="home_wifi_band_6">6 GHz</string>
     <string name="home_wifi_signal">%1$d%%</string>
-    <string name="home_wifi_scan_started">WiFi ქსელების ძებნა…</string>
-    <string name="home_wifi_scan_refused">Android ახლა ძებნის უფლებას არ იძლევა. ცოტა ხანში სცადეთ.</string>
     <string name="home_wifi_status_description">WiFi: %1$s</string>
-    <string name="home_wifi_scan_button">WiFi-ს ძებნა</string>
+    <string name="home_hotspot_waiting">ტელეფონის ჰოტსპოტის მოლოდინი…</string>
+    <string name="home_hotspot_not_found">WiFi არ არის დაკავშირებული. ჩართულია ტელეფონის ჰოტსპოტი?</string>
     <string name="home_wifi_hotspot_hint">ჩართულია ტელეფონის ჰოტსპოტი?</string>
-    <string name="home_wifi_off_hint">ჩასართავად შეეხეთ WiFi-ს ძებნას</string>
-    <string name="home_wifi_scan_description">WiFi ქსელების ძებნა. ხანგრძლივი დაჭერით WiFi პარამეტრები გაიხსნება.</string>
+    <string name="home_wifi_off_hint">ჩართეთ დასაკავშირებლად</string>
 </resources>

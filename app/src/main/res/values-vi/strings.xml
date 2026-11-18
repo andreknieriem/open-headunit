@@ -725,6 +725,14 @@
     <string name="server_mode_manual">Thủ công</string>
     <string name="server_mode_auto">Tự động</string>
     <string name="server_mode_help">Tự động tìm máy chủ của đầu xe trên điện thoại qua mạng và tự kết nối. Thủ công không tìm. Bạn kết nối từ danh sách mạng hoặc bằng địa chỉ của điện thoại.</string>
+    <string name="headunit_server_network_label">Cách kết nối</string>
+    <string name="headunit_server_network_phone">Điểm phát điện thoại</string>
+    <string name="headunit_server_network_unit">Điểm phát của máy</string>
+    <string name="headunit_server_network_shared">WiFi chung</string>
+    <string name="headunit_server_network_help">WiFi mà điện thoại và máy này dùng chung. Điểm phát điện thoại: máy này kết nối vào điểm phát của điện thoại. Cho đến lúc đó, việc tìm điện thoại sẽ chờ, và Kết nối qua WiFi sẽ quét tìm điểm phát trước. Điểm phát của máy: điện thoại kết nối vào điểm truy cập của máy này. WiFi chung: cả hai cùng một bộ định tuyến, và không có gì thay đổi.</string>
+    <string name="headunit_server_auto_wifi_scan">Tự động quét tìm điểm phát</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Khi màn hình chính đang hiện và chưa kết nối WiFi.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Khi màn hình chính đang hiện và máy này không ở mạng WiFi nào, máy sẽ nhờ Android quét WiFi: ngay lập tức, mỗi 35 giây trong hai phút, sau đó mỗi phút một lần. Nhờ vậy máy kết nối vào điểm phát của điện thoại sớm hơn. Android cho phép bốn lần quét trong hai phút và không cho phép khi chạy nền.</string>
 
     <string name="helper_strategy_label">Chiến lược kết nối Helper</string>
     <string name="helper_strategy_help">Chọn cách điện thoại và thiết bị này dùng chung mạng ở chế độ Wireless Helper. WiFi chung dùng mạng mà cả hai đã có. WiFi Direct tạo liên kết riêng. Google Nearby đang ở bản beta. Hotspot điện thoại tham gia điểm phát của điện thoại. Hotspot Headunit biến thiết bị này thành điểm truy cập. Hãy đổi khi điện thoại không tìm thấy thiết bị này.</string>
@@ -1887,11 +1895,9 @@
     <string name="home_wifi_band_5">5 GHz</string>
     <string name="home_wifi_band_6">6 GHz</string>
     <string name="home_wifi_signal">%1$d%%</string>
-    <string name="home_wifi_scan_started">Đang quét mạng WiFi…</string>
-    <string name="home_wifi_scan_refused">Android hiện chưa cho phép quét. Hãy thử lại sau ít phút.</string>
     <string name="home_wifi_status_description">WiFi: %1$s</string>
-    <string name="home_wifi_scan_button">Quét WiFi</string>
+    <string name="home_hotspot_waiting">Đang chờ điểm phát của điện thoại…</string>
+    <string name="home_hotspot_not_found">Chưa kết nối WiFi. Điểm phát của điện thoại đã bật chưa?</string>
     <string name="home_wifi_hotspot_hint">Điểm phát của điện thoại đã bật chưa?</string>
-    <string name="home_wifi_off_hint">Chạm Quét WiFi để bật</string>
-    <string name="home_wifi_scan_description">Quét mạng WiFi. Nhấn giữ để mở cài đặt WiFi.</string>
+    <string name="home_wifi_off_hint">Bật lên để kết nối</string>
 </resources>

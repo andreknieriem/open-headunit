@@ -708,6 +708,14 @@
     <string name="server_mode_manual">手動</string>
     <string name="server_mode_auto">自動</string>
     <string name="server_mode_help">「自動」は、ネットワーク上でスマートフォンのヘッドユニットサーバーを探し、自動で接続します。「手動」は探しません。ネットワーク一覧から、またはスマートフォンのアドレスで接続します。</string>
+    <string name="headunit_server_network_label">接続方法</string>
+    <string name="headunit_server_network_phone">スマホのテザリング</string>
+    <string name="headunit_server_network_unit">本機のアクセスポイント</string>
+    <string name="headunit_server_network_shared">共通のWi-Fi</string>
+    <string name="headunit_server_network_help">スマートフォンと本機が共有するWi-Fi。スマホのテザリング：本機がスマートフォンのテザリングに接続します。接続するまでスマートフォンの検索は待機し、［WiFi で接続］はまずテザリングをスキャンします。本機のアクセスポイント：スマートフォンが本機のアクセスポイントに接続します。共通のWi-Fi：両方が同じルーターにつながり、何も変わりません。</string>
+    <string name="headunit_server_auto_wifi_scan">テザリングを自動でスキャン</string>
+    <string name="headunit_server_auto_wifi_scan_summary">ホーム画面の表示中で、Wi-Fiに未接続のとき。</string>
+    <string name="headunit_server_auto_wifi_scan_help">ホーム画面の表示中に本機がどのWi-Fiネットワークにも接続していないと、AndroidにWi-Fiスキャンを依頼します：すぐに1回、2分間は35秒ごと、その後は1分ごと。これで本機はスマートフォンのテザリングに早く接続できます。Androidが許可するのは2分間に4回までで、バックグラウンドでは許可されません。</string>
 
     <string name="helper_strategy_label">ヘルパーの接続方式</string>
     <string name="helper_strategy_help">Wireless Helper モードで、スマートフォンとこの機器がネットワークを共有する方法を選びます。共通 Wifi は、両方がすでに参加しているネットワークを使います。WiFi Direct は専用のリンクを作ります。周辺のデバイスはベータ版です。スマホのホットスポットは、スマートフォンのホットスポットに参加します。車載機のホットスポットは、この機器をアクセスポイントにします。スマートフォンがこの機器を見つけられないときに変更してください。</string>
@@ -1887,11 +1895,9 @@
     <string name="home_wifi_band_5">5 GHz</string>
     <string name="home_wifi_band_6">6 GHz</string>
     <string name="home_wifi_signal">%1$d%%</string>
-    <string name="home_wifi_scan_started">Wi-Fiネットワークをスキャンしています…</string>
-    <string name="home_wifi_scan_refused">Androidは今スキャンを許可していません。少ししてからもう一度お試しください。</string>
     <string name="home_wifi_status_description">Wi-Fi：%1$s</string>
-    <string name="home_wifi_scan_button">Wi-Fiをスキャン</string>
+    <string name="home_hotspot_waiting">スマートフォンのテザリングを待っています…</string>
+    <string name="home_hotspot_not_found">Wi-Fiに接続できませんでした。スマートフォンのテザリングはオンですか？</string>
     <string name="home_wifi_hotspot_hint">スマートフォンのテザリングはオンですか？</string>
-    <string name="home_wifi_off_hint">オンにするには［Wi-Fiをスキャン］をタップ</string>
-    <string name="home_wifi_scan_description">Wi-Fiネットワークをスキャンします。長押しでWi-Fi設定を開きます。</string>
+    <string name="home_wifi_off_hint">接続するにはオンにしてください</string>
 </resources>

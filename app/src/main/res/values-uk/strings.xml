@@ -700,6 +700,14 @@
     <string name="server_mode_manual">Вручну</string>
     <string name="server_mode_auto">Авто</string>
     <string name="server_mode_help">«Авто» шукає в мережі сервер головного пристрою на телефоні й підключається сам. «Вручну» не шукає. Ви підключаєтеся зі списку мереж або за адресою телефона.</string>
+    <string name="headunit_server_network_label">Спосіб підключення</string>
+    <string name="headunit_server_network_phone">Точка телефона</string>
+    <string name="headunit_server_network_unit">Точка пристрою</string>
+    <string name="headunit_server_network_shared">Спільний Wi-Fi</string>
+    <string name="headunit_server_network_help">Який Wi-Fi спільний для телефона й цього пристрою. Точка телефона: пристрій підключається до точки доступу телефона. До того пошук телефона чекає, а «Підключити через Wi-Fi» спершу шукає точку доступу. Точка пристрою: телефон підключається до точки доступу цього пристрою. Спільний Wi-Fi: обидва в одному роутері, нічого не змінюється.</string>
+    <string name="headunit_server_auto_wifi_scan">Шукати точку доступу автоматично</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Поки відкрито головний екран і Wi-Fi не підключено.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Поки відкрито головний екран і пристрій не підключено до жодної мережі Wi-Fi, він просить Android виконати пошук Wi-Fi: одразу, кожні 35 секунд протягом двох хвилин, потім раз на хвилину. Так пристрій раніше підключається до точки доступу телефона. Android дозволяє чотири пошуки за дві хвилини і жодного у фоні.</string>
 
     <string name="helper_strategy_label">Метод підключення (Helper)</string>
     <string name="helper_strategy_help">Обирає, як телефон і цей пристрій ділять мережу в режимі Wireless Helper. «Спільний Wi-Fi» використовує мережу, у якій уже є обидва. Wi-Fi Direct створює приватне з\'єднання. «Пристрої поруч» перебувають в бета-версії. «Точка доступу телефона» приєднується до точки доступу телефона. «Точка доступу магнітоли» робить цей пристрій точкою доступу. Змініть спосіб, якщо телефон не знаходить цей пристрій.</string>
@@ -1888,11 +1896,9 @@
     <string name="home_wifi_band_5">5 ГГц</string>
     <string name="home_wifi_band_6">6 ГГц</string>
     <string name="home_wifi_signal">%1$d %%</string>
-    <string name="home_wifi_scan_started">Пошук мереж Wi-Fi…</string>
-    <string name="home_wifi_scan_refused">Android зараз не дозволяє пошук. Спробуйте трохи пізніше.</string>
     <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
-    <string name="home_wifi_scan_button">Знайти Wi-Fi</string>
+    <string name="home_hotspot_waiting">Очікування точки доступу телефона…</string>
+    <string name="home_hotspot_not_found">Wi-Fi не підключено. Чи ввімкнено точку доступу телефона?</string>
     <string name="home_wifi_hotspot_hint">Чи ввімкнено точку доступу телефона?</string>
-    <string name="home_wifi_off_hint">Торкніться «Знайти Wi-Fi», щоб увімкнути</string>
-    <string name="home_wifi_scan_description">Пошук мереж Wi-Fi. Довге натискання відкриє налаштування Wi-Fi.</string>
+    <string name="home_wifi_off_hint">Увімкніть для підключення</string>
 </resources>

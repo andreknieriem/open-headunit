@@ -1292,6 +1292,14 @@
     <string name="server_mode_manual">กำหนดเอง</string>
     <string name="server_mode_auto">อัตโนมัติ</string>
     <string name="server_mode_help">อัตโนมัติจะค้นหาเซิร์ฟเวอร์เฮดยูนิตบนโทรศัพท์ในเครือข่ายและเชื่อมต่อเอง กำหนดเองจะไม่ค้นหา คุณเชื่อมต่อจากรายการเครือข่ายหรือด้วยที่อยู่ของโทรศัพท์</string>
+    <string name="headunit_server_network_label">วิธีเชื่อมต่อ</string>
+    <string name="headunit_server_network_phone">ฮอตสปอตโทรศัพท์</string>
+    <string name="headunit_server_network_unit">ฮอตสปอตเครื่อง</string>
+    <string name="headunit_server_network_shared">Wi-Fi ร่วมกัน</string>
+    <string name="headunit_server_network_help">Wi-Fi ที่โทรศัพท์และเครื่องนี้ใช้ร่วมกัน ฮอตสปอตโทรศัพท์: เครื่องนี้เชื่อมต่อกับฮอตสปอตของโทรศัพท์ ระหว่างนั้นการค้นหาโทรศัพท์จะรอ และ เชื่อมต่อผ่าน Wi-Fi จะสแกนหาฮอตสปอตก่อน ฮอตสปอตเครื่อง: โทรศัพท์เชื่อมต่อกับแอกเซสพอยต์ของเครื่องนี้ Wi-Fi ร่วมกัน: ทั้งคู่อยู่บนเราเตอร์เดียวกัน และไม่มีอะไรเปลี่ยน</string>
+    <string name="headunit_server_auto_wifi_scan">สแกนหาฮอตสปอตอัตโนมัติ</string>
+    <string name="headunit_server_auto_wifi_scan_summary">ขณะที่หน้าหลักแสดงอยู่และยังไม่ได้เชื่อมต่อ Wi-Fi</string>
+    <string name="headunit_server_auto_wifi_scan_help">ขณะที่หน้าหลักแสดงอยู่และเครื่องนี้ไม่ได้อยู่บนเครือข่าย Wi-Fi ใด เครื่องจะขอให้ Android สแกน Wi-Fi: ทันที ทุก 35 วินาทีเป็นเวลาสองนาที จากนั้นนาทีละครั้ง เครื่องจึงเชื่อมต่อกับฮอตสปอตของโทรศัพท์ได้เร็วขึ้น Android อนุญาตให้สแกนสี่ครั้งในสองนาที และไม่อนุญาตในเบื้องหลัง</string>
 
     <string name="helper_strategy_label">วิธีเชื่อมต่อของ Helper</string>
     <string name="helper_strategy_help">เลือกวิธีที่โทรศัพท์และเครื่องนี้ใช้เครือข่ายร่วมกันในโหมด Wireless Helper Wi-Fi ทั่วไปใช้เครือข่ายที่ทั้งสองเครื่องอยู่แล้ว WiFi Direct สร้างการเชื่อมต่อส่วนตัว Google Nearby เป็นรุ่นเบต้า ฮอตสปอตโทรศัพท์เข้าร่วมฮอตสปอตของโทรศัพท์ ฮอตสปอตเฮดยูนิตทำให้เครื่องนี้เป็นจุดเชื่อมต่อ เปลี่ยนเมื่อโทรศัพท์หาเครื่องนี้ไม่พบ</string>
@@ -1938,11 +1946,9 @@
     <string name="home_wifi_band_5">5 GHz</string>
     <string name="home_wifi_band_6">6 GHz</string>
     <string name="home_wifi_signal">%1$d%%</string>
-    <string name="home_wifi_scan_started">กำลังสแกนหาเครือข่าย Wi-Fi…</string>
-    <string name="home_wifi_scan_refused">ขณะนี้ Android ไม่อนุญาตให้สแกน โปรดลองอีกครั้งในอีกสักครู่</string>
     <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
-    <string name="home_wifi_scan_button">สแกน Wi-Fi</string>
+    <string name="home_hotspot_waiting">กำลังรอฮอตสปอตของโทรศัพท์…</string>
+    <string name="home_hotspot_not_found">ไม่ได้เชื่อมต่อ Wi-Fi ฮอตสปอตของโทรศัพท์เปิดอยู่หรือไม่</string>
     <string name="home_wifi_hotspot_hint">ฮอตสปอตของโทรศัพท์เปิดอยู่หรือไม่</string>
-    <string name="home_wifi_off_hint">แตะ สแกน Wi-Fi เพื่อเปิด</string>
-    <string name="home_wifi_scan_description">สแกนหาเครือข่าย Wi-Fi กดค้างเพื่อเปิดการตั้งค่า Wi-Fi</string>
+    <string name="home_wifi_off_hint">เปิดเพื่อเชื่อมต่อ</string>
 </resources>

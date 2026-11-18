@@ -1292,6 +1292,14 @@
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Otomatis</string>
     <string name="server_mode_help">Otomatis mencari server head unit di ponsel melalui jaringan dan terhubung sendiri. Manual tidak mencari. Anda terhubung dari daftar jaringan atau dengan alamat ponsel.</string>
+    <string name="headunit_server_network_label">Metode Koneksi</string>
+    <string name="headunit_server_network_phone">Hotspot ponsel</string>
+    <string name="headunit_server_network_unit">Hotspot unit</string>
+    <string name="headunit_server_network_shared">WiFi bersama</string>
+    <string name="headunit_server_network_help">WiFi mana yang dipakai bersama oleh ponsel dan unit ini. Hotspot ponsel: unit ini bergabung ke hotspot ponsel. Sampai saat itu, pencarian ponsel menunggu, dan Hubungkan lewat Wi-Fi memindai hotspot terlebih dahulu. Hotspot unit: ponsel bergabung ke titik akses unit ini. WiFi bersama: keduanya di router yang sama, dan tidak ada yang berubah.</string>
+    <string name="headunit_server_auto_wifi_scan">Pindai hotspot secara otomatis</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Selama layar utama tampil dan tidak ada WiFi tersambung.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Selama layar utama tampil dan unit ini tidak berada di jaringan WiFi mana pun, unit meminta Android memindai WiFi: segera, setiap 35 detik selama dua menit, lalu sekali per menit. Dengan begitu unit lebih cepat bergabung ke hotspot ponsel. Android mengizinkan empat pemindaian dalam dua menit, dan tidak ada di latar belakang.</string>
 
     <string name="helper_strategy_label">Strategi Koneksi Helper</string>
     <string name="helper_strategy_help">Memilih cara ponsel dan unit ini berbagi jaringan dalam mode Wireless Helper. Wi-Fi Umum memakai jaringan yang sudah dipakai keduanya. WiFi Direct membuat tautan privat. Google Nearby masih beta. Hotspot Ponsel bergabung ke hotspot ponsel. Hotspot Headunit menjadikan unit ini titik akses. Ubah jika ponsel tidak menemukan unit ini.</string>
@@ -1932,11 +1940,9 @@
     <string name="home_wifi_band_5">5 GHz</string>
     <string name="home_wifi_band_6">6 GHz</string>
     <string name="home_wifi_signal">%1$d%%</string>
-    <string name="home_wifi_scan_started">Memindai jaringan WiFi…</string>
-    <string name="home_wifi_scan_refused">Android belum mengizinkan pemindaian sekarang. Coba lagi sebentar lagi.</string>
     <string name="home_wifi_status_description">WiFi: %1$s</string>
-    <string name="home_wifi_scan_button">Pindai WiFi</string>
+    <string name="home_hotspot_waiting">Menunggu hotspot ponsel…</string>
+    <string name="home_hotspot_not_found">Tidak ada WiFi tersambung. Apakah hotspot ponsel menyala?</string>
     <string name="home_wifi_hotspot_hint">Apakah hotspot ponsel menyala?</string>
-    <string name="home_wifi_off_hint">Ketuk Pindai WiFi untuk menyalakannya</string>
-    <string name="home_wifi_scan_description">Pindai jaringan WiFi. Tekan lama untuk pengaturan WiFi.</string>
+    <string name="home_wifi_off_hint">Nyalakan untuk terhubung</string>
 </resources>

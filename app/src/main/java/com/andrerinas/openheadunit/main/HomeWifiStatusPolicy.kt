@@ -1,9 +1,13 @@
 package com.andrerinas.openheadunit.main
 
+import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
+
 /**
- * What the WiFi line next to the main button's icon says, and when the Scan WiFi button beside the
- * main button shows. Only for Headunit Server, where this unit joins the phone's hotspot; Native
- * and WiFi Direct bring their own network, so "not connected" would mislead there.
+ * The home's side of Headunit Server on the phone's hotspot ([HeadunitServerNetwork.PHONE_HOTSPOT]):
+ * the WiFi line next to the main card's icon, what the main button does while this unit is on no
+ * WiFi network, and the optional scans the home makes by itself. Nothing here applies to any
+ * other mode or network; the main button keeps doing there what it always did.
  *
  * Android 10 units can sit a minute with a saved hotspot in range, because the platform's own
  * reconnect scans back off while nothing is connected. One scan asked for by hand ends that wait,
@@ -37,44 +41,78 @@ object HomeWifiStatusPolicy {
         /** Lit bars out of four; zero without a reading. */
         val bars: Int get() = barsFor(signalPercent)
 
-        /** Not on WiFi: the scan is the next thing to do, so its button stands out. */
+        /** Not on WiFi: nothing can connect until the unit joins the hotspot. */
         val needsAttention: Boolean get() = kind == Kind.OFF || kind == Kind.NOT_CONNECTED
     }
+
+    /** What the main button does on the phone's hotspot. */
+    enum class ConnectAction {
+        /** What it always did: search for the phone. */
+        CONNECT,
+        /** Ask for a WiFi scan, and search once the unit has joined the hotspot. */
+        SCAN_AND_WAIT,
+        /** Ask for WiFi to be turned on, and search once the unit has joined the hotspot. */
+        TURN_WIFI_ON_AND_WAIT,
+    }
+
+    /** How long the main button waits for the unit to join the hotspot before it says so. */
+    const val JOIN_WAIT_MS = 60_000L
+
+    /**
+     * Between two scans of the home's own. From Android 9 a foreground app gets four scans in two
+     * minutes and the platform drops the rest, so this is the shortest pace that is never refused.
+     */
+    const val RESCAN_MS = 35_000L
+
+    /** The automatic scans slow down after this long without the hotspot: it is most likely off. */
+    const val AUTO_SCAN_BRISK_MS = 120_000L
+    const val AUTO_SCAN_SLOW_MS = 60_000L
 
     /** Below this Android reports no signal at all (WifiInfo.INVALID_RSSI is -127). */
     private const val RSSI_FLOOR = -100
     private const val RSSI_FULL = -50
 
-    fun line(isHeadunitServer: Boolean, cardIsWifi: Boolean, facts: Facts): Line = when {
-        !isHeadunitServer || !cardIsWifi -> Line(Kind.HIDDEN)
+    /** Whether any of this applies: Headunit Server (Auto) with the phone's hotspot chosen. */
+    fun appliesTo(mode: WifiLauncherMode, network: HeadunitServerNetwork): Boolean =
+        mode == WifiLauncherMode.AUTO && network == HeadunitServerNetwork.PHONE_HOTSPOT
+
+    fun line(phoneHotspot: Boolean, cardIsWifi: Boolean, facts: Facts): Line = when {
+        !phoneHotspot || !cardIsWifi -> Line(Kind.HIDDEN)
         !facts.wifiEnabled -> Line(Kind.OFF)
         !facts.connected -> Line(Kind.NOT_CONNECTED)
         else -> Line(Kind.CONNECTED, cleanSsid(facts.rawSsid), band(facts.frequencyMhz), signalPercent(facts.rssiDbm))
     }
 
     /**
-     * Whether the Scan WiFi button shows. Not while a connection is on its way, during the
-     * reconnect countdown, or over a session: the main button and Cancel are what matter then.
-     * While the stack only listens for the phone it does show: that is when a scan helps most.
+     * What the main button does on the phone's hotspot. On WiFi, what it always did. On none, it
+     * gets the unit onto the hotspot first: searching before then can only find nothing. An access
+     * point of this unit's own means the network was set up some other way than the one chosen,
+     * so the button does what it always did rather than scan beside it.
      */
-    fun showsScanButton(line: Line, cardIdle: Boolean): Boolean = line.kind != Kind.HIDDEN && cardIdle
-
-    /** Whether the card is idle enough for the Scan WiFi button; see [showsScanButton]. */
-    fun cardIdle(status: HomePrimaryPolicy.Status): Boolean = when (status) {
-        HomePrimaryPolicy.Status.CONNECTING,
-        HomePrimaryPolicy.Status.RECONNECTING,
-        HomePrimaryPolicy.Status.ACTIVE_SESSION -> false
-        else -> true
+    fun connectAction(facts: Facts, unitHotspotUp: Boolean): ConnectAction = when {
+        unitHotspotUp -> ConnectAction.CONNECT
+        !facts.wifiEnabled -> ConnectAction.TURN_WIFI_ON_AND_WAIT
+        !facts.connected -> ConnectAction.SCAN_AND_WAIT
+        else -> ConnectAction.CONNECT
     }
 
+    /** Whether the wait the main button started is over because the unit joined a network. */
+    fun waitJoined(facts: Facts): Boolean = facts.wifiEnabled && facts.connected
+
     /**
-     * Whether Scan WiFi drops its label for its icon alone: when the actions row cannot hold the
-     * main button's one-line label, the gap, Scan WiFi in full and whatever else is in the row
-     * (Cancel while the stack listens). Otherwise the main button, which gives up width first, is
-     * squeezed to nothing on a portrait phone.
+     * Whether the home scans by itself now: only when the user turned that on, and only while there
+     * is a hotspot to find and nothing else in the way.
      */
-    fun scanCompact(availablePx: Int, actionNeededPx: Int, gapPx: Int, scanFullPx: Int, othersPx: Int): Boolean =
-        availablePx > 0 && actionNeededPx + gapPx + scanFullPx + othersPx > availablePx
+    fun shouldAutoScan(enabled: Boolean, facts: Facts, unitHotspotUp: Boolean, sessionActive: Boolean): Boolean =
+        enabled && facts.wifiEnabled && !facts.connected && !unitHotspotUp && !sessionActive
+
+    /**
+     * The pause before the next automatic scan, by how long the unit has been without WiFi since
+     * the home came on screen: brisk at first, when the hotspot has most likely just been switched
+     * on, slower once it has stayed away.
+     */
+    fun autoScanDelayMs(sinceStartMs: Long): Long =
+        if (sinceStartMs < AUTO_SCAN_BRISK_MS) RESCAN_MS else AUTO_SCAN_SLOW_MS
 
     /** The name without its quotes, or null for Android's placeholder. */
     fun cleanSsid(raw: String?): String? {

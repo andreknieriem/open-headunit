@@ -134,8 +134,10 @@ class HomeFragment : Fragment() {
     private var reconnectTarget: HomePrimaryPolicy.Connection? = null
     private var reconnectSecondsLeft = 0
     private var autoConnectCancelled = false
-    /** The WiFi line beside the main button's icon, Headunit Server only; live while started. */
+    /** The WiFi line beside the main card's icon and the wait for the phone's hotspot; live while started. */
     private var homeWifiStatus: HomeWifiStatus? = null
+    /** Whether the card was last drawn waiting for the hotspot, so a change redraws all of it. */
+    private var renderedHotspotWait = false
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
     private var activeDialog: androidx.appcompat.app.AlertDialog? = null
@@ -253,7 +255,7 @@ class HomeFragment : Fragment() {
         ).forEach { id ->
             container.findViewById<View>(id)?.setOnLongClickListener { showPageMenu(widgetPage = null) }
         }
-        setupWifiStatus(container)
+        setupWifiStatus()
         setupListeners()
     }
 
@@ -447,31 +449,65 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Headunit Server's Scan WiFi button: a tap asks Android for one WiFi scan (or to turn WiFi
-     * on), a long press opens Android's WiFi settings. The WiFi line itself is information only.
+     * Headunit Server on the phone's hotspot (see [HomeWifiStatusPolicy]): the WiFi line beside the
+     * card's icon, and the main button's wait for the unit to join the hotspot. Redraws the whole
+     * home when the wait starts or ends, since the card's buttons and subtitle change with it.
      */
-    private fun setupWifiStatus(container: View) {
-        homeWifiStatus = HomeWifiStatus(requireContext()) { renderWifiStatus() }
-        container.findViewById<View>(R.id.home_wifi_scan)?.apply {
-            setOnClickListener { onWifiScanClicked() }
-            setOnLongClickListener {
-                homeWifiStatus?.openWifiSettings()
-                true
-            }
+    private fun setupWifiStatus() {
+        homeWifiStatus = HomeWifiStatus(requireContext()) {
+            if (homeWifiStatus?.isWaitingForHotspot != renderedHotspotWait) renderHome() else renderWifiStatus()
         }
     }
 
-    private fun onWifiScanClicked() {
-        val status = homeWifiStatus ?: return
-        val ctx = context ?: return
-        when (status.requestScan()) {
-            HomeWifiStatus.ScanRequest.STARTED ->
-                ToastUtils.showToast(ctx, getString(R.string.home_wifi_scan_started), Toast.LENGTH_SHORT)
-            HomeWifiStatus.ScanRequest.REFUSED ->
-                ToastUtils.showToast(ctx, getString(R.string.home_wifi_scan_refused), Toast.LENGTH_LONG, force = true)
-            HomeWifiStatus.ScanRequest.WIFI_OFF -> status.askToTurnWifiOn()
+    private fun phoneHotspotChosen(settings: Settings): Boolean =
+        HomeWifiStatusPolicy.appliesTo(settings.wifiConnectionMode, settings.headunitServerNetwork)
+
+    /**
+     * The main button's Headunit Server press on the phone's hotspot, while the unit is on no WiFi
+     * network: scans (or asks for WiFi to be turned on) and searches for the phone once the unit
+     * has joined. Returns false, having done nothing, everywhere else; the press then does what it
+     * always did.
+     */
+    private fun waitForPhoneHotspotFirst(): Boolean {
+        val ctx = context ?: return false
+        val status = homeWifiStatus ?: return false
+        if (!phoneHotspotChosen(App.provide(ctx).settings)) return false
+        if (status.isWaitingForHotspot) {
+            // A second press during the wait is the same request: scan again, keep waiting.
+            status.requestScan()
+            return true
         }
-        renderWifiStatus()
+        val action = HomeWifiStatusPolicy.connectAction(status.facts(), status.unitHotspotUp())
+        AppLog.i("HomeFragment: phone hotspot chosen, main button -> $action")
+        if (action == HomeWifiStatusPolicy.ConnectAction.CONNECT) return false
+        status.waitForHotspot(
+            scanNow = action == HomeWifiStatusPolicy.ConnectAction.SCAN_AND_WAIT,
+            onJoined = {
+                AppLog.i("HomeFragment: the unit joined a WiFi network; searching for the phone")
+                if (isAdded) startHeadunitServerSearch(quietWhenSearching = true)
+            },
+            onTimedOut = {
+                AppLog.i("HomeFragment: no WiFi network joined within ${HomeWifiStatusPolicy.JOIN_WAIT_MS / 1000}s")
+                context?.let { ToastUtils.showToast(it, getString(R.string.home_hotspot_not_found), Toast.LENGTH_LONG, force = true) }
+            },
+        )
+        if (action == HomeWifiStatusPolicy.ConnectAction.TURN_WIFI_ON_AND_WAIT) status.askToTurnWifiOn()
+        showFirstPage(animate = true)
+        renderHome()
+        return true
+    }
+
+    /** The scans the home makes by itself, when the user turned them on for the phone's hotspot. */
+    private fun startAutoWifiScanIfChosen() {
+        val status = homeWifiStatus ?: return
+        val appSettings = App.provide(requireContext()).settings
+        if (!phoneHotspotChosen(appSettings) || !appSettings.headunitServerAutoWifiScan) return
+        status.startAutoScan {
+            HomeWifiStatusPolicy.shouldAutoScan(
+                enabled = true, facts = status.facts(),
+                unitHotspotUp = status.unitHotspotUp(), sessionActive = commManager.isConnected,
+            )
+        }
     }
 
     private fun renderWifiStatus() {
@@ -480,9 +516,8 @@ class HomeFragment : Fragment() {
         val ctx = context ?: return
         val decision = decision ?: return
         val appSettings = App.provide(ctx).settings
-        val mode = appSettings.wifiConnectionMode
         val line = HomeWifiStatusPolicy.line(
-            isHeadunitServer = mode == WifiLauncherMode.AUTO || mode == WifiLauncherMode.MANUAL,
+            phoneHotspot = phoneHotspotChosen(appSettings),
             cardIsWifi = decision.primary == HomePrimaryPolicy.Connection.WIFI,
             facts = status.facts(),
         )
@@ -526,6 +561,9 @@ class HomeFragment : Fragment() {
             networkLine = ConnectionStageTracker.network.value?.let { networkText(it) }
         )
         HomeUiHelper.fitDriverBar(root, appSettings.homeButtonScalePercent)
+        val waiting = homeWifiStatus?.isWaitingForHotspot == true
+        renderedHotspotWait = waiting
+        HomeUiHelper.applyHotspotWait(ctx, root, waiting)
         renderWifiStatus()
         renderHomeInfo()
         reportBringUpOwner()
@@ -600,6 +638,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun onPrimaryCancelClicked() {
+        // While the card waits for the phone's hotspot, Cancel ends that wait and nothing else:
+        // the search the service may be running beside it is the upstream Cancel's to stop.
+        if (homeWifiStatus?.isWaitingForHotspot == true) {
+            AppLog.i("HomeFragment: hotspot wait cancelled from the home")
+            homeWifiStatus?.cancelWait()
+            return
+        }
         // During the countdown Cancel only ends the countdown, even when the pill was hidden for it
         // (HomePrimaryPolicy.homeTellsBringUp): the card then shows the listening step with its own
         // Cancel, which is the one that stops the bring-up.
@@ -786,8 +831,8 @@ class HomeFragment : Fragment() {
         if (!isAdded || view !== root) return
         val card = root.findViewById<View>(R.id.home_primary_card) ?: return
         if (card.height <= 0) return
-        // Width first: a narrower Scan WiFi or network name changes the layout the height fit reads.
-        if (HomeUiHelper.fitWifiStatus(requireContext(), root)) {
+        // Width first: a narrower network name changes the layout the height fit reads.
+        if (HomeUiHelper.fitCardWidth(requireContext(), root)) {
             scheduleCardFit(root)
             return
         }
@@ -1970,6 +2015,31 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * Headunit Server (Auto)'s one-shot search, as the main button has always started it.
+     * [quietWhenSearching] for the search after a hotspot join, which the service has usually begun
+     * by itself already: saying "already scanning" then would read as a fault.
+     */
+    private fun startHeadunitServerSearch(quietWhenSearching: Boolean = false) {
+        if (commManager.isConnected) {
+            // Already connected
+        } else if (AapService.scanningState.value) {
+            if (!quietWhenSearching) {
+                ToastUtils.showToast(requireContext(), getString(R.string.already_scanning), Toast.LENGTH_SHORT)
+            }
+        } else {
+            ToastUtils.showToast(requireContext(), getString(R.string.searching_headunit_server), Toast.LENGTH_SHORT)
+            (requireActivity() as? MainActivity)?.beginAutoConnect(
+                "manual WiFi headunit server scan",
+                MainActivity.ConnectionUiMode.OVERLAY
+            )
+            val intent = Intent(requireContext(), AapService::class.java).apply {
+                action = AapService.ACTION_START_WIRELESS_SCAN
+            }
+            ContextCompat.startForegroundService(requireContext(), intent)
+        }
+    }
+
     private fun onWifiClicked() {
         if (showsBringUp(HomePrimaryPolicy.Connection.WIFI)) return
         // With a session up the wireless tile is the way back to it, the same as the USB one. It
@@ -1981,21 +2051,8 @@ class HomeFragment : Fragment() {
         val mode = App.provide(requireContext()).settings.wifiConnectionMode
         when (mode) {
             WifiLauncherMode.AUTO -> { // Auto (Headunit Server) - One-Shot Scan
-                if (commManager.isConnected) {
-                    // Already connected
-                } else if (AapService.scanningState.value) {
-                    ToastUtils.showToast(requireContext(), getString(R.string.already_scanning), Toast.LENGTH_SHORT)
-                } else {
-                    ToastUtils.showToast(requireContext(), getString(R.string.searching_headunit_server), Toast.LENGTH_SHORT)
-                    (requireActivity() as? MainActivity)?.beginAutoConnect(
-                        "manual WiFi headunit server scan",
-                        MainActivity.ConnectionUiMode.OVERLAY
-                    )
-                    val intent = Intent(requireContext(), AapService::class.java).apply {
-                        action = AapService.ACTION_START_WIRELESS_SCAN
-                    }
-                    ContextCompat.startForegroundService(requireContext(), intent)
-                }
+                // On the phone's hotspot with no WiFi yet, the unit joins it first.
+                if (!waitForPhoneHotspotFirst()) startHeadunitServerSearch()
             }
             WifiLauncherMode.HELPER -> { // Helper (Wireless Launcher)
                 if (commManager.isConnected) {
@@ -2424,6 +2481,7 @@ class HomeFragment : Fragment() {
         // built in onResume.
         HomeWidgets.startListening(requireContext())
         homeWifiStatus?.start()
+        startAutoWifiScanIfChosen()
         renderWifiStatus()
         reportBringUpOwner(started = true)
         activity?.window?.decorView?.viewTreeObserver?.addOnGlobalLayoutListener(issueBannerWatcher)

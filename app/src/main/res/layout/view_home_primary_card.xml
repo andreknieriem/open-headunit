@@ -47,8 +47,8 @@
                     app:srcCompat="@drawable/ic_usb_white" />
             </FrameLayout>
 
-            <!-- Headunit Server only: the WiFi network this unit is on, its band and signal, or why
-                 there is none. Information only: the Scan WiFi button below acts on it. It takes
+            <!-- Headunit Server on the phone's hotspot only: the WiFi network this unit is on, its
+                 band and signal, or why there is none. Information only. It takes
                  three quarters of the row's free width and the spacer after it the rest, so it never
                  reaches the countdown or the date and time in the far corner. A name too long for
                  it steps down a size, then ends in an ellipsis. -->
@@ -127,7 +127,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Gives way to the WiFi line on a card too narrow for both (HomeUiHelper.fitWifiStatus). -->
+            <!-- Gives way to the WiFi line on a card too narrow for both (HomeUiHelper.fitCardWidth). -->
             <View
                 android:id="@+id/home_primary_header_spacer"
                 android:layout_width="0dp"
@@ -250,42 +250,6 @@
                 android:focusable="true"
                 android:fontFamily="sans-serif-medium"
                 android:textSize="@dimen/home_cta_text" />
-
-            <!-- Headunit Server only, while nothing is on its way: asks Android for one WiFi scan,
-                 which is what gets a slow unit onto the phone's hotspot. A long press opens the
-                 WiFi settings. The main button's size and shape, see-through; it sits before Cancel
-                 while the stack only listens. -->
-            <LinearLayout
-                android:id="@+id/home_wifi_scan"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/home_cta_height"
-                android:layout_gravity="center_vertical"
-                android:paddingLeft="@dimen/home_wifi_scan_padding_h"
-                android:paddingRight="@dimen/home_wifi_scan_padding_h"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/home_wifi_scan_icon"
-                    android:layout_width="@dimen/home_cta_icon"
-                    android:layout_height="@dimen/home_cta_icon"
-                    android:importantForAccessibility="no"
-                    app:srcCompat="@drawable/ic_wifi_find_white" />
-
-
-                <TextView
-                    android:id="@+id/home_wifi_scan_label"
-                    style="@style/HomeCardText"
-                    android:layout_marginStart="@dimen/home_wifi_meta_gap"
-                    android:layout_marginLeft="@dimen/home_wifi_meta_gap"
-                    android:fontFamily="sans-serif-medium"
-                    android:maxLines="1"
-                    android:text="@string/home_wifi_scan_button"
-                    android:textSize="@dimen/home_cta_text" />
-            </LinearLayout>
 
             <TextView
                 android:id="@+id/home_primary_cancel"

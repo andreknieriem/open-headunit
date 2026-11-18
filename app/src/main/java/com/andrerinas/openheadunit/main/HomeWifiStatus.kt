@@ -13,14 +13,17 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings as SystemSettings
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.HotspotManager
 
 /**
- * The WiFi facts behind the home's WiFi line, kept current while the home is on screen, and the
- * one-off scan the Scan WiFi button asks for. [start] in onStart, [stop] in onStop; [onChanged] runs on the
- * main thread.
+ * The WiFi facts behind the home's WiFi line, kept current while the home is on screen; the main
+ * button's wait for the phone's hotspot; and the scans the home makes by itself when the user
+ * turned them on. [start] in onStart, [stop] in onStop, which ends the wait and the automatic
+ * scans too; [onChanged] and every callback run on the main thread. Rules: [HomeWifiStatusPolicy].
  */
 class HomeWifiStatus(context: Context, private val onChanged: () -> Unit) {
 
@@ -46,7 +49,104 @@ class HomeWifiStatus(context: Context, private val onChanged: () -> Unit) {
         }
     }
 
-    private fun changed() = handler.post(onChanged)
+    private fun changed() = handler.post {
+        // The wait ends here rather than in the fragment, so a join heard while nothing redraws
+        // still ends it.
+        if (waitJoined != null && HomeWifiStatusPolicy.waitJoined(facts())) {
+            val joined = waitJoined
+            clearWait()
+            joined?.invoke()
+        }
+        onChanged()
+    }
+
+    private var waitJoined: (() -> Unit)? = null
+    private var waitTimedOut: (() -> Unit)? = null
+
+    /** The main button is waiting for this unit to join the phone's hotspot. */
+    val isWaitingForHotspot: Boolean get() = waitJoined != null
+
+    private val waitRescan = object : Runnable {
+        override fun run() {
+            if (waitJoined == null) return
+            requestScan()
+            handler.postDelayed(this, HomeWifiStatusPolicy.RESCAN_MS)
+        }
+    }
+
+    private val waitTimeout = Runnable {
+        val timedOut = waitTimedOut
+        clearWait()
+        timedOut?.invoke()
+        onChanged()
+    }
+
+    /**
+     * Waits up to [HomeWifiStatusPolicy.JOIN_WAIT_MS] for this unit to join a WiFi network, scanning
+     * now when [scanNow] and again every [HomeWifiStatusPolicy.RESCAN_MS]. Exactly one of the two
+     * callbacks runs, unless [cancelWait] or [stop] comes first.
+     */
+    fun waitForHotspot(scanNow: Boolean, onJoined: () -> Unit, onTimedOut: () -> Unit) {
+        clearWait()
+        waitJoined = onJoined
+        waitTimedOut = onTimedOut
+        if (scanNow) requestScan()
+        handler.postDelayed(waitRescan, HomeWifiStatusPolicy.RESCAN_MS)
+        handler.postDelayed(waitTimeout, HomeWifiStatusPolicy.JOIN_WAIT_MS)
+        // WiFi may have come up between the tap and here.
+        changed()
+    }
+
+    fun cancelWait() {
+        if (waitJoined == null) return
+        clearWait()
+        onChanged()
+    }
+
+    private fun clearWait() {
+        waitJoined = null
+        waitTimedOut = null
+        handler.removeCallbacks(waitRescan)
+        handler.removeCallbacks(waitTimeout)
+    }
+
+    private var autoScanAllowed: (() -> Boolean)? = null
+    private var autoScanSince = 0L
+
+    private val autoScanTick = object : Runnable {
+        override fun run() {
+            val allowed = autoScanAllowed ?: return
+            val now = SystemClock.elapsedRealtime()
+            // A join ends one stretch without WiFi; the next one starts brisk again.
+            if (facts().connected) autoScanSince = now
+            // The wait scans on its own pace; two paces would spend Android's allowance twice.
+            if (waitJoined == null && allowed()) requestScan()
+            handler.postDelayed(this, HomeWifiStatusPolicy.autoScanDelayMs(now - autoScanSince))
+        }
+    }
+
+    /**
+     * Scans by itself until [stop]: at once, then at [HomeWifiStatusPolicy.autoScanDelayMs]'s pace,
+     * each time only if [allowed] says so.
+     */
+    fun startAutoScan(allowed: () -> Boolean) {
+        stopAutoScan()
+        autoScanAllowed = allowed
+        autoScanSince = SystemClock.elapsedRealtime()
+        handler.post(autoScanTick)
+    }
+
+    private fun stopAutoScan() {
+        autoScanAllowed = null
+        handler.removeCallbacks(autoScanTick)
+    }
+
+    /** Whether this unit hosts an access point of its own right now; see [HotspotManager.isApUp]. */
+    fun unitHotspotUp(): Boolean = try {
+        HotspotManager.isApUp(context)
+    } catch (e: Exception) {
+        false
+    }
 
     fun start() {
         if (receiver != null) return
@@ -97,6 +197,8 @@ class HomeWifiStatus(context: Context, private val onChanged: () -> Unit) {
         callback = null
         handler.removeCallbacks(scanTimeout)
         scanning = false
+        clearWait()
+        stopAutoScan()
     }
 
     @SuppressLint("MissingPermission")
@@ -130,9 +232,9 @@ class HomeWifiStatus(context: Context, private val onChanged: () -> Unit) {
     }
 
     /**
-     * One scan, for the Scan WiFi button. Android picks and joins the network itself; this
-     * only gets it the results sooner. From Android 9 a foreground app gets four scans in two
-     * minutes, and the platform refuses the rest.
+     * One scan. Android picks and joins the network itself; this only gets it the results sooner.
+     * From Android 9 a foreground app gets four scans in two minutes, and the platform refuses the
+     * rest; a refusal changes nothing, since Android's own scans carry on.
      */
     @SuppressLint("MissingPermission")
     fun requestScan(): ScanRequest {
@@ -165,9 +267,6 @@ class HomeWifiStatus(context: Context, private val onChanged: () -> Unit) {
         }
         openWifiScreen(panel = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
     }
-
-    /** Android's WiFi settings, for the long press: pick a network or type its password. */
-    fun openWifiSettings() = openWifiScreen(panel = false)
 
     private fun openWifiScreen(panel: Boolean) {
         val action = if (panel && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) SystemSettings.Panel.ACTION_WIFI

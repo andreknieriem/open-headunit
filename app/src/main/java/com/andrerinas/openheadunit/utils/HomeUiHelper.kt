@@ -91,6 +91,7 @@ object HomeUiHelper {
 
     private val scaledTiles = listOf(
         R.id.usb_button, R.id.wifi_button, R.id.self_mode_button, R.id.settings_button, R.id.exit_button,
+        R.id.sidebar_apps_button,
         // The scroll view keeps the tiles' width, so it scales with them.
         R.id.home_bar_scroll
     )
@@ -101,6 +102,7 @@ object HomeUiHelper {
      */
     private val fittedTiles = listOf(
         R.id.usb_button, R.id.wifi_button, R.id.self_mode_button, R.id.settings_button, R.id.exit_button,
+        R.id.sidebar_apps_button,
         R.id.home_bar_scroll
     )
 
@@ -242,6 +244,9 @@ object HomeUiHelper {
             shape(palette.panel, panelRadius, palette.panelStroke, strokePx)
         rootView.findViewById<ViewGroup>(R.id.exit_button)?.let {
             paintTile(it, tileBackground(context, palette), palette.textMuted, palette.textMuted)
+        }
+        rootView.findViewById<ViewGroup>(R.id.sidebar_apps_button)?.let {
+            paintTile(it, tileBackground(context, palette), palette.text, palette.text)
         }
         rootView.findViewById<ViewGroup>(R.id.apps_button)?.let {
             val radius = resources.getDimension(R.dimen.home_tile_radius)
@@ -446,6 +451,7 @@ object HomeUiHelper {
         // Exit is pinned under the scroll and shrinks with the tiles, so the room it takes now
         // (and the gap above it) counts as room the tiles and Exit share.
         val exit = rootView.findViewById<View>(R.id.exit_button)?.takeIf { it.visibility == View.VISIBLE }
+            ?: rootView.findViewById<View>(R.id.sidebar_apps_button)?.takeIf { it.visibility == View.VISIBLE }
         val available = scroll.height - tiles.paddingTop - tiles.paddingBottom +
             (exit?.let { it.height + gapPx } ?: 0)
         val fixedPx = gapPx * (visible.size - 1) + (if (exit != null) gapPx else 0)
@@ -481,7 +487,7 @@ object HomeUiHelper {
                 (0 until group.childCount).map { group.getChildAt(it) }.filterIsInstance<WordFitTextView>().firstOrNull()
             } ?: return@maxOfOrNull tilePx
             val name = label.getTag(R.id.home_tile_name) as? CharSequence ?: label.text
-            val connection = tile.id != R.id.settings_button && tile.id != R.id.exit_button
+            val connection = tile.id != R.id.settings_button && tile.id != R.id.exit_button && tile.id != R.id.sidebar_apps_button
             val texts = if (connection) listOf(name) + states else listOf(name)
             label.tileWidthForWholeWords(texts, tilePx, maxPx)
         } ?: tilePx
@@ -652,15 +658,18 @@ object HomeUiHelper {
      * to the other apps.
      */
     fun applyFavoritesVisibility(rootView: View, isLauncherActive: Boolean, showFavorites: Boolean) {
-        // The whole area, not only its rows: an empty area that is still visible keeps the gap
-        // above it, and outside launcher mode the main button then ended short of the driver bar.
+        val widgetsVisible = rootView.findViewById<View>(R.id.home_widgets_scroll)?.visibility == View.VISIBLE
+        val favoritesVisible = isLauncherActive && showFavorites
         rootView.findViewById<View>(R.id.home_favorites_area)?.visibility =
-            if (isLauncherActive) View.VISIBLE else View.GONE
-        rootView.findViewById<View>(R.id.home_favorites)?.visibility = if (isLauncherActive) View.VISIBLE else View.GONE
+            if (isLauncherActive && (showFavorites || widgetsVisible)) View.VISIBLE else View.GONE
+        rootView.findViewById<View>(R.id.home_favorites)?.visibility =
+            if (favoritesVisible) View.VISIBLE else View.GONE
+        // "All" lives in the sidebar in launcher mode (replacing Exit), so keep the row's tile hidden.
+        rootView.findViewById<View>(R.id.apps_button)?.visibility = View.GONE
         rootView.findViewById<View>(R.id.home_primary_icon_tile)?.visibility =
             if (isLauncherActive) View.GONE else View.VISIBLE
         favoriteSlotIds.forEach {
-            rootView.findViewById<View>(it)?.visibility = if (showFavorites) View.VISIBLE else View.GONE
+            rootView.findViewById<View>(it)?.visibility = if (favoritesVisible) View.VISIBLE else View.GONE
         }
     }
 

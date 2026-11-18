@@ -113,6 +113,18 @@
                 android:text="@string/exit" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/sidebar_apps_button"
+            style="@style/HomeTile"
+            android:visibility="gone">
+            <ImageView
+                style="@style/HomeTileIcon"
+                app:srcCompat="@drawable/ic_apps" />
+            <com.andrerinas.openheadunit.view.WordFitTextView
+                style="@style/HomeTileLabel.Wrap"
+                android:text="@string/home_all_apps" />
+        </LinearLayout>
+
     </LinearLayout>
 
     <!-- The pages: the main one from this file, the rest added by HomeFragment.renderPages. The

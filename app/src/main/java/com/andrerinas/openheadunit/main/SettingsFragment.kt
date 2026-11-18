@@ -102,6 +102,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
+import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
 import com.andrerinas.openheadunit.connection.wifi.WirelessRearmPolicy
 import java.io.File
 import kotlinx.coroutines.CancellationException
@@ -139,6 +140,9 @@ class SettingsFragment : Fragment() {
         // is picked, and on a device that will not let an app read its hotspot configuration the
         // manual name is the only way to finish setting the route up.
         "wifiConnectionMode",
+        // Headunit Server (Auto) only. Which network the two share is the one thing a user on the
+        // phone's hotspot has to say for the unit to wait for it, and it decides nothing else.
+        "headunitServerNetwork", "headunitServerAutoWifiScan",
         "nativeApTransport", "hotspotBand",
         // The WiFi Direct band, for the same reason as the hotspot one beside it: it is the first
         // thing to try when a wireless session connects and shows no picture, and a user sent to
@@ -225,6 +229,8 @@ class SettingsFragment : Fragment() {
     private var pendingWifiConnectionMode by pending::wifiConnectionMode
     private var pendingHelperConnectionStrategy by pending::helperConnectionStrategy
     private var pendingAutoEnableHotspot by pending::autoEnableHotspot
+    private var pendingHeadunitServerNetwork by pending::headunitServerNetwork
+    private var pendingHeadunitServerAutoWifiScan by pending::headunitServerAutoWifiScan
     private var pendingWaitForWifi by pending::waitForWifi
     private var pendingWaitForWifiTimeout by pending::waitForWifiTimeout
     private var pendingBluetoothManagerServiceName by pending::bluetoothManagerServiceName
@@ -704,6 +710,11 @@ class SettingsFragment : Fragment() {
         pendingRaiseProjectionDuringCall?.let { if (it != settings.raiseProjectionDuringCall) settings.raiseProjectionDuringCall = it }
         pendingShowOverLockScreen?.let { if (it != settings.showOverLockScreen) settings.showOverLockScreen = it }
         pendingAutoEnableHotspot?.let { if (it != settings.autoEnableHotspot) settings.autoEnableHotspot = it }
+        // Read by every discovery sweep and by the home, so neither needs a restart. Written even
+        // when unchanged: a unit that never chose reads its choice off "Auto-Enable Hotspot", and
+        // turning that off must not move it to another network behind the user's back.
+        pendingHeadunitServerNetwork?.let { settings.headunitServerNetwork = it }
+        pendingHeadunitServerAutoWifiScan?.let { if (it != settings.headunitServerAutoWifiScan) settings.headunitServerAutoWifiScan = it }
         pendingAutoRestartWifi?.let { if (it != settings.autoRestartWifiWhenP2pStuck) settings.autoRestartWifiWhenP2pStuck = it }
         pendingUseLibusb?.let { if (it != settings.useLibusb) settings.useLibusb = it }
         pendingListenForUsbDevices?.let {
@@ -1308,9 +1319,42 @@ class SettingsFragment : Fragment() {
                 }
             ))
 
-            // Mode 1 (Auto Server) can also use the auto-hotspot feature
             if (pendingWifiConnectionMode == WifiLauncherMode.AUTO) {
-                addHotspotToggle(items)
+                // Which network the phone and this unit share. Only the phone's hotspot changes
+                // anything: the unit has to join it before there is anyone to find.
+                val networks = listOf(HeadunitServerNetwork.PHONE_HOTSPOT, HeadunitServerNetwork.UNIT_HOTSPOT, HeadunitServerNetwork.SHARED)
+                val network = pendingHeadunitServerNetwork ?: settings.headunitServerNetwork
+                items.add(SettingItem.SegmentedButtonSettingEntry(
+                    stableId = "headunitServerNetwork",
+                    nameResId = R.string.headunit_server_network_label,
+                    helpResId = R.string.headunit_server_network_help,
+                    options = networks.map { getString(headunitServerNetworkLabel(it)) },
+                    selectedIndex = networks.indexOf(network),
+                    onOptionSelected = { index ->
+                        pendingHeadunitServerNetwork = networks[index]
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
+                when (network) {
+                    HeadunitServerNetwork.PHONE_HOTSPOT -> items.add(SettingItem.ToggleSettingEntry(
+                        stableId = "headunitServerAutoWifiScan",
+                        nameResId = R.string.headunit_server_auto_wifi_scan,
+                        descriptionResId = R.string.headunit_server_auto_wifi_scan_summary,
+                        helpResId = R.string.headunit_server_auto_wifi_scan_help,
+                        isChecked = pendingHeadunitServerAutoWifiScan ?: false,
+                        onCheckedChanged = { isChecked ->
+                            pendingHeadunitServerAutoWifiScan = isChecked
+                            checkChanges()
+                            updateSettingsList()
+                        }
+                    ))
+                    // Mode 1 (Auto Server) can also use the auto-hotspot feature. Left as it was,
+                    // value included, under the choice it belongs to: the setting is shared with
+                    // the Helper and Native routes, so hiding it here must not change it there.
+                    HeadunitServerNetwork.UNIT_HOTSPOT -> addHotspotToggle(items)
+                    HeadunitServerNetwork.SHARED -> {}
+                }
             }
         }
 
@@ -4864,6 +4908,12 @@ class SettingsFragment : Fragment() {
         ))
     }
 
+
+    private fun headunitServerNetworkLabel(network: HeadunitServerNetwork): Int = when (network) {
+        HeadunitServerNetwork.PHONE_HOTSPOT -> R.string.headunit_server_network_phone
+        HeadunitServerNetwork.UNIT_HOTSPOT -> R.string.headunit_server_network_unit
+        HeadunitServerNetwork.SHARED -> R.string.headunit_server_network_shared
+    }
 
     private fun getAutoConnectSummary(): String {
         val order = settings.autoConnectPriorityOrder

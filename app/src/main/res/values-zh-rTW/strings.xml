@@ -699,6 +699,14 @@
     <string name="server_mode_manual">手動</string>
     <string name="server_mode_auto">自動</string>
     <string name="server_mode_help">「自動」會在網路上搜尋手機上的車機伺服器並自動連線。「手動」不會搜尋。你可以從網路清單連線，或使用手機的位址連線。</string>
+    <string name="headunit_server_network_label">連線方式</string>
+    <string name="headunit_server_network_phone">手機熱點</string>
+    <string name="headunit_server_network_unit">本機熱點</string>
+    <string name="headunit_server_network_shared">共用 Wi-Fi</string>
+    <string name="headunit_server_network_help">手機和本機共用哪個 Wi-Fi。手機熱點：本機連上手機的熱點。連上之前，尋找手機會先等待，「透過 WiFi 連線」會先掃描熱點。本機熱點：手機連上本機的存取點。共用 Wi-Fi：兩者在同一台路由器上，一切照舊。</string>
+    <string name="headunit_server_auto_wifi_scan">自動掃描熱點</string>
+    <string name="headunit_server_auto_wifi_scan_summary">主畫面顯示中且未連上 Wi-Fi 時。</string>
+    <string name="headunit_server_auto_wifi_scan_help">主畫面顯示中且本機未連上任何 Wi-Fi 網路時，會請 Android 掃描 Wi-Fi：立即一次，兩分鐘內每 35 秒一次，之後每分鐘一次。這樣本機能更快連上手機熱點。Android 允許兩分鐘內掃描四次，背景執行時不允許掃描。</string>
 
     <string name="helper_strategy_label">Helper 連線策略</string>
     <string name="helper_strategy_help">選擇在 Wireless Helper 模式下手機與本車機如何共用網路。「普通 Wifi」會使用雙方已共用的網路。WiFi Direct 會建立專用連結。「搜尋附近裝置」為測試版。「手機熱點」會加入手機的熱點。「車機熱點」會讓本車機成為存取點。手機找不到本車機時再變更。</string>
@@ -1875,4 +1883,17 @@
     <string name="usb_wireless_dongle_help">如果您透過 AAWireless 或 Carlinkit 等無線 USB 轉接器連線，請開啟此選項。Open Headunit 無法區分轉接器與傳輸線，開啟後會將主畫面文字從有線改為無線。</string>
     <string name="home_subtitle_usb_dongle">無線連線</string>
     <string name="home_action_connect_wireless_dongle">無線連線</string>
+    <string name="home_wifi_not_connected">Wi-Fi 未連線</string>
+    <string name="home_wifi_off">Wi-Fi 已關閉</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi 已連線</string>
+    <string name="home_wifi_scanning">正在掃描…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">Wi-Fi：%1$s</string>
+    <string name="home_hotspot_waiting">正在等待手機熱點…</string>
+    <string name="home_hotspot_not_found">未連上 Wi-Fi。手機熱點已開啟嗎？</string>
+    <string name="home_wifi_hotspot_hint">手機熱點已開啟嗎？</string>
+    <string name="home_wifi_off_hint">開啟後即可連線</string>
 </resources>

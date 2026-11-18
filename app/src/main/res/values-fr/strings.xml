@@ -1081,6 +1081,14 @@
     <string name="server_mode_manual">Manuel</string>
     <string name="server_mode_auto">Auto</string>
     <string name="server_mode_help">Auto cherche sur le réseau le serveur de l\'autoradio sur le téléphone et s\'y connecte seul. Manuel ne cherche pas. Vous vous connectez depuis la liste des réseaux ou avec l\'adresse du téléphone.</string>
+    <string name="headunit_server_network_label">Méthode de connexion</string>
+    <string name="headunit_server_network_phone">Hotspot téléphone</string>
+    <string name="headunit_server_network_unit">Hotspot unité</string>
+    <string name="headunit_server_network_shared">Wi-Fi commun</string>
+    <string name="headunit_server_network_help">Le Wi-Fi que le téléphone et cette unité partagent. Hotspot téléphone : cette unité rejoint le point d’accès du téléphone. D’ici là, la recherche du téléphone attend, et Connexion WiFi cherche d’abord le point d’accès. Hotspot unité : le téléphone rejoint le point d’accès de cette unité. Wi-Fi commun : les deux sont sur le même routeur, et rien ne change.</string>
+    <string name="headunit_server_auto_wifi_scan">Chercher le point d’accès automatiquement</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Tant que l’accueil est affiché et qu’aucun Wi-Fi n’est connecté.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Tant que l’écran d’accueil est affiché et que cette unité n’est connectée à aucun Wi-Fi, elle demande à Android une recherche Wi-Fi : tout de suite, toutes les 35 secondes pendant deux minutes, puis une fois par minute. L’unité rejoint ainsi plus tôt le point d’accès du téléphone. Android autorise quatre recherches en deux minutes, et aucune en arrière-plan.</string>
 
     <string name="helper_strategy_label">Stratégie de connexion de l\'assistant</string>
     <string name="helper_strategy_help">Choisit comment le téléphone et cet appareil partagent un réseau en mode Assistant sans fil. Wifi commun utilise un réseau déjà partagé par les deux. WiFi Direct crée une liaison privée. Google Nearby est en bêta. Point d\'accès du téléphone rejoint le point d\'accès du téléphone. Point d\'accès de l\'autoradio fait de cet appareil le point d\'accès. Changez-le si le téléphone ne trouve pas cet appareil.</string>
@@ -1922,4 +1930,17 @@
     <string name="usb_wireless_dongle_help">Activez cette option si vous utilisez un adaptateur USB sans fil comme AAWireless ou Carlinkit. Open Headunit ne peut pas différencier un dongle d’un câble ; cette option remplace donc les libellés câble par sans fil sur l’écran d’accueil.</string>
     <string name="home_subtitle_usb_dongle">Sans fil</string>
     <string name="home_action_connect_wireless_dongle">Connecter sans fil</string>
+    <string name="home_wifi_not_connected">Wi-Fi non connecté</string>
+    <string name="home_wifi_off">Le Wi-Fi est désactivé</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi connecté</string>
+    <string name="home_wifi_scanning">Recherche…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_status_description">Wi-Fi : %1$s</string>
+    <string name="home_hotspot_waiting">En attente du point d’accès du téléphone…</string>
+    <string name="home_hotspot_not_found">Aucun Wi-Fi connecté. Le point d’accès du téléphone est-il activé ?</string>
+    <string name="home_wifi_hotspot_hint">Point d’accès du téléphone activé ?</string>
+    <string name="home_wifi_off_hint">Activez-le pour vous connecter</string>
 </resources>

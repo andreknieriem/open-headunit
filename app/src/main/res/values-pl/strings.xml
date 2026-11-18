@@ -700,6 +700,14 @@
     <string name="server_mode_manual">Ręczny</string>
     <string name="server_mode_auto">Automatyczny</string>
     <string name="server_mode_help">Automatyczny szuka w sieci serwera stacji na telefonie i łączy się sam. Ręczny nie szuka. Łączysz się z listy sieci lub podajesz adres telefonu.</string>
+    <string name="headunit_server_network_label">Metoda połączenia</string>
+    <string name="headunit_server_network_phone">Hotspot telefonu</string>
+    <string name="headunit_server_network_unit">Hotspot jednostki</string>
+    <string name="headunit_server_network_shared">Wspólne WiFi</string>
+    <string name="headunit_server_network_help">Które WiFi dzielą telefon i ta jednostka. Hotspot telefonu: ta jednostka łączy się z hotspotem telefonu. Do tego czasu wyszukiwanie telefonu czeka, a Połącz przez Wi-Fi najpierw szuka hotspotu. Hotspot jednostki: telefon łączy się z punktem dostępu tej jednostki. Wspólne WiFi: oba są w tym samym routerze i nic się nie zmienia.</string>
+    <string name="headunit_server_auto_wifi_scan">Szukaj hotspotu automatycznie</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Gdy ekran główny jest widoczny i nie połączono z WiFi.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Gdy ekran główny jest widoczny, a ta jednostka nie jest w żadnej sieci WiFi, prosi Androida o skanowanie WiFi: od razu, co 35 sekund przez dwie minuty, potem raz na minutę. Dzięki temu jednostka szybciej łączy się z hotspotem telefonu. Android pozwala na cztery skanowania w dwie minuty i żadnego w tle.</string>
 
     <string name="helper_strategy_label">Metoda połączenia (Helper)</string>
     <string name="helper_strategy_help">Wybiera, jak telefon i ta stacja dzielą sieć w trybie Wireless Helper. Wspólne Wi-Fi używa sieci, w której są już oba urządzenia. Wi-Fi Direct tworzy prywatne łącze. Urządzenia w pobliżu są w wersji beta. Hotspot telefonu łączy z hotspotem telefonu. Hotspot stacji czyni tę stację punktem dostępu. Zmień go, gdy telefon nie znajduje tej stacji.</string>
@@ -1882,4 +1890,17 @@
     <string name="usb_wireless_dongle_help">Włącz tę opcję, jeśli łączysz się przez bezprzewodowy adapter USB, np. AAWireless lub Carlinkit. Open Headunit nie odróżnia adaptera od kabla, więc ta opcja zmienia etykiety na ekranie głównym z kablowych na bezprzewodowe.</string>
     <string name="home_subtitle_usb_dongle">Bezprzewodowo</string>
     <string name="home_action_connect_wireless_dongle">Połącz bezprzewodowo</string>
+    <string name="home_wifi_not_connected">WiFi nie jest połączone</string>
+    <string name="home_wifi_off">WiFi jest wyłączone</string>
+    <string name="home_wifi_connected_unnamed">WiFi połączone</string>
+    <string name="home_wifi_scanning">Wyszukiwanie…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">Czekam na hotspot telefonu…</string>
+    <string name="home_hotspot_not_found">Brak połączenia z WiFi. Czy hotspot telefonu jest włączony?</string>
+    <string name="home_wifi_hotspot_hint">Czy hotspot telefonu jest włączony?</string>
+    <string name="home_wifi_off_hint">Włącz je, aby się połączyć</string>
 </resources>

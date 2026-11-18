@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.main
 
 import com.andrerinas.openheadunit.aap.protocol.messages.BluetoothAnnouncePolicy
+import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
@@ -61,6 +62,8 @@ class SettingsPendingCopy {
     var wifiConnectionMode: WifiLauncherMode? = null
     var helperConnectionStrategy: HelperStrategy? = null
     var autoEnableHotspot: Boolean? = null
+    var headunitServerNetwork: HeadunitServerNetwork? = null
+    var headunitServerAutoWifiScan: Boolean? = null
     var waitForWifi: Boolean? = null
     var waitForWifiTimeout: Int? = null
     var bluetoothManagerServiceName: String? = null
@@ -158,6 +161,8 @@ class SettingsPendingCopy {
         wifiConnectionMode = settings.wifiConnectionMode
         helperConnectionStrategy = settings.helperConnectionStrategy
         autoEnableHotspot = settings.autoEnableHotspot
+        headunitServerNetwork = settings.headunitServerNetwork
+        headunitServerAutoWifiScan = settings.headunitServerAutoWifiScan
         waitForWifi = settings.waitForWifiBeforeWifiDirect
         waitForWifiTimeout = settings.waitForWifiTimeout
         bluetoothManagerServiceName = settings.bluetoothManagerServiceName
@@ -256,6 +261,8 @@ class SettingsPendingCopy {
         wifiConnectionMode != settings.wifiConnectionMode ||
         helperConnectionStrategy != settings.helperConnectionStrategy ||
         autoEnableHotspot != settings.autoEnableHotspot ||
+        headunitServerNetwork != settings.headunitServerNetwork ||
+        headunitServerAutoWifiScan != settings.headunitServerAutoWifiScan ||
         waitForWifi != settings.waitForWifiBeforeWifiDirect ||
         waitForWifiTimeout != settings.waitForWifiTimeout ||
         bluetoothManagerServiceName != settings.bluetoothManagerServiceName ||

@@ -699,6 +699,14 @@
     <string name="server_mode_manual">Handmatig</string>
     <string name="server_mode_auto">Automatisch</string>
     <string name="server_mode_help">Automatisch zoekt op het netwerk naar de headunit-server op de telefoon en verbindt zelf. Handmatig zoekt niet. Je verbindt via de netwerklijst of met het adres van de telefoon.</string>
+    <string name="headunit_server_network_label">Verbindingsmethode</string>
+    <string name="headunit_server_network_phone">Telefoonhotspot</string>
+    <string name="headunit_server_network_unit">Unithotspot</string>
+    <string name="headunit_server_network_shared">Gedeelde wifi</string>
+    <string name="headunit_server_network_help">Welke wifi de telefoon en deze unit delen. Telefoonhotspot: deze unit maakt verbinding met de hotspot van de telefoon. Tot dan wacht het zoeken naar de telefoon, en Verbinden via WiFi zoekt eerst naar de hotspot. Unithotspot: de telefoon maakt verbinding met het toegangspunt van deze unit. Gedeelde wifi: beide zitten op dezelfde router, en er verandert niets.</string>
+    <string name="headunit_server_auto_wifi_scan">Automatisch naar de hotspot zoeken</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Zolang het startscherm open is en er geen wifi verbonden is.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Zolang het startscherm zichtbaar is en deze unit op geen enkel wifinetwerk zit, vraagt hij Android om een wifiscan: meteen, twee minuten lang elke 35 seconden, daarna eens per minuut. Zo maakt de unit eerder verbinding met de hotspot van de telefoon. Android staat vier scans in twee minuten toe, en geen op de achtergrond.</string>
 
     <string name="helper_strategy_label">Verbindingsmethode (Helper)</string>
     <string name="helper_strategy_help">Bepaalt hoe de telefoon en dit apparaat een netwerk delen in de modus Wireless Helper. Gemeenschappelijke WiFi gebruikt een netwerk dat beide al delen. WiFi Direct maakt een privéverbinding. Apparaten in de buurt zitten in bèta. Telefoon-hotspot maakt verbinding met de hotspot van de telefoon. Headunit-hotspot maakt dit apparaat het toegangspunt. Wijzig dit als de telefoon dit apparaat niet vindt.</string>
@@ -1881,4 +1889,17 @@
     <string name="usb_wireless_dongle_help">Schakel dit in als je verbindt via een draadloze USB-adapter zoals AAWireless of Carlinkit. Open Headunit kan een dongle niet van een kabel onderscheiden, dus deze optie verandert de startschermteksten van kabel naar draadloos.</string>
     <string name="home_subtitle_usb_dongle">Draadloos</string>
     <string name="home_action_connect_wireless_dongle">Draadloos verbinden</string>
+    <string name="home_wifi_not_connected">Wifi niet verbonden</string>
+    <string name="home_wifi_off">Wifi staat uit</string>
+    <string name="home_wifi_connected_unnamed">Wifi verbonden</string>
+    <string name="home_wifi_scanning">Zoeken…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">Wifi: %1$s</string>
+    <string name="home_hotspot_waiting">Wachten op de hotspot van de telefoon…</string>
+    <string name="home_hotspot_not_found">Geen wifi verbonden. Staat de hotspot van de telefoon aan?</string>
+    <string name="home_wifi_hotspot_hint">Staat de hotspot van de telefoon aan?</string>
+    <string name="home_wifi_off_hint">Zet het aan om te verbinden</string>
 </resources>

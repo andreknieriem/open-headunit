@@ -707,6 +707,14 @@
     <string name="server_mode_manual">Manuale</string>
     <string name="server_mode_auto">Auto</string>
     <string name="server_mode_help">Auto cerca in rete il server dell\'autoradio sul telefono e si collega da solo. Manuale non cerca. Ti colleghi dall\'elenco delle reti o con l\'indirizzo del telefono.</string>
+    <string name="headunit_server_network_label">Metodo di connessione</string>
+    <string name="headunit_server_network_phone">Hotspot telefono</string>
+    <string name="headunit_server_network_unit">Hotspot unità</string>
+    <string name="headunit_server_network_shared">WiFi comune</string>
+    <string name="headunit_server_network_help">Quale WiFi condividono il telefono e questa unità. Hotspot telefono: questa unità si collega all’hotspot del telefono. Fino ad allora la ricerca del telefono attende, e Connetti via WiFi cerca prima l’hotspot. Hotspot unità: il telefono si collega al punto di accesso di questa unità. WiFi comune: entrambi sono sullo stesso router e non cambia nulla.</string>
+    <string name="headunit_server_auto_wifi_scan">Cerca l’hotspot automaticamente</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Mentre la schermata Home è visibile e nessun WiFi è connesso.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Mentre la schermata Home è visibile e questa unità non è su nessuna rete WiFi, chiede ad Android una ricerca WiFi: subito, ogni 35 secondi per due minuti, poi una volta al minuto. Così l’unità si collega prima all’hotspot del telefono. Android consente quattro ricerche in due minuti e nessuna in background.</string>
     <string name="helper_strategy_label">Metodo di connessione (Helper)</string>
     <string name="helper_strategy_help">Sceglie come telefono e questa unità condividono una rete in modalità Wireless Helper. WiFi Comune usa una rete che entrambi condividono già. WiFi Direct crea un collegamento privato. Dispositivi nelle vicinanze sono in beta. Hotspot del telefono si unisce all\'hotspot del telefono. Hotspot dell\'unità rende questa unità il punto di accesso. Cambialo se il telefono non trova questa unità.</string>
     <string-array name="helper_strategies">
@@ -1879,4 +1887,17 @@
     <string name="usb_wireless_dongle_help">Attiva questa opzione se ti colleghi tramite un adattatore USB wireless come AAWireless o Carlinkit. Open Headunit non può distinguere un dongle da un cavo, quindi questa opzione cambia le etichette della schermata iniziale da cavo a wireless.</string>
     <string name="home_subtitle_usb_dongle">In modalità wireless</string>
     <string name="home_action_connect_wireless_dongle">Connetti in modalità wireless</string>
+    <string name="home_wifi_not_connected">WiFi non connesso</string>
+    <string name="home_wifi_off">Il WiFi è spento</string>
+    <string name="home_wifi_connected_unnamed">WiFi connesso</string>
+    <string name="home_wifi_scanning">Ricerca…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">In attesa dell’hotspot del telefono…</string>
+    <string name="home_hotspot_not_found">Nessun WiFi connesso. L’hotspot del telefono è attivo?</string>
+    <string name="home_wifi_hotspot_hint">L’hotspot del telefono è attivo?</string>
+    <string name="home_wifi_off_hint">Accendilo per connetterti</string>
 </resources>

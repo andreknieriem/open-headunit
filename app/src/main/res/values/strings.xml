@@ -1399,6 +1399,14 @@
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Auto</string>
     <string name="server_mode_help">Auto searches the network for the head unit server on the phone and connects by itself. Manual does not search. You connect from the network list, or with the phone\'s address.</string>
+    <string name="headunit_server_network_label">Connection Method</string>
+    <string name="headunit_server_network_phone">Phone hotspot</string>
+    <string name="headunit_server_network_unit">Unit hotspot</string>
+    <string name="headunit_server_network_shared">Shared WiFi</string>
+    <string name="headunit_server_network_help">Which WiFi the phone and this unit share. Phone hotspot: this unit joins the phone’s hotspot. Until it has, the search for the phone waits, and Connect over WiFi scans for the hotspot first. Unit hotspot: the phone joins this unit’s access point. Shared WiFi: both are on the same router, and nothing changes.</string>
+    <string name="headunit_server_auto_wifi_scan">Scan for the Hotspot Automatically</string>
+    <string name="headunit_server_auto_wifi_scan_summary">While the home screen is shown and no WiFi is joined.</string>
+    <string name="headunit_server_auto_wifi_scan_help">While the home screen is shown and this unit is on no WiFi network, it asks Android for a WiFi scan: at once, every 35 seconds for two minutes, then once a minute. The unit then joins the phone’s hotspot sooner. Android allows four scans in two minutes, and none in the background.</string>
 
     <string name="helper_strategy_label">Helper Connection Strategy</string>
     <string name="helper_strategy_help">Chooses how the phone and this unit share a network in Wireless Helper mode. Common WiFi uses a network both already share. WiFi Direct makes a private link. Google Nearby is a beta. Phone Hotspot joins the phone\'s hotspot. Headunit Hotspot makes this unit the access point. Change it when the phone does not find this unit.</string>
@@ -1955,4 +1963,17 @@
     <string name="audio_matching_phase_gradient_hint">Slow playback</string>
     <string name="audio_matching_option" translatable="false">%1$s\n(%2$s)</string>
     <string name="audio_matching_description">OHU remains the default. WSOLA aligns overlapping waveforms; Phase Vocoder adjusts spectral phases. Short uses a shorter analysis window. Phase Gradient integrates phase gradients to reconstruct phases. These independent methods add processing latency; their names do not rank sound quality.\n\nNative methods: PCM music. Navigation, voice responses, system sounds and AAC use OHU.\nReconnect to apply. Removed engine preferences reset to OHU.</string>
+    <string name="home_wifi_not_connected">WiFi not connected</string>
+    <string name="home_wifi_off">WiFi is off</string>
+    <string name="home_wifi_connected_unnamed">WiFi connected</string>
+    <string name="home_wifi_scanning">Scanning…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">Waiting for the phone’s hotspot…</string>
+    <string name="home_hotspot_not_found">No WiFi joined. Is the phone’s hotspot on?</string>
+    <string name="home_wifi_hotspot_hint">Is the phone’s hotspot on?</string>
+    <string name="home_wifi_off_hint">Turn it on to connect</string>
 </resources>

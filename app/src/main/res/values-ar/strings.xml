@@ -699,6 +699,14 @@
     <string name="server_mode_manual">يدوي</string>
     <string name="server_mode_auto">تلقائي</string>
     <string name="server_mode_help">«تلقائي» يبحث في الشبكة عن خادم الوحدة الرئيسية على الهاتف ويتصل تلقائيًا. «يدوي» لا يبحث. تتصل من قائمة الشبكات أو بعنوان الهاتف.</string>
+    <string name="headunit_server_network_label">طريقة الاتصال</string>
+    <string name="headunit_server_network_phone">نقطة اتصال الهاتف</string>
+    <string name="headunit_server_network_unit">نقطة اتصال الوحدة</string>
+    <string name="headunit_server_network_shared">WiFi مشترك</string>
+    <string name="headunit_server_network_help">شبكة WiFi التي يتشاركها الهاتف وهذه الوحدة. نقطة اتصال الهاتف: تنضم هذه الوحدة إلى نقطة اتصال الهاتف. وحتى ذلك الحين ينتظر البحث عن الهاتف، ويبحث اتصل عبر واي فاي عن نقطة الاتصال أولاً. نقطة اتصال الوحدة: ينضم الهاتف إلى نقطة وصول هذه الوحدة. WiFi مشترك: كلاهما على الموجّه نفسه، ولا يتغير شيء.</string>
+    <string name="headunit_server_auto_wifi_scan">البحث عن نقطة الاتصال تلقائيًا</string>
+    <string name="headunit_server_auto_wifi_scan_summary">ما دامت الشاشة الرئيسية ظاهرة ولا توجد شبكة WiFi متصلة.</string>
+    <string name="headunit_server_auto_wifi_scan_help">ما دامت الشاشة الرئيسية ظاهرة وهذه الوحدة غير متصلة بأي شبكة WiFi، تطلب من Android بحثًا عن WiFi: فورًا، ثم كل 35 ثانية لمدة دقيقتين، ثم مرة كل دقيقة. وهكذا تنضم الوحدة إلى نقطة اتصال الهاتف أسرع. يسمح Android بأربع عمليات بحث في دقيقتين، ولا يسمح بأي منها في الخلفية.</string>
 
     <string name="helper_strategy_label">طريقة اتصال المساعد</string>
     <string name="helper_strategy_help">يختار كيف يتشارك الهاتف وهذه الوحدة شبكة في وضع Wireless Helper. يستخدم «WiFi عادي» شبكة يتشاركها الطرفان أصلًا. ينشئ WiFi Direct رابطًا خاصًا. «الأجهزة القريبة» نسخة تجريبية. تنضم «نقطة اتصال الهاتف» إلى نقطة اتصال الهاتف. تجعل «نقطة اتصال الشاشة» هذه الوحدة نقطة الوصول. غيّره إذا لم يعثر الهاتف على هذه الوحدة.</string>
@@ -1878,4 +1886,17 @@
     <string name="usb_wireless_dongle_help">فعّل هذا الخيار إذا كنت تتصل عبر محول USB لاسلكي مثل AAWireless أو Carlinkit. لا يستطيع Open Headunit التمييز بين الدونجل والكابل، لذا يغيّر هذا الخيار تسميات الشاشة الرئيسية من سلكي إلى لاسلكي.</string>
     <string name="home_subtitle_usb_dongle">لاسلكياً</string>
     <string name="home_action_connect_wireless_dongle">الاتصال لاسلكياً</string>
+    <string name="home_wifi_not_connected">شبكة WiFi غير متصلة</string>
+    <string name="home_wifi_off">WiFi مغلق</string>
+    <string name="home_wifi_connected_unnamed">WiFi متصل</string>
+    <string name="home_wifi_scanning">جارٍ البحث…</string>
+    <string name="home_wifi_band_24">2.4 غيغاهرتز</string>
+    <string name="home_wifi_band_5">5 غيغاهرتز</string>
+    <string name="home_wifi_band_6">6 غيغاهرتز</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">بانتظار نقطة اتصال الهاتف…</string>
+    <string name="home_hotspot_not_found">لا توجد شبكة WiFi متصلة. هل نقطة اتصال الهاتف مفعّلة؟</string>
+    <string name="home_wifi_hotspot_hint">هل نقطة اتصال الهاتف مفعّلة؟</string>
+    <string name="home_wifi_off_hint">شغّله للاتصال</string>
 </resources>

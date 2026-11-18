@@ -730,6 +730,14 @@ Open Headunit предоставляется «как есть» без каки
     <string name="server_mode_manual">Вручную</string>
     <string name="server_mode_auto">Авто</string>
     <string name="server_mode_help">«Авто» ищет в сети сервер головного устройства на телефоне и подключается сам. «Вручную» не ищет. Вы подключаетесь из списка сетей или по адресу телефона.</string>
+    <string name="headunit_server_network_label">Способ подключения</string>
+    <string name="headunit_server_network_phone">Точка телефона</string>
+    <string name="headunit_server_network_unit">Точка устройства</string>
+    <string name="headunit_server_network_shared">Общий Wi‑Fi</string>
+    <string name="headunit_server_network_help">Какой Wi‑Fi общий у телефона и этого устройства. Точка телефона: устройство подключается к точке доступа телефона. До этого поиск телефона ждёт, а «Подключить по Wi‑Fi» сначала ищет точку доступа. Точка устройства: телефон подключается к точке доступа этого устройства. Общий Wi‑Fi: оба в одном роутере, ничего не меняется.</string>
+    <string name="headunit_server_auto_wifi_scan">Искать точку доступа автоматически</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Пока открыт главный экран и Wi‑Fi не подключён.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Пока открыт главный экран и устройство не подключено ни к одной сети Wi‑Fi, оно просит Android выполнить поиск Wi‑Fi: сразу, каждые 35 секунд в течение двух минут, затем раз в минуту. Так устройство раньше подключается к точке доступа телефона. Android разрешает четыре поиска за две минуты и ни одного в фоне.</string>
 
     <string name="helper_strategy_label">Метод подключения (Helper)</string>
     <string name="helper_strategy_help">Выбирает, как телефон и это устройство делят сеть в режиме Wireless Helper. «Общий Wi-Fi» использует сеть, в которой уже находятся оба. Wi-Fi Direct создаёт частное соединение. Google Nearby находится в бета-версии. «Точка доступа телефона» подключается к точке доступа телефона. «Точка доступа головного устройства» делает это устройство точкой доступа. Смените способ, если телефон не находит это устройство.</string>
@@ -1876,4 +1884,17 @@ Open Headunit предоставляется «как есть» без каки
     <string name="usb_wireless_dongle_help">Включите, если подключаетесь через беспроводной USB-адаптер (например, AAWireless или Carlinkit). Open Headunit не может отличить адаптер от кабеля, поэтому эта настройка меняет подписи на главном экране с кабельных на беспроводные.</string>
     <string name="home_subtitle_usb_dongle">Без проводов</string>
     <string name="home_action_connect_wireless_dongle">Подключить без проводов</string>
+    <string name="home_wifi_not_connected">Wi‑Fi не подключён</string>
+    <string name="home_wifi_off">Wi‑Fi выключен</string>
+    <string name="home_wifi_connected_unnamed">Wi‑Fi подключён</string>
+    <string name="home_wifi_scanning">Поиск…</string>
+    <string name="home_wifi_band_24">2,4 ГГц</string>
+    <string name="home_wifi_band_5">5 ГГц</string>
+    <string name="home_wifi_band_6">6 ГГц</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_status_description">Wi‑Fi: %1$s</string>
+    <string name="home_hotspot_waiting">Ожидание точки доступа телефона…</string>
+    <string name="home_hotspot_not_found">Wi‑Fi не подключён. Включена ли точка доступа телефона?</string>
+    <string name="home_wifi_hotspot_hint">Включена ли точка доступа телефона?</string>
+    <string name="home_wifi_off_hint">Включите для подключения</string>
 </resources>

@@ -213,12 +213,13 @@ object LogExporter {
      * that mode consults - which meant a header could not tell a Native/WiFi-Direct failure from a
      * Native/hotspot one, and reading it literally sent triage after a Nearby path that never ran.
      */
-    private fun wifiTransport(settings: Settings): String =
-        if (settings.wifiConnectionMode == WifiLauncherMode.NATIVE) {
-            settings.nativeApStrategy.name
-        } else {
-            settings.helperConnectionStrategy.name
-        }
+    private fun wifiTransport(settings: Settings): String = when (settings.wifiConnectionMode) {
+        WifiLauncherMode.NATIVE -> settings.nativeApStrategy.name
+        // Headunit Server has no strategy; which network it shares decides whether discovery waits.
+        WifiLauncherMode.AUTO -> settings.headunitServerNetwork.name +
+            if (settings.headunitServerAutoWifiScan) "+autoScan" else ""
+        else -> settings.helperConnectionStrategy.name
+    }
 
     /**
      * The settings that make the app behave unlike itself, in the one line every capture opens with.

@@ -700,6 +700,14 @@
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Automático</string>
     <string name="server_mode_help">Automático busca en la red el servidor de la unidad en el móvil y se conecta solo. Manual no busca. Te conectas desde la lista de redes o con la dirección del móvil.</string>
+    <string name="headunit_server_network_label">Método de conexión</string>
+    <string name="headunit_server_network_phone">Zona del teléfono</string>
+    <string name="headunit_server_network_unit">Zona de la unidad</string>
+    <string name="headunit_server_network_shared">Wi-Fi común</string>
+    <string name="headunit_server_network_help">Qué Wi-Fi comparten el teléfono y esta unidad. Zona del teléfono: esta unidad se une a la zona Wi-Fi del teléfono. Hasta entonces, la búsqueda del teléfono espera, y Conectar por WiFi busca primero la zona Wi-Fi. Zona de la unidad: el teléfono se une al punto de acceso de esta unidad. Wi-Fi común: ambos están en el mismo router y nada cambia.</string>
+    <string name="headunit_server_auto_wifi_scan">Buscar la zona Wi-Fi automáticamente</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Mientras se muestra el inicio y no hay Wi-Fi conectado.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Mientras se muestra la pantalla de inicio y esta unidad no está en ninguna red Wi-Fi, pide a Android una búsqueda de Wi-Fi: enseguida, cada 35 segundos durante dos minutos y luego una vez por minuto. Así la unidad se une antes a la zona Wi-Fi del teléfono. Android permite cuatro búsquedas en dos minutos y ninguna en segundo plano.</string>
 
     <string name="helper_strategy_label">Estrategia de conexión (Helper)</string>
     <string name="helper_strategy_help">Elige cómo comparten red el móvil y esta unidad en el modo Wireless Helper. WiFi Común usa una red que ambos ya comparten. WiFi Direct crea un enlace privado. Dispositivos cercanos están en beta. Punto de acceso del móvil se une al punto de acceso del móvil. Punto de acceso de la radio convierte esta unidad en el punto de acceso. Cámbialo si el móvil no encuentra esta unidad.</string>
@@ -1891,4 +1899,17 @@
     <string name="usb_wireless_dongle_help">Actívalo si te conectas mediante un adaptador USB inalámbrico como AAWireless o Carlinkit. Open Headunit no puede distinguir un adaptador de un cable, por lo que esta opción cambia las etiquetas de la pantalla de inicio a inalámbrico.</string>
     <string name="home_subtitle_usb_dongle">De forma inalámbrica</string>
     <string name="home_action_connect_wireless_dongle">Conectar de forma inalámbrica</string>
+    <string name="home_wifi_not_connected">Wi-Fi no conectado</string>
+    <string name="home_wifi_off">El Wi-Fi está apagado</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi conectado</string>
+    <string name="home_wifi_scanning">Buscando…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_hotspot_waiting">Esperando la zona Wi-Fi del teléfono…</string>
+    <string name="home_hotspot_not_found">No hay Wi-Fi conectado. ¿Está activa la zona Wi-Fi del teléfono?</string>
+    <string name="home_wifi_hotspot_hint">¿Está activa la zona Wi-Fi del teléfono?</string>
+    <string name="home_wifi_off_hint">Actívalo para conectar</string>
 </resources>

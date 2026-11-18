@@ -783,6 +783,14 @@
     <string name="server_mode_manual">수동</string>
     <string name="server_mode_auto">자동</string>
     <string name="server_mode_help">자동은 네트워크에서 휴대전화의 헤드유닛 서버를 찾아 자동으로 연결합니다. 수동은 찾지 않습니다. 네트워크 목록에서 연결하거나 휴대전화 주소로 연결합니다.</string>
+    <string name="headunit_server_network_label">연결 방법</string>
+    <string name="headunit_server_network_phone">휴대폰 핫스팟</string>
+    <string name="headunit_server_network_unit">기기 핫스팟</string>
+    <string name="headunit_server_network_shared">공유 Wi-Fi</string>
+    <string name="headunit_server_network_help">휴대폰과 이 기기가 함께 쓰는 Wi-Fi입니다. 휴대폰 핫스팟: 이 기기가 휴대폰 핫스팟에 연결합니다. 그때까지 휴대폰 검색은 기다리고, Wi-Fi로 연결은 먼저 핫스팟을 검색합니다. 기기 핫스팟: 휴대폰이 이 기기의 액세스 포인트에 연결합니다. 공유 Wi-Fi: 둘 다 같은 공유기에 있으며 바뀌는 것은 없습니다.</string>
+    <string name="headunit_server_auto_wifi_scan">핫스팟 자동 검색</string>
+    <string name="headunit_server_auto_wifi_scan_summary">홈 화면이 표시되고 Wi-Fi에 연결되지 않은 동안.</string>
+    <string name="headunit_server_auto_wifi_scan_help">홈 화면이 표시되고 이 기기가 어떤 Wi-Fi 네트워크에도 연결되지 않은 동안 Android에 Wi-Fi 검색을 요청합니다: 즉시, 2분 동안 35초마다, 그 후 1분마다. 그러면 기기가 휴대폰 핫스팟에 더 빨리 연결됩니다. Android는 2분에 4번까지 검색을 허용하며 백그라운드에서는 허용하지 않습니다.</string>
 
     <string name="helper_strategy_label">Wireless Helper 연결 방식</string>
     <string name="helper_strategy_help">Wireless Helper 모드에서 휴대전화와 이 기기가 네트워크를 공유하는 방법을 선택합니다. 같은 Wi-Fi 네트워크는 둘 다 이미 사용하는 네트워크를 씁니다. Wi-Fi Direct는 전용 링크를 만듭니다. Google Nearby는 베타입니다. 휴대전화 핫스팟은 휴대전화의 핫스팟에 연결합니다. 헤드유닛 핫스팟은 이 기기를 액세스 포인트로 만듭니다. 휴대전화가 이 기기를 찾지 못하면 변경하세요.</string>
@@ -1871,4 +1879,17 @@
     <string name="usb_wireless_dongle_help">AAWireless 또는 Carlinkit 같은 무선 USB 어댑터를 통해 연결하는 경우 켜세요. Open Headunit은 동글과 일반 케이블을 구분할 수 없으므로, 이 옵션으로 홈 화면 표시를 유선에서 무선으로 바꿉니다.</string>
     <string name="home_subtitle_usb_dongle">무선으로</string>
     <string name="home_action_connect_wireless_dongle">무선으로 연결</string>
+    <string name="home_wifi_not_connected">Wi-Fi 연결 안 됨</string>
+    <string name="home_wifi_off">Wi-Fi 꺼짐</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi 연결됨</string>
+    <string name="home_wifi_scanning">검색 중…</string>
+    <string name="home_wifi_band_24">2.4GHz</string>
+    <string name="home_wifi_band_5">5GHz</string>
+    <string name="home_wifi_band_6">6GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_hotspot_waiting">휴대폰 핫스팟을 기다리는 중…</string>
+    <string name="home_hotspot_not_found">연결된 Wi-Fi가 없습니다. 휴대폰 핫스팟이 켜져 있나요?</string>
+    <string name="home_wifi_hotspot_hint">휴대폰 핫스팟이 켜져 있나요?</string>
+    <string name="home_wifi_off_hint">연결하려면 켜세요</string>
 </resources>

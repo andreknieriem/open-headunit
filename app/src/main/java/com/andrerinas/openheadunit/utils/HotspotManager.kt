@@ -443,7 +443,7 @@ object HotspotManager {
     }
 
     /** Whether a soft AP is running right now, by framework state or, failing that, by interface. */
-    private fun isApUp(context: Context): Boolean = when (SoftApStateReader.read(context)) {
+    fun isApUp(context: Context): Boolean = when (SoftApStateReader.read(context)) {
         SoftApState.ENABLED -> true
         SoftApState.NOT_ENABLED -> false
         // Nothing was learned, so fall back to what an access point looks like from outside.

@@ -765,6 +765,14 @@
     <string name="server_mode_manual">Manuell</string>
     <string name="server_mode_auto">Auto</string>
     <string name="server_mode_help">Auto sucht im Netzwerk nach dem Headunit-Server auf dem Smartphone und verbindet sich von selbst. Manuell sucht nicht. Du verbindest dich über die Netzwerkliste oder mit der Adresse des Smartphones.</string>
+    <string name="headunit_server_network_label">Verbindungsart</string>
+    <string name="headunit_server_network_phone">Handy-Hotspot</string>
+    <string name="headunit_server_network_unit">Geräte-Hotspot</string>
+    <string name="headunit_server_network_shared">Gemeinsames WLAN</string>
+    <string name="headunit_server_network_help">Welches WLAN Handy und dieses Gerät teilen. Handy-Hotspot: Dieses Gerät verbindet sich mit dem Hotspot des Handys. Bis dahin wartet die Suche nach dem Handy, und „Über WLAN verbinden“ sucht zuerst nach dem Hotspot. Geräte-Hotspot: Das Handy verbindet sich mit dem Zugangspunkt dieses Geräts. Gemeinsames WLAN: Beide hängen am selben Router, und nichts ändert sich.</string>
+    <string name="headunit_server_auto_wifi_scan">Hotspot automatisch suchen</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Solange der Startbildschirm offen und kein WLAN verbunden ist.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Solange der Startbildschirm zu sehen ist und dieses Gerät mit keinem WLAN verbunden ist, bittet es Android um eine WLAN-Suche: sofort, zwei Minuten lang alle 35 Sekunden, danach einmal pro Minute. So verbindet sich das Gerät früher mit dem Hotspot des Handys. Android erlaubt vier Suchen in zwei Minuten und im Hintergrund keine.</string>
 
     <string name="helper_strategy_label">Verbindungsmethode (Helper)</string>
     <string name="helper_strategy_help">Legt fest, wie Smartphone und dieses Gerät im Modus Wireless Helper ein Netzwerk teilen. Gemeinsames WLAN nutzt ein Netzwerk, in dem beide schon sind. WiFi Direct baut eine private Verbindung auf. Google Nearby ist eine Beta. Handy-Hotspot tritt dem Hotspot des Smartphones bei. Headunit-Hotspot macht dieses Gerät zum Zugangspunkt. Ändere es, wenn das Smartphone dieses Gerät nicht findet.</string>
@@ -1880,4 +1888,17 @@
     <string name="esp32_relay_end_aa_on_disconnect_summary">Sitzung beenden, wenn das Relay zweimal nicht antwortet</string>
     <string name="esp32_relay_end_aa_on_disconnect_description">Dieses Gerät sendet alle 2 Sekunden eine Statusprüfung an das Relay. Bleiben zwei Prüfungen in Folge ohne Antwort, endet die Android-Auto-Sitzung.</string>
     <string name="esp32_relay_phase_failed">Fehlgeschlagen: %1$s</string>
+    <string name="home_wifi_not_connected">WLAN nicht verbunden</string>
+    <string name="home_wifi_off">WLAN ist aus</string>
+    <string name="home_wifi_connected_unnamed">WLAN verbunden</string>
+    <string name="home_wifi_scanning">Suche läuft…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_status_description">WLAN: %1$s</string>
+    <string name="home_hotspot_waiting">Warte auf den Hotspot des Handys…</string>
+    <string name="home_hotspot_not_found">Kein WLAN verbunden. Ist der Hotspot des Handys an?</string>
+    <string name="home_wifi_hotspot_hint">Ist der Hotspot des Handys an?</string>
+    <string name="home_wifi_off_hint">Zum Verbinden einschalten</string>
 </resources>

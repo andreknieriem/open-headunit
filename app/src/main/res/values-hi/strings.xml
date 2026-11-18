@@ -1291,6 +1291,14 @@
     <string name="server_mode_manual">मैन्युअल</string>
     <string name="server_mode_auto">ऑटो</string>
     <string name="server_mode_help">ऑटो नेटवर्क पर फ़ोन में मौजूद हेडयूनिट सर्वर को खोजता है और अपने आप कनेक्ट हो जाता है। मैन्युअल नहीं खोजता। आप नेटवर्क सूची से या फ़ोन के पते से कनेक्ट करते हैं।</string>
+    <string name="headunit_server_network_label">कनेक्शन का तरीका</string>
+    <string name="headunit_server_network_phone">फ़ोन हॉटस्पॉट</string>
+    <string name="headunit_server_network_unit">यूनिट हॉटस्पॉट</string>
+    <string name="headunit_server_network_shared">साझा वाई-फ़ाई</string>
+    <string name="headunit_server_network_help">फ़ोन और यह यूनिट कौन-सा वाई-फ़ाई साझा करते हैं। फ़ोन हॉटस्पॉट: यह यूनिट फ़ोन के हॉटस्पॉट से जुड़ती है। तब तक फ़ोन की खोज रुकी रहती है, और वाई-फ़ाई से कनेक्ट करें पहले हॉटस्पॉट खोजता है। यूनिट हॉटस्पॉट: फ़ोन इस यूनिट के एक्सेस पॉइंट से जुड़ता है। साझा वाई-फ़ाई: दोनों एक ही राउटर पर हैं, और कुछ नहीं बदलता।</string>
+    <string name="headunit_server_auto_wifi_scan">हॉटस्पॉट अपने आप खोजें</string>
+    <string name="headunit_server_auto_wifi_scan_summary">जब तक होम स्क्रीन दिख रही है और कोई वाई-फ़ाई जुड़ा नहीं है।</string>
+    <string name="headunit_server_auto_wifi_scan_help">जब तक होम स्क्रीन दिख रही है और यह यूनिट किसी वाई-फ़ाई नेटवर्क पर नहीं है, यह Android से वाई-फ़ाई खोज माँगती है: तुरंत, दो मिनट तक हर 35 सेकंड, फिर हर मिनट एक बार। इससे यूनिट फ़ोन के हॉटस्पॉट से जल्दी जुड़ती है। Android दो मिनट में चार खोज की अनुमति देता है, और बैकग्राउंड में एक भी नहीं।</string>
 
     <string name="helper_strategy_label">हेल्पर कनेक्शन का तरीका</string>
     <string name="helper_strategy_help">तय करता है कि वायरलेस हेल्पर मोड में फ़ोन और यह यूनिट नेटवर्क कैसे साझा करें। सामान्य वाई-फ़ाई उस नेटवर्क का इस्तेमाल करता है जिस पर दोनों पहले से हैं। WiFi Direct निजी लिंक बनाता है। Google Nearby बीटा है। फ़ोन हॉटस्पॉट फ़ोन के हॉटस्पॉट से जुड़ता है। हेडयूनिट हॉटस्पॉट इस यूनिट को एक्सेस पॉइंट बनाता है। फ़ोन को यह यूनिट न मिले, तो इसे बदलें।</string>
@@ -1923,4 +1931,17 @@
     <string name="usb_wireless_dongle_help">यदि आप AAWireless या Carlinkit जैसे वायरलेस USB अडैप्टर से कनेक्ट करते हैं तो इसे चालू करें। Open Headunit डोंगल और केबल में अंतर नहीं कर सकता, इसलिए यह विकल्प होम स्क्रीन के लेबल को केबल से वायरलेस में बदल देता है।</string>
     <string name="home_subtitle_usb_dongle">वायरलेस रूप से</string>
     <string name="home_action_connect_wireless_dongle">वायरलेस कनेक्ट करें</string>
+    <string name="home_wifi_not_connected">वाई-फ़ाई कनेक्ट नहीं है</string>
+    <string name="home_wifi_off">वाई-फ़ाई बंद है</string>
+    <string name="home_wifi_connected_unnamed">वाई-फ़ाई कनेक्ट है</string>
+    <string name="home_wifi_scanning">खोज रहे हैं…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">वाई-फ़ाई: %1$s</string>
+    <string name="home_hotspot_waiting">फ़ोन के हॉटस्पॉट का इंतज़ार…</string>
+    <string name="home_hotspot_not_found">कोई वाई-फ़ाई नहीं जुड़ा। क्या फ़ोन का हॉटस्पॉट चालू है?</string>
+    <string name="home_wifi_hotspot_hint">क्या फ़ोन का हॉटस्पॉट चालू है?</string>
+    <string name="home_wifi_off_hint">कनेक्ट करने के लिए इसे चालू करें</string>
 </resources>

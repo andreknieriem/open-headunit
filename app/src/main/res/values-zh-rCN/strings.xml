@@ -699,6 +699,14 @@
     <string name="server_mode_manual">手动</string>
     <string name="server_mode_auto">自动</string>
     <string name="server_mode_help">“自动”会在网络中搜索手机上的车机服务器并自动连接。“手动”不搜索。你可以从网络列表连接，或使用手机的地址连接。</string>
+    <string name="headunit_server_network_label">连接方式</string>
+    <string name="headunit_server_network_phone">手机热点</string>
+    <string name="headunit_server_network_unit">本机热点</string>
+    <string name="headunit_server_network_shared">共用 WLAN</string>
+    <string name="headunit_server_network_help">手机和本机共用哪个 WLAN。手机热点：本机连接手机的热点。在连上之前，查找手机会等待，“通过 WiFi 连接”会先扫描热点。本机热点：手机连接本机的接入点。共用 WLAN：两者连在同一个路由器上，一切照旧。</string>
+    <string name="headunit_server_auto_wifi_scan">自动扫描热点</string>
+    <string name="headunit_server_auto_wifi_scan_summary">主屏幕显示中且未连接 WLAN 时。</string>
+    <string name="headunit_server_auto_wifi_scan_help">主屏幕显示中且本机未连接任何 WLAN 网络时，会请求 Android 扫描 WLAN：立即一次，两分钟内每 35 秒一次，之后每分钟一次。这样本机能更快连上手机热点。Android 允许两分钟内扫描四次，后台不允许扫描。</string>
 
     <string name="helper_strategy_label">助手连接策略</string>
     <string name="helper_strategy_help">选择在唤醒助手模式下手机与本车机如何共用网络。“普通 Wifi”使用双方已共用的网络。WiFi Direct 建立专用链路。“搜索附近设备”为测试版。“手机热点”加入手机的热点。“车机热点”将本车机作为接入点。手机找不到本车机时再更改。</string>
@@ -1875,4 +1883,17 @@
     <string name="usb_wireless_dongle_help">如果您通过 AAWireless 或 Carlinkit 等无线 USB 适配器连接，请开启此选项。Open Headunit 无法区分适配器与数据线，开启后会将主屏幕上的文字从有线更改为无线。</string>
     <string name="home_subtitle_usb_dongle">无线连接</string>
     <string name="home_action_connect_wireless_dongle">无线连接</string>
+    <string name="home_wifi_not_connected">WLAN 未连接</string>
+    <string name="home_wifi_off">WLAN 已关闭</string>
+    <string name="home_wifi_connected_unnamed">WLAN 已连接</string>
+    <string name="home_wifi_scanning">正在扫描…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WLAN：%1$s</string>
+    <string name="home_hotspot_waiting">正在等待手机热点…</string>
+    <string name="home_hotspot_not_found">未连接 WLAN。手机热点已开启吗？</string>
+    <string name="home_wifi_hotspot_hint">手机热点已开启吗？</string>
+    <string name="home_wifi_off_hint">开启后即可连接</string>
 </resources>

@@ -702,6 +702,14 @@
     <string name="server_mode_manual">Manuel</string>
     <string name="server_mode_auto">Otomatik</string>
     <string name="server_mode_help">Otomatik, ağda telefondaki ünite sunucusunu arar ve kendiliğinden bağlanır. Manuel aramaz. Ağ listesinden veya telefonun adresiyle bağlanırsınız.</string>
+    <string name="headunit_server_network_label">Bağlantı Yöntemi</string>
+    <string name="headunit_server_network_phone">Telefon AP</string>
+    <string name="headunit_server_network_unit">Ünite AP</string>
+    <string name="headunit_server_network_shared">Ortak ağ</string>
+    <string name="headunit_server_network_help">Telefonla bu ünitenin hangi WiFi ağını paylaştığı. Telefon AP: bu ünite telefonun erişim noktasına bağlanır. Bağlanana kadar telefon araması bekler ve WiFi ile bağlan önce erişim noktasını tarar. Ünite AP: telefon bu ünitenin erişim noktasına bağlanır. Ortak ağ: ikisi aynı modeme bağlıdır ve hiçbir şey değişmez.</string>
+    <string name="headunit_server_auto_wifi_scan">Erişim Noktasını Otomatik Tara</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Ana ekran açıkken ve WiFi bağlı değilken.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Ana ekran açıkken ve bu ünite hiçbir WiFi ağına bağlı değilken Android’den WiFi taraması ister: hemen, iki dakika boyunca 35 saniyede bir, sonra dakikada bir. Böylece ünite telefonun erişim noktasına daha erken bağlanır. Android iki dakikada dört taramaya izin verir, arka planda hiç izin vermez.</string>
 
     <string name="helper_strategy_label">Yardımcı Bağlantı Stratejisi</string>
     <string name="helper_strategy_help">Kablosuz Yardımcı modunda telefonun ve bu ünitenin bir ağı nasıl paylaşacağını seçer. Ortak Wifi, ikisinin de zaten paylaştığı bir ağı kullanır. WiFi Direct özel bir bağlantı kurar. Google Yakındakiler beta sürümündedir. Telefon Erişim Noktası, telefonun hotspot\'una katılır. Multimedya Sistemi Erişim Noktası, bu üniteyi erişim noktası yapar. Telefon bu üniteyi bulamıyorsa değiştirin.</string>
@@ -1872,4 +1880,17 @@
     <string name="usb_wireless_dongle_help">AAWireless veya Carlinkit gibi bir kablosuz USB adaptörü ile bağlanıyorsanız bunu açın. Open Headunit bir dongle’ı kablodan ayırt edemez, bu yüzden bu seçenek ana ekran etiketlerini kablodan kablosuza çevirir.</string>
     <string name="home_subtitle_usb_dongle">Kablosuz</string>
     <string name="home_action_connect_wireless_dongle">Kablosuz bağlan</string>
+    <string name="home_wifi_not_connected">WiFi bağlı değil</string>
+    <string name="home_wifi_off">WiFi kapalı</string>
+    <string name="home_wifi_connected_unnamed">WiFi bağlı</string>
+    <string name="home_wifi_scanning">Taranıyor…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%%%1$d</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">Telefonun erişim noktası bekleniyor…</string>
+    <string name="home_hotspot_not_found">WiFi’ye bağlanılamadı. Telefonun erişim noktası açık mı?</string>
+    <string name="home_wifi_hotspot_hint">Telefonun erişim noktası açık mı?</string>
+    <string name="home_wifi_off_hint">Bağlanmak için açın</string>
 </resources>

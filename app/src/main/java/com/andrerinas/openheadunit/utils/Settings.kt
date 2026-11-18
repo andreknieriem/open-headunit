@@ -46,6 +46,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAddressRecord
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAdvertisedEndpoint
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
+import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
 
 class Settings(private val context: Context) {
 
@@ -2683,6 +2684,16 @@ class Settings(private val context: Context) {
     var autoEnableHotspot: Boolean
         get() = prefs.getBoolean("auto-enable-hotspot", false)
         set(value) { prefs.edit().putBoolean("auto-enable-hotspot", value).apply() }
+
+    /** Headunit Server (Auto) only; see [HeadunitServerNetwork]. */
+    var headunitServerNetwork: HeadunitServerNetwork
+        get() = HeadunitServerNetwork.byIdOrDefault(prefs.getInt("headunit-server-network", -1), autoEnableHotspot)
+        set(value) { prefs.edit().putInt("headunit-server-network", value.id).apply() }
+
+    /** On the phone's hotspot: scan for it by itself while the home is on screen and no WiFi is joined. */
+    var headunitServerAutoWifiScan: Boolean
+        get() = prefs.getBoolean("headunit-server-auto-wifi-scan", false)
+        set(value) { prefs.edit().putBoolean("headunit-server-auto-wifi-scan", value).apply() }
 
     var waitForWifiBeforeWifiDirect: Boolean
         get() = prefs.getBoolean("wait-for-wifi-before-wifi-direct", false)

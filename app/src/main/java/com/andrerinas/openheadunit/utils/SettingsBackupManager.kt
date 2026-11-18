@@ -273,6 +273,7 @@ object SettingsBackupManager {
         "app-theme" to ValueType.INT,
         "enable-rotary" to ValueType.BOOLEAN,
         "kill-on-disconnect" to ValueType.BOOLEAN,
+        "show-over-lock-screen" to ValueType.BOOLEAN,
         "auto-enable-hotspot" to ValueType.BOOLEAN,
         "wait-for-wifi-before-wifi-direct" to ValueType.BOOLEAN,
         "wait-for-wifi-timeout" to ValueType.INT,

@@ -13,6 +13,7 @@ import com.andrerinas.openheadunit.input.InputAction
 import com.andrerinas.openheadunit.input.InputActionCodec
 import com.andrerinas.openheadunit.input.KeyBindingPolicy
 import com.andrerinas.openheadunit.input.LocalAction
+import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.main.AppLauncher
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
@@ -1421,6 +1422,10 @@ class CommManager(
     }
 
     private fun runBoundAction(action: InputAction, keyCode: Int) {
+        if (!LockedInputPolicy.allowsBoundAction(LockedInputPolicy.engaged, action)) {
+            AppLog.i("CommManager: Key $keyCode bound action ${InputActionCodec.encode(action)} held: unit is locked")
+            return
+        }
         AppLog.i("CommManager: Key $keyCode runs bound action ${InputActionCodec.encode(action)}")
         when (action) {
             is InputAction.Local -> _localActions.tryEmit(action.kind)

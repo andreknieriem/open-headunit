@@ -233,4 +233,48 @@ class SoftApEndpointStabilityPolicyTest {
         assertNull(SoftApEndpointStabilityPolicy.groupAddressMoved(null, "DIRECT-ab-car", psk, "192.168.52.47"))
         assertFalse(SoftApEndpointStabilityPolicy.sameNetwork(null, "DIRECT-ab-car", psk))
     }
+
+    // An access point whose BSSID is random per boot (Android 10's stock Wi-Fi HAL): same name, address and
+    // password all along, the BSSID equal at every bring-up inside a boot and new after each restart.
+    @Test
+    fun `a BSSID that moved restarts the restart proof even when the address already spanned a boot`() {
+        val earned = SoftApAddressRecord("192.168.43.1", digest, 7, spannedBoot = true, bssid = "9e:00:00:40:9e:a4")
+        val v = SoftApEndpointStabilityPolicy.grade(CHANGED, "192.168.43.1", psk, 8, earned, bssid = "9e:00:00:ea:b0:10")
+        assertEquals(CHANGED, v.stability)
+        assertEquals(SoftApAddressRecord("192.168.43.1", digest, 8, spannedBoot = false, bssid = "9e:00:00:ea:b0:10"), v.remember)
+    }
+
+    @Test
+    fun `the new BSSID repeating inside the same boot is not stable`() {
+        val afterMove = SoftApAddressRecord("192.168.43.1", digest, 8, spannedBoot = false, bssid = "9e:00:00:ea:b0:10")
+        // The name-and-BSSID verdict says STABLE here: same name, same BSSID as the last bring-up.
+        val v = SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, afterMove, bssid = "9e:00:00:ea:b0:10")
+        assertEquals(UNPROVEN, v.stability)
+        assertFalse(v.remember!!.spannedBoot)
+    }
+
+    @Test
+    fun `a BSSID that holds across a restart is stable`() {
+        val first = SoftApAddressRecord("192.168.43.1", digest, 7, spannedBoot = false, bssid = "00:11:22:33:44:55")
+        val v = SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, first, bssid = "00:11:22:33:44:55")
+        assertEquals(STABLE, v.stability)
+        assertTrue(v.remember!!.spannedBoot)
+    }
+
+    @Test
+    fun `a record from before the BSSID was tracked adopts it and earns its proof again`() {
+        val old = SoftApAddressRecord("192.168.43.1", digest, 7, spannedBoot = true)
+        val first = SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, old, bssid = "00:11:22:33:44:55")
+        assertEquals(UNPROVEN, first.stability)
+        assertEquals(SoftApAddressRecord("192.168.43.1", digest, 8, spannedBoot = false, bssid = "00:11:22:33:44:55"), first.remember)
+        // Same boot again: still not proven. Next boot with the same BSSID: stable.
+        assertEquals(UNPROVEN, SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, first.remember, bssid = "00:11:22:33:44:55").stability)
+        assertEquals(STABLE, SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 9, first.remember, bssid = "00:11:22:33:44:55").stability)
+    }
+
+    @Test
+    fun `BSSID case does not count as a move`() {
+        val first = SoftApAddressRecord("192.168.43.1", digest, 7, spannedBoot = true, bssid = "9E:00:00:EA:B0:10")
+        assertEquals(STABLE, SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, first, bssid = "9e:00:00:ea:b0:10").stability)
+    }
 }

@@ -99,6 +99,16 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 - more customization options for the UI and the app itself
 
 ## Changelog
+### 4.1.0-beta1
+- Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
+- Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
+- Allow embedding the projection activity, thanks to @codepdbh
+- Feat: Send volume buttons to the phone, and add speed-dependent volume, thanks to @Megalodon-sharky
+- Feat(usb): add wireless dongle display option for home screen
+- Enable selected Bluetooth adapter before Native AA startup, thanks to @KingHavok
+- Add "Show over lock screen": map and directions while locked, no input to the phone, thanks to @DukeShank
+- Feat(home): move All Apps button to sidebar in launcher mode
+
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar
 - Home: a separate switch for the widgets, and a panel opacity slider

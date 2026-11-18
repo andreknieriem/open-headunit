@@ -106,24 +106,28 @@ object SystemUI {
                             View.SYSTEM_UI_FLAG_FULLSCREEN or 
                             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                             
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                        // Keep the status bar hidden across system overlays (e.g. volume OSD) on pre-Android 11 ROMs.
+                        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                         flags = flags or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     } else {
-                        // Older than KitKat: use FLAG_FULLSCREEN for reliability
-                        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                         flags = flags or View.SYSTEM_UI_FLAG_LOW_PROFILE
                     }
                 }
                 Settings.FullscreenMode.STATUS_ONLY -> {
                     flags = flags or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                    }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
                         flags = flags or View.SYSTEM_UI_FLAG_LOW_PROFILE
                     }
                 }
                 Settings.FullscreenMode.NONE -> {
                     // Reset flags for normal mode
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                     }
                 }

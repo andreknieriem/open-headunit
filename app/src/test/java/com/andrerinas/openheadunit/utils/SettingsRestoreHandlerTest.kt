@@ -51,6 +51,18 @@ class SettingsRestoreHandlerTest {
         assertTrue(context.services.single().getBooleanExtra(AapService.EXTRA_SETTINGS_REARM, false))
     }
 
+    @Test fun `restoring automatic Bluetooth startup rearms the wireless launcher`() {
+        settings.connectionModes = setOf(Settings.ConnectionMode.WIFI)
+        settings.nativeAaEnableBluetooth = false
+        val before = SettingsRestoreHandler.capture(context, settings)
+        assertFalse(before.wireless.nativeAaEnableBluetooth)
+        settings.nativeAaEnableBluetooth = true
+        assertTrue(SettingsRestoreHandler.capture(context, settings).wireless.nativeAaEnableBluetooth)
+        assertFalse(SettingsRestoreHandler.apply(context, settings, before, setOf("native-aa-enable-bluetooth")))
+        assertEquals(listOf(AapService.ACTION_START_WIRELESS), context.services.map { it.action })
+        assertTrue(context.services.single().getBooleanExtra(AapService.EXTRA_SETTINGS_REARM, false))
+    }
+
     @Test fun `removing wireless connection mode stops instead of starting the launcher`() {
         settings.connectionModes = setOf(Settings.ConnectionMode.WIFI)
         val before = SettingsRestoreHandler.capture(context, settings)

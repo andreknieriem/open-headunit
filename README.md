@@ -108,6 +108,7 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 - Enable selected Bluetooth adapter before Native AA startup, thanks to @KingHavok
 - Add "Show over lock screen": map and directions while locked, no input to the phone, thanks to @DukeShank
 - Feat(home): move All Apps button to sidebar in launcher mode
+- Display: reconnect in the remembered shape, and redraw instead of stretching when the screen turns, thanks to @tamer1an
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

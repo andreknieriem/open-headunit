@@ -50,6 +50,7 @@ import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnect
 import com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection
 import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
 
 /**
@@ -1157,6 +1158,10 @@ class CommManager(
         silentPeerFailures =
             UnresponsivePeerPolicy.countAfterSilentFailure(silentPeerFailures, silentPeerEndpoint, endpoint)
         silentPeerEndpoint = endpoint
+        ConnectionDiagnosticsTracker.recordError(
+            rawCause = "peer_silent",
+            endpoint = endpoint,
+        )
         // Only Android Auto's head unit server — the peer on 5277, so the discovery path and Self
         // Mode — is something the user can restart. The phone dialling our own server on 5288 and
         // the Nearby helper can both reach this branch, and sending their users off to force stop
@@ -1833,6 +1838,13 @@ class CommManager(
         )
         if (reachedHandshake && renderedAnyFrame) {
             ConnectionIssues.clear(context, ConnectionIssue.VIDEO_LINK_TOO_SLOW)
+            ConnectionDiagnosticsTracker.noteFirstVideoFrameRendered()
+        } else if (reachedHandshake && !renderedAnyFrame) {
+            ConnectionDiagnosticsTracker.recordError(
+                rawCause = "video_first_frame_timeout",
+                reachedHandshake = true,
+                renderedAnyFrame = false,
+            )
         }
         if (VideoStarvationPolicy.shouldCap(starvedSessionStreak)) {
             settings.videoProfileStarvationCap = true

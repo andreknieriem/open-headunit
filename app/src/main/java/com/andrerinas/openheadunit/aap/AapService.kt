@@ -107,6 +107,7 @@ import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
 import com.andrerinas.openheadunit.connection.ConnectionFallbackPolicy
 import com.andrerinas.openheadunit.connection.ConnectionModeCoordinator
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
 import com.andrerinas.openheadunit.connection.usb.UsbPlugInPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
@@ -1531,6 +1532,7 @@ class AapService : Service() {
     private fun maybeAutoResumePlaybackOnReconnect() {
         wirelessRecovery.onTransportStarted()
         connectionModeCoordinator.onTransportStarted(resolveActiveCandidateMode())
+        ConnectionDiagnosticsTracker.noteDecoderInitialized()
         val settings = App.provide(this).settings
         val now = SystemClock.elapsedRealtime()
         val playback = reconnectPlayback.consume(now)
@@ -1596,6 +1598,9 @@ class AapService : Service() {
 
     private fun onConnected() {
         usbLauncherManager.setSwitchingToProjection(false)
+        ConnectionDiagnosticsTracker.noteTransportConnected(
+            mode = resolveActiveCandidateMode()?.displayName ?: if (commManager.isUsbSession) "USB" else "Wireless"
+        )
         updateNotification()
         // apply_hfp: projection TCP is up — ESP32 relay must release HFP and stop wake retries.
         // Only when AA came up over the board (not USB / Headunit Server with a saved board).
@@ -2393,6 +2398,14 @@ class AapService : Service() {
             connectionModeCoordinator.resetCycle()
             AppLog.i("AapService: not reconnecting by itself, the projection screen could not be raised.")
             return
+        }
+
+        if (!state.isUserExit && !state.isClean && !state.isSettingsRestart && state.failureCause != null) {
+            ConnectionDiagnosticsTracker.recordError(
+                rawCause = state.failureCause,
+                endpoint = commManager.lastAttemptedEndpoint,
+                mode = resolveActiveCandidateMode(state)?.displayName ?: "Wireless",
+            )
         }
 
         val settings = App.provide(this).settings
@@ -3390,6 +3403,7 @@ class AapService : Service() {
     private fun quiesceWirelessForWiredSession() {
         wirelessRecovery.onHandshakeComplete()
         connectionModeCoordinator.onHandshakeComplete(resolveActiveCandidateMode())
+        ConnectionDiagnosticsTracker.noteAapNegotiationSucceeded()
         if (wirelessQuiescedForWiredSession) return
         if (!UsbSessionQuiescePolicy.shouldQuiesce(commManager.isWirelessSession)) return
 

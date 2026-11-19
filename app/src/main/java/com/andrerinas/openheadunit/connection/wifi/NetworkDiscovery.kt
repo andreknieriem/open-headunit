@@ -7,6 +7,7 @@ import android.os.Build
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.HeldServerSocket
 import com.andrerinas.openheadunit.connection.SameEndpointConnectPolicy
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.NetworkAddresses
 import kotlinx.coroutines.CancellationException
@@ -213,6 +214,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                 val gatewayFound = scanGateways()
 
                 if (gatewayFound) {
+                    ConnectionDiagnosticsTracker.noteDiscoveryResult(found = true, wifiConnected = true, sameSubnet = true)
                     AppLog.i("NetworkDiscovery: Gateway found service, skipping subnet scan.")
                     return@launch
                 }
@@ -220,6 +222,17 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                 // 2. Deep Scan: Check entire Subnet
                 AppLog.i("NetworkDiscovery: Step 2 - Full Subnet Scan")
                 scanSubnet()
+                if (reportedIps.isNotEmpty()) {
+                    ConnectionDiagnosticsTracker.noteDiscoveryResult(found = true, wifiConnected = true, sameSubnet = true)
+                } else {
+                    val isolation = lastProbeFailure == "NoRouteToHostException"
+                    ConnectionDiagnosticsTracker.recordError(
+                        rawCause = if (isolation) "wifi_client_isolation" else "phone_not_found",
+                        wifiConnected = true,
+                        sameSubnet = true,
+                        clientIsolationSuspected = isolation,
+                    )
+                }
             } finally {
                 withContext(Dispatchers.Main) {
                     // Read now rather than captured at the top: a continuous request that arrived

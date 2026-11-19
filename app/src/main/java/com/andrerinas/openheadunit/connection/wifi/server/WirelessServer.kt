@@ -7,6 +7,7 @@ import android.os.SystemClock
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
 import com.andrerinas.openheadunit.utils.AppLog
 import java.net.ServerSocket
 import kotlinx.coroutines.Dispatchers
@@ -150,8 +151,16 @@ class WirelessServer(
             } catch (e: Exception) {
                 // The cancelled branch used to be silent, which made a server that was torn
                 // down indistinguishable from one that was never started.
-                if (isActive) AppLog.e("Wireless server error", e)
-                else AppLog.i("WirelessServer: port 5288 released (${e.javaClass.simpleName}).")
+                if (isActive) {
+                    AppLog.e("Wireless server error", e)
+                    ConnectionDiagnosticsTracker.recordError(
+                        rawCause = "headunit_server_not_running",
+                        throwable = e,
+                        endpoint = "0.0.0.0:5288",
+                    )
+                } else {
+                    AppLog.i("WirelessServer: port 5288 released (${e.javaClass.simpleName}).")
+                }
             } finally {
                 isListening = false
                 unregisterNsd()

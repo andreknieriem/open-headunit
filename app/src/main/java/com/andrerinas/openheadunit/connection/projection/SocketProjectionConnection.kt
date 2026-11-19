@@ -6,6 +6,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.Dispatchers
@@ -92,11 +93,20 @@ class SocketProjectionConnection(
                                 val caps = cm.getNetworkCapabilities(net)
                                 caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                             }
+                            var matchedSubnet = false
                             wifiNetwork = selectWifiNetwork(ip, wifiNetworks) { net ->
-                                cm.getLinkProperties(net)?.linkAddresses?.map { linkAddr ->
+                                val addrs = cm.getLinkProperties(net)?.linkAddresses?.map { linkAddr ->
                                     linkAddr.address?.hostAddress to linkAddr.prefixLength
                                 } ?: emptyList()
+                                if (addrs.any { (hostAddr, prefixLen) -> matchesSubnet(ip, hostAddr, prefixLen) }) {
+                                    matchedSubnet = true
+                                }
+                                addrs
                             }
+                            ConnectionDiagnosticsTracker.noteNetworkContext(
+                                wifiConnected = wifiNetwork != null,
+                                sameSubnet = matchedSubnet,
+                            )
                             if (wifiNetwork != null) {
                                 AppLog.i("Found active WiFi/P2P network via synchronous scan: $wifiNetwork")
                             }
@@ -203,9 +213,15 @@ class SocketProjectionConnection(
             // BufferedInputStream + readFully + timeout = internal buffer state corruption.
             input = DataInputStream(transport.getInputStream())
             output = transport.getOutputStream()
+            ConnectionDiagnosticsTracker.noteTransportConnected(mode = "Wireless")
             return@withContext true
         } catch (e: IOException) {
             AppLog.e(e)
+            ConnectionDiagnosticsTracker.recordError(
+                throwable = e,
+                endpoint = "$ip:$port",
+                mode = "Wireless",
+            )
             return@withContext false
         }
     }

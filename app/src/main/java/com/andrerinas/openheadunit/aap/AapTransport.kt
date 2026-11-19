@@ -30,6 +30,7 @@ import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.aap.protocol.proto.Input
 import com.andrerinas.openheadunit.utils.AuditReportPolicy
 import com.andrerinas.openheadunit.utils.LegacyOptimizer
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.AbstractUsbProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
@@ -1263,6 +1264,11 @@ class AapTransport(
                             "phone, and reboot it if that does not help."
                     )
                 }
+                ConnectionDiagnosticsTracker.recordError(
+                    rawCause = if (lastHandshakeFailure == HandshakeFailure.PEER_SILENT) "peer_silent" else "aap_negotiation_failed",
+                    handshakeFailure = lastHandshakeFailure,
+                    mode = if (isUsb) "USB" else "Wireless",
+                )
                 return false
             }
             AppLog.i("Handshake: Version response recv ret: %d", versionFrameSize)
@@ -1271,9 +1277,15 @@ class AapTransport(
             AppLog.d("Handshake: Starting SSL handshake via performHandshake(). TS: ${SystemClock.elapsedRealtime()}")
             if (!ssl.performHandshake(connection)) {
                 AppLog.e("Handshake: SSL performHandshake failed.")
+                ConnectionDiagnosticsTracker.recordError(
+                    rawCause = "tls_handshake_failed",
+                    handshakeFailure = HandshakeFailure.SSL,
+                    mode = if (isUsb) "USB" else "Wireless",
+                )
                 return false
             }
 
+            ConnectionDiagnosticsTracker.noteTlsSucceeded()
             ssl.postHandshakeReset()
             (ssl as? AapSslContext)?.onPeerClose = ::notePeerClose
             ssl.setControlRecordListener {
@@ -1291,6 +1303,11 @@ class AapTransport(
             AppLog.d("Handshake: Status OK sent. ret: $ret. TS: ${SystemClock.elapsedRealtime()}")
             if (ret != status.size || !tlsWriter.activate()) {
                 AppLog.e("Handshake: AuthComplete write incomplete or transport retired: $ret")
+                ConnectionDiagnosticsTracker.recordError(
+                    rawCause = "aap_negotiation_failed",
+                    handshakeFailure = HandshakeFailure.OTHER,
+                    mode = if (isUsb) "USB" else "Wireless",
+                )
                 return false
             }
 
@@ -1298,9 +1315,15 @@ class AapTransport(
             AppLog.d("Handshake: Handshake successful. TS: ${SystemClock.elapsedRealtime()}")
 
             lastHandshakeFailure = HandshakeFailure.NONE
+            ConnectionDiagnosticsTracker.noteAapNegotiationSucceeded()
             return true
         } catch (e: Exception) {
             AppLog.e("Handshake failed with exception", e)
+            ConnectionDiagnosticsTracker.recordError(
+                rawCause = if (lastHandshakeFailure == HandshakeFailure.SSL) "tls_handshake_failed" else "aap_negotiation_failed",
+                throwable = e,
+                handshakeFailure = lastHandshakeFailure,
+            )
             return false
         }
     }

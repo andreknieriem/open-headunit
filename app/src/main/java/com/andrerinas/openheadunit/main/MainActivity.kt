@@ -43,6 +43,8 @@ import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsUi
 import com.andrerinas.openheadunit.connection.PhoneExitQuietPolicy
 import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
@@ -486,14 +488,23 @@ class MainActivity : BaseActivity() {
                             }
                         }
                         is CommManager.ConnectionState.Error -> {
+                            val classified = ConnectionDiagnosticsTracker.recordError(rawCause = state.message)
+                            ConnectionDiagnosticsUi.showErrorToast(this@MainActivity, classified)
                             if (autoConnectInProgress) {
-                                AppLog.w("Auto-connect overlay: connection error: ${state.message}")
+                                AppLog.w("Auto-connect overlay: connection error [${classified.code}]: ${state.message}")
                                 endAutoConnect(success = false)
                             }
                         }
                         is CommManager.ConnectionState.Disconnected -> {
                             // Initial Disconnected on app launch is normal; only treat
                             // as failure if we previously advanced to an active state.
+                            if (!state.isUserExit && !state.isClean && state.failureCause != null) {
+                                ConnectionDiagnosticsTracker.latestError.value?.let { err ->
+                                    if (autoConnectInProgress) {
+                                        ConnectionDiagnosticsUi.showErrorToast(this@MainActivity, err)
+                                    }
+                                }
+                            }
                             if (autoConnectInProgress && hasAdvancedToActiveState) {
                                 AppLog.w("Auto-connect overlay: disconnected mid-attempt")
                                 endAutoConnect(success = false)
@@ -1437,6 +1448,10 @@ class MainActivity : BaseActivity() {
             }
         )
         banner.setOnClickListener { openRemedyFor(issue) }
+        banner.setOnLongClickListener {
+            ConnectionDiagnosticsUi.showErrorDialog(this)
+            true
+        }
         dismiss?.setOnClickListener {
             // Per occurrence, not permanent: the stamp is compared against the next raise, so the
             // banner comes back on its own the next time the same thing happens.

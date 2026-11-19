@@ -86,6 +86,8 @@ import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsTracker
+import com.andrerinas.openheadunit.connection.diagnostics.ConnectionDiagnosticsUi
 import com.andrerinas.openheadunit.view.HomePagesHintView
 import androidx.activity.OnBackPressedCallback
 import com.andrerinas.openheadunit.connection.CommManager
@@ -312,6 +314,11 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 ConnectionStageTracker.network.collect { renderHome() }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ConnectionDiagnosticsTracker.latestError.collect { renderHome() }
             }
         }
 
@@ -556,10 +563,20 @@ class HomeFragment : Fragment() {
             decision, chosen, HomePagesPolicy.barCarriesEveryConnection(pageCount)
         )
         HomeUiHelper.applyBar(ctx, root, appSettings, barConnections, palette, decision.tiles)
+        val latestErr = ConnectionDiagnosticsTracker.latestError.value?.takeIf { !commManager.isConnected }
+        val statusLine = ConnectionStageTracker.network.value?.let { networkText(it) }
+            ?: latestErr?.let { "[${it.code.name}] ${it.shortMessage}" }
         HomeUiHelper.applyPrimaryCard(
             ctx, root, appSettings, decision, usbPhone?.let { phoneName(it) }, reconnectSecondsLeft, palette,
-            networkLine = ConnectionStageTracker.network.value?.let { networkText(it) }
+            networkLine = statusLine
         )
+        root.findViewById<View>(R.id.home_primary_detail)?.setOnClickListener {
+            if (ConnectionDiagnosticsTracker.latestError.value != null) {
+                ConnectionDiagnosticsUi.showErrorDialog(ctx)
+            } else {
+                ConnectionDiagnosticsUi.copyDiagnosticsToClipboard(ctx)
+            }
+        }
         HomeUiHelper.fitDriverBar(root, appSettings.homeButtonScalePercent)
         val waiting = homeWifiStatus?.isWaitingForHotspot == true
         renderedHotspotWait = waiting
@@ -3034,6 +3051,9 @@ class HomeFragment : Fragment() {
                 MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
                     .setTitle(R.string.bt_manufacturer_devices_title)
                     .setMessage(R.string.hct_aa_no_paired_phone)
+                    .setNeutralButton("Copy Diagnostics") { _, _ ->
+                        ConnectionDiagnosticsUi.copyDiagnosticsToClipboard(context)
+                    }
                     .setPositiveButton(android.R.string.ok, null)
                     .create().also { notice ->
                         notice.setOnDismissListener { if (activeDialog === notice) activeDialog = null }

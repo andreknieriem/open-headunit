@@ -49,16 +49,21 @@ class BluetoothRadioCyclePolicyTest {
 
     /**
      * TARGET_UNREADABLE could not tell whose link it is, and a guess is not a reason to drop one.
-     * Every other reason poked in the first place, so there is no stand-down to escalate.
+     * GATEWAY_ONLY and SWITCH_TARGET name a link that belongs to somebody else.
+     *
+     * TARGET_CONNECTED is the stand-down this policy was written for. NO_LINK and TARGET_ABSENT are
+     * the dead-link case: the phone holds no connection, so the wake loop pokes, and on a stack that
+     * will not raise the link it pokes forever. All three are bounded by the gates below.
      */
     @Test
-    fun `only a link taken to be the target's is worth a cycle`() {
+    fun `the target's link and a link that is absent are worth a cycle`() {
+        val cycleable = setOf(
+            BluetoothWakePolicy.WakeReason.TARGET_CONNECTED,
+            BluetoothWakePolicy.WakeReason.NO_LINK,
+            BluetoothWakePolicy.WakeReason.TARGET_ABSENT,
+        )
         for (reason in BluetoothWakePolicy.WakeReason.entries) {
-            assertEquals(
-                reason.name,
-                reason == BluetoothWakePolicy.WakeReason.TARGET_CONNECTED,
-                decide(reason = reason)
-            )
+            assertEquals(reason.name, reason in cycleable, decide(reason = reason))
         }
     }
 

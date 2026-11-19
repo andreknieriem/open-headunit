@@ -303,6 +303,17 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("show-over-lock-screen", value).apply()
         }
 
+    /**
+     * With [showOverLockScreen] on, a locked unit shows the night overlay (clock, next turn and
+     * playing track as text) in place of the projection; see
+     * [com.andrerinas.openheadunit.input.LockedViewPolicy]. Off by default.
+     */
+    var nightOverlayWhileLocked: Boolean
+        get() = prefs.getBoolean("night-overlay-while-locked", false)
+        set(value) {
+            prefs.edit().putBoolean("night-overlay-while-locked", value).apply()
+        }
+
     var nightMode: NightMode
         get() {
             val value = prefs.getInt("night-mode", 0)

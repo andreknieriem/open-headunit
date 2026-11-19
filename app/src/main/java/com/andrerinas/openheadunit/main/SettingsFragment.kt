@@ -282,6 +282,7 @@ class SettingsFragment : Fragment() {
     private var pendingAutoKillOemApps by pending::autoKillOemApps
     private var pendingRaiseProjectionDuringCall by pending::raiseProjectionDuringCall
     private var pendingShowOverLockScreen by pending::showOverLockScreen
+    private var pendingNightOverlayWhileLocked by pending::nightOverlayWhileLocked
 
     // Custom Insets
     private var pendingInsetLeft by pending::insetLeft
@@ -709,6 +710,7 @@ class SettingsFragment : Fragment() {
         pendingAutoKillOemApps?.let { if (it != settings.autoKillOemApps) settings.autoKillOemApps = it }
         pendingRaiseProjectionDuringCall?.let { if (it != settings.raiseProjectionDuringCall) settings.raiseProjectionDuringCall = it }
         pendingShowOverLockScreen?.let { if (it != settings.showOverLockScreen) settings.showOverLockScreen = it }
+        pendingNightOverlayWhileLocked?.let { if (it != settings.nightOverlayWhileLocked) settings.nightOverlayWhileLocked = it }
         pendingAutoEnableHotspot?.let { if (it != settings.autoEnableHotspot) settings.autoEnableHotspot = it }
         // Read by every discovery sweep and by the home, so neither needs a restart. Written even
         // when unchanged: a unit that never chose reads its choice off "Auto-Enable Hotspot", and
@@ -2215,6 +2217,22 @@ class SettingsFragment : Fragment() {
                 updateSettingsList()
             }
         ))
+
+        // The night overlay in place of the picture: no map, no saved places, no pop-ups.
+        if (pendingShowOverLockScreen ?: settings.showOverLockScreen) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "nightOverlayWhileLocked",
+                nameResId = R.string.night_overlay_while_locked,
+                descriptionResId = R.string.night_overlay_while_locked_summary,
+                helpResId = R.string.night_overlay_while_locked_help,
+                isChecked = pendingNightOverlayWhileLocked ?: settings.nightOverlayWhileLocked,
+                onCheckedChanged = { isChecked ->
+                    pendingNightOverlayWhileLocked = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
 
         if (!isCarLauncherActive) {
             val exitActions = arrayOf(

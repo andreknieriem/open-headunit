@@ -79,6 +79,21 @@ class AutoStartFragment : Fragment() {
         }
     }
 
+    private val bleScanPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            pendingAutoStartOnBle = true
+            checkChanges()
+            updateSettingsList()
+        } else {
+            pendingAutoStartOnBle = false
+            checkChanges()
+            updateSettingsList()
+            showBlePermissionDeniedDialog()
+        }
+    }
+
     private val bluetoothEnableLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -559,36 +574,48 @@ class AutoStartFragment : Fragment() {
                 ))
             }
 
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "autoStartBle",
-                nameResId = R.string.auto_start_ble_label,
-                descriptionResId = R.string.auto_start_ble_description,
-                helpResId = R.string.auto_start_ble_help,
-                isChecked = pendingAutoStartOnBle == true,
-                onCheckedChanged = { isChecked ->
-                    pendingAutoStartOnBle = isChecked
-                    checkChanges()
-                    updateSettingsList()
-                }
-            ))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "autoStartBle",
+                    nameResId = R.string.auto_start_ble_label,
+                    descriptionResId = R.string.auto_start_ble_description,
+                    helpResId = R.string.auto_start_ble_help,
+                    isChecked = pendingAutoStartOnBle == true,
+                    onCheckedChanged = { isChecked ->
+                        if (isChecked) {
+                            val neededPerm = requiredBleScanPermission()
+                            if (neededPerm != null &&
+                                ContextCompat.checkSelfPermission(requireContext(), neededPerm) !=
+                                android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                bleScanPermissionLauncher.launch(neededPerm)
+                                return@ToggleSettingEntry
+                            }
+                        }
+                        pendingAutoStartOnBle = isChecked
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
 
-            if (pendingAutoStartOnBle == true) {
-                items.add(SettingItem.SettingEntry(
-                    stableId = "autoStartBleTarget",
-                    nameResId = R.string.auto_start_ble_target_label,
-                    helpResId = R.string.auto_start_ble_target_help,
-                    value = if (pendingAutoStartBleTarget.isNullOrBlank()) getString(R.string.wifi_ssid_not_set) else pendingAutoStartBleTarget!!,
-                    onClick = { showBleTargetInputDialog() }
-                ))
-                val cooldownSec = pendingAutoStartBleCooldownSeconds
-                    ?: com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.DEFAULT_COOLDOWN_SECONDS
-                items.add(SettingItem.SettingEntry(
-                    stableId = "autoStartBleCooldown",
-                    nameResId = R.string.auto_start_ble_cooldown_label,
-                    helpResId = R.string.auto_start_ble_cooldown_help,
-                    value = getString(R.string.auto_start_ble_cooldown_seconds, cooldownSec),
-                    onClick = { showBleCooldownDialog() }
-                ))
+                if (pendingAutoStartOnBle == true) {
+                    items.add(SettingItem.SettingEntry(
+                        stableId = "autoStartBleTarget",
+                        nameResId = R.string.auto_start_ble_target_label,
+                        helpResId = R.string.auto_start_ble_target_help,
+                        value = if (pendingAutoStartBleTarget.isNullOrBlank()) getString(R.string.wifi_ssid_not_set) else pendingAutoStartBleTarget!!,
+                        onClick = { showBleTargetInputDialog() }
+                    ))
+                    val cooldownSec = pendingAutoStartBleCooldownSeconds
+                        ?: com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.DEFAULT_COOLDOWN_SECONDS
+                    items.add(SettingItem.SettingEntry(
+                        stableId = "autoStartBleCooldown",
+                        nameResId = R.string.auto_start_ble_cooldown_label,
+                        helpResId = R.string.auto_start_ble_cooldown_help,
+                        value = getString(R.string.auto_start_ble_cooldown_seconds, cooldownSec),
+                        onClick = { showBleCooldownDialog() }
+                    ))
+                }
             }
         }
 
@@ -629,7 +656,14 @@ class AutoStartFragment : Fragment() {
             settings.listenForUsbDevices),
         onWifi = pendingAutoStartOnWifi == true,
         btTriggerCount = pendingAutoStartBtMacs.size,
+        onBle = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && pendingAutoStartOnBle == true,
     )
+
+    private fun requiredBleScanPermission(): String? = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> android.Manifest.permission.BLUETOOTH_SCAN
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> android.Manifest.permission.ACCESS_FINE_LOCATION
+        else -> null
+    }
 
     private fun requestOverlayPermission() {
         try {
@@ -784,9 +818,23 @@ class AutoStartFragment : Fragment() {
     }
 
     private fun showBluetoothPermissionDeniedDialog() {
+        showPermissionDeniedDialog(
+            R.string.bt_permission_denied_title,
+            R.string.bt_permission_denied_message
+        )
+    }
+
+    private fun showBlePermissionDeniedDialog() {
+        showPermissionDeniedDialog(
+            R.string.ble_permission_denied_title,
+            R.string.ble_permission_denied_message
+        )
+    }
+
+    private fun showPermissionDeniedDialog(titleResId: Int, messageResId: Int) {
         MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(R.string.bt_permission_denied_title)
-            .setMessage(R.string.bt_permission_denied_message)
+            .setTitle(titleResId)
+            .setMessage(messageResId)
             .setPositiveButton(R.string.open_settings) { _, _ ->
                 try {
                     val intent = Intent(

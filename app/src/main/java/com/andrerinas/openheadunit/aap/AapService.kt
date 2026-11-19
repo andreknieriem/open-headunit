@@ -244,6 +244,7 @@ class AapService : Service() {
     }
 
     private fun reconcileBleProximityTrigger() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
         if (isDestroying) {
             bleProximityTrigger?.stop()
             return

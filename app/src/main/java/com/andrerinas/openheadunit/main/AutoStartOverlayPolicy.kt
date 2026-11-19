@@ -16,7 +16,8 @@ object AutoStartOverlayPolicy {
         onUsb: Boolean,
         onWifi: Boolean,
         btTriggerCount: Int,
-    ): Boolean = onBoot || onScreenOn || onUsb || onWifi || btTriggerCount > 0
+        onBle: Boolean = false,
+    ): Boolean = onBoot || onScreenOn || onUsb || onWifi || btTriggerCount > 0 || onBle
 
     /** The screen says what is missing and keeps the configuration. */
     fun showsNotice(overlayGranted: Boolean, launches: Boolean): Boolean =

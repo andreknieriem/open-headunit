@@ -653,6 +653,8 @@
     <string name="auto_start_ble_cooldown_label">BLE trigger cooldown</string>
     <string name="auto_start_ble_cooldown_help">Minimum time in seconds before another BLE proximity trigger can fire (15–300 seconds).</string>
     <string name="auto_start_ble_cooldown_seconds">%1$d s</string>
+    <string name="ble_permission_denied_title">BLE Scan Permission Required</string>
+    <string name="ble_permission_denied_message">Nearby devices (Android 12+) or Location permission is required to scan for nearby BLE devices. Please grant it in app settings.</string>
     <string name="bt_permission_denied_title">Bluetooth Permission Required</string>
     <string name="bt_permission_denied_message">Bluetooth permission is required to select paired devices. Please grant it in app settings.</string>
     <string name="overlay_permission_title">Background Start Permission</string>

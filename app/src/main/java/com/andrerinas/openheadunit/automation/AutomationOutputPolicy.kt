@@ -24,6 +24,7 @@ object AutomationOutputPolicy {
         "wifi-direct-readback-passphrase",
         "wifi-direct-readback-bssid",
         "auto-start-wifi-ssid",
+        "auto-start-ble-target",
         "auto-start-bt-macs",
         "auto-start-bt-name",
         "auto-disconnect-bt-macs",

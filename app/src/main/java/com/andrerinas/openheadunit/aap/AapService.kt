@@ -3810,8 +3810,10 @@ class AapService : Service() {
             ACTION_START_WIRELESS_SCAN   -> {
                 val settings = App.provide(this).settings
                 val mode = settings.wifiConnectionMode
+                val byCommand = intent?.getBooleanExtra(EXTRA_BY_COMMAND, false) == true
+                val noUi = intent?.getBooleanExtra(EXTRA_NO_UI, false) == true
 
-                AppLog.i("AapService: Force-starting WIFI-Scan from UI")
+                AppLog.i("AapService: Force-starting WIFI-Scan from ${if (byCommand) "automation command" else "UI"}")
 
                 // [FIX] Reset exit flags on manual scan start
                 userExitedAA = false
@@ -3823,6 +3825,10 @@ class AapService : Service() {
 
                 if (mode == WifiLauncherMode.AUTO)
                     wifiLauncherManager.startDiscovery(oneShot = true)
+
+                if (byCommand && !noUi && !commManager.isConnected) {
+                    launchMainActivityFromBackground("Automation wireless scan")
+                }
             }
             ACTION_STOP_WIRELESS         -> {
                 stopWirelessForCommand(intent?.getBooleanExtra(EXTRA_SETTINGS_REARM, false) == true)
@@ -4303,42 +4309,62 @@ class AapService : Service() {
     }
 
     private fun launchMainActivityOnBoot() {
-        // Android < 10: no background activity start restrictions
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            AppLog.i("Boot auto-start: launching directly (API ${Build.VERSION.SDK_INT} < 29)")
-            launchDirectly()
+        launchMainActivityFromBackground("Boot auto-start", checkSettingsVisible = false)
+    }
+
+    /**
+     * Raises [MainActivity] from a background service using [ActivityLaunchPolicy]
+     * (DIRECT -> OVERLAY trampoline -> full-screen intent NOTIFICATION).
+     */
+    private fun launchMainActivityFromBackground(
+        source: String,
+        checkSettingsVisible: Boolean = true,
+    ) {
+        if (commManager.isConnected) {
+            AppLog.i("$source: session already connected, not raising MainActivity")
+            return
+        }
+        if (checkSettingsVisible && SettingsActivity.isVisible) {
+            AppLog.i("$source: settings screen is visible, not raising MainActivity")
             return
         }
 
-        // Android 10+: try overlay trampoline (bypasses all known OEM restrictions)
-        if (AppPermissions.isOverlayGranted(this)) {
-            AppLog.i("Boot auto-start: launching via overlay window trampoline")
-            if (launchViaOverlayTrampoline()) return
-        }
+        val canOverlay = AppPermissions.isOverlayGranted(this)
+        val strategy = ActivityLaunchPolicy.chooseLaunchStrategy(
+            Build.VERSION.SDK_INT, canOverlay, App.hasStartedActivity
+        )
+        AppLog.i("$source: launching MainActivity via $strategy (overlay=$canOverlay, foreground=${App.hasStartedActivity})")
 
-        // Fallback: full-screen intent notification
-        AppLog.i("Boot auto-start: falling back to full-screen intent notification")
-        launchViaFullScreenIntent()
+        when (strategy) {
+            ActivityLaunchPolicy.LaunchStrategy.DIRECT -> launchDirectly(source)
+            ActivityLaunchPolicy.LaunchStrategy.OVERLAY -> {
+                if (!launchViaOverlayTrampoline(source)) {
+                    AppLog.w("$source: overlay trampoline failed, falling back to full-screen intent notification")
+                    launchViaFullScreenIntent(source)
+                }
+            }
+            ActivityLaunchPolicy.LaunchStrategy.NOTIFICATION -> launchViaFullScreenIntent(source)
+        }
     }
 
-    private fun launchDirectly() {
+    private fun launchDirectly(source: String = "Boot auto-start") {
         try {
             val launchIntent = Intent(this, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
+                putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
             }
             startActivity(launchIntent)
-            AppLog.i("Boot auto-start: direct startActivity succeeded")
+            AppLog.i("$source: direct startActivity succeeded")
         } catch (e: Exception) {
-            AppLog.e("Boot auto-start: direct startActivity failed: ${e.message}")
-            launchViaFullScreenIntent()
+            AppLog.e("$source: direct startActivity failed: ${e.message}")
+            launchViaFullScreenIntent(source)
         }
     }
 
-    private fun launchViaOverlayTrampoline(): Boolean {
+    private fun launchViaOverlayTrampoline(source: String = "Boot auto-start"): Boolean {
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
+            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
         }
         return launchViaOverlayTrampoline(launchIntent)
     }
@@ -4372,10 +4398,10 @@ class AapService : Service() {
         }
     }
 
-    private fun launchViaFullScreenIntent() {
+    private fun launchViaFullScreenIntent(source: String = "Boot auto-start") {
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
+            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
         }
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)

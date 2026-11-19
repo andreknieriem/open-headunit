@@ -458,6 +458,7 @@
             <intent-filter>
                 <action android:name="com.andrerinas.openheadunit.ACTION_SET_NIGHT_MODE" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_CONNECT" />
+                <action android:name="com.andrerinas.openheadunit.ACTION_START_WIRELESS_SCAN" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_DISCONNECT" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_START_SELF_MODE" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_STOP_SERVICE" />
@@ -472,6 +473,9 @@
 
                 <data
                     android:host="connect"
+                    android:scheme="headunit" />
+                <data
+                    android:host="wireless"
                     android:scheme="headunit" />
                 <data
                     android:host="disconnect"

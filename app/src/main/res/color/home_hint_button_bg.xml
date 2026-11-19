@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- "Got it": lighter while it has D-pad focus, together with the dark ring of home_hint_button_stroke. -->
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_focused="true" android:color="@color/home_hint_button_focused" />
-    <item android:color="@color/home_hint_button" />
-</selector>

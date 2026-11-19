@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- One widget on the home screen. The host view is added at runtime and the frame's size comes
-     from what the widget asks for, so both are set by HomeFragment.renderWidgets. -->
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/home_widget_frame"
-    android:layout_width="wrap_content"
-    android:layout_height="match_parent"
-    android:padding="@dimen/home_widget_padding" />

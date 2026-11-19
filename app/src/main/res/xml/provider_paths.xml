@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <cache-path name="cache" path="." />
-    <external-files-path name="external_files" path="." />
-    <!-- Below Android 10 the Downloads log location is the public directory, which no root above
-         covers, so sharing a log from there threw out of the click handler and killed the app. -->
-    <external-path name="external_storage" path="." />
-</paths>

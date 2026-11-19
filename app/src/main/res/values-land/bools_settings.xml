@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <bool name="settings_rail_foldable">false</bool>
-    <bool name="settings_show_title">false</bool>
-</resources>

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- A dark ring around "Got it" while it has D-pad focus, nothing otherwise. -->
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_focused="true" android:color="@color/home_hint_title" />
-    <item android:color="@android:color/transparent" />
-</selector>

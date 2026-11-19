@@ -1363,6 +1363,26 @@ class Settings(private val context: Context) {
         get() = prefs.getString("last-connection-usb-device", "")!!
         set(value) { prefs.edit().putString("last-connection-usb-device", value).apply() }
 
+    /** Whether automatic fallback across connection modes is enabled when a mode repeatedly fails. */
+    var connectionModeFallbackEnabled: Boolean
+        get() = prefs.getBoolean("connection-mode-fallback-enabled", true)
+        set(value) { prefs.edit().putBoolean("connection-mode-fallback-enabled", value).apply() }
+
+    /** Key of the last [com.andrerinas.openheadunit.connection.ConnectionFallbackPolicy.CandidateMode] that reached a healthy session. */
+    var lastSuccessfulConnectionMode: String
+        get() = prefs.getString("last-successful-connection-mode", "")!!
+        set(value) { prefs.edit().putString("last-successful-connection-mode", value).apply() }
+
+    /** Target IPv4 address for the Manual IP fallback mode; falls back to [lastConnectionIp] when blank. */
+    var manualFallbackIp: String
+        get() = prefs.getString("manual-fallback-ip", "")!!
+        set(value) { prefs.edit().putString("manual-fallback-ip", value).apply() }
+
+    /** Target TCP port for the Manual IP fallback mode (defaults to Headunit Server port 5277). */
+    var manualFallbackPort: Int
+        get() = prefs.getInt("manual-fallback-port", 5277)
+        set(value) { prefs.edit().putInt("manual-fallback-port", value).apply() }
+
     fun saveLastConnection(type: String, ip: String = "", usbDevice: String = "") {
         lastConnectionType = type
         lastConnectionIp = ip
@@ -1373,6 +1393,7 @@ class Settings(private val context: Context) {
         lastConnectionType = ""
         lastConnectionIp = ""
         lastConnectionUsbDevice = ""
+        lastSuccessfulConnectionMode = ""
     }
 
     /**

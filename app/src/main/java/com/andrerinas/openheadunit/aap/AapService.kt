@@ -105,6 +105,8 @@ import android.view.View
 import android.view.WindowManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
+import com.andrerinas.openheadunit.connection.ConnectionFallbackPolicy
+import com.andrerinas.openheadunit.connection.ConnectionModeCoordinator
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
 import com.andrerinas.openheadunit.connection.usb.UsbPlugInPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
@@ -1528,6 +1530,7 @@ class AapService : Service() {
 
     private fun maybeAutoResumePlaybackOnReconnect() {
         wirelessRecovery.onTransportStarted()
+        connectionModeCoordinator.onTransportStarted(resolveActiveCandidateMode())
         val settings = App.provide(this).settings
         val now = SystemClock.elapsedRealtime()
         val playback = reconnectPlayback.consume(now)
@@ -1848,6 +1851,71 @@ class AapService : Service() {
     private val automaticReconnect by lazy { reconnectTimer() }
     private val usbReconnect by lazy { reconnectTimer() }
     internal val wirelessRecovery = WirelessRecoveryPolicy.Tracker()
+    internal val connectionModeCoordinator by lazy {
+        val persisted = ConnectionFallbackPolicy.CandidateMode.fromKey(
+            App.provide(this).settings.lastSuccessfulConnectionMode
+        )
+        ConnectionModeCoordinator(
+            initialLastSuccessfulMode = persisted,
+            onPersistLastSuccessfulMode = { mode ->
+                App.provide(this).settings.lastSuccessfulConnectionMode = mode.key
+            },
+        )
+    }
+
+    fun connectionFallbackDiagnostics(): ConnectionModeCoordinator.DiagnosticsSnapshot =
+        connectionModeCoordinator.diagnosticsSnapshot(buildFallbackPreconditions())
+
+    internal fun buildFallbackPreconditions(): ConnectionFallbackPolicy.Preconditions {
+        val settings = App.provide(this).settings
+        val persistedLast = ConnectionFallbackPolicy.CandidateMode.fromKey(settings.lastSuccessfulConnectionMode)
+            ?: connectionModeCoordinator.lastSuccessfulMode
+        val configuredIp = settings.manualFallbackIp.ifBlank {
+            settings.lastConnectionIp.takeIf { settings.lastConnectionType == Settings.CONNECTION_TYPE_WIFI }.orEmpty()
+        }
+        val nativeBlocked = (wifiLauncherManager.active as? WifiLauncherNative)?.refusedModuleAtStart == true
+        return ConnectionFallbackPolicy.Preconditions(
+            fallbackEnabled = settings.connectionModeFallbackEnabled,
+            lastSuccessfulMode = persistedLast,
+            wirelessSelected = settings.showsWifi(),
+            wirelessPausedByBootLoop = Settings.isWirelessPausedByBootLoop(this),
+            nativeBlockedByExternalBt = nativeBlocked,
+            sharedWifiAvailable = true,
+            manualIp = configuredIp,
+            manualPort = settings.manualFallbackPort,
+            usbSelected = settings.showsUsb(),
+            usbConnected = UsbDeviceCompat.accessoryOnBus(this),
+        )
+    }
+
+    internal fun resolveActiveCandidateMode(
+        endedState: CommManager.ConnectionState.Disconnected? = null,
+    ): ConnectionFallbackPolicy.CandidateMode? {
+        if (commManager.isLoopbackSession || endedState?.wasLoopbackSession == true) return null
+        if (commManager.isUsbSession || endedState?.transport == com.andrerinas.openheadunit.connection.projection.ProjectionConnection.Type.USB) {
+            return ConnectionFallbackPolicy.CandidateMode.USB
+        }
+        return when (wifiLauncherManager.activeMode) {
+            WifiLauncherMode.NATIVE -> ConnectionFallbackPolicy.CandidateMode.NATIVE_WIFI_DIRECT
+            WifiLauncherMode.AUTO, WifiLauncherMode.HELPER -> ConnectionFallbackPolicy.CandidateMode.SHARED_WIFI_HEADUNIT_SERVER
+            WifiLauncherMode.MANUAL -> ConnectionFallbackPolicy.CandidateMode.MANUAL_IP
+            null -> {
+                val settings = App.provide(this).settings
+                when {
+                    settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
+                        ConnectionFallbackPolicy.CandidateMode.USB
+                    settings.wifiConnectionMode == WifiLauncherMode.NATIVE ->
+                        ConnectionFallbackPolicy.CandidateMode.NATIVE_WIFI_DIRECT
+                    settings.wifiConnectionMode == WifiLauncherMode.AUTO ||
+                        settings.wifiConnectionMode == WifiLauncherMode.HELPER ->
+                        ConnectionFallbackPolicy.CandidateMode.SHARED_WIFI_HEADUNIT_SERVER
+                    settings.wifiConnectionMode == WifiLauncherMode.MANUAL ->
+                        ConnectionFallbackPolicy.CandidateMode.MANUAL_IP
+                    else -> connectionModeCoordinator.currentMode
+                }
+            }
+        }
+    }
 
     /**
      * Called by [CommManager.ConnectionState.Disconnected] observer:
@@ -2322,6 +2390,7 @@ class AapService : Service() {
         }
         if (state.holdsRecovery) {
             wirelessRecovery.reset()
+            connectionModeCoordinator.resetCycle()
             AppLog.i("AapService: not reconnecting by itself, the projection screen could not be raised.")
             return
         }
@@ -2332,12 +2401,14 @@ class AapService : Service() {
             // Skip reconnect for user-initiated exits — the user explicitly wants to stop.
             if (state.isUserExit) {
                 wirelessRecovery.reset()
+                connectionModeCoordinator.resetCycle()
                 AppLog.i("AapService: User exit with wirelessServer active. Not restarting discovery.")
                 return
             }
-            // Only where a discovery loop exists: Native stays armed across a session end now, and
-            // the line would otherwise announce a restart that is a no-op there.
-            if (wifiLauncherManager.active?.hasLocalDiscovery() == true) {
+            val shouldRecoverActiveWireless =
+                wifiLauncherManager.active?.hasLocalDiscovery() == true ||
+                    (!state.isClean && settings.connectionModeFallbackEnabled)
+            if (shouldRecoverActiveWireless) {
                 val ticket = wifiLauncherManager.cleanupTicketFor(state) ?: return
                 val decision = wirelessRecovery.onDisconnected(
                     endedState = state,
@@ -2351,13 +2422,29 @@ class AapService : Service() {
                     failureCause = state.failureCause,
                     silentPeerFailures = commManager.silentPeerFailures,
                 ) ?: return
+                val fallbackStep = connectionModeCoordinator.onDisconnected(
+                    endedState = state,
+                    ticket = ticket,
+                    preconditions = buildFallbackPreconditions(),
+                    failedMode = resolveActiveCandidateMode(state),
+                    isUserExit = state.isUserExit,
+                    holdsRecovery = state.holdsRecovery,
+                    isSettingsRestart = state.isSettingsRestart,
+                    cancelledByUser = wifiLauncherManager.cancelledByUser,
+                    wirelessPausedForSettings = wirelessPausedForSettings,
+                    reachedSsl = state.reachedSsl,
+                    failureCause = state.failureCause,
+                    silentPeerFailures = commManager.silentPeerFailures,
+                )
+                val delayMs = fallbackStep?.delayMs ?: decision.delayMs
                 AppLog.i(
                     "AapService: Disconnected (cause=${state.failureCause ?: "none"}). " +
-                        "Restarting discovery loop via stage ${decision.stage} (attempt ${decision.attempt}) in ${decision.delayMs}ms..."
+                        "Restarting discovery loop via stage ${decision.stage} (attempt ${decision.attempt}, " +
+                        "fallback=${fallbackStep?.transitionReason ?: "none"}) in ${delayMs}ms..."
                 )
                 automaticReconnect.schedule(
                     endedSession = state,
-                    delayMs = decision.delayMs,
+                    delayMs = delayMs,
                     ownsCheck = {
                         wirelessRecovery.canExecute(
                             decision = decision,
@@ -2365,10 +2452,17 @@ class AapService : Service() {
                             isTicketCurrent = wifiLauncherManager::isCleanupCurrent,
                             cancelledByUser = wifiLauncherManager.cancelledByUser,
                             wirelessPausedForSettings = wirelessPausedForSettings,
-                        )
+                        ) && (fallbackStep == null || connectionModeCoordinator.canExecute(
+                            step = fallbackStep,
+                            currentState = commManager.connectionState.value,
+                            isTicketCurrent = wifiLauncherManager::isCleanupCurrent,
+                            isBusy = commManager.isBusy,
+                            cancelledByUser = wifiLauncherManager.cancelledByUser,
+                            wirelessPausedForSettings = wirelessPausedForSettings,
+                        ))
                     },
                 ) {
-                    executeWirelessRecoveryStage(decision)
+                    executeWirelessRecoveryStage(decision, fallbackStep)
                 }
             }
             return
@@ -2416,7 +2510,9 @@ class AapService : Service() {
 
         if (!state.isClean) {
             val mode = settings.wifiConnectionMode
-            if (mode == WifiLauncherMode.AUTO && lastType != Settings.CONNECTION_TYPE_USB) {
+            if ((mode == WifiLauncherMode.AUTO || settings.connectionModeFallbackEnabled) &&
+                lastType != Settings.CONNECTION_TYPE_USB
+            ) {
                 val ticket = wifiLauncherManager.cleanupTicketFor(state) ?: return
                 val decision = wirelessRecovery.onDisconnected(
                     endedState = state,
@@ -2430,13 +2526,29 @@ class AapService : Service() {
                     failureCause = state.failureCause,
                     silentPeerFailures = commManager.silentPeerFailures,
                 ) ?: return
+                val fallbackStep = connectionModeCoordinator.onDisconnected(
+                    endedState = state,
+                    ticket = ticket,
+                    preconditions = buildFallbackPreconditions(),
+                    failedMode = resolveActiveCandidateMode(state),
+                    isUserExit = state.isUserExit,
+                    holdsRecovery = state.holdsRecovery,
+                    isSettingsRestart = state.isSettingsRestart,
+                    cancelledByUser = wifiLauncherManager.cancelledByUser,
+                    wirelessPausedForSettings = wirelessPausedForSettings,
+                    reachedSsl = state.reachedSsl,
+                    failureCause = state.failureCause,
+                    silentPeerFailures = commManager.silentPeerFailures,
+                )
+                val delayMs = fallbackStep?.delayMs ?: decision.delayMs
                 AppLog.i(
-                    "AapService: Unclean WiFi disconnect in Auto Mode (cause=${state.failureCause ?: "none"}). " +
-                        "Retrying discovery via stage ${decision.stage} (attempt ${decision.attempt}) in ${decision.delayMs}ms..."
+                    "AapService: Unclean WiFi disconnect (cause=${state.failureCause ?: "none"}). " +
+                        "Retrying via stage ${decision.stage} (attempt ${decision.attempt}, " +
+                        "fallback=${fallbackStep?.transitionReason ?: "none"}) in ${delayMs}ms..."
                 )
                 automaticReconnect.schedule(
                     endedSession = state,
-                    delayMs = decision.delayMs,
+                    delayMs = delayMs,
                     ownsCheck = {
                         wirelessRecovery.canExecute(
                             decision = decision,
@@ -2444,10 +2556,17 @@ class AapService : Service() {
                             isTicketCurrent = wifiLauncherManager::isCleanupCurrent,
                             cancelledByUser = wifiLauncherManager.cancelledByUser,
                             wirelessPausedForSettings = wirelessPausedForSettings,
-                        )
+                        ) && (fallbackStep == null || connectionModeCoordinator.canExecute(
+                            step = fallbackStep,
+                            currentState = commManager.connectionState.value,
+                            isTicketCurrent = wifiLauncherManager::isCleanupCurrent,
+                            isBusy = commManager.isBusy,
+                            cancelledByUser = wifiLauncherManager.cancelledByUser,
+                            wirelessPausedForSettings = wirelessPausedForSettings,
+                        ))
                     },
                 ) {
-                    executeWirelessRecoveryStage(decision, oneShotDiscovery = true)
+                    executeWirelessRecoveryStage(decision, fallbackStep, oneShotDiscovery = mode == WifiLauncherMode.AUTO)
                 }
             }
         }
@@ -2455,9 +2574,24 @@ class AapService : Service() {
 
     private fun executeWirelessRecoveryStage(
         decision: WirelessRecoveryPolicy.Decision,
+        fallbackStep: ConnectionModeCoordinator.FallbackStep? = null,
         oneShotDiscovery: Boolean = false,
     ) {
         if (commManager.isBusy || wifiLauncherManager.cancelledByUser || wirelessPausedForSettings) return
+        val settings = App.provide(this).settings
+        if (fallbackStep != null && fallbackStep.modeChanged && settings.connectionModeFallbackEnabled) {
+            connectionModeCoordinator.executeSerialized(
+                step = fallbackStep,
+                currentState = commManager.connectionState.value,
+                isTicketCurrent = wifiLauncherManager::isCleanupCurrent,
+                isBusy = commManager.isBusy,
+                cancelledByUser = wifiLauncherManager.cancelledByUser,
+                wirelessPausedForSettings = wirelessPausedForSettings,
+            ) { step ->
+                executeFallbackModeTransition(step)
+            }
+            return
+        }
         val active = wifiLauncherManager.active
         when (decision.stage) {
             WirelessRecoveryPolicy.Stage.FAST_RETRY -> {
@@ -2488,6 +2622,57 @@ class AapService : Service() {
                 } else if (oneShotDiscovery) {
                     wifiLauncherManager.startDiscovery(oneShot = true)
                 }
+            }
+        }
+    }
+
+    private fun executeFallbackModeTransition(step: ConnectionModeCoordinator.FallbackStep) {
+        if (commManager.isBusy || wifiLauncherManager.cancelledByUser || wirelessPausedForSettings) return
+        val settings = App.provide(this).settings
+        val skippedSummary = if (step.skippedModes.isEmpty()) "none" else {
+            step.skippedModes.entries.joinToString { "${it.key.displayName}=${it.value.description}" }
+        }
+        AppLog.i(
+            "AapService: Connection-mode fallback transitioning from ${step.fromMode?.displayName ?: "none"} " +
+                "to ${step.targetMode.displayName} (${step.transitionReason}; skipped: $skippedSummary)"
+        )
+        when (step.targetMode) {
+            ConnectionFallbackPolicy.CandidateMode.NATIVE_WIFI_DIRECT -> {
+                wifiLauncherManager.setActive(WifiLauncherMode.NATIVE, force = true)
+            }
+            ConnectionFallbackPolicy.CandidateMode.SHARED_WIFI_HEADUNIT_SERVER -> {
+                val targetWifiMode = step.targetMode.toWifiLauncherMode(
+                    configuredWifiMode = settings.wifiConnectionMode,
+                    helperUsesSharedNetwork = (wifiLauncherManager.active as? WifiLauncherHelper)?.hasLocalDiscovery() == true,
+                ) ?: WifiLauncherMode.AUTO
+                wifiLauncherManager.setActive(targetWifiMode, force = true)
+            }
+            ConnectionFallbackPolicy.CandidateMode.MANUAL_IP -> {
+                val preconditions = buildFallbackPreconditions()
+                val ip = preconditions.manualIp?.trim().orEmpty()
+                val port = preconditions.manualPort
+                if (!ConnectionFallbackPolicy.isValidManualEndpoint(ip, port)) return
+                wifiLauncherManager.setActive(WifiLauncherMode.MANUAL, force = true)
+                val ticket = wifiLauncherManager.cleanupTicket()
+                serviceScope.launch {
+                    commManager.awaitDisconnectComplete()
+                    if (!isDestroying &&
+                        !commManager.isBusy &&
+                        wifiLauncherManager.isCleanupCurrent(ticket) &&
+                        !wifiLauncherManager.cancelledByUser &&
+                        !wirelessPausedForSettings
+                    ) {
+                        commManager.connect(ip, port)
+                    }
+                }
+            }
+            ConnectionFallbackPolicy.CandidateMode.USB -> {
+                if (!UsbDeviceCompat.accessoryOnBus(this)) return
+                wifiLauncherManager.stop()
+                usbLauncherManager.checkAlreadyConnected(
+                    force = true,
+                    trigger = UsbPlugInPolicy.Trigger.RECONNECT,
+                )
             }
         }
     }
@@ -3204,6 +3389,7 @@ class AapService : Service() {
      */
     private fun quiesceWirelessForWiredSession() {
         wirelessRecovery.onHandshakeComplete()
+        connectionModeCoordinator.onHandshakeComplete(resolveActiveCandidateMode())
         if (wirelessQuiescedForWiredSession) return
         if (!UsbSessionQuiescePolicy.shouldQuiesce(commManager.isWirelessSession)) return
 

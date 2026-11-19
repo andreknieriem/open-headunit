@@ -88,13 +88,17 @@ class SocketProjectionConnection(
 
                             // 1. Try synchronous scan of existing networks first (instant and reliable if connected)
                             val networks = cm.allNetworks
-                            for (net in networks) {
+                            val wifiNetworks = networks.filter { net ->
                                 val caps = cm.getNetworkCapabilities(net)
-                                if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                                    wifiNetwork = net
-                                    AppLog.i("Found active WiFi/P2P network via synchronous scan: $net")
-                                    break
-                                }
+                                caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                            }
+                            wifiNetwork = selectWifiNetwork(ip, wifiNetworks) { net ->
+                                cm.getLinkProperties(net)?.linkAddresses?.map { linkAddr ->
+                                    linkAddr.address?.hostAddress to linkAddr.prefixLength
+                                } ?: emptyList()
+                            }
+                            if (wifiNetwork != null) {
+                                AppLog.i("Found active WiFi/P2P network via synchronous scan: $wifiNetwork")
                             }
 
                             // 2. Fallback to callback if not found synchronously (with increased 1500ms timeout)
@@ -207,13 +211,10 @@ class SocketProjectionConnection(
     }
 
     override fun disconnect() {
-        if (transport.isConnected) {
-            try {
-                transport.close()
-            } catch (e: IOException) {
-                AppLog.e(e)
-            }
-
+        try {
+            transport.close()
+        } catch (e: IOException) {
+            AppLog.e(e)
         }
         input = null
         output = null
@@ -300,5 +301,46 @@ class SocketProjectionConnection(
     companion object {
         private const val DEF_BUFFER_LENGTH = 131080
         private const val LOW_LATENCY_SOCKET_BUFFER_BYTES = 256 * 1024
+
+        internal fun ipv4ToInt(ipv4: String?): Int? {
+            val host = ipv4?.takeIf { it.isNotBlank() } ?: return null
+            val parts = host.split('.')
+            if (parts.size != 4) return null
+            var result = 0
+            for (part in parts) {
+                val octet = part.toIntOrNull() ?: return null
+                if (octet !in 0..255) return null
+                result = (result shl 8) or octet
+            }
+            return result
+        }
+
+        internal fun matchesSubnet(targetIp: String, linkHostAddress: String?, prefixLength: Int): Boolean {
+            val targetInt = ipv4ToInt(targetIp) ?: return false
+            val linkInt = ipv4ToInt(linkHostAddress) ?: return false
+            val effectivePrefix = if (prefixLength in 1..32) prefixLength else 24
+            val mask = if (effectivePrefix == 32) -1 else (-1 shl (32 - effectivePrefix))
+            return (targetInt and mask) == (linkInt and mask)
+        }
+
+        internal fun <N> selectWifiNetwork(
+            targetIp: String,
+            wifiNetworks: Iterable<N>,
+            linkAddressesOf: (N) -> Iterable<Pair<String?, Int>>,
+        ): N? {
+            var fallback: N? = null
+            for (net in wifiNetworks) {
+                if (fallback == null) fallback = net
+                val matches = try {
+                    linkAddressesOf(net).any { (hostAddr, prefixLen) ->
+                        matchesSubnet(targetIp, hostAddr, prefixLen)
+                    }
+                } catch (_: Exception) {
+                    false
+                }
+                if (matches) return net
+            }
+            return fallback
+        }
     }
 }

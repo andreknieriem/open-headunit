@@ -125,6 +125,7 @@ import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherStopSequence
 import com.andrerinas.openheadunit.connection.wifi.WifiJoinKickPolicy
+import com.andrerinas.openheadunit.connection.wifi.WirelessRecoveryPolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.P2pIdentityRotationPolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.StationScanMonitor
 import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDown
@@ -903,6 +904,7 @@ class AapService : Service() {
             return
         }
         rearmNativeHotspotAfterWake(trigger)
+        rearmNonNativeWirelessAfterWake(trigger)
 
         val settings = App.provide(this).settings
 
@@ -932,6 +934,38 @@ class AapService : Service() {
         lastWakeRearmTimestamp = now
         AppLog.i("WakeDetect: re-reading the Native AA hotspot after a wake ($trigger)")
         launcher.refreshAfterWake()
+    }
+
+    /**
+     * On wake, non-Native wireless modes ([WifiLauncherMode.AUTO] / [WifiLauncherMode.HELPER])
+     * verify [WirelessServer] health via [com.andrerinas.openheadunit.connection.wifi.server.WirelessServerRestartPolicy]
+     * and kick discovery if not busy or cancelled by the user.
+     */
+    internal fun rearmNonNativeWirelessAfterWake(trigger: String) {
+        if (commManager.isBusy ||
+            wifiLauncherManager.cancelledByUser ||
+            wirelessPausedForSettings ||
+            wirelessQuiescedForWiredSession
+        ) return
+        val active = wifiLauncherManager.active ?: return
+        if (!wifiLauncherManager.activeIsStarted) return
+        if (active.mode != WifiLauncherMode.AUTO && active.mode != WifiLauncherMode.HELPER) return
+
+        if (active.hasWirelessServer()) {
+            wifiLauncherManager.sharedServices.startWirelessServer(active)
+        }
+        if (active.hasLocalDiscovery()) {
+            when (wifiLauncherManager.forceStartDiscoveryScan()) {
+                false -> {
+                    rescanWithoutWaiting = true
+                    AppLog.i("WakeDetect: discovery scan already in flight on wake ($trigger); next scan will not wait")
+                }
+                null -> wifiLauncherManager.startDiscovery(oneShot = false)
+                true -> AppLog.i("WakeDetect: kicked discovery scan after wake ($trigger)")
+            }
+        } else {
+            wifiLauncherManager.restartDiscovery()
+        }
     }
 
     /**
@@ -1493,6 +1527,7 @@ class AapService : Service() {
     }
 
     private fun maybeAutoResumePlaybackOnReconnect() {
+        wirelessRecovery.onTransportStarted()
         val settings = App.provide(this).settings
         val now = SystemClock.elapsedRealtime()
         val playback = reconnectPlayback.consume(now)
@@ -1812,6 +1847,7 @@ class AapService : Service() {
         AutomaticReconnect(serviceScope, { commManager.connectionState.value }, { isDestroying })
     private val automaticReconnect by lazy { reconnectTimer() }
     private val usbReconnect by lazy { reconnectTimer() }
+    internal val wirelessRecovery = WirelessRecoveryPolicy.Tracker()
 
     /**
      * Called by [CommManager.ConnectionState.Disconnected] observer:
@@ -2285,6 +2321,7 @@ class AapService : Service() {
             return
         }
         if (state.holdsRecovery) {
+            wirelessRecovery.reset()
             AppLog.i("AapService: not reconnecting by itself, the projection screen could not be raised.")
             return
         }
@@ -2294,15 +2331,44 @@ class AapService : Service() {
         if (wifiLauncherManager.isActive) {
             // Skip reconnect for user-initiated exits — the user explicitly wants to stop.
             if (state.isUserExit) {
+                wirelessRecovery.reset()
                 AppLog.i("AapService: User exit with wirelessServer active. Not restarting discovery.")
                 return
             }
             // Only where a discovery loop exists: Native stays armed across a session end now, and
             // the line would otherwise announce a restart that is a no-op there.
             if (wifiLauncherManager.active?.hasLocalDiscovery() == true) {
-                AppLog.i("AapService: Disconnected. Restarting discovery loop in 2s...")
-                automaticReconnect.schedule(state, 2000) {
-                    wifiLauncherManager.restartDiscovery()
+                val ticket = wifiLauncherManager.cleanupTicketFor(state) ?: return
+                val decision = wirelessRecovery.onDisconnected(
+                    endedState = state,
+                    ticket = ticket,
+                    isUserExit = state.isUserExit,
+                    holdsRecovery = state.holdsRecovery,
+                    isSettingsRestart = state.isSettingsRestart,
+                    cancelledByUser = wifiLauncherManager.cancelledByUser,
+                    wirelessPausedForSettings = wirelessPausedForSettings,
+                    reachedSsl = state.reachedSsl,
+                    failureCause = state.failureCause,
+                    silentPeerFailures = commManager.silentPeerFailures,
+                ) ?: return
+                AppLog.i(
+                    "AapService: Disconnected (cause=${state.failureCause ?: "none"}). " +
+                        "Restarting discovery loop via stage ${decision.stage} (attempt ${decision.attempt}) in ${decision.delayMs}ms..."
+                )
+                automaticReconnect.schedule(
+                    endedSession = state,
+                    delayMs = decision.delayMs,
+                    ownsCheck = {
+                        wirelessRecovery.canExecute(
+                            decision = decision,
+                            currentState = commManager.connectionState.value,
+                            isTicketCurrent = wifiLauncherManager::isCleanupCurrent,
+                            cancelledByUser = wifiLauncherManager.cancelledByUser,
+                            wirelessPausedForSettings = wirelessPausedForSettings,
+                        )
+                    },
+                ) {
+                    executeWirelessRecoveryStage(decision)
                 }
             }
             return
@@ -2351,8 +2417,75 @@ class AapService : Service() {
         if (!state.isClean) {
             val mode = settings.wifiConnectionMode
             if (mode == WifiLauncherMode.AUTO && lastType != Settings.CONNECTION_TYPE_USB) {
-                AppLog.i("AapService: Unclean WiFi disconnect in Auto Mode. Retrying discovery in 2s...")
-                automaticReconnect.schedule(state, 2000) {
+                val ticket = wifiLauncherManager.cleanupTicketFor(state) ?: return
+                val decision = wirelessRecovery.onDisconnected(
+                    endedState = state,
+                    ticket = ticket,
+                    isUserExit = state.isUserExit,
+                    holdsRecovery = state.holdsRecovery,
+                    isSettingsRestart = state.isSettingsRestart,
+                    cancelledByUser = wifiLauncherManager.cancelledByUser,
+                    wirelessPausedForSettings = wirelessPausedForSettings,
+                    reachedSsl = state.reachedSsl,
+                    failureCause = state.failureCause,
+                    silentPeerFailures = commManager.silentPeerFailures,
+                ) ?: return
+                AppLog.i(
+                    "AapService: Unclean WiFi disconnect in Auto Mode (cause=${state.failureCause ?: "none"}). " +
+                        "Retrying discovery via stage ${decision.stage} (attempt ${decision.attempt}) in ${decision.delayMs}ms..."
+                )
+                automaticReconnect.schedule(
+                    endedSession = state,
+                    delayMs = decision.delayMs,
+                    ownsCheck = {
+                        wirelessRecovery.canExecute(
+                            decision = decision,
+                            currentState = commManager.connectionState.value,
+                            isTicketCurrent = wifiLauncherManager::isCleanupCurrent,
+                            cancelledByUser = wifiLauncherManager.cancelledByUser,
+                            wirelessPausedForSettings = wirelessPausedForSettings,
+                        )
+                    },
+                ) {
+                    executeWirelessRecoveryStage(decision, oneShotDiscovery = true)
+                }
+            }
+        }
+    }
+
+    private fun executeWirelessRecoveryStage(
+        decision: WirelessRecoveryPolicy.Decision,
+        oneShotDiscovery: Boolean = false,
+    ) {
+        if (commManager.isBusy || wifiLauncherManager.cancelledByUser || wirelessPausedForSettings) return
+        val active = wifiLauncherManager.active
+        when (decision.stage) {
+            WirelessRecoveryPolicy.Stage.FAST_RETRY -> {
+                if (oneShotDiscovery || active == null) {
+                    wifiLauncherManager.startDiscovery(oneShot = true)
+                } else {
+                    wifiLauncherManager.restartDiscovery()
+                }
+            }
+            WirelessRecoveryPolicy.Stage.LAUNCHER_REARM -> {
+                if (active != null) {
+                    if (active.hasWirelessServer()) {
+                        wifiLauncherManager.sharedServices.startWirelessServer(active)
+                    }
+                    when (active) {
+                        is WifiLauncherNative -> active.refreshAfterWake()
+                        is WifiLauncherHelper -> active.refreshAfterSettingsRestart()
+                        else -> wifiLauncherManager.restartDiscovery()
+                    }
+                } else if (oneShotDiscovery) {
+                    wifiLauncherManager.startDiscovery(oneShot = true)
+                }
+            }
+            WirelessRecoveryPolicy.Stage.STACK_RECOVERY,
+            WirelessRecoveryPolicy.Stage.BACKOFF -> {
+                if (active != null) {
+                    wifiLauncherManager.setActiveFromSettings(force = true)
+                } else if (oneShotDiscovery) {
                     wifiLauncherManager.startDiscovery(oneShot = true)
                 }
             }
@@ -3070,6 +3203,7 @@ class AapService : Service() {
      * [UsbSessionQuiescePolicy] for why any of it is running in the first place.
      */
     private fun quiesceWirelessForWiredSession() {
+        wirelessRecovery.onHandshakeComplete()
         if (wirelessQuiescedForWiredSession) return
         if (!UsbSessionQuiescePolicy.shouldQuiesce(commManager.isWirelessSession)) return
 

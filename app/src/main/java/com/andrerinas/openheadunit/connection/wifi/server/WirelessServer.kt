@@ -129,7 +129,7 @@ class WirelessServer(
                     val clientSocket = serverSocket?.accept() ?: break
                     AppLog.i("WirelessServer: Incoming connection detected from ${clientSocket.inetAddress}")
                     service.serviceScope.launch {
-                        if (commManager.isConnected) {
+                        if (commManager.isBusy) {
                             AppLog.w("WirelessServer: Already connected, dropping client from ${clientSocket.inetAddress}")
                             withContext(Dispatchers.IO) {
                                 try { clientSocket.close() } catch (e: Exception) { AppLog.d("WirelessServer: Error closing dropped client socket", e) }

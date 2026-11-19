@@ -13,8 +13,8 @@ import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.AppLog
 
 /**
- * The auxiliary display's window: a TextureView scaled from its top-left by [cropScaleX]/[cropScaleY],
- * so the blank right and bottom margin of each frame falls off the panel instead of shrinking it.
+ * The auxiliary display's window: a TextureView scaled about its centre by [cropScaleX]/[cropScaleY],
+ * so the blank margin on each side of a frame falls off the panel instead of shrinking it.
  */
 internal class AuxDisplayPresentation(
     outerContext: Context,
@@ -38,7 +38,9 @@ internal class AuxDisplayPresentation(
             override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
                 AppLog.i("AuxDisplayPresentation: surface ready on display ${display.displayId} " +
                     "(margin crop x$cropScaleX, x$cropScaleY)")
-                view.setTransform(Matrix().apply { setScale(cropScaleX, cropScaleY, 0f, 0f) })
+                // The phone centres the picture in the frame (it logs dispLeft = half the width margin), so
+                // the crop grows from the middle; from the top-left it showed one bar and cut the far side.
+                view.setTransform(Matrix().apply { setScale(cropScaleX, cropScaleY, width / 2f, height / 2f) })
                 val created = Surface(texture)
                 surface = created
                 decoder.setSurface(created)

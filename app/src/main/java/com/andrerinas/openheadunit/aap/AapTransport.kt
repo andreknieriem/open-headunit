@@ -196,7 +196,7 @@ class AapTransport(
     var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
     var onUpdateUiConfigReplyReceived: (() -> Unit)? = null
 
-    /** What the phone selected in the version handshake, or null before it has answered. */
+    /** The phone's answer in the version handshake (its own version), or null before it has answered. */
     var negotiatedVersion: AapVersionNegotiation.Result? = null
         private set
     private var pollHandler: Handler? = null
@@ -1098,7 +1098,9 @@ class AapTransport(
                 SystemClock.sleep(500)
             }
 
-            val version = Messages.versionRequest
+            // The full navigation data (lanes) needs the version Zlink asks for; see FullNavigationProfile.
+            val announcedMinor = FullNavigationProfile.versionMinor(FullNavigationProfile.enabled(context))
+            val version = Messages.versionRequest(AapVersionNegotiation.ANNOUNCED_MAJOR, announcedMinor)
             var ret = -1
             var attempt = 0
             var received = false
@@ -1222,8 +1224,8 @@ class AapTransport(
                             return false
                         }
                         negotiatedVersion = negotiated
-                        AppLog.i("Handshake: the phone selected ${negotiated.major}.${negotiated.minor} " +
-                            "(we asked for ${AapVersionNegotiation.ANNOUNCED_MAJOR}.${AapVersionNegotiation.ANNOUNCED_MINOR}), status ${negotiated.statusName}")
+                        AppLog.i("Handshake: the phone answered ${negotiated.major}.${negotiated.minor} " +
+                            "(its own version; we asked for ${AapVersionNegotiation.ANNOUNCED_MAJOR}.$announcedMinor), status ${negotiated.statusName}")
                         negotiated.requestedConfig?.let {
                             AppLog.i("Handshake: the phone asks for ping timeout " +
                                 "${it.pingConfiguration.timeoutMs}ms, read timeout " +

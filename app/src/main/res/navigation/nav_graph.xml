@@ -85,6 +85,13 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_settingsFragment_to_thirdPartyAccessFragment"
+            app:destination="@id/thirdPartyAccessFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
             android:id="@+id/action_settingsFragment_to_dpiSettingsFragment"
             app:destination="@id/dpiSettingsFragment"
             app:enterAnim="@anim/slide_in_right"
@@ -227,6 +234,11 @@
         android:id="@+id/performanceOverlaySettingsFragment"
         android:name="com.andrerinas.openheadunit.main.PerformanceOverlaySettingsFragment"
         android:label="@string/performance_overlay_settings" />
+
+    <fragment
+        android:id="@+id/thirdPartyAccessFragment"
+        android:name="com.andrerinas.openheadunit.main.ThirdPartyAccessFragment"
+        android:label="@string/third_party_access_title" />
 
     <fragment
         android:id="@+id/deviceSpecificSettingsFragment"

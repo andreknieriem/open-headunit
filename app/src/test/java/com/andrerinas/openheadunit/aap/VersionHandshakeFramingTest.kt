@@ -262,7 +262,7 @@ class VersionHandshakeFramingTest {
             run(transport(ssl), connection)
             verify(ssl).performHandshake(connection)
             assertEquals(stale.size + response.size, position)
-            assertTrue(lines.any { line -> line.contains("the phone selected 1.7 (we asked for 1.2)") })
+            assertTrue(lines.any { line -> line.contains("the phone answered 1.7 (its own version; we asked for 1.2)") })
             assertTrue(lines.any { line -> line.contains("Version response recv ret: 12") })
         } finally { com.andrerinas.openheadunit.utils.AppLog.LOGGER = original }
     }

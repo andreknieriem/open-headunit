@@ -11,6 +11,7 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Common
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.aap.protocol.proto.Input
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
+import com.andrerinas.openheadunit.aap.protocol.proto.NavigationStatus
 import com.andrerinas.openheadunit.aap.protocol.proto.Sensors
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.audio.MicrophonePolicy
@@ -518,6 +519,12 @@ internal class AapControlGateway(
 
         if (channel == Channel.ID_SEN) {
             aapTransport.send(DrivingStatusEvent(Sensors.SensorBatch.DrivingStatusData.Status.UNRESTRICTED))
+        }
+        if (channel == Channel.ID_NAV) {
+            // "Start" (0x8001): the phone sends the turn-by-turn messages only after the head unit has asked for them. Without it
+            // only the navigation status arrives. Other head-unit apps (for example Zlink) send it right after the channel opens.
+            aapTransport.send(AapMessage(channel, NavigationStatus.MsgType.INSTRUMENT_CLUSTER_START_VALUE,
+                NavigationStatus.NavigationStatusStart.newBuilder().build()))
         }
         return 0
     }

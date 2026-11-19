@@ -30,8 +30,9 @@ object AuxDisplayProfilePolicy {
     fun dimensions(resolution: Resolution): Pair<Int, Int>? = SIZES.firstOrNull { it.first == resolution }?.second
 
     /**
-     * How much to enlarge a frame, from its top-left, so the panel shows only the picture: Android
-     * Auto draws the panel's size at the top-left of the frame and leaves the margins blank.
+     * How much to enlarge a frame, about its centre, so the panel shows only the picture: on this
+     * sink Android Auto draws the panel's size in the middle of the frame and leaves half the margin
+     * blank on each side.
      */
     fun marginCropScale(profile: Profile): Pair<Float, Float> {
         val (w, h) = dimensions(profile.resolution) ?: return 1f to 1f

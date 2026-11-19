@@ -331,6 +331,12 @@ class NativeAaHandshakeManager(
     // Until when each device is left alone after a cycle, so the ordinary loop does not poke away
     // the very link the cycle handed back 15 s later.
     private val radioCycleQuietUntil = ConcurrentHashMap<String, Long>()
+    // Failed wake passes per device, and when the first of the current streak landed. A phone whose
+    // own link is down is poked over and over with nothing to show for it, and on a stack that will
+    // not raise that link itself the loop never ends: this is the evidence that earns one radio
+    // cycle. Per arming, like every other budget here, and cleared by a poke that answers.
+    private val deadLinkFailures = ConcurrentHashMap<String, Int>()
+    private val deadLinkSince = ConcurrentHashMap<String, Long>()
     // Whether any poke pass this arming was stood down over a hands-free link. Only those armings
     // count towards re-measuring a DESTRUCTIVE verdict; one the phone never reached says nothing.
     @Volatile private var standDownReachedThisArming = false
@@ -1878,8 +1884,26 @@ class NativeAaHandshakeManager(
         now = now,
     )
 
-    /** A call rides on the link a cycle would drop, and the audio mode is the read that needs no permission. */
-    private fun isCallActiveNow(): Boolean = try {
+    /**
+     * Counts one failed wake pass for [address].
+     *
+     * Two RFCOMM records are tried per pass, so this runs twice for a pass that reached nothing and
+     * never for one that opened a socket. The streak is deliberately per arming and per address:
+     * one phone's dead link says nothing about another's, and a re-arm is a fresh start.
+     */
+    private fun noteDeadLinkFailure(address: String) {
+        val now = SystemClock.elapsedRealtime()
+        deadLinkFailures[address] = (deadLinkFailures[address] ?: 0) + 1
+        deadLinkSince.getOrPut(address) { now }
+    }
+
+    /** The phone answered, or this arming ended: the next failure starts a new streak. */
+    private fun clearDeadLinkRecord(address: String) {
+        deadLinkFailures.remove(address)
+        deadLinkSince.remove(address)
+    }
+
+    /** A call rides on the link a cycle would drop, and the audio mode is the read that needs no permission. */    private fun isCallActiveNow(): Boolean = try {
         val mode = (context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager).mode
         CallState.isCallActive(mode, MicRecorder.holdsCommunicationMode) || CallState.isCallStarting(mode)
     } catch (e: Exception) {
@@ -2176,6 +2200,22 @@ class NativeAaHandshakeManager(
             }
         } else {
             handsFreeStandDownSince.remove(device.address)
+            // A link that is absent makes the poke the only thing that could raise it, so a failed
+            // poke is retried rather than stood down. What it must not do is retry forever: where
+            // this unit's stack will not raise the link, the loop used to poke every 15 s with no
+            // end and the card sat at "Waking your phone" until the radio was cycled by hand. Once
+            // the failures are evidence rather than a slow phone, the cycle that cured it is chosen
+            // instead — under the same gates that make it safe, and once per arming.
+            val now = SystemClock.elapsedRealtime()
+            val firstFailure = deadLinkSince[device.address]
+            if (firstFailure != null &&
+                DeadLinkRecoveryPolicy.shouldCycle(deadLinkFailures[device.address] ?: 0, decision.reason) &&
+                allowsRadioCycle(device, decision.reason, firstFailure, now)
+            ) {
+                cycleOwnRadio(device, firstFailure, now)
+                clearDeadLinkRecord(device.address)
+                return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+            }
         }
         // Recorded here rather than after a successful connect, so a target whose Bluetooth is off
         // still produces the verdict: it reads as absent, which is the arm that raises.
@@ -2226,6 +2266,9 @@ class NativeAaHandshakeManager(
                     // connect()", and a hold that keeps it set would stall the next poke for
                     // nothing - the phone is already awake by then.
                     pokeConnectingTo = null
+                    // The socket reached the phone, so whatever this unit's link was doing, the
+                    // dead-link streak is over and the next session end starts from nothing.
+                    clearDeadLinkRecord(device.address)
                     // Named, not just the UUID: which record we ended up on is the first thing to
                     // check when a reporter's calls come out of the phone instead of the car.
                     AppLog.i("NativeAA: Successfully poked ${device.name} via $profile. Holding ${holdMs}ms...")
@@ -2245,6 +2288,7 @@ class NativeAaHandshakeManager(
                     // saw the attempt and never its outcome. Address as well as name, because
                     // getName() is null for an unbonded device.
                     AppLog.i("NativeAA: Poke via $profile to ${device.name ?: "unnamed"} (${device.address}) failed: ${e.message}")
+                    noteDeadLinkFailure(device.address)
                 } finally {
                     pokeConnectingTo = null
                     socket?.let { closePhoneSocket(it) }
@@ -4429,6 +4473,10 @@ class NativeAaHandshakeManager(
         // leaving it set makes the phone coming back do nothing at all.
         pokeAttemptInFlight = false
         pokeConnectingTo = null
+        // The dead-link streak is evidence about one arming's pokes, and this stop ends it. Left
+        // set, the next arming would spend its one cycle on a streak it never earned.
+        deadLinkFailures.clear()
+        deadLinkSince.clear()
         // Cancel before dropping the reference, for the same reason a supersede does: the socket
         // this manager just closed does not necessarily end the coroutine reading from it.
         activeHandshakeJob?.cancel()

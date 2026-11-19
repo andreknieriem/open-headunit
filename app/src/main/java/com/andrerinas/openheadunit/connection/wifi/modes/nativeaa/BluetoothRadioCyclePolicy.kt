@@ -35,6 +35,26 @@ object BluetoothRadioCyclePolicy {
     const val ADAPTER_OFF_WAIT_MS = 10_000L
     const val ADAPTER_ON_WAIT_MS = 20_000L
 
+    /**
+     * The wake reasons a cycle may answer.
+     *
+     * `TARGET_CONNECTED` is the stand-down case this policy was written for: a hands-free link is
+     * up, Android Auto will not start, and the cycle hands that link back rather than taking it.
+     *
+     * `NO_LINK` and `TARGET_ABSENT` are the dead-link case: the phone holds no connection to this
+     * unit, so the wake loop pokes instead of standing down — and on a stack that will not raise
+     * the link by itself, every poke fails and the phone is never given an event to notice. That
+     * is the "Waking your phone" wedge; the only cure was to cycle the radio by hand.
+     *
+     * Both kinds are still bounded by every gate in [cycleDecision]: one cycle per arming, never
+     * on a call, never while a session or handshake is up, never on a unit measured STRANDS.
+     */
+    val CYCLEABLE_REASONS: Set<BluetoothWakePolicy.WakeReason> = setOf(
+        BluetoothWakePolicy.WakeReason.TARGET_CONNECTED,
+        BluetoothWakePolicy.WakeReason.NO_LINK,
+        BluetoothWakePolicy.WakeReason.TARGET_ABSENT,
+    )
+
     /** What this unit is known to do with its own Bluetooth after a cycle. */
     enum class Verdict {
         /** Never measured. The next cycle is the probe. */
@@ -89,7 +109,7 @@ object BluetoothRadioCyclePolicy {
     ): Boolean {
         if (sdkInt > LAST_CYCLEABLE_SDK) return false
         if (verdict == Verdict.STRANDS) return false
-        if (reason != BluetoothWakePolicy.WakeReason.TARGET_CONNECTED) return false
+        if (reason !in CYCLEABLE_REASONS) return false
         if (!pairingHasRunAaHere) return false
         if (callActive) return false
         if (sessionInProgress) return false

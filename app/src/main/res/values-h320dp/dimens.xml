@@ -1,0 +1,65 @@
+<resources>
+    <!--
+        Screens shorter than 360dp, which is where a 1024x600 panel set to a high density lands
+        (at 280dpi it is 585x343dp) and where a 480x240 unit lives. There the main button, the
+        favorite apps and the driver bar cannot all keep the sizes meant for a 480dp tall screen,
+        and the main button's action used to be the part that got cut. Everything shrinks together
+        so nothing clips. Above 360dp the values in values-h360dp apply, which are the ones the
+        800x480 screens already use.
+    -->
+    <dimen name="home_gap">6dp</dimen>
+    <dimen name="home_panel_radius">14dp</dimen>
+    <dimen name="home_tile_radius">10dp</dimen>
+    <dimen name="home_tile_size">56dp</dimen>
+    <dimen name="home_tile_icon">20dp</dimen>
+    <dimen name="home_tile_label">10sp</dimen>
+    <dimen name="home_card_padding_h">12dp</dimen>
+    <dimen name="home_card_padding_v">8dp</dimen>
+    <dimen name="home_card_icon_tile">40dp</dimen>
+    <dimen name="home_card_icon">22dp</dimen>
+    <dimen name="home_card_kicker">11sp</dimen>
+    <dimen name="home_card_title">20sp</dimen>
+    <dimen name="home_card_subtitle">12sp</dimen>
+    <dimen name="home_cta_height">46dp</dimen>
+    <dimen name="home_cta_min_width">160dp</dimen>
+    <dimen name="home_progress_shine_width">44dp</dimen>
+    <dimen name="home_cta_text">14sp</dimen>
+    <dimen name="home_secondary_cta_height">38dp</dimen>
+    <dimen name="home_secondary_cta_text">12sp</dimen>
+    <dimen name="home_countdown_size">36dp</dimen>
+    <dimen name="home_countdown_text">16sp</dimen>
+    <dimen name="home_favorites_height">60dp</dimen>
+    <!-- The page dots under the home's pages: the row, a dot, the current one, and the
+         width each dot takes as a button. -->
+    <dimen name="home_dots_height">16dp</dimen>
+    <dimen name="home_dot_size">5dp</dimen>
+    <dimen name="home_dot_active_width">14dp</dimen>
+    <dimen name="home_dot_touch_width">36dp</dimen>
+    <!-- The home's own action menu (HomeActionDialog). -->
+    <dimen name="home_action_padding">14dp</dimen>
+    <dimen name="home_action_row_height">52dp</dimen>
+    <dimen name="home_action_icon">22dp</dimen>
+    <dimen name="home_action_title_text">18sp</dimen>
+    <dimen name="home_action_text">16sp</dimen>
+    <dimen name="home_action_detail_text">13sp</dimen>
+    <dimen name="home_action_max_width">440dp</dimen>
+    <dimen name="home_favorite_icon">24dp</dimen>
+    <dimen name="home_info_time">15sp</dimen>
+    <dimen name="home_info_date">9sp</dimen>
+    <dimen name="home_info_speed">15sp</dimen>
+    <dimen name="home_info_gap_wide">8dp</dimen>
+    <dimen name="home_info_min_text">70dp</dimen>
+    <dimen name="home_widget_padding">3dp</dimen>
+    <dimen name="home_widget_strip_min">44dp</dimen>
+    <dimen name="home_widget_strip_max">100dp</dimen>
+    <!-- Headunit Server's WiFi line beside the main card's icon. -->
+    <dimen name="home_wifi_status_gap">10dp</dimen>
+    <dimen name="home_wifi_dot">7dp</dimen>
+    <dimen name="home_wifi_meta_gap">6dp</dimen>
+    <dimen name="home_wifi_chip_padding_h">6dp</dimen>
+    <dimen name="home_wifi_bars_width">13dp</dimen>
+    <dimen name="home_wifi_bars_height">11dp</dimen>
+    <!-- The network name, and the icon the main button leads with (the size of its label). -->
+    <dimen name="home_wifi_name_text">15sp</dimen>
+    <dimen name="home_cta_icon">17dp</dimen>
+</resources>

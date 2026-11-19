@@ -1,0 +1,92 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="default_horizontal_margin">16dp</dimen>
+    <dimen name="default_vertical_margin">16dp</dimen>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="list_padding">16dp</dimen>
+
+    <!--
+        Home screen, sized for the shortest screens (under 240dp tall, where a 480x240 unit at
+        mdpi lands once the system bars are taken out). A height qualifier means "at least", so
+        these are the smallest sizes and values-h320dp, values-h360dp and values-w400dp-h520dp
+        grow them step by step. At this size the widget row is left out on purpose (its minimum is
+        above what is left over), and the main button keeps everything it needs.
+    -->
+    <dimen name="home_gap">4dp</dimen>
+    <dimen name="home_panel_radius">10dp</dimen>
+    <dimen name="home_tile_radius">8dp</dimen>
+    <dimen name="home_tile_size">44dp</dimen>
+    <dimen name="home_tile_icon">16dp</dimen>
+    <dimen name="home_tile_label">8sp</dimen>
+    <dimen name="home_card_padding_h">8dp</dimen>
+    <dimen name="home_card_padding_v">4dp</dimen>
+    <dimen name="home_card_icon_tile">32dp</dimen>
+    <dimen name="home_card_icon">18dp</dimen>
+    <dimen name="home_card_kicker">9sp</dimen>
+    <dimen name="home_card_title">16sp</dimen>
+    <dimen name="home_card_subtitle">10sp</dimen>
+    <dimen name="home_cta_height">38dp</dimen>
+    <dimen name="home_cta_min_width">120dp</dimen>
+    <!-- The light that sweeps the main button's progress bar while a connection comes up. -->
+    <dimen name="home_progress_shine_width">32dp</dimen>
+    <dimen name="home_cta_text">12sp</dimen>
+    <dimen name="home_secondary_cta_height">30dp</dimen>
+    <dimen name="home_secondary_cta_text">10sp</dimen>
+    <dimen name="home_countdown_size">28dp</dimen>
+    <dimen name="home_countdown_text">13sp</dimen>
+    <dimen name="home_favorites_height">48dp</dimen>
+    <!-- The page dots under the home's pages: the row, a dot, the current one, and the
+         width each dot takes as a button. -->
+    <dimen name="home_dots_height">14dp</dimen>
+    <dimen name="home_dot_size">5dp</dimen>
+    <dimen name="home_dot_active_width">12dp</dimen>
+    <dimen name="home_dot_touch_width">32dp</dimen>
+    <!-- The home's own action menu (HomeActionDialog). -->
+    <dimen name="home_action_padding">10dp</dimen>
+    <dimen name="home_action_row_height">44dp</dimen>
+    <dimen name="home_action_icon">20dp</dimen>
+    <dimen name="home_action_title_text">16sp</dimen>
+    <dimen name="home_action_text">14sp</dimen>
+    <dimen name="home_action_detail_text">12sp</dimen>
+    <dimen name="home_action_max_width">400dp</dimen>
+    <dimen name="home_action_stroke">1dp</dimen>
+    <dimen name="home_favorite_icon">18dp</dimen>
+    <dimen name="home_info_time">12sp</dimen>
+    <dimen name="home_info_date">8sp</dimen>
+    <dimen name="home_info_speed">12sp</dimen>
+    <dimen name="home_info_gap_wide">6dp</dimen>
+    <dimen name="home_info_min_text">60dp</dimen>
+    <dimen name="home_widget_padding">2dp</dimen>
+    <dimen name="home_widget_strip_min">90dp</dimen>
+    <dimen name="home_widget_strip_max">110dp</dimen>
+
+    <!-- Customization: the scaled-down new home that previews the connection colors. -->
+    <dimen name="customization_home_preview_padding">8dp</dimen>
+    <dimen name="customization_home_preview_max_height">220dp</dimen>
+    <!-- The one-time hint for adding pages; the _small ones are for 800x480 class screens. -->
+    <dimen name="home_hint_callout_radius">20dp</dimen>
+    <dimen name="home_hint_callout_width">380dp</dimen>
+    <dimen name="home_hint_callout_width_small">294dp</dimen>
+    <dimen name="home_hint_callout_padding">24dp</dimen>
+    <dimen name="home_hint_callout_padding_small">18dp</dimen>
+    <dimen name="home_hint_title">24sp</dimen>
+    <dimen name="home_hint_title_small">20sp</dimen>
+    <dimen name="home_hint_body">17sp</dimen>
+    <dimen name="home_hint_body_small">15sp</dimen>
+    <dimen name="home_hint_button_height">52dp</dimen>
+    <dimen name="home_hint_button_height_small">48dp</dimen>
+    <dimen name="home_hint_art">88dp</dimen>
+    <dimen name="home_hint_art_small">64dp</dimen>
+    <!-- Headunit Server's WiFi line beside the main card's icon. -->
+    <dimen name="home_wifi_status_gap">8dp</dimen>
+    <dimen name="home_wifi_dot">6dp</dimen>
+    <dimen name="home_wifi_meta_gap">5dp</dimen>
+    <dimen name="home_wifi_chip_padding_h">5dp</dimen>
+    <dimen name="home_wifi_bars_width">11dp</dimen>
+    <dimen name="home_wifi_bars_height">9dp</dimen>
+    <!-- The network name, and the icon the main button leads with (the size of its label). -->
+    <dimen name="home_wifi_name_text">13sp</dimen>
+    <dimen name="home_cta_icon">15dp</dimen>
+</resources>

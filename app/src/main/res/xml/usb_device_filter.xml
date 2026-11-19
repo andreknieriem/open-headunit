@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+    Which devices Android offers us as a handler for, and the only filter that runs before the
+    system dialog appears. This used to be <usb-device />, so the OS proposed Open Headunit for
+    every attached device: a flash drive and a Bluetooth audio dongle both raised the prompt on
+    hardware. The blacklist cannot help there, because it runs inside the app after the prompt.
+
+    These entries are the descriptor triples UsbDeviceIdentityPolicy accepts, and the two must stay
+    in step. Broader here means the OS launches us for a device we then reject; narrower means a
+    device we would accept never auto-starts. A device that matches nothing is still reachable
+    through the USB button, which enumerates the bus itself.
+
+    UsbManifestFilter is a Kotlin copy of this file, and its test fails when the two differ.
+
+    Android's DeviceFilter checks the device descriptor and then every interface descriptor, so an
+    entry with no vendor-id is a descriptor test rather than a vendor allowlist. An unlisted phone
+    does not need an app update to work.
+-->
+<resources>
+
+    <!-- Already in accessory mode. Widening this set means widening the policy with it. -->
+    <usb-device vendor-id="6353" product-id="11520" />  <!-- 0x18D1:0x2D00 accessory -->
+    <usb-device vendor-id="6353" product-id="11521" />  <!-- 0x18D1:0x2D01 accessory + ADB -->
+
+    <!-- 0x18D1:0x4EE1 is the idle identity of wireless AA adapters (AAWireless) before the AOA
+         switch. Without this entry the app was never launched when one was attached (#1261). -->
+    <usb-device vendor-id="6353" product-id="20193" />  <!-- 0x18D1:0x4EE1 wireless AA adapter, idle -->
+
+    <!--
+        Vendor class. This is the accessory interface, and also how modern Android presents MTP,
+        so it is what catches a phone in charging-only or file-transfer mode. It is the loosest
+        entry here: a USB ethernet controller carries the same triple on its control interface and
+        will still raise the dialog. The policy rejects it in the app, which the manifest cannot do
+        because it can express neither the interface name nor the CDC siblings.
+    -->
+    <usb-device class="255" subclass="255" protocol="0" />
+
+    <usb-device class="255" subclass="66" protocol="1" />   <!-- ADB -->
+    <usb-device class="6" subclass="1" protocol="1" />      <!-- PTP -->
+    <usb-device class="224" subclass="1" protocol="3" />    <!-- RNDIS tethering -->
+    <usb-device class="239" subclass="4" protocol="1" />    <!-- RNDIS over Ethernet -->
+    <usb-device class="8" subclass="6" protocol="1" />      <!-- MTP over mass storage -->
+
+</resources>

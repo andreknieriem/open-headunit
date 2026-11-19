@@ -337,6 +337,8 @@ class NativeAaHandshakeManager(
     // cycle. Per arming, like every other budget here, and cleared by a poke that answers.
     private val deadLinkFailures = ConcurrentHashMap<String, Int>()
     private val deadLinkSince = ConcurrentHashMap<String, Long>()
+    // One line per arming explaining why a streak that earned a cycle did not get one.
+    @Volatile private var deadLinkBlockedLoggedFor: String? = null
     // Whether any poke pass this arming was stood down over a hands-free link. Only those armings
     // count towards re-measuring a DESTRUCTIVE verdict; one the phone never reached says nothing.
     @Volatile private var standDownReachedThisArming = false
@@ -1867,22 +1869,8 @@ class NativeAaHandshakeManager(
         reason: BluetoothWakePolicy.WakeReason,
         standDownSince: Long,
         now: Long,
-    ): Boolean = BluetoothRadioCyclePolicy.cycleDecision(
-        sdkInt = Build.VERSION.SDK_INT,
-        verdict = BluetoothRadioCyclePolicy.Verdict.of(settings.nativeAaRadioCycleVerdict),
-        reason = reason,
-        pairingHasRunAaHere = HandsFreeWakeEscalationPolicy.pairingHasRunAaHere(
-            acceptedThisProcess = everAcceptedAaConnection,
-            targetMac = device.address,
-            lastConnectedNativeMac = settings.lastConnectedNativeMac,
-        ),
-        callActive = isCallActiveNow(),
-        sessionInProgress = commManager.isConnected || isHandshakeInFlight() || isHandoffSettling(),
-        standDownSinceMs = standDownSince,
-        lastCycleMs = lastRadioCycleAt,
-        cyclesUsed = radioCycles,
-        now = now,
-    )
+        waitMs: Long = BluetoothRadioCyclePolicy.CYCLE_AFTER_MS,
+    ): Boolean = radioCycleBlocker(device, reason, standDownSince, now, waitMs) == null
 
     /**
      * Counts one failed wake pass for [address].
@@ -1901,9 +1889,36 @@ class NativeAaHandshakeManager(
     private fun clearDeadLinkRecord(address: String) {
         deadLinkFailures.remove(address)
         deadLinkSince.remove(address)
+        if (deadLinkBlockedLoggedFor == address) deadLinkBlockedLoggedFor = null
     }
 
-    /** A call rides on the link a cycle would drop, and the audio mode is the read that needs no permission. */    private fun isCallActiveNow(): Boolean = try {
+    /** The gate [allowsRadioCycle] is refusing on, for the one line that says so. */
+    private fun radioCycleBlocker(
+        device: BluetoothDevice,
+        reason: BluetoothWakePolicy.WakeReason,
+        standDownSince: Long,
+        now: Long,
+        waitMs: Long = BluetoothRadioCyclePolicy.CYCLE_AFTER_MS,
+    ): BluetoothRadioCyclePolicy.Blocker? = BluetoothRadioCyclePolicy.blocker(
+        sdkInt = Build.VERSION.SDK_INT,
+        verdict = BluetoothRadioCyclePolicy.Verdict.of(settings.nativeAaRadioCycleVerdict),
+        reason = reason,
+        pairingHasRunAaHere = HandsFreeWakeEscalationPolicy.pairingHasRunAaHere(
+            acceptedThisProcess = everAcceptedAaConnection,
+            targetMac = device.address,
+            lastConnectedNativeMac = settings.lastConnectedNativeMac,
+        ),
+        callActive = isCallActiveNow(),
+        sessionInProgress = commManager.isConnected || isHandshakeInFlight() || isHandoffSettling(),
+        standDownSinceMs = standDownSince,
+        lastCycleMs = lastRadioCycleAt,
+        cyclesUsed = radioCycles,
+        now = now,
+        waitMs = waitMs,
+    )
+
+    /** A call rides on the link a cycle would drop, and the audio mode is the read that needs no permission. */
+    private fun isCallActiveNow(): Boolean = try {
         val mode = (context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager).mode
         CallState.isCallActive(mode, MicRecorder.holdsCommunicationMode) || CallState.isCallStarting(mode)
     } catch (e: Exception) {
@@ -1918,7 +1933,12 @@ class NativeAaHandshakeManager(
      */
     @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION")
-    private suspend fun cycleOwnRadio(device: BluetoothDevice, standDownSince: Long, now: Long) {
+    private suspend fun cycleOwnRadio(
+        device: BluetoothDevice,
+        standDownSince: Long,
+        now: Long,
+        linkWasAbsent: Boolean = false,
+    ) {
         val adapter = BluetoothHelper.getBluetoothAdapter(context)
         val enabled = try { adapter != null && adapter.isEnabled } catch (e: Exception) { false }
         if (adapter == null || !enabled) {
@@ -1968,7 +1988,7 @@ class NativeAaHandshakeManager(
                 SystemClock.elapsedRealtime() + BluetoothRadioCyclePolicy.POST_CYCLE_QUIET_MS
         }
         // Null where the radio never went down: nothing was cycled, so nothing was measured either.
-        noteRadioCycleOutcome(verdict, if (offReached) onReached else null)
+        noteRadioCycleOutcome(verdict, if (offReached) onReached else null, linkWasAbsent)
     }
 
     /**
@@ -1999,7 +2019,11 @@ class NativeAaHandshakeManager(
      * Records what the cycle cost, on the first one this unit ever made. A radio that never came
      * back is settled immediately; anything else waits for the unit's own stack to reconnect.
      */
-    private fun noteRadioCycleOutcome(verdict: BluetoothRadioCyclePolicy.Verdict, backOn: Boolean?) {
+    private fun noteRadioCycleOutcome(
+        verdict: BluetoothRadioCyclePolicy.Verdict,
+        backOn: Boolean?,
+        linkWasAbsent: Boolean = false,
+    ) {
         when (backOn) {
             null -> AppLog.w(
                 "NativeAA: this unit's Bluetooth never went down, so nothing was cycled and nothing " +
@@ -2019,11 +2043,17 @@ class NativeAaHandshakeManager(
                 delay(window)
                 BluetoothHelper.handsFreeLinkState(context, includeGatewayRole = false)
             }
-            val measured = BluetoothRadioCyclePolicy.verdictFrom(backOn, link)
+            val measured = BluetoothRadioCyclePolicy.verdictFrom(backOn, link, linkWasAbsent)
             if (!BluetoothRadioCyclePolicy.recordable(measured)) {
                 AppLog.i(
-                    "NativeAA: this unit would not say whether its hands-free link came back after " +
-                        "the Bluetooth cycle, so whether cycling works here stays unmeasured."
+                    if (linkWasAbsent) {
+                        "NativeAA: this cycle was taken for a phone that held no link at all, so a " +
+                            "link that is still missing says nothing about this unit's radio — it " +
+                            "stays unmeasured rather than being condemned to never cycle again."
+                    } else {
+                        "NativeAA: this unit would not say whether its hands-free link came back " +
+                            "after the Bluetooth cycle, so whether cycling works here stays unmeasured."
+                    }
                 )
                 return@launch
             }
@@ -2209,12 +2239,34 @@ class NativeAaHandshakeManager(
             val now = SystemClock.elapsedRealtime()
             val firstFailure = deadLinkSince[device.address]
             if (firstFailure != null &&
-                DeadLinkRecoveryPolicy.shouldCycle(deadLinkFailures[device.address] ?: 0, decision.reason) &&
-                allowsRadioCycle(device, decision.reason, firstFailure, now)
+                DeadLinkRecoveryPolicy.shouldCycle(
+                    failedPokes = deadLinkFailures[device.address] ?: 0,
+                    reason = decision.reason,
+                    streakAgeMs = now - firstFailure,
+                )
             ) {
-                cycleOwnRadio(device, firstFailure, now)
-                clearDeadLinkRecord(device.address)
-                return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+                if (allowsRadioCycle(
+                        device, decision.reason, firstFailure, now,
+                        waitMs = DeadLinkRecoveryPolicy.MIN_STREAK_MS,
+                    )
+                ) {
+                    cycleOwnRadio(device, firstFailure, now, linkWasAbsent = true)
+                    clearDeadLinkRecord(device.address)
+                    return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+                }
+                // Said once per arming rather than every pass: the streak that earned the cycle is
+                // the useful line, and a refusal nobody explains is what hid the previous version
+                // of this policy never firing at all.
+                if (deadLinkBlockedLoggedFor != device.address) {
+                    deadLinkBlockedLoggedFor = device.address
+                    AppLog.i(
+                        "NativeAA: ${deadLinkFailures[device.address] ?: 0} failed pokes at " +
+                            "${device.name ?: "unnamed"} (${device.address}) over " +
+                            "${(now - firstFailure) / 1000}s earn a radio cycle, but " +
+                            "${radioCycleBlocker(device, decision.reason, firstFailure, now)} " +
+                            "refuses it."
+                    )
+                }
             }
         }
         // Recorded here rather than after a successful connect, so a target whose Bluetooth is off
@@ -4477,6 +4529,7 @@ class NativeAaHandshakeManager(
         // set, the next arming would spend its one cycle on a streak it never earned.
         deadLinkFailures.clear()
         deadLinkSince.clear()
+        deadLinkBlockedLoggedFor = null
         // Cancel before dropping the reference, for the same reason a supersede does: the socket
         // this manager just closed does not necessarily end the coroutine reading from it.
         activeHandshakeJob?.cancel()

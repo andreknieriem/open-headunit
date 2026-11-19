@@ -644,6 +644,15 @@
     <string name="auto_start_wifi_warning">Legacy Feature: This may not work reliably on Android 8+ due to background restrictions. Ensure the app is excluded from battery optimization.</string>
     <string name="enter_wifi_ssid">Enter WiFi SSID</string>
     <string name="wifi_ssid_not_set">Not set</string>
+    <string name="auto_start_ble_label">Auto-start on BLE proximity</string>
+    <string name="auto_start_ble_description">Wake Open Headunit and start wireless discovery when a nearby phone\'s BLE advertisement is detected.</string>
+    <string name="auto_start_ble_help">Uses a low-power BLE scan while idle to wake the wireless connection path when the target phone comes into range. Off by default; skips while a session is active and enforces a cooldown between triggers.</string>
+    <string name="auto_start_ble_target_label">BLE target name or MAC</string>
+    <string name="auto_start_ble_target_help">Advertised BLE device name (exact or prefix, case-insensitive) or Bluetooth MAC address (AA:BB:CC:DD:EE:FF). Note: stock Android phones randomize BLE MACs unless bonded, so matching by device name is more reliable.</string>
+    <string name="auto_start_ble_target_hint">Enter BLE device name or MAC</string>
+    <string name="auto_start_ble_cooldown_label">BLE trigger cooldown</string>
+    <string name="auto_start_ble_cooldown_help">Minimum time in seconds before another BLE proximity trigger can fire (15–300 seconds).</string>
+    <string name="auto_start_ble_cooldown_seconds">%1$d s</string>
     <string name="bt_permission_denied_title">Bluetooth Permission Required</string>
     <string name="bt_permission_denied_message">Bluetooth permission is required to select paired devices. Please grant it in app settings.</string>
     <string name="overlay_permission_title">Background Start Permission</string>

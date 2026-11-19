@@ -164,6 +164,7 @@ class AapService : Service() {
     private lateinit var uiModeManager: UiModeManager
     private var nightModeManager: NightModeManager? = null
     private var wifiAutoStartReceiver: WifiAutoStartReceiver? = null
+    private var bleProximityTrigger: com.andrerinas.openheadunit.app.BleProximityTrigger? = null
     private var mediaSession: MediaSessionCompat? = null
     private val hctWppOwnerDelegate = lazy {
         com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner(this)
@@ -241,6 +242,40 @@ class AapService : Service() {
                 commManager.connectionState.value is CommManager.ConnectionState.TransportStarted
         )
     }
+
+    private fun reconcileBleProximityTrigger() {
+        if (isDestroying) {
+            bleProximityTrigger?.stop()
+            return
+        }
+        val sessionBusy = commManager.isBusy || commManager.isConnected
+        if (!settings.autoStartOnBleProximity) {
+            bleProximityTrigger?.stop()
+            return
+        }
+        val trigger = bleProximityTrigger ?: com.andrerinas.openheadunit.app.BleProximityTrigger(
+            context = this,
+            settings = settings,
+            environmentProvider = {
+                com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.Environment(
+                    sessionBusy = commManager.isBusy || commManager.isConnected,
+                    settingsVisible = SettingsActivity.isVisible,
+                    userExitActive = userExitedAA || SystemClock.elapsedRealtime() < userExitCooldownUntil,
+                    wirelessCancelledByUser = wirelessCancelledByUser(),
+                )
+            },
+            onTriggered = { _ ->
+                ContextCompat.startForegroundService(
+                    this,
+                    Intent(this, AapService::class.java).apply {
+                        action = ACTION_START_WIRELESS_SCAN
+                        putExtra(EXTRA_BY_COMMAND, true)
+                    }
+                )
+            },
+        ).also { bleProximityTrigger = it }
+        trigger.reconcile(sessionBusy = sessionBusy)
+    }
     private val settings: Settings by lazy { App.provide(this).settings }
     private val mediaNotification by lazy { BackgroundNotification(this) }
 
@@ -282,6 +317,15 @@ class AapService : Service() {
             if (key == Settings.KEY_ENABLE_CAR_LAUNCHER) {
                 serviceScope.launch(Dispatchers.Main) {
                     updateNotification()
+                }
+            }
+
+            if (key == Settings.KEY_AUTO_START_ON_BLE_PROXIMITY ||
+                key == Settings.KEY_AUTO_START_BLE_TARGET ||
+                key == Settings.KEY_AUTO_START_BLE_COOLDOWN_SECONDS
+            ) {
+                serviceScope.launch(Dispatchers.Main) {
+                    reconcileBleProximityTrigger()
                 }
             }
         }
@@ -1253,6 +1297,7 @@ class AapService : Service() {
         }
         registerReceivers()
         carKeysManager.registerIdleReceivers(this)
+        reconcileBleProximityTrigger()
 
         MicRecorder.foregroundClaim = object : MicRecorder.ForegroundMicrophoneClaim {
             override fun claim() = promoteForMicrophone()
@@ -1381,6 +1426,7 @@ class AapService : Service() {
             commManager.connectionState.collect { state ->
                 automaticReconnect.onStateChanged()
                 usbReconnect.onStateChanged()
+                reconcileBleProximityTrigger()
                 if (Build.VERSION.SDK_INT >= 26) {
                     val live = state is CommManager.ConnectionState.Connected ||
                         state is CommManager.ConnectionState.StartingTransport ||
@@ -3485,6 +3531,8 @@ class AapService : Service() {
         stopForegroundForShutdown()
         deviceHackManager?.stop()
         deviceHackManager = null
+        bleProximityTrigger?.stop()
+        bleProximityTrigger = null
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.close(this)
         if (Build.VERSION.SDK_INT >= 26) WifiScanControl.end(this)
         ConnectionArbiter.actions = null

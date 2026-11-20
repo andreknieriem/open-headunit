@@ -10,6 +10,10 @@ import org.mockito.kotlin.any
 class RetiredHandshakeTest {
     private fun handshake(connection: ProjectionConnection): AapTransport {
         val transport = mock(AapTransport::class.java, CALLS_REAL_METHODS)
+        AapTransport::class.java.getDeclaredField("selectedGalProfile")
+            .apply { isAccessible = true }.set(transport, GalProfile.COMPATIBILITY)
+        AapTransport::class.java.getDeclaredField("displaySettings")
+            .apply { isAccessible = true }.set(transport, GalDisplaySettings(false, false, false))
         val method = AapTransport::class.java.getDeclaredMethod("handshake", ProjectionConnection::class.java)
             .apply { isAccessible = true }
         assertEquals(false, method.invoke(transport, connection))

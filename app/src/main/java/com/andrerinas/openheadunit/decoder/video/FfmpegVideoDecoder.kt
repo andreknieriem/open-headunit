@@ -1,7 +1,6 @@
 package com.andrerinas.openheadunit.decoder.video
 
 import android.os.Build
-import android.os.SystemClock
 import android.view.Surface
 import androidx.annotation.Keep
 import com.andrerinas.openheadunit.utils.AppLog
@@ -13,9 +12,13 @@ class FfmpegVideoDecoder(
     private val surface: Surface?,
     private val yuvFrameSink: SoftwareYuvFrameSink?,
     private val width: Int,
-    private val height: Int
+    private val height: Int,
+    private val beforeRender: PresentationGate? = null
 ) {
+    fun interface PresentationGate { fun beforeRender(presentationTimeUs: Long, cleanKeyframe: Boolean): Boolean }
     private var nativeHandle: Long = 0
+    // Both callbacks run synchronously on the same decoder worker, for one AVFrame at a time.
+    private var submissionSequence = 0L
 
     val isStarted: Boolean
         get() = nativeHandle != 0L
@@ -53,17 +56,17 @@ class FfmpegVideoDecoder(
         return true
     }
 
-    fun decode(buffer: ByteArray, offset: Int, size: Int): Int {
+    @Synchronized fun decode(buffer: ByteArray, offset: Int, size: Int, presentationTimeUs: Long = System.nanoTime() / 1000L): Int {
         keyframeRendered = false
         val handle = nativeHandle
         if (handle == 0L) return 0
-        val result = nativeDecode(handle, buffer, offset, size, SystemClock.elapsedRealtimeNanos() / 1000L)
+        val result = nativeDecode(handle, buffer, offset, size, presentationTimeUs)
         if (result < 0) return result
         keyframeRendered = result and RENDERED_KEYFRAME != 0
         return result and RENDERED_KEYFRAME.inv()
     }
 
-    fun stop() {
+    @Synchronized fun stop() {
         val handle = nativeHandle
         nativeHandle = 0
         keyframeRendered = false
@@ -86,6 +89,20 @@ class FfmpegVideoDecoder(
         outputHeight = height
     }
 
+    /**
+     * Worker-side pacing and final reservation, after decode and before native presentation.
+     * A granted frame owns the following native/GL operation even if retirement then completes;
+     * the gate holds no controller/timing monitor across that operation.
+     */
+    @Keep
+    @Suppress("unused")
+    private fun onNativeBeforeRender(presentationTimeUs: Long, cleanKeyframe: Boolean): Boolean {
+        // Reserve before checking ownership: an admitted old worker may be delayed in native
+        // conversion, but it must never acquire a sequence newer than its replacement.
+        submissionSequence = yuvFrameSink?.reserveFrameSequence() ?: 0L
+        return beforeRender?.beforeRender(presentationTimeUs, cleanKeyframe) ?: true
+    }
+
     @Keep
     @Suppress("unused")
     private fun onNativeYuv420Frame(
@@ -98,7 +115,11 @@ class FfmpegVideoDecoder(
         vPlane: ByteBuffer,
         vStride: Int
     ): Boolean {
-        return yuvFrameSink?.renderYuv420Frame(width, height, yPlane, yStride, uPlane, uStride, vPlane, vStride) == true
+        // Native planes are borrowed for this call only; the sink must finish or cancel every
+        // reader before returning, including when teardown interrupts this worker.
+        return yuvFrameSink?.renderYuv420Frame(
+            width, height, yPlane, yStride, uPlane, uStride, vPlane, vStride, submissionSequence
+        ) == true
     }
 
     companion object {

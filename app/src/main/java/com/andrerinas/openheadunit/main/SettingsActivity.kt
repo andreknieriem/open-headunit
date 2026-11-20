@@ -126,20 +126,24 @@ class SettingsActivity : BaseActivity() {
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.settings_nav_host) as NavHostFragment
         val navController = navHostFragment.navController
 
-        // Set the start destination to settingsFragment instead of homeFragment
-        val navGraph = navController.navInflater.inflate(R.navigation.nav_graph)
-        navGraph.startDestination = R.id.settingsFragment
-        navController.graph = navGraph
+        // NavHost restores the complete back stack, including each child's pending Bundle.
+        // Replacing its graph on recreation discards that state and creates a fresh child.
+        if (savedInstanceState == null || navController.currentDestination == null) {
+            val navGraph = navController.navInflater.inflate(R.navigation.nav_graph)
+            navGraph.startDestination = R.id.settingsFragment
+            navController.graph = navGraph
 
-        // Open a specific sub-screen when requested (e.g. from the onboarding wizard),
-        // otherwise restore the sub-screen after recreate() (e.g. theme change from DarkModeFragment)
-        val requestedDestination = intent?.getIntExtra(EXTRA_DESTINATION, 0) ?: 0
-        val restoredDestination = if (requestedDestination != 0) requestedDestination
-            else savedInstanceState?.getInt(KEY_CURRENT_DESTINATION, 0) ?: 0
-        if (restoredDestination != 0 && restoredDestination != R.id.settingsFragment) {
-            try {
-                navController.navigate(restoredDestination)
-            } catch (_: Exception) {}
+            // An explicit destination applies to this launch, not again after rotation.
+            val requestedDestination = intent?.getIntExtra(EXTRA_DESTINATION, 0) ?: 0
+            val destination = if (requestedDestination != 0) requestedDestination
+                else savedInstanceState?.getInt(KEY_CURRENT_DESTINATION, 0) ?: 0
+            if (destination != 0 && destination != R.id.settingsFragment) {
+                try {
+                    navController.navigate(destination)
+                } catch (_: Exception) {}
+            }
+        } else {
+            navController.graph.startDestination = R.id.settingsFragment
         }
 
         val root = findViewById<View>(R.id.settings_nav_host)

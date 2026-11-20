@@ -20,7 +20,7 @@ sealed class P2pGroupIdentity {
 }
 
 /** The pair the app keeps between bring-ups. */
-data class StoredP2pIdentity(val networkName: String, val passphrase: String)
+data class StoredP2pIdentity(val networkName: String, val passphrase: String) : java.io.Serializable
 
 /**
  * A group as it was actually read back off the air, whatever named it.

@@ -109,9 +109,17 @@ class VersionHandshakeFramingTest {
         Unit
     }
 
-    private fun transport(ssl: AapSsl): AapTransport {
+    private fun transport(ssl: AapSsl, profile: GalProfile = GalProfile.COMPATIBILITY, automatic: Boolean = false): AapTransport {
         val transport = mock(AapTransport::class.java, CALLS_REAL_METHODS)
-        AapTransport::class.java.getDeclaredField("ssl").apply { isAccessible = true }.set(transport, ssl)
+        fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
+            .apply { isAccessible = true }.set(transport, value)
+        field("ssl", ssl)
+        field("selectedGalProfile", profile)
+        field("galVersionSelection", if (automatic) GalProfile.AUTO_SETTING else profile.version.toString())
+        field("laboratoryOptions", GalLaboratoryOptions())
+        field("displaySettings", GalDisplaySettings(false, false, false))
+        field("aapVideo", mock(AapVideo::class.java))
+        field("presentationController", GalPresentationController())
         return transport
     }
 
@@ -120,6 +128,131 @@ class VersionHandshakeFramingTest {
             .apply { isAccessible = true }
         // A mock TLS engine returns false after we prove it was reached (or not reached).
         assertEquals(false, method.invoke(transport, connection))
+    }
+
+    @Test fun `each selected profile is requested directly and higher replies never promote it`() =
+        mockStatic(SystemClock::class.java).use {
+            for (profile in GalProfile.entries) {
+                val peer = response.copyOf().also { it[7] = 6; it[9] = 1 }
+                val ssl = mock(AapSsl::class.java)
+                val transport = transport(ssl, profile)
+                val connection = versionConnection(peer) { request ->
+                    assertArrayEquals(com.andrerinas.openheadunit.aap.protocol.messages.Messages
+                        .versionRequest(profile.version.major, profile.version.minor), request)
+                }
+                run(transport, connection)
+                verify(ssl).performHandshake(connection)
+                verify(connection, times(1)).sendBlocking(any(), anyInt(), anyInt())
+                assertEquals(profile, transport.galContract!!.negotiation.profile)
+                assertEquals(GalVersion(6, 1), transport.negotiatedVersion!!.version)
+            }
+        }
+
+    @Test fun `reply below the directly selected version is rejected before TLS without fallback`() =
+        mockStatic(SystemClock::class.java).use {
+            for (profile in GalProfile.entries) {
+                val lower = if (profile.version.minor == 0) GalVersion(profile.version.major - 1, 9)
+                    else GalVersion(profile.version.major, profile.version.minor - 1)
+                val peer = response.copyOf().also {
+                    it[7] = lower.major.toByte(); it[9] = lower.minor.toByte()
+                }
+                val ssl = mock(AapSsl::class.java)
+                val transport = transport(ssl, profile)
+                val connection = versionConnection(peer) {}
+                run(transport, connection)
+                verifyNoInteractions(ssl)
+                verify(connection, times(1)).sendBlocking(any(), anyInt(), anyInt())
+                assertNull(transport.galContract)
+                assertNull(transport.negotiatedVersion)
+            }
+        }
+
+    @Test fun `automatic transport binds the peer-supported profile before entering TLS`() =
+        mockStatic(SystemClock::class.java).use {
+            val cases = listOf(
+                GalVersion(1, 5) to GalProfile.COMPATIBILITY,
+                GalVersion(5, 0) to GalProfile.GAL_5_0,
+                GalVersion(6, 1) to GalProfile.GAL_6_1
+            )
+            for ((ceiling, expected) in cases) {
+                val peer = response.copyOf().also {
+                    it[7] = ceiling.major.toByte(); it[9] = ceiling.minor.toByte()
+                }
+                val ssl = mock(AapSsl::class.java)
+                val transport = transport(ssl, GalProfile.GAL_6_1, automatic = true)
+                val requests = mutableListOf<ByteArray>()
+                val connection = versionConnection(
+                    if (expected == GalProfile.COMPATIBILITY) peer else response + peer + peer
+                ) { requests.add(it) }
+                run(transport, connection)
+                verify(ssl).performHandshake(connection)
+                val contract = transport.galContract!!
+                assertEquals(expected, contract.negotiation.profile)
+                assertEquals(expected.version, contract.negotiation.requestedVersion)
+                assertEquals(expected == GalProfile.GAL_6_1,
+                    contract.media.optionsFor(com.andrerinas.openheadunit.aap.protocol.Channel.ID_VID).standalone)
+                assertArrayEquals(com.andrerinas.openheadunit.aap.protocol.messages.Messages
+                    .versionRequest(expected.version.major, expected.version.minor), requests.last())
+            }
+        }
+
+    @Test fun `automatic transport cannot enter TLS when final confirmation falls below its request`() =
+        mockStatic(SystemClock::class.java).use {
+            val high = response.copyOf().also { it[7] = 6; it[9] = 1 }
+            val ssl = mock(AapSsl::class.java)
+            val transport = transport(ssl, GalProfile.GAL_6_1, automatic = true)
+            val connection = versionConnection(response + high + response) {}
+            run(transport, connection)
+            verifyNoInteractions(ssl)
+            assertNull(transport.galContract)
+            assertNull(transport.negotiatedVersion)
+            verify(connection, times(3)).sendBlocking(any(), anyInt(), anyInt())
+            Unit
+        }
+
+    @Test fun `retirement after any automatic response prevents further requests or TLS`() =
+        mockStatic(SystemClock::class.java).use {
+            for (retireAfter in 1..3) {
+                val high = response.copyOf().also { it[7] = 6; it[9] = 1 }
+                val stream = response + high + high
+                var connected = true
+                var position = 0
+                var writes = 0
+                val connection = mock(ProjectionConnection::class.java)
+                `when`(connection.isConnected).thenAnswer { connected }
+                `when`(connection.sendBlocking(any(), anyInt(), anyInt())).thenAnswer { writes++; 10 }
+                `when`(connection.recvBlocking(any(), anyInt(), anyInt(), anyBoolean())).thenAnswer { call ->
+                    val count = minOf(call.getArgument<Int>(1), stream.size - position)
+                    stream.copyInto(call.getArgument<ByteArray>(0), 0, position, position + count)
+                    position += count
+                    if (position == retireAfter * response.size) connected = false
+                    count
+                }
+                val ssl = mock(AapSsl::class.java)
+                val transport = transport(ssl, GalProfile.GAL_6_1, automatic = true)
+                run(transport, connection)
+                verifyNoInteractions(ssl)
+                assertNull(transport.galContract)
+                assertEquals(retireAfter, writes)
+            }
+        }
+
+    private fun versionConnection(peer: ByteArray, request: (ByteArray) -> Unit): ProjectionConnection {
+        val connection = mock(ProjectionConnection::class.java)
+        `when`(connection.isConnected).thenReturn(true)
+        `when`(connection.sendBlocking(any(), anyInt(), anyInt())).thenAnswer {
+            val size = it.getArgument<Int>(1)
+            request(it.getArgument<ByteArray>(0).copyOf(size))
+            size
+        }
+        var position = 0
+        `when`(connection.recvBlocking(any(), anyInt(), anyInt(), anyBoolean())).thenAnswer {
+            val count = minOf(it.getArgument<Int>(1), peer.size - position)
+            peer.copyInto(it.getArgument<ByteArray>(0), 0, position, position + count)
+            position += count
+            count
+        }
+        return connection
     }
 
     @Test fun `split response survives a stalled read on one request and leaves coalesced TLS bytes for SSL`() = mockStatic(SystemClock::class.java).use { clock ->
@@ -195,7 +328,7 @@ class VersionHandshakeFramingTest {
             byteArrayOf(0, 3, 0, 2, 0, 15),
             response.copyOf().also { it[1] = 7 }
         )
-        for (frame in invalid) {
+        for (automatic in listOf(false, true)) for (frame in invalid) {
             val connection = mock(ProjectionConnection::class.java)
             `when`(connection.isSingleMessage).thenReturn(true)
             `when`(connection.isConnected).thenReturn(true)
@@ -208,7 +341,7 @@ class VersionHandshakeFramingTest {
                 count
             }
             val ssl = mock(AapSsl::class.java)
-            val transport = transport(ssl)
+            val transport = transport(ssl, automatic = automatic)
             run(transport, connection)
             verifyNoInteractions(ssl)
             assertNull(transport.negotiatedVersion)
@@ -252,19 +385,10 @@ class VersionHandshakeFramingTest {
                 1
             }
         }
-        val lines = mutableListOf<String>()
-        val original = com.andrerinas.openheadunit.utils.AppLog.LOGGER
-        com.andrerinas.openheadunit.utils.AppLog.LOGGER = object : com.andrerinas.openheadunit.utils.AppLog.Logger {
-            override fun println(priority: Int, tag: String, msg: String) { lines.add(msg) }
-        }
-        try {
-            val ssl = mock(AapSsl::class.java)
-            run(transport(ssl), connection)
-            verify(ssl).performHandshake(connection)
-            assertEquals(stale.size + response.size, position)
-            assertTrue(lines.any { line -> line.contains("the phone selected 1.7 (we asked for 1.2)") })
-            assertTrue(lines.any { line -> line.contains("Version response recv ret: 12") })
-        } finally { com.andrerinas.openheadunit.utils.AppLog.LOGGER = original }
+        val ssl = mock(AapSsl::class.java)
+        run(transport(ssl), connection)
+        verify(ssl).performHandshake(connection)
+        assertEquals(stale.size + response.size, position)
     }
 
     @Test fun `negative or short writes never replay on unknown endpoints or WiFi`() = mockStatic(SystemClock::class.java).use {

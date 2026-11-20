@@ -53,6 +53,27 @@ object SettingsBackupManager {
         STRING_SET
     }
 
+    private val laboratoryKeys = linkedMapOf(
+        "gal-laboratory-guidance48Khz" to ValueType.BOOLEAN,
+        "gal-laboratory-modernDisplayConfig" to ValueType.BOOLEAN,
+        "gal-laboratory-audioUpdates" to ValueType.BOOLEAN,
+        "gal-laboratory-videoUpdates" to ValueType.BOOLEAN,
+        "gal-laboratory-avSync" to ValueType.STRING,
+        "gal-laboratory-videoTiming" to ValueType.STRING,
+        "gal-laboratory-audioBuffer" to ValueType.STRING,
+        "gal-laboratory-mediaStats" to ValueType.STRING,
+        "gal-laboratory-maxLagToleranceMs" to ValueType.INT,
+        "gal-laboratory-syncIntervalMs" to ValueType.INT,
+        "gal-laboratory-maxAudioDelayMs" to ValueType.INT,
+        "gal-laboratory-maxVideoDelayMs" to ValueType.INT,
+        "gal-laboratory-averageLagWeight" to ValueType.INT,
+        "gal-laboratory-syncOffsetMs" to ValueType.INT,
+        "gal-laboratory-videoMinDelayMs" to ValueType.INT,
+        "gal-laboratory-videoMaxDelayMs" to ValueType.INT,
+        "gal-laboratory-audioBufferLimitMs" to ValueType.INT,
+        "gal-laboratory-statisticsIntervalMs" to ValueType.INT
+    )
+
     internal val backupKeys = linkedMapOf(
         "advanced-settings-active" to ValueType.BOOLEAN,
         "settings-rail-collapsed" to ValueType.BOOLEAN,
@@ -196,6 +217,7 @@ object SettingsBackupManager {
         "head-unit-model" to ValueType.STRING,
         "wifi-connection-mode" to ValueType.INT,
         "video-codec" to ValueType.STRING,
+        "gal-protocol-version" to ValueType.STRING,
         "fps-limit" to ValueType.INT,
         "auto-connect-last-session" to ValueType.BOOLEAN,
         "auto-connect-single-usb" to ValueType.BOOLEAN,
@@ -321,7 +343,7 @@ object SettingsBackupManager {
         // Touch calibration fix and toast visibility.
         "show-toast-messages" to ValueType.BOOLEAN,
         "usb-blacklist" to ValueType.STRING_SET
-    )
+    ) + laboratoryKeys
 
     private val wifiScanBackupKeys = mapOf(
         "wifi-scan-enabled" to "enabled",
@@ -332,6 +354,7 @@ object SettingsBackupManager {
         "resolutionId",
         "video-fit-mode",
         "video-codec",
+        "gal-protocol-version",
         "fps-limit",
         "dpi-pixel-density",
         "pixel-aspect-ratio-e4",
@@ -367,7 +390,7 @@ object SettingsBackupManager {
         "device-specific-pause-projection-on-reverse",
         "wifi-scan-enabled",
         "wifi-scan-fyt-auto-start"
-    )
+    ) + laboratoryKeys.keys
 
     fun defaultFileName(): String {
         val timestamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())

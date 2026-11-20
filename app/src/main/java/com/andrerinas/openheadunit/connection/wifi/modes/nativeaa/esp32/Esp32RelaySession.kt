@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.utils.AppLog
 
 /**
@@ -74,9 +75,15 @@ object Esp32RelaySession {
 
     /**
      * PROJECTION_UP could not be recorded for [PROJECTION_FAIL_TIMEOUT_MS].
-     * Android Auto projection should stop.
+     * Android Auto projection should stop: the session the watch measured, which the callback
+     * carries, and no session that replaced it before the callback ran.
      */
-    var onProjectionRecordFailed: (() -> Unit)? = null
+    internal var onProjectionRecordFailed: ((CommManager.Attempt) -> Unit)? = null
+
+    /** Reads the live session attempt when projection comes up; set by AapService. */
+    internal var readAttempt: (() -> CommManager.Attempt?)? = null
+    /** The session the PROJECTION_UP watch measures; null while projection is down. */
+    @Volatile private var projectionAttempt: CommManager.Attempt? = null
 
     /**
      * True while Native AA is carrying the handshake over the ESP32 relay ([setFrameSink] non-null).
@@ -470,6 +477,9 @@ object Esp32RelaySession {
         }
         val changed = projectionUp != up
         projectionUp = up
+        // A first notice may precede the session's attempt; a later one for the same up period binds it.
+        if (!up) projectionAttempt = null
+        else if (projectionAttempt == null) projectionAttempt = readAttempt?.invoke()
         main.removeCallbacks(projectionHeartbeat)
         main.removeCallbacks(projectionFailWatch)
         if (changed && up) {
@@ -564,10 +574,12 @@ object Esp32RelaySession {
         if (!projectionUp) return
         projectionUp = false
         lastProjectionOkAtMs = 0L
+        val attempt = projectionAttempt
+        projectionAttempt = null
         main.removeCallbacks(projectionHeartbeat)
         main.removeCallbacks(projectionFailWatch)
         AppLog.w("ESP32 relay: PROJECTION_UP failed for ${PROJECTION_FAIL_TIMEOUT_MS / 1000}s, stopping Android Auto")
-        main.post { onProjectionRecordFailed?.invoke() }
+        if (attempt != null) main.post { onProjectionRecordFailed?.invoke(attempt) }
     }
 
     /**
@@ -618,6 +630,7 @@ object Esp32RelaySession {
         transportErrorHandler = null
         relayTransportActive = false
         projectionUp = false
+        projectionAttempt = null
         lastProjectionOkAtMs = 0L
         startSent = false
         allowAutoDial = true

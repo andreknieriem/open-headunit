@@ -5,17 +5,30 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any as anyValue
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.same
 
 class UsbSettingsPermissionTest {
     @Test fun `late permission distinguishes cancellation from expired or overtaken Save`() {
-        mockStatic(android.os.SystemClock::class.java).use {
-        mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {
-            for (outcome in listOf("cancelled", "expired", "overtaken")) {
+        for (outcome in listOf("cancelled", "expired", "overtaken")) checkPermission(outcome)
+    }
+
+    @Test fun `denial then grant preserves the original scan and consumes its launcher token once`() {
+        checkPermission("expired", rebuiltDialog = true)
+    }
+
+    private fun checkPermission(outcome: String, rebuiltDialog: Boolean = false) {
+        ConnectionArbiter.reset()
+        try {
+            mockStatic(android.os.SystemClock::class.java).use {
+            mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {
             val service = mock(AapService::class.java)
             val app = mock(App::class.java)
             val component = mock(AppComponent::class.java)
@@ -28,15 +41,19 @@ class UsbSettingsPermissionTest {
             set("_connectionState", states)
             set("connectionState", states)
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
             `when`(service.applicationContext).thenReturn(app)
             App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }.set(app, lazyOf(component))
             `when`(component.commManager).thenReturn(comm)
+            `when`(component.settings).thenReturn(mock(com.andrerinas.openheadunit.utils.Settings::class.java))
+            `when`(service.getString(anyInt())).thenReturn("")
             val manager = spy(UsbLauncherManager(service))
-            doNothing().`when`(manager).checkAlreadyConnected(true, false, null)
+            doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), anyValue(), anyValue())
             val usb = mock(android.hardware.usb.UsbManager::class.java)
             `when`(service.getSystemService(android.content.Context.USB_SERVICE)).thenReturn(usb)
             `when`(service.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(mock(android.content.SharedPreferences::class.java))
+            service.withUsbInputPreferencesForTest()
             val device = mock(UsbDevice::class.java)
             `when`(device.deviceName).thenReturn("/dev/bus/usb/001/002")
             `when`(device.vendorId).thenReturn(0x18d1)
@@ -45,20 +62,32 @@ class UsbSettingsPermissionTest {
             // cancellation must discard the grant; the other cases use ordinary admission.
             @Suppress("UNCHECKED_CAST")
             val owners = UsbLauncherManager::class.java.getDeclaredField("permissionOwners")
-                .apply { isAccessible = true }.get(manager) as MutableMap<String, CommManager.ConnectionState.Disconnected>
-            owners[device.deviceName] = saved
+                .apply { isAccessible = true }.get(manager) as MutableMap<String, UsbLauncherManager.PermissionAttempt>
+            val scan = comm.usbRecheck(comm.appConnectionTicket())
+            val token = UsbReceiver.newLauncherToken()
+            owners[token] = UsbLauncherManager.PermissionAttempt(device.deviceName, saved, scan)
             if (outcome == "cancelled") comm.cancelPendingSettingsRestart()
-            ConnectionArbiter.reset()
-            try {
-                UsbLauncherListener(manager).onUsbPermission(true, true, device)
-                verify(manager, times(if (outcome == "cancelled") 0 else 1))
-                    .checkAlreadyConnected(true, false, null)
-                assertFalse(manager.isSwitchingToProjection())
-                assertSame(current, states.value)
-                assertTrue(owners.isEmpty())
-            } finally { ConnectionArbiter.reset() }
+            val listener = UsbLauncherListener(manager)
+            val replyScan = checkNotNull(UsbReceiver.decodeRecheck(UsbReceiver.encodeRecheck(scan)))
+            if (rebuiltDialog) {
+                listener.onUsbPermission(false, true, device, replyScan, token)
+                assertTrue(owners.containsKey(token))
+                verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), anyValue(), anyValue())
             }
-        }
-        }
+            listener.onUsbPermission(true, true, device, replyScan, token)
+            assertTrue(owners.isEmpty())
+            // An expired Save's grant still continues the original scan before any duplicate arrives.
+            // Ordinary admission continues the dialog's own owed scan, not the decoded reply.
+            verify(manager, times(if (outcome == "cancelled") 0 else 1))
+                .checkAlreadyConnected(eq(true), eq(false), isNull(), eq(false), eq(UsbPlugInPolicy.Trigger.APP_START), same(scan))
+            if (rebuiltDialog) {
+                listener.onUsbPermission(true, true, device, replyScan, token)
+                verify(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), anyValue(), anyValue())
+            }
+            assertFalse(manager.isSwitchingToProjection())
+            assertSame(current, states.value)
+            }
+            }
+        } finally { ConnectionArbiter.reset() }
     }
 }

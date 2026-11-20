@@ -19,6 +19,8 @@ class AutomationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         AppLog.i("AutomationReceiver: $action")
+        val component = App.provide(context)
+        val ticket = component.commManager.appConnectionTicket()
 
         val effects = AutomationCommandPolicy.effectsFor(
             action,
@@ -26,7 +28,11 @@ class AutomationReceiver : BroadcastReceiver() {
             AutomationCommandPolicy.State(
                 externalConfigAllowed = App.provide(context).settings.allowExternalConfiguration,
                 screenOffGranted = ScreenPower.hasLockGrant(context)
-            )
+            ),
+            acceptStop = {
+                component.commManager.requestExplicitAppExit(
+                    ticket, component.settings.killOnDisconnect && component.commManager.isConnected)?.id
+            }
         )
 
         val reply = JSONObject().put("action", action ?: "")

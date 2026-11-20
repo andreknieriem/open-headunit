@@ -4,13 +4,12 @@ import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
-import android.os.UserManager
-import android.os.Build
 
 class AutoStartReceiver : BroadcastReceiver() {
 
@@ -21,8 +20,7 @@ class AutoStartReceiver : BroadcastReceiver() {
 
         if (targetMacs.isEmpty()) return
         
-        val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && 
-                      !(context.getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+        val isLocked = !App.isUserUnlocked(context)
         
         // Before the first unlock there is no credential storage, which both the session and the
         // object graph read, so there is nothing to start yet. Nothing replays this event either,
@@ -58,7 +56,10 @@ class AutoStartReceiver : BroadcastReceiver() {
                 // decides what that means per mode. The Self Mode half is MainActivity's.
                 // singleTask: raising the home screen would close settings, so the service holds it.
                 val uiHeld = SettingsActivity.isVisible
-                val serviceIntent = Intent(context, AapService::class.java).setAction(AapService.ACTION_BT_AUTO_START)
+                // The arrival is the input: both of its relays, to the service and to the home
+                // screen, carry the one ticket read here.
+                val ticket = com.andrerinas.openheadunit.App.provide(context).commManager.appConnectionTicket()
+                val serviceIntent = AapService.operationIntent(context, ticket).setAction(AapService.ACTION_BT_AUTO_START)
                     .putExtra(AapService.EXTRA_UI_HELD, uiHeld)
                 try {
                     androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
@@ -72,9 +73,10 @@ class AutoStartReceiver : BroadcastReceiver() {
                 val launchIntent = Intent(context, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, MainActivity.LAUNCH_SOURCE_BLUETOOTH)
+                    putExtra(MainActivity.EXTRA_CONNECTION_TICKET, ticket)
                 }
                 try {
-                    context.startActivity(launchIntent)
+                    context.startActivity(AppUiEntry.continuation(launchIntent))
                 } catch (e: Exception) {
                     AppLog.w("Could not start UI from background (expected on Android 10+): ${e.message}")
                 }

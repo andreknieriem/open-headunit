@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.app
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -12,6 +13,7 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.R
@@ -41,12 +43,23 @@ open class BaseActivity : AppCompatActivity() {
     private var currentHomeBackgroundImagePath: String? = null
     private var backgroundTarget: CustomTarget<Bitmap>? = null
 
+    private val appUiEntryIdentity: AppUiEntryIdentity by viewModels()
+    protected var isNewAppUiDelivery = false
+        private set
+    protected var isExitAppUiDelivery = false
+        private set
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (AppUiEntry.isEntryActivity(this)) {
+            val delivery = AppUiEntry.created(this, appUiEntryIdentity)
+            isNewAppUiDelivery = delivery != null
+            isExitAppUiDelivery = delivery == AppForegroundPolicy.Kind.EXIT
+        }
         val settings = Settings(this)
         currentLanguage = settings.appLanguage
         currentAppTheme = settings.appTheme
@@ -64,6 +77,12 @@ open class BaseActivity : AppCompatActivity() {
         }
 
         applyWindowBackground()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (AppUiEntry.isEntryActivity(this)) AppUiEntry.delivered(this, intent)
     }
 
     override fun setContentView(layoutResID: Int) {
@@ -93,6 +112,7 @@ open class BaseActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (AppUiEntry.isEntryActivity(this)) AppUiEntry.resumed(this)
         val settings = Settings(this)
         val actualNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         if (currentLanguage != settings.appLanguage ||

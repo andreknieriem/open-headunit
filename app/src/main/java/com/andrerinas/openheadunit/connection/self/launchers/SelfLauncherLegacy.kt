@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.os.Build
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.self.SelfLauncher
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager.Companion.AA_PACKAGE
@@ -59,7 +60,8 @@ class SelfLauncherLegacy(
         services.ensureLaunchAllowed()
         services.wifiLauncherManager.noteRearm()
         services.wifiLauncherManager.sharedServices.startWirelessServer(
-            services.wifiLauncherManager.active ?: WifiLauncherManual(services.wifiLauncherManager)
+            services.wifiLauncherManager.active ?: WifiLauncherManual(services.wifiLauncherManager),
+            ConnectionOperation(services.operationTicket, services.settingsRestart),
         )
 
         val connectivityManager = services.aap.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

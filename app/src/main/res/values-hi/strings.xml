@@ -668,7 +668,7 @@
     <string name="auto_connect_help">ये तरीके ऐप खुलते ही अपने-आप चलते हैं। जो चाहिए उन्हें चालू करें, फिर खींचकर क्रम तय करें। चालू तरीकों में से जो पहले सफल होगा, वही इस्तेमाल होगा।</string>
     <string name="auto_connect_screen_help">तय करता है कि ऐप्लिकेशन खुलने पर अपने आप कैसे कनेक्ट हो। अपनी पसंद के तरीके चालू करें और उन्हें आज़माने के क्रम में खींचें। जो पहला तरीका सफल होगा, वही इस्तेमाल होगा। देरी से धीमी यूनिट पर Wi-Fi को जागने का समय मिलता है। यहाँ की कोई भी चीज़ आपके शुरू किए कनेक्शन को नहीं बदलती। सेव करें दबाने पर बदलाव लागू होते हैं।</string>
     <string name="dpi_screen_help">तय करता है कि Android Auto किस पिक्सल डेंसिटी पर ड्रॉ करे। ज़्यादा DPI से आइकन और टेक्स्ट बड़े होते हैं, इसलिए स्क्रीन पर कम समाता है। कम DPI से वे छोटे होते हैं, इसलिए ज़्यादा समाता है। स्वचालित इस डिवाइस की डेंसिटी इस्तेमाल करता है। नई वैल्यू अगले कनेक्शन पर लागू होती है।</string>
-    <string name="keymap_screen_help">इस यूनिट की कुंजियों और बटनों को Android Auto की कार्रवाइयों से जोड़ता है। किसी पंक्ति पर टैप करें, फिर जिस कुंजी को असाइन करना है उसे दबाएँ। रीसेट आपके सभी असाइनमेंट हटाकर डिफ़ॉल्ट पर लौटाता है। स्टीयरिंग या पैनल की कुंजी गलत काम करे, तो इसका इस्तेमाल करें।</string>
+    <string name="keymap_screen_help">इस यूनिट की कुंजियों और बटनों को कार्रवाइयों से जोड़ता है: Android Auto कुंजी, प्रोजेक्शन स्क्रीन की कार्रवाई, या कोई ऐप खोलना। कुंजी बाइंडिंग जोड़ें पर टैप करें, कुंजी दबाएँ, फिर कार्रवाई चुनें। बदलने या हटाने के लिए किसी बाइंडिंग पर टैप करें। रीसेट सभी बाइंडिंग हटा देता है।</string>
     <string name="customization_screen_help">इस ऐप्लिकेशन की होम स्क्रीन का रूप बदलता है: बैकग्राउंड इमेज, चारों बटनों के रंग और आकार, और टेक्स्ट का आकार। नाइट सेटिंग डार्क मोड में बैकग्राउंड तय करती है। इनमें से कोई भी चीज़ यह नहीं बदलती कि Android Auto प्रोजेक्शन में क्या दिखाता है।</string>
     <string name="loading_screen_screen_help">Android Auto शुरू होते समय दिखने वाली तस्वीर या छोटा वीडियो तय करता है। 10 MB तक की इमेज या वीडियो चुनें, उसे स्क्रीन के हिसाब से स्केल करें और छोटे ऐनिमेशन को लूप में चलाएँ। शुरुआती टेक्स्ट छिपाया भी जा सकता है। हटाएं दबाने पर डिफ़ॉल्ट स्क्रीन लौट आती है।</string>
     <string name="auto_connect_priority">प्राथमिकता %d</string>
@@ -937,6 +937,22 @@
     <string name="key_mappings_reset">कुंजी मैपिंग रीसेट हो गई</string>
     <string name="press_key_to_assign">\'%s\' को असाइन करने के लिए कोई कुंजी दबाएं…</string>
     <string name="key_assigned">\'%1$s\' को \'%2$s\' पर असाइन किया गया</string>
+    <string name="action_picker_title">कार्रवाई चुनें</string>
+    <string name="action_remove_binding">बाइंडिंग हटाएँ</string>
+    <string name="action_section_projection">प्रोजेक्शन स्क्रीन</string>
+    <string name="action_section_aa_keys">Android Auto कुंजियाँ</string>
+    <string name="action_section_apps">ऐप्स</string>
+    <string name="action_launch_app">ऐप खोलें…</string>
+    <string name="action_launch_named_app">%s खोलें</string>
+    <string name="action_aa_key_code">Android Auto कुंजी %d</string>
+    <string name="action_selected">चयनित</string>
+    <string name="action_search_keywords">कार्रवाई ऐप खोलें लॉन्च शॉर्टकट</string>
+    <string name="keymap_add_binding">कुंजी बाइंडिंग जोड़ें</string>
+    <string name="keymap_press_new_key">जिस कुंजी या बटन को बाइंड करना है उसे दबाएँ…</string>
+    <string name="keymap_no_bindings">अभी कोई कुंजी बाइंड नहीं है। कुंजी बाइंडिंग जोड़ें पर टैप करें, कोई कुंजी दबाएँ, फिर चुनें कि वह क्या करे।</string>
+    <string name="keymap_bindings_header">कुंजी बाइंडिंग</string>
+    <string name="keymap_tester_hint">कोई भी कुंजी या स्टीयरिंग बटन दबाएँ, उसका नाम और कोड यहाँ दिखेगा।</string>
+    <string name="keymap_tester_last">अंतिम कुंजी: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">आखिरी दबाई गई कुंजी: %1$s (%2$d)</string>
     <string name="scan">स्कैन करें</string>
     <string name="scanning_network">नेटवर्क स्कैन हो रहा है…</string>
@@ -1179,6 +1195,10 @@
     <string name="raise_projection_during_call">कॉल के दौरान Android Auto में रहें</string>
     <string name="raise_projection_during_call_description">सिर्फ़ सेल्फ़ मोड के लिए। प्रोजेक्शन को फ़ोन की कॉल स्क्रीन के ऊपर वापस लाता है, ताकि कॉल का जवाब देना और कॉल खत्म करना Android Auto इंटरफ़ेस में ही हो।</string>
     <string name="raise_projection_during_call_summary">सिर्फ़ सेल्फ़ मोड के लिए। प्रोजेक्शन को फ़ोन की कॉल स्क्रीन के ऊपर दिखाता है।</string>
+    <string name="show_over_lock_screen">लॉक स्क्रीन के ऊपर दिखाएँ</string>
+    <string name="show_over_lock_screen_summary">लॉक रहने पर भी मैप और दिशा-निर्देश दिखते रहते हैं। टच और बटन काम नहीं करते।</string>
+    <string name="show_over_lock_screen_help">Android Auto की तस्वीर को लॉक स्क्रीन के ऊपर दिखाता है, ताकि अनलॉक किए बिना मैप और दिशा-निर्देश पढ़े जा सकें। जब तक यह यूनिट लॉक है, फ़ोन तक कुछ नहीं पहुँचता: टच, बटन, रोटरी कंट्रोलर और वॉइस बटन रोक दिए जाते हैं, और मैप सामने लाया जाता है। अपने PIN, पैटर्न या पासवर्ड से अनलॉक करने के लिए Back दबाएँ; उसके बाद सब कुछ सामान्य रूप से काम करता है। फ़ोन पर संगीत, कॉल और वॉइस असिस्टेंट पर कोई असर नहीं पड़ता।</string>
+    <string name="show_over_lock_screen_locked_toast">लॉक है: केवल मैप। अनलॉक करने के लिए Back दबाएँ।</string>
     <string name="kill_on_disconnect_warning_title">चेतावनी</string>
     <string name="kill_on_disconnect_warning">नीचे दी गई फिर से कनेक्ट होने की सेटिंग, डिसकनेक्ट होने पर ऐप बंद करने की सेटिंग से टकराएंगी:\n\n%1$s\n\nहेड यूनिट चालू होने पर शुरुआती कनेक्शन की आपकी सेटिंग (अपने-आप कनेक्ट होना, अपने-आप शुरू होना) अब भी काम करेंगी। लेकिन पहली बार डिसकनेक्ट होने के बाद ऐप फिर से कनेक्ट होने की कोशिश करने के बजाय तुरंत बंद हो जाएगा।\n\nध्यान दें: कुछ आफ़्टरमार्केट हेड यूनिट पूरी तरह बंद नहीं होतीं, बल्कि हाइबरनेट हो जाती हैं, जैसे फ़ोन की स्क्रीन लॉक हो जाती है पर फ़ोन बंद नहीं होता। यह विकल्प चालू होने पर ऐप पहली बार डिसकनेक्ट होने के बाद बंद हो जाएगा और अगली बार इग्निशन चालू करने पर अपने-आप दोबारा नहीं खुल सकता।\n\nक्या आप ऊपर दी गई फिर से कनेक्ट होने की सेटिंग बंद करना चाहते हैं?</string>
     <string name="kill_on_disconnect_disable_and_enable">बंद करें और चालू करें</string>
@@ -1271,6 +1291,14 @@
     <string name="server_mode_manual">मैन्युअल</string>
     <string name="server_mode_auto">ऑटो</string>
     <string name="server_mode_help">ऑटो नेटवर्क पर फ़ोन में मौजूद हेडयूनिट सर्वर को खोजता है और अपने आप कनेक्ट हो जाता है। मैन्युअल नहीं खोजता। आप नेटवर्क सूची से या फ़ोन के पते से कनेक्ट करते हैं।</string>
+    <string name="headunit_server_network_label">कनेक्शन का तरीका</string>
+    <string name="headunit_server_network_phone">फ़ोन हॉटस्पॉट</string>
+    <string name="headunit_server_network_unit">यूनिट हॉटस्पॉट</string>
+    <string name="headunit_server_network_shared">साझा वाई-फ़ाई</string>
+    <string name="headunit_server_network_help">फ़ोन और यह यूनिट कौन-सा वाई-फ़ाई साझा करते हैं। फ़ोन हॉटस्पॉट: यह यूनिट फ़ोन के हॉटस्पॉट से जुड़ती है। तब तक फ़ोन की खोज रुकी रहती है, और वाई-फ़ाई से कनेक्ट करें पहले हॉटस्पॉट खोजता है। यूनिट हॉटस्पॉट: फ़ोन इस यूनिट के एक्सेस पॉइंट से जुड़ता है। साझा वाई-फ़ाई: दोनों एक ही राउटर पर हैं, और कुछ नहीं बदलता।</string>
+    <string name="headunit_server_auto_wifi_scan">हॉटस्पॉट अपने आप खोजें</string>
+    <string name="headunit_server_auto_wifi_scan_summary">जब तक होम स्क्रीन दिख रही है और कोई वाई-फ़ाई जुड़ा नहीं है।</string>
+    <string name="headunit_server_auto_wifi_scan_help">जब तक होम स्क्रीन दिख रही है और यह यूनिट किसी वाई-फ़ाई नेटवर्क पर नहीं है, यह Android से वाई-फ़ाई खोज माँगती है: तुरंत, दो मिनट तक हर 35 सेकंड, फिर हर मिनट एक बार। इससे यूनिट फ़ोन के हॉटस्पॉट से जल्दी जुड़ती है। Android दो मिनट में चार खोज की अनुमति देता है, और बैकग्राउंड में एक भी नहीं।</string>
 
     <string name="helper_strategy_label">हेल्पर कनेक्शन का तरीका</string>
     <string name="helper_strategy_help">तय करता है कि वायरलेस हेल्पर मोड में फ़ोन और यह यूनिट नेटवर्क कैसे साझा करें। सामान्य वाई-फ़ाई उस नेटवर्क का इस्तेमाल करता है जिस पर दोनों पहले से हैं। WiFi Direct निजी लिंक बनाता है। Google Nearby बीटा है। फ़ोन हॉटस्पॉट फ़ोन के हॉटस्पॉट से जुड़ता है। हेडयूनिट हॉटस्पॉट इस यूनिट को एक्सेस पॉइंट बनाता है। फ़ोन को यह यूनिट न मिले, तो इसे बदलें।</string>
@@ -1903,4 +1931,17 @@
     <string name="usb_wireless_dongle_help">यदि आप AAWireless या Carlinkit जैसे वायरलेस USB अडैप्टर से कनेक्ट करते हैं तो इसे चालू करें। Open Headunit डोंगल और केबल में अंतर नहीं कर सकता, इसलिए यह विकल्प होम स्क्रीन के लेबल को केबल से वायरलेस में बदल देता है।</string>
     <string name="home_subtitle_usb_dongle">वायरलेस रूप से</string>
     <string name="home_action_connect_wireless_dongle">वायरलेस कनेक्ट करें</string>
+    <string name="home_wifi_not_connected">वाई-फ़ाई कनेक्ट नहीं है</string>
+    <string name="home_wifi_off">वाई-फ़ाई बंद है</string>
+    <string name="home_wifi_connected_unnamed">वाई-फ़ाई कनेक्ट है</string>
+    <string name="home_wifi_scanning">खोज रहे हैं…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">वाई-फ़ाई: %1$s</string>
+    <string name="home_hotspot_waiting">फ़ोन के हॉटस्पॉट का इंतज़ार…</string>
+    <string name="home_hotspot_not_found">कोई वाई-फ़ाई नहीं जुड़ा। क्या फ़ोन का हॉटस्पॉट चालू है?</string>
+    <string name="home_wifi_hotspot_hint">क्या फ़ोन का हॉटस्पॉट चालू है?</string>
+    <string name="home_wifi_off_hint">कनेक्ट करने के लिए इसे चालू करें</string>
 </resources>

@@ -377,7 +377,7 @@
     <string name="auto_connect_help">ეს მეთოდები ავტომატურად ეშვება აპის გახსნისას. ჩართეთ სასურველი მეთოდები, შემდეგ გადაათრიეთ რიგითობის დასაყენებლად. გამოყენებული იქნება პირველივე ჩართული მეთოდი, რომელიც წარმატებით დაუკავშირდება.</string>
     <string name="auto_connect_screen_help">განსაზღვრავს, როგორ უკავშირდება აპი თავისით გახსნისას. ჩართეთ სასურველი მეთოდები და გადაათრიეთ საცდელი თანმიმდევრობით. გამოიყენება პირველი წარმატებული მეთოდი. შეყოვნება Wi-Fi-ს აძლევს გაღვიძების დროს ნელ მოწყობილობაზე. აქ არაფერი ცვლის თქვენ მიერ დაწყებულ კავშირს. „შენახვა“ ცვლილებებს ამოქმედებს.</string>
     <string name="dpi_screen_help">ადგენს პიქსელების სიმკვრივეს, რომლითაც Android Auto ხატავს. მაღალი DPI ზრდის ხატულებსა და ტექსტს, ამიტომ ეკრანზე ნაკლები ეტევა. დაბალი DPI მათ ამცირებს, ამიტომ მეტი ეტევა. „ავტომატური“ იყენებს ამ მოწყობილობის სიმკვრივეს. ახალი მნიშვნელობა მოქმედებს შემდეგი კავშირიდან.</string>
-    <string name="keymap_screen_help">ამ მოწყობილობის კლავიშებსა და ღილაკებს აკავშირებს Android Auto-ს მოქმედებებთან. შეეხეთ სტრიქონს და დააჭირეთ მისანიჭებელ კლავიშს. „გადაყენება“ შლის თქვენს ყველა მინიჭებას და აბრუნებს ნაგულისხმევს. გამოიყენეთ, როცა საჭის ან პანელის კლავიში არასწორად მუშაობს.</string>
+    <string name="keymap_screen_help">ამ მოწყობილობის კლავიშებსა და ღილაკებს ანიჭებს მოქმედებებს: Android Auto-ს კლავიშს, პროექციის ეკრანის მოქმედებას ან აპის გაშვებას. შეეხეთ „კლავიშის მინიჭების დამატებას“, დააჭირეთ კლავიშს და აირჩიეთ მოქმედება. შეეხეთ მინიჭებას მის შესაცვლელად ან წასაშლელად. „გადაყენება“ შლის ყველა მინიჭებას.</string>
     <string name="customization_screen_help">ცვლის ამ აპის მთავარი ეკრანის იერს: ფონის სურათს, ოთხი ღილაკის ფერებსა და ზომას და ტექსტის ზომას. ღამის პარამეტრი მართავს ფონს მუქ რეჟიმში. ეს არაფერი ცვლის იმას, რასაც Android Auto პროექციაზე აჩვენებს.</string>
     <string name="loading_screen_screen_help">ადგენს სურათს ან მოკლე ვიდეოს, რომელიც Android Auto-ს გაშვებისას გამოჩნდება. აირჩიეთ სურათი ან ვიდეო 10 მბ-მდე, მოარგეთ ეკრანს და მოკლე ანიმაციები ციკლში გაუშვით. ასევე შეგიძლიათ საწყისი ტექსტის დამალვა. „წაშლა“ აბრუნებს ნაგულისხმევ ეკრანს.</string>
     <string name="auto_connect_priority">პრიორიტეტი %d</string>
@@ -496,6 +496,22 @@
     <string name="key_mappings_reset">ღილაკების მინიჭებები განულდა</string>
     <string name="press_key_to_assign">დააჭირეთ ღილაკს \'%s\' ფუნქციის მისანიჭებლად…</string>
     <string name="key_assigned">\'%1$s\' მიენიჭა ღილაკს \'%2$s\'</string>
+    <string name="action_picker_title">აირჩიეთ მოქმედება</string>
+    <string name="action_remove_binding">მინიჭების წაშლა</string>
+    <string name="action_section_projection">პროექციის ეკრანი</string>
+    <string name="action_section_aa_keys">Android Auto-ს კლავიშები</string>
+    <string name="action_section_apps">აპები</string>
+    <string name="action_launch_app">აპის გაშვება…</string>
+    <string name="action_launch_named_app">%s-ის გაშვება</string>
+    <string name="action_aa_key_code">Android Auto-ს კლავიში %d</string>
+    <string name="action_selected">არჩეულია</string>
+    <string name="action_search_keywords">მოქმედება გაშვება გახსნა აპი მალსახმობი</string>
+    <string name="keymap_add_binding">კლავიშის მინიჭების დამატება</string>
+    <string name="keymap_press_new_key">დააჭირეთ კლავიშს ან ღილაკს, რომლის მინიჭებაც გსურთ…</string>
+    <string name="keymap_no_bindings">კლავიშები ჯერ არ არის მინიჭებული. შეეხეთ „კლავიშის მინიჭების დამატებას“, დააჭირეთ კლავიშს და აირჩიეთ, რას გააკეთებს.</string>
+    <string name="keymap_bindings_header">კლავიშების მინიჭებები</string>
+    <string name="keymap_tester_hint">დააჭირეთ ნებისმიერ კლავიშს ან საჭის ღილაკს, რომ აქ მისი სახელი და კოდი ნახოთ.</string>
+    <string name="keymap_tester_last">ბოლო კლავიში: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">ბოლო დაჭერილი ღილაკი: %1$s (%2$d)</string>
     <string name="scan">სკანირება</string>
     <string name="scanning_network">მიმდინარეობს ქსელის სკანირება…</string>
@@ -740,6 +756,14 @@
     <string name="server_mode_manual">ხელით</string>
     <string name="server_mode_auto">ავტო</string>
     <string name="server_mode_help">ავტო ქსელში ეძებს ტელეფონზე არსებულ Headunit სერვერს და თავისით უკავშირდება. ხელით არ ეძებს. უკავშირდებით ქსელების სიიდან ან ტელეფონის მისამართით.</string>
+    <string name="headunit_server_network_label">დაკავშირების მეთოდი</string>
+    <string name="headunit_server_network_phone">ტელეფონი</string>
+    <string name="headunit_server_network_unit">ერთეული</string>
+    <string name="headunit_server_network_shared">საერთო WiFi</string>
+    <string name="headunit_server_network_help">რომელ WiFi-ს იზიარებენ ტელეფონი და ეს მოწყობილობა. ტელეფონი: ეს მოწყობილობა უერთდება ტელეფონის ჰოტსპოტს. მანამდე ტელეფონის ძებნა ელოდება, ხოლო WiFi-ით დაკავშირება ჯერ ჰოტსპოტს ეძებს. ერთეული: ტელეფონი უერთდება ამ მოწყობილობის წვდომის წერტილს. საერთო WiFi: ორივე ერთ როუტერზეა და არაფერი იცვლება.</string>
+    <string name="headunit_server_auto_wifi_scan">ჰოტსპოტის ავტომატური ძებნა</string>
+    <string name="headunit_server_auto_wifi_scan_summary">სანამ მთავარი ეკრანი ჩანს და WiFi დაკავშირებული არ არის.</string>
+    <string name="headunit_server_auto_wifi_scan_help">სანამ მთავარი ეკრანი ჩანს და ეს მოწყობილობა არცერთ WiFi ქსელს არ უერთდება, ის Android-ს WiFi-ის სკანირებას სთხოვს: მაშინვე, ორი წუთის განმავლობაში ყოველ 35 წამში, შემდეგ წუთში ერთხელ. ასე მოწყობილობა ტელეფონის ჰოტსპოტს უფრო ადრე უერთდება. Android ორ წუთში ოთხ სკანირებას უშვებს, ფონურ რეჟიმში კი არცერთს.</string>
 
     <string name="helper_strategy_label">დამხმარე კავშირის სტრატეგია</string>
     <string name="helper_strategy_help">ირჩევს, როგორ იზიარებენ ტელეფონი და ეს მოწყობილობა ქსელს Wireless Helper-ის რეჟიმში. „საერთო Wi-Fi“ იყენებს ქსელს, რომელშიც ორივე უკვე არის. WiFi Direct ქმნის კერძო კავშირს. Google Nearby ბეტაა. „ტელეფონის ჰოტსპოტი“ უერთდება ტელეფონის ჰოტსპოტს. „ჰედუნიტის ჰოტსპოტი“ ამ მოწყობილობას წვდომის წერტილად აქცევს. შეცვალეთ, თუ ტელეფონი ამ მოწყობილობას ვერ პოულობს.</string>
@@ -1293,6 +1317,10 @@
     <string name="raise_projection_during_call">ზარების დროს Android Auto-ში დარჩენა</string>
     <string name="raise_projection_during_call_description">მხოლოდ ავტონომიური რეჟიმი. აბრუნებს პროექციას ტელეფონის ზარის ეკრანის ზემოთ, ასე რომ ზარებზე პასუხი და დასრულება Android Auto-ს ინტერფეისში ხდება.</string>
     <string name="raise_projection_during_call_summary">მხოლოდ ავტონომიური რეჟიმისთვის. აჩვენებს პროექციას ტელეფონის ზარის ეკრანის ზემოდან.</string>
+    <string name="show_over_lock_screen">ჩაკეტილ ეკრანზე ჩვენება</string>
+    <string name="show_over_lock_screen_summary">რუკა და მიმართულებები ჩაკეტვისას ჩანს. შეხება და ღილაკები არ მუშაობს.</string>
+    <string name="show_over_lock_screen_help">Android Auto-ს გამოსახულებას აჩვენებს ჩაკეტილი ეკრანის ზემოთ, რათა რუკა და მიმართულებები განბლოკვის გარეშე წაიკითხოთ. სანამ ეს მოწყობილობა ჩაკეტილია, ტელეფონამდე არაფერი აღწევს: შეხებები, ღილაკები, მბრუნავი კონტროლერი და ხმის ღილაკი შეჩერებულია, ხოლო რუკა წინა პლანზე გადმოდის. განსაბლოკად PIN-კოდით, ნიმუშით ან პაროლით დააჭირეთ „უკან“-ს; ამის შემდეგ ყველაფერი ჩვეულებრივად მუშაობს. ტელეფონზე მუსიკას, ზარებსა და ხმოვან ასისტენტს ეს არ ეხება.</string>
+    <string name="show_over_lock_screen_locked_toast">ჩაკეტილია: მხოლოდ რუკა. განსაბლოკად დააჭირეთ „უკან“-ს.</string>
     <string name="audio_stream_settings">აუდიონაკადები</string>
     <string name="audio_stream_settings_description">აირჩიეთ სისტემური ნაკადი, რომელზეც უკრავს Android Auto-ს თითოეული არხი.</string>
     <string name="audio_stream_settings_info">Android Auto ხმას სამ არხზე აგზავნის: მედია, სავიგაციო მითითებები და სისტემური ხმები. თითოეული სისტემური ნაკადით აღწევს მაგნიტოლამდე და არჩეული ნაკადი განსაზღვრავს, ხმის რომელ ღილაკს დაემორჩილება და, ბევრ მაგნიტოლაზე, ჩაირთვება თუ არა მისთვის გამაძლიერებელი. დინამიკის ღილაკით შენახვამდე მოისმინეთ სატესტო სიგნალი ამ ნაკადზე.</string>
@@ -1842,4 +1870,17 @@
     <string name="usb_wireless_dongle_help">ჩართეთ, თუ უკავშირდებით უსადენო USB ადაპტერით (მაგ. AAWireless ან Carlinkit). Open Headunit ვერ ასხვავებს დონგლს კაბელისგან, ამიტომ ეს პარამეტრი მთავარ ეკრანზე წარწერებს კაბელიდან უსადენოზე ცვლის.</string>
     <string name="home_subtitle_usb_dongle">უსადენოდ</string>
     <string name="home_action_connect_wireless_dongle">უსადენოდ დაკავშირება</string>
+    <string name="home_wifi_not_connected">WiFi გათიშულია</string>
+    <string name="home_wifi_off">WiFi გამორთულია</string>
+    <string name="home_wifi_connected_unnamed">WiFi დაკავშირებულია</string>
+    <string name="home_wifi_scanning">ძებნა…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">ტელეფონის ჰოტსპოტის მოლოდინი…</string>
+    <string name="home_hotspot_not_found">WiFi არ არის დაკავშირებული. ჩართულია ტელეფონის ჰოტსპოტი?</string>
+    <string name="home_wifi_hotspot_hint">ჩართულია ტელეფონის ჰოტსპოტი?</string>
+    <string name="home_wifi_off_hint">ჩართეთ დასაკავშირებლად</string>
 </resources>

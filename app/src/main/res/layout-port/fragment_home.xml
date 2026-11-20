@@ -118,6 +118,20 @@
                 android:text="@string/exit" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/sidebar_apps_button"
+            style="@style/HomeTile"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:visibility="gone">
+            <ImageView
+                style="@style/HomeTileIcon"
+                app:srcCompat="@drawable/ic_apps" />
+            <com.andrerinas.openheadunit.view.WordFitTextView
+                style="@style/HomeTileLabel.Wrap"
+                android:text="@string/home_all_apps" />
+        </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>

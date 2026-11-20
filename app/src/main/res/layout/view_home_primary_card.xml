@@ -47,7 +47,89 @@
                     app:srcCompat="@drawable/ic_usb_white" />
             </FrameLayout>
 
+            <!-- Headunit Server on the phone's hotspot only: the WiFi network this unit is on, its
+                 band and signal, or why there is none. Information only. It takes
+                 three quarters of the row's free width and the spacer after it the rest, so it never
+                 reaches the countdown or the date and time in the far corner. A name too long for
+                 it steps down a size, then ends in an ellipsis. -->
+            <LinearLayout
+                android:id="@+id/home_wifi_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="3"
+                android:layout_marginStart="@dimen/home_wifi_status_gap"
+                android:layout_marginLeft="@dimen/home_wifi_status_gap"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/home_wifi_warning"
+                        android:layout_width="@dimen/home_wifi_dot"
+                        android:layout_height="@dimen/home_wifi_dot"
+                        android:layout_marginEnd="@dimen/home_wifi_meta_gap"
+                        android:layout_marginRight="@dimen/home_wifi_meta_gap"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/home_wifi_warning_dot"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/home_wifi_name"
+                        style="@style/HomeCardText"
+                        android:fontFamily="sans-serif-medium"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textSize="@dimen/home_wifi_name_text" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/home_wifi_band"
+                        style="@style/HomeCardText"
+                        android:layout_marginEnd="@dimen/home_wifi_meta_gap"
+                        android:layout_marginRight="@dimen/home_wifi_meta_gap"
+                        android:paddingLeft="@dimen/home_wifi_chip_padding_h"
+                        android:paddingRight="@dimen/home_wifi_chip_padding_h"
+                        android:paddingTop="1dp"
+                        android:paddingBottom="1dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:maxLines="1"
+                        android:textSize="@dimen/home_card_kicker"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/home_wifi_bars"
+                        android:layout_width="@dimen/home_wifi_bars_width"
+                        android:layout_height="@dimen/home_wifi_bars_height"
+                        android:layout_marginEnd="@dimen/home_wifi_meta_gap"
+                        android:layout_marginRight="@dimen/home_wifi_meta_gap"
+                        android:importantForAccessibility="no"
+                        android:visibility="gone"
+                        app:srcCompat="@drawable/ic_wifi_bars_0" />
+
+                    <TextView
+                        android:id="@+id/home_wifi_meta"
+                        style="@style/HomeCardText"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textSize="@dimen/home_card_subtitle" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Gives way to the WiFi line on a card too narrow for both (HomeUiHelper.fitCardWidth). -->
             <View
+                android:id="@+id/home_primary_header_spacer"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_weight="1" />
@@ -166,8 +248,8 @@
                 android:ellipsize="end"
                 android:clickable="true"
                 android:focusable="true"
-                android:textSize="@dimen/home_cta_text"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium"
+                android:textSize="@dimen/home_cta_text" />
 
             <TextView
                 android:id="@+id/home_primary_cancel"

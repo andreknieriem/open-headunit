@@ -22,10 +22,79 @@ class BluetoothRadioCyclePolicyTest {
         standDownSinceMs: Long = standDown,
         lastCycleMs: Long = 0L,
         cyclesUsed: Int = 0,
+        waitMs: Long = BluetoothRadioCyclePolicy.CYCLE_AFTER_MS,
     ) = BluetoothRadioCyclePolicy.cycleDecision(
         sdkInt, verdict, reason, pairingHasRunAaHere, callActive, sessionInProgress,
-        standDownSinceMs, lastCycleMs, cyclesUsed, now
+        standDownSinceMs, lastCycleMs, cyclesUsed, now, waitMs
     )
+
+    /**
+     * The dead-link path brings its own, shorter floor: it has no link to give a run to, and its
+     * wake loop gives up sooner than the stand-down's 90 s. The gate has to take the caller's
+     * number rather than the policy's own, or that path can never fire.
+     */
+    @Test
+    fun `the caller's wait replaces the default one`() {
+        val shorter = DeadLinkRecoveryPolicy.MIN_STREAK_MS
+        assertFalse(decide(standDownSinceMs = now - shorter + 1, waitMs = shorter))
+        assertTrue(decide(standDownSinceMs = now - shorter, waitMs = shorter))
+        // And the default is still the default: the same age is too young without it.
+        assertFalse(decide(standDownSinceMs = now - shorter))
+    }
+
+    /**
+     * A refusal used to be a bare false, so a wake loop that declined every pass for minutes left
+     * nothing in the log to say why. Each gate now names itself.
+     */
+    @Test
+    fun `each refusing gate names itself`() {
+        fun blockerOf(
+            sdkInt: Int = BluetoothRadioCyclePolicy.LAST_CYCLEABLE_SDK,
+            verdict: Verdict = Verdict.UNKNOWN,
+            reason: BluetoothWakePolicy.WakeReason = BluetoothWakePolicy.WakeReason.TARGET_CONNECTED,
+            pairingHasRunAaHere: Boolean = true,
+            callActive: Boolean = false,
+            sessionInProgress: Boolean = false,
+            standDownSinceMs: Long = standDown,
+            lastCycleMs: Long = 0L,
+            cyclesUsed: Int = 0,
+        ) = BluetoothRadioCyclePolicy.blocker(
+            sdkInt, verdict, reason, pairingHasRunAaHere, callActive, sessionInProgress,
+            standDownSinceMs, lastCycleMs, cyclesUsed, now
+        )
+
+        assertEquals(null, blockerOf())
+        assertEquals(
+            BluetoothRadioCyclePolicy.Blocker.SDK_TOO_NEW,
+            blockerOf(sdkInt = BluetoothRadioCyclePolicy.LAST_CYCLEABLE_SDK + 1)
+        )
+        assertEquals(
+            BluetoothRadioCyclePolicy.Blocker.RADIO_STRANDS,
+            blockerOf(verdict = Verdict.STRANDS)
+        )
+        assertEquals(
+            BluetoothRadioCyclePolicy.Blocker.REASON_NOT_CYCLEABLE,
+            blockerOf(reason = BluetoothWakePolicy.WakeReason.TARGET_UNREADABLE)
+        )
+        assertEquals(
+            BluetoothRadioCyclePolicy.Blocker.PAIRING_NEVER_RAN_AA,
+            blockerOf(pairingHasRunAaHere = false)
+        )
+        assertEquals(BluetoothRadioCyclePolicy.Blocker.CALL_ACTIVE, blockerOf(callActive = true))
+        assertEquals(
+            BluetoothRadioCyclePolicy.Blocker.SESSION_IN_PROGRESS,
+            blockerOf(sessionInProgress = true)
+        )
+        assertEquals(
+            BluetoothRadioCyclePolicy.Blocker.BUDGET_SPENT,
+            blockerOf(cyclesUsed = BluetoothRadioCyclePolicy.MAX_CYCLES_PER_ARMING)
+        )
+        assertEquals(BluetoothRadioCyclePolicy.Blocker.TOO_SOON, blockerOf(standDownSinceMs = now))
+        assertEquals(
+            BluetoothRadioCyclePolicy.Blocker.COOLDOWN,
+            blockerOf(lastCycleMs = now - BluetoothRadioCyclePolicy.CYCLE_COOLDOWN_MS + 1)
+        )
+    }
 
     @Test
     fun `a stand-down that has run its wait cycles the radio`() {
@@ -49,16 +118,21 @@ class BluetoothRadioCyclePolicyTest {
 
     /**
      * TARGET_UNREADABLE could not tell whose link it is, and a guess is not a reason to drop one.
-     * Every other reason poked in the first place, so there is no stand-down to escalate.
+     * GATEWAY_ONLY and SWITCH_TARGET name a link that belongs to somebody else.
+     *
+     * TARGET_CONNECTED is the stand-down this policy was written for. NO_LINK and TARGET_ABSENT are
+     * the dead-link case: the phone holds no connection, so the wake loop pokes, and on a stack that
+     * will not raise the link it pokes forever. All three are bounded by the gates below.
      */
     @Test
-    fun `only a link taken to be the target's is worth a cycle`() {
+    fun `the target's link and a link that is absent are worth a cycle`() {
+        val cycleable = setOf(
+            BluetoothWakePolicy.WakeReason.TARGET_CONNECTED,
+            BluetoothWakePolicy.WakeReason.NO_LINK,
+            BluetoothWakePolicy.WakeReason.TARGET_ABSENT,
+        )
         for (reason in BluetoothWakePolicy.WakeReason.entries) {
-            assertEquals(
-                reason.name,
-                reason == BluetoothWakePolicy.WakeReason.TARGET_CONNECTED,
-                decide(reason = reason)
-            )
+            assertEquals(reason.name, reason in cycleable, decide(reason = reason))
         }
     }
 
@@ -198,5 +272,38 @@ class BluetoothRadioCyclePolicyTest {
         // The complement, so the fix above cannot be read as disabling the measurement.
         assertEquals(BluetoothRadioCyclePolicy.Verdict.STRANDS, BluetoothRadioCyclePolicy.verdictFrom(false, null))
         assertTrue(BluetoothRadioCyclePolicy.recordable(BluetoothRadioCyclePolicy.Verdict.STRANDS))
+    }
+
+    /**
+     * A cycle taken while the phone is not there mis-measured as STRANDS on the rig, and the latch
+     * outlived reinstalls because it lives in the settings: the only recovery that works on this
+     * hardware was disabled by one test run with the phone's radio off.
+     */
+    @Test
+    fun `a link that was already absent cannot condemn the radio`() {
+        assertEquals(
+            Verdict.STRANDS,
+            BluetoothRadioCyclePolicy.verdictFrom(adapterCameBackOn = true, linkReturned = false)
+        )
+        assertEquals(
+            Verdict.UNKNOWN,
+            BluetoothRadioCyclePolicy.verdictFrom(
+                adapterCameBackOn = true, linkReturned = false, linkWasAbsent = true
+            )
+        )
+        // A link that did come back is still proof, whichever reason earned the cycle.
+        assertEquals(
+            Verdict.RECOVERS,
+            BluetoothRadioCyclePolicy.verdictFrom(
+                adapterCameBackOn = true, linkReturned = true, linkWasAbsent = true
+            )
+        )
+        // And a radio that really stayed off condemns either way.
+        assertEquals(
+            Verdict.STRANDS,
+            BluetoothRadioCyclePolicy.verdictFrom(
+                adapterCameBackOn = false, linkReturned = false, linkWasAbsent = true
+            )
+        )
     }
 }

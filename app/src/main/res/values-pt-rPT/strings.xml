@@ -669,7 +669,7 @@
     <string name="auto_connect_help">Estes métodos são executados automaticamente quando a aplicação abre. Ative os que pretende e arraste para definir a ordem. É utilizado o primeiro método ativado que tiver êxito.</string>
     <string name="auto_connect_screen_help">Define como a aplicação se liga sozinha ao abrir. Ative os métodos pretendidos e arraste-os pela ordem em que serão tentados. É usado o primeiro que funcionar. O atraso dá tempo ao Wi-Fi para acordar numa unidade lenta. Nada aqui altera uma ligação que inicie por si. Guardar aplica as alterações.</string>
     <string name="dpi_screen_help">Define a densidade de píxeis com que o Android Auto desenha. Um DPI mais alto aumenta ícones e texto, e cabe menos no ecrã. Um DPI mais baixo reduz-os, e cabe mais. Automático usa a densidade deste dispositivo. O novo valor aplica-se na próxima ligação.</string>
-    <string name="keymap_screen_help">Associa as teclas e os botões desta unidade a ações do Android Auto. Toque numa linha e prima a tecla a atribuir. Repor remove todas as suas atribuições e volta ao predefinido. Use quando uma tecla do volante ou do painel fizer a coisa errada.</string>
+    <string name="keymap_screen_help">Atribui as teclas e os botões desta unidade a ações: uma tecla do Android Auto, uma ação do ecrã de projeção ou abrir uma app. Toque em Adicionar atribuição de tecla, prima a tecla e escolha a ação. Toque numa atribuição para a alterar ou remover. Repor remove todas as atribuições.</string>
     <string name="customization_screen_help">Altera o aspeto do ecrã inicial desta aplicação: a imagem de fundo, as cores e o tamanho dos quatro botões e o tamanho do texto. A definição noturna controla o fundo no modo escuro. Nada disto altera o que o Android Auto mostra na projeção.</string>
     <string name="loading_screen_screen_help">Define a imagem ou o vídeo curto mostrado enquanto o Android Auto arranca. Escolha uma imagem ou um vídeo até 10 MB, ajuste ao ecrã e repita animações curtas em ciclo. Também pode ocultar o texto de arranque. Remover volta ao ecrã predefinido.</string>
     <string name="auto_connect_priority">Prioridade %d</string>
@@ -938,6 +938,22 @@
     <string name="key_mappings_reset">Mapeamento de teclas reposto</string>
     <string name="press_key_to_assign">Prima uma tecla para atribuir a \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' atribuído a \'%2$s\'</string>
+    <string name="action_picker_title">Escolher ação</string>
+    <string name="action_remove_binding">Remover atribuição</string>
+    <string name="action_section_projection">Ecrã de projeção</string>
+    <string name="action_section_aa_keys">Teclas do Android Auto</string>
+    <string name="action_section_apps">Aplicações</string>
+    <string name="action_launch_app">Abrir app…</string>
+    <string name="action_launch_named_app">Abrir %s</string>
+    <string name="action_aa_key_code">Tecla do Android Auto %d</string>
+    <string name="action_selected">Selecionado</string>
+    <string name="action_search_keywords">ação abrir iniciar app aplicação atalho</string>
+    <string name="keymap_add_binding">Adicionar atribuição de tecla</string>
+    <string name="keymap_press_new_key">Prima a tecla ou o botão que pretende atribuir…</string>
+    <string name="keymap_no_bindings">Ainda não há teclas atribuídas. Toque em Adicionar atribuição de tecla, prima uma tecla e escolha o que faz.</string>
+    <string name="keymap_bindings_header">Atribuições de teclas</string>
+    <string name="keymap_tester_hint">Prima qualquer tecla ou botão do volante para ver aqui o nome e o código.</string>
+    <string name="keymap_tester_last">Última tecla: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Última tecla premida: %1$s (%2$d)</string>
     <string name="scan">Procurar</string>
     <string name="scanning_network">A analisar rede…</string>
@@ -1180,6 +1196,10 @@
     <string name="raise_projection_during_call">Manter no Android Auto durante chamadas</string>
     <string name="raise_projection_during_call_description">Apenas no Modo Próprio. Traz a projeção de volta sobre o ecrã de chamada do telemóvel, para atender e terminar as chamadas na interface do Android Auto.</string>
     <string name="raise_projection_during_call_summary">Só no Modo Próprio. Mostra a projeção sobre o ecrã de chamada do telemóvel.</string>
+    <string name="show_over_lock_screen">Mostrar sobre o ecrã de bloqueio</string>
+    <string name="show_over_lock_screen_summary">O mapa e as indicações continuam visíveis com bloqueio. Toques e botões não fazem nada.</string>
+    <string name="show_over_lock_screen_help">Mostra a imagem do Android Auto sobre o ecrã de bloqueio, para ler o mapa e as indicações sem desbloquear. Enquanto esta unidade estiver bloqueada, nada chega ao telemóvel: toques, botões, o comando rotativo e o botão de voz são retidos, e o mapa é trazido para a frente. Prima Voltar para desbloquear com o seu PIN, padrão ou palavra-passe; depois tudo funciona normalmente. A música, as chamadas e o assistente de voz no próprio telemóvel não são afetados.</string>
+    <string name="show_over_lock_screen_locked_toast">Bloqueado: só o mapa. Prima Voltar para desbloquear.</string>
     <string name="kill_on_disconnect_warning_title">Aviso</string>
     <string name="kill_on_disconnect_warning">As seguintes definições de religação entram em conflito com o fecho da aplicação ao desligar:\n\n%1$s\n\nAs definições de ligação inicial (ligação automática, arranque automático) continuam a funcionar quando a unidade liga. No entanto, após a primeira desligação, a aplicação fecha de imediato em vez de tentar religar.\n\nNota: algumas unidades não originais nunca desligam por completo, entram em hibernação, como um telemóvel que bloqueia o ecrã mas nunca se desliga. Com esta opção ativada, a aplicação fecha após a primeira desligação e pode não reabrir automaticamente na próxima ignição.\n\nQuer desativar as definições de religação indicadas acima?</string>
     <string name="kill_on_disconnect_disable_and_enable">Desativar e ativar</string>
@@ -1272,6 +1292,14 @@
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Automático</string>
     <string name="server_mode_help">Automático procura na rede o servidor da unidade no telemóvel e liga-se sozinho. Manual não procura. Liga-se a partir da lista de redes ou com o endereço do telemóvel.</string>
+    <string name="headunit_server_network_label">Método de ligação</string>
+    <string name="headunit_server_network_phone">Zona do telemóvel</string>
+    <string name="headunit_server_network_unit">Zona da unidade</string>
+    <string name="headunit_server_network_shared">Wi-Fi comum</string>
+    <string name="headunit_server_network_help">Que Wi-Fi o telemóvel e esta unidade partilham. Zona do telemóvel: esta unidade liga-se à zona Wi-Fi do telemóvel. Até lá, a procura do telemóvel espera, e Ligar por Wi-Fi procura primeiro a zona Wi-Fi. Zona da unidade: o telemóvel liga-se ao ponto de acesso desta unidade. Wi-Fi comum: ambos estão no mesmo router e nada muda.</string>
+    <string name="headunit_server_auto_wifi_scan">Procurar a zona Wi-Fi automaticamente</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Enquanto o ecrã inicial está aberto e nenhum Wi-Fi está ligado.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Enquanto o ecrã inicial é mostrado e esta unidade não está em nenhuma rede Wi-Fi, pede ao Android uma pesquisa de Wi-Fi: de imediato, a cada 35 segundos durante dois minutos e depois uma vez por minuto. Assim a unidade liga-se mais cedo à zona Wi-Fi do telemóvel. O Android permite quatro pesquisas em dois minutos e nenhuma em segundo plano.</string>
 
     <string name="helper_strategy_label">Estratégia de ligação Helper</string>
     <string name="helper_strategy_help">Define como o telemóvel e esta unidade partilham uma rede no modo Wireless Helper. Wi-Fi comum usa uma rede que ambos já partilham. WiFi Direct cria uma ligação privada. Google Nearby é beta. Hotspot do telemóvel entra no hotspot do telemóvel. Hotspot da unidade faz desta unidade o ponto de acesso. Altere se o telemóvel não encontrar esta unidade.</string>
@@ -1909,4 +1937,17 @@
     <string name="usb_wireless_dongle_help">Ative esta opção se utiliza um adaptador USB sem fios como AAWireless ou Carlinkit. O Open Headunit não distingue um dongle de um cabo, pelo que esta opção altera os textos do ecrã inicial de cabo para sem fios.</string>
     <string name="home_subtitle_usb_dongle">Sem fios</string>
     <string name="home_action_connect_wireless_dongle">Ligar sem fios</string>
+    <string name="home_wifi_not_connected">Wi-Fi não ligado</string>
+    <string name="home_wifi_off">O Wi-Fi está desligado</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi ligado</string>
+    <string name="home_wifi_scanning">A procurar…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_hotspot_waiting">À espera da zona Wi-Fi do telemóvel…</string>
+    <string name="home_hotspot_not_found">Nenhum Wi-Fi ligado. A zona Wi-Fi do telemóvel está ativa?</string>
+    <string name="home_wifi_hotspot_hint">A zona Wi-Fi do telemóvel está ativa?</string>
+    <string name="home_wifi_off_hint">Ative-o para ligar</string>
 </resources>

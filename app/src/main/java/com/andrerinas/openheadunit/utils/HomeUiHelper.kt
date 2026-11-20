@@ -40,6 +40,7 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.main.BarFitPolicy
 import com.andrerinas.openheadunit.main.HomeColorPolicy
+import com.andrerinas.openheadunit.main.HomeWifiStatusPolicy
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Connection
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Decision
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Status
@@ -91,6 +92,7 @@ object HomeUiHelper {
 
     private val scaledTiles = listOf(
         R.id.usb_button, R.id.wifi_button, R.id.self_mode_button, R.id.settings_button, R.id.exit_button,
+        R.id.sidebar_apps_button,
         // The scroll view keeps the tiles' width, so it scales with them.
         R.id.home_bar_scroll
     )
@@ -101,6 +103,7 @@ object HomeUiHelper {
      */
     private val fittedTiles = listOf(
         R.id.usb_button, R.id.wifi_button, R.id.self_mode_button, R.id.settings_button, R.id.exit_button,
+        R.id.sidebar_apps_button,
         R.id.home_bar_scroll
     )
 
@@ -242,6 +245,9 @@ object HomeUiHelper {
             shape(palette.panel, panelRadius, palette.panelStroke, strokePx)
         rootView.findViewById<ViewGroup>(R.id.exit_button)?.let {
             paintTile(it, tileBackground(context, palette), palette.textMuted, palette.textMuted)
+        }
+        rootView.findViewById<ViewGroup>(R.id.sidebar_apps_button)?.let {
+            paintTile(it, tileBackground(context, palette), palette.text, palette.text)
         }
         rootView.findViewById<ViewGroup>(R.id.apps_button)?.let {
             val radius = resources.getDimension(R.dimen.home_tile_radius)
@@ -446,6 +452,7 @@ object HomeUiHelper {
         // Exit is pinned under the scroll and shrinks with the tiles, so the room it takes now
         // (and the gap above it) counts as room the tiles and Exit share.
         val exit = rootView.findViewById<View>(R.id.exit_button)?.takeIf { it.visibility == View.VISIBLE }
+            ?: rootView.findViewById<View>(R.id.sidebar_apps_button)?.takeIf { it.visibility == View.VISIBLE }
         val available = scroll.height - tiles.paddingTop - tiles.paddingBottom +
             (exit?.let { it.height + gapPx } ?: 0)
         val fixedPx = gapPx * (visible.size - 1) + (if (exit != null) gapPx else 0)
@@ -481,7 +488,7 @@ object HomeUiHelper {
                 (0 until group.childCount).map { group.getChildAt(it) }.filterIsInstance<WordFitTextView>().firstOrNull()
             } ?: return@maxOfOrNull tilePx
             val name = label.getTag(R.id.home_tile_name) as? CharSequence ?: label.text
-            val connection = tile.id != R.id.settings_button && tile.id != R.id.exit_button
+            val connection = tile.id != R.id.settings_button && tile.id != R.id.exit_button && tile.id != R.id.sidebar_apps_button
             val texts = if (connection) listOf(name) + states else listOf(name)
             label.tileWidthForWholeWords(texts, tilePx, maxPx)
         } ?: tilePx
@@ -559,7 +566,14 @@ object HomeUiHelper {
         kicker?.text = context.getString(kickerRes(decision, usbAsWireless))
         title?.text = title(context, decision, phoneName, usbAsWireless)
         subtitle?.text = stage?.let { context.getString(it.label) } ?: context.getString(subtitleRes(decision, usbAsWireless))
-        action?.text = context.getString(actionRes(decision, usbAsWireless))
+        val actionLabel = context.getString(actionRes(decision, usbAsWireless))
+        action?.contentDescription = actionLabel
+        // fitCardWidth() may have dropped the icon for a card too narrow for icon and label.
+        val actionIconFittedOff = action?.getTag(R.id.home_action_icon_fit) == contentWidthOf(rootView)
+        if (!actionIconFittedOff) action?.setTag(R.id.home_action_icon_fit, null)
+        fun actionText(@ColorInt color: Int): CharSequence =
+            if (actionIconFittedOff) actionLabel
+            else withLeadingIcon(context, actionIconRes(decision, usbAsWireless), actionLabel, color)
         // Nothing to start while a connection is on its way; Cancel is the one thing left to do.
         action?.visibility = if (connecting) View.GONE else View.VISIBLE
         icon?.setImageResource(iconRes(decision.primary))
@@ -587,7 +601,8 @@ object HomeUiHelper {
         val resources = context.resources
         val panelRadius = resources.getDimension(R.dimen.home_panel_radius)
         val tileRadius = resources.getDimension(R.dimen.home_tile_radius)
-        val ctaRadius = resources.getDimension(R.dimen.home_cta_height) / 3.5f
+        // A pill, led by an icon.
+        val ctaRadius = resources.getDimension(R.dimen.home_cta_height) / 2f
         val cancelRadius = resources.getDimension(R.dimen.home_secondary_cta_height) / 2f
         val iconTile = rootView.findViewById<View>(R.id.home_primary_icon_tile)
 
@@ -599,8 +614,11 @@ object HomeUiHelper {
             icon?.clearColorFilter()
             listOf(kicker, title, subtitle, detail).forEach { it?.setTextColor(Color.WHITE) }
             action?.apply {
-                background = pressable(Color.WHITE, ctaRadius, palette)
-                setTextColor(ColorUtils.darkenColor(color, 0.66f))
+                // White with a breath of the connection's color, so it belongs to the card.
+                background = pressable(blend(Color.WHITE, color, ACTION_TINT), ctaRadius, palette)
+                val labelColor = ColorUtils.darkenColor(color, 0.66f)
+                setTextColor(labelColor)
+                text = actionText(labelColor)
             }
             cancel?.apply {
                 background = pressable(shade, cancelRadius, palette)
@@ -630,9 +648,11 @@ object HomeUiHelper {
                     mask = { rounded(Color.WHITE, ctaRadius) }
                 )
                 setTextColor(color)
+                text = actionText(color)
             } else {
                 background = pressable(color, ctaRadius, palette)
                 setTextColor(readableOn(color))
+                text = actionText(readableOn(color))
             }
         }
         cancel?.apply {
@@ -646,21 +666,305 @@ object HomeUiHelper {
     }
 
     /**
+     * The card while the main button waits for the unit to join the phone's hotspot: the
+     * subtitle says so, and Cancel stands where the main button was, since pressing that again
+     * would only ask for the same thing. Runs after [applyPrimaryCard], whose choices it leaves
+     * alone when there is no wait.
+     */
+    fun applyHotspotWait(context: Context, rootView: View, waiting: Boolean) {
+        if (!waiting) return
+        rootView.findViewById<TextView>(R.id.home_primary_subtitle)?.text = context.getString(R.string.home_hotspot_waiting)
+        rootView.findViewById<View>(R.id.home_primary_action)?.visibility = View.GONE
+        rootView.findViewById<View>(R.id.home_primary_cancel)?.visibility = View.VISIBLE
+    }
+
+    /**
+     * The WiFi line beside the main card's icon, for Headunit Server on the phone's hotspot. Runs
+     * after [applyPrimaryCard], whose icon it swaps for "WiFi off" while this unit is not on WiFi,
+     * and for a turning ring while a scan is out. A HIDDEN line hides it. Painted with the same
+     * helpers as the card, so the day, night and extreme dark palettes carry over.
+     */
+    fun applyWifiStatus(
+        context: Context,
+        rootView: View,
+        settings: Settings,
+        decision: Decision,
+        palette: Palette,
+        line: HomeWifiStatusPolicy.Line,
+        scanning: Boolean,
+    ) {
+        val status = rootView.findViewById<View>(R.id.home_wifi_status) ?: return
+        val icon = rootView.findViewById<ImageView>(R.id.home_primary_icon)
+        val shown = line.kind != HomeWifiStatusPolicy.Kind.HIDDEN
+        status.visibility = if (shown) View.VISIBLE else View.GONE
+        // Only while it can help: a scan still out once the unit has joined says nothing.
+        icon?.let { spinScanIcon(context, it, scanning && line.needsAttention) }
+        if (!shown) return
+
+        val name = rootView.findViewById<TextView>(R.id.home_wifi_name)
+        val warning = rootView.findViewById<View>(R.id.home_wifi_warning)
+        val band = rootView.findViewById<TextView>(R.id.home_wifi_band)
+        val bars = rootView.findViewById<ImageView>(R.id.home_wifi_bars)
+        val meta = rootView.findViewById<TextView>(R.id.home_wifi_meta)
+        val connected = line.kind == HomeWifiStatusPolicy.Kind.CONNECTED
+        val contentWidth = contentWidthOf(rootView)
+
+        name?.text = when (line.kind) {
+            HomeWifiStatusPolicy.Kind.OFF -> context.getString(R.string.home_wifi_off)
+            HomeWifiStatusPolicy.Kind.NOT_CONNECTED -> context.getString(R.string.home_wifi_not_connected)
+            else -> line.ssid ?: context.getString(R.string.home_wifi_connected_unnamed)
+        }
+        warning?.visibility = if (line.needsAttention) View.VISIBLE else View.GONE
+        val bandText = when (line.band) {
+            HomeWifiStatusPolicy.Band.GHZ_2_4 -> context.getString(R.string.home_wifi_band_24)
+            HomeWifiStatusPolicy.Band.GHZ_5 -> context.getString(R.string.home_wifi_band_5)
+            HomeWifiStatusPolicy.Band.GHZ_6 -> context.getString(R.string.home_wifi_band_6)
+            null -> null
+        }
+        band?.text = bandText
+        band?.visibility = if (connected && bandText != null) View.VISIBLE else View.GONE
+        bars?.setImageResource(WIFI_BARS[line.bars])
+        // fitCardWidth() may have taken the bars off a narrow card; the percentage says the same.
+        val barsFittedOff = meta?.getTag(R.id.home_wifi_meta_fit) == contentWidth &&
+            bars?.getTag(R.id.home_wifi_meta_fit) == true
+        if (!barsFittedOff) bars?.setTag(R.id.home_wifi_meta_fit, null)
+        bars?.visibility = if (connected && line.signalPercent != null && !barsFittedOff) View.VISIBLE else View.GONE
+        meta?.text = when {
+            !connected && scanning -> context.getString(R.string.home_wifi_scanning)
+            line.kind == HomeWifiStatusPolicy.Kind.OFF -> context.getString(R.string.home_wifi_off_hint)
+            line.kind == HomeWifiStatusPolicy.Kind.NOT_CONNECTED -> context.getString(R.string.home_wifi_hotspot_hint)
+            else -> line.signalPercent?.let { context.getString(R.string.home_wifi_signal, it) } ?: ""
+        }
+        // Words a hint may wrap at; the percentage is never broken. Not by its spaces: Japanese,
+        // Chinese and Thai write a hint without any.
+        meta?.setTag(R.id.home_wifi_meta, !connected)
+        if (!connected && !scanning) icon?.setImageResource(R.drawable.ic_wifi_off_white)
+        status.contentDescription = context.getString(
+            R.string.home_wifi_status_description,
+            listOfNotNull(name?.text, bandText, meta?.text?.takeIf { it.isNotEmpty() }).joinToString(", ")
+        )
+
+        // Full size again, unless fitCardWidth() stepped down for the width the card still has:
+        // undoing that on every render would make a narrow card jump each time the home redraws.
+        val res = context.resources
+        rootView.findViewById<View>(R.id.home_primary_header_spacer)?.let { spacer ->
+            if (spacer.getTag(R.id.home_wifi_meta_fit) != contentWidth) {
+                spacer.setTag(R.id.home_wifi_meta_fit, null)
+                spacer.visibility = View.VISIBLE
+            }
+        }
+        if (name?.getTag(R.id.home_wifi_name) != contentWidth) {
+            name?.setTag(R.id.home_wifi_name, null)
+            name?.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimension(R.dimen.home_wifi_name_text))
+            name?.maxLines = 1
+        }
+        if (meta?.getTag(R.id.home_wifi_meta_fit) != contentWidth) {
+            meta?.setTag(R.id.home_wifi_meta_fit, null)
+            meta?.maxLines = 1
+        }
+
+        val color = connectionColor(settings, decision.primary, palette)
+        val radius = context.resources.getDimension(R.dimen.home_cta_height) / 2f
+        val textColor: Int
+        val mutedColor: Int
+        if (!palette.isDark) {
+            textColor = Color.WHITE
+            mutedColor = withAlpha(Color.WHITE, 0xCC)
+            band?.setTextColor(Color.WHITE)
+            band?.background = rounded(withAlpha(Color.WHITE, 0x24), radius)
+        } else {
+            textColor = palette.text
+            mutedColor = palette.textMuted
+            // The connection's color washes the chip; the label stays the readable text color.
+            band?.setTextColor(palette.text)
+            band?.background = rounded(withAlpha(color, BAND_WASH_ALPHA_DARK), radius)
+        }
+        name?.setTextColor(textColor)
+        meta?.setTextColor(mutedColor)
+        bars?.setColorFilter(mutedColor, PorterDuff.Mode.SRC_IN)
+    }
+
+    /**
+     * While a scan is out the card's icon gives way to an open ring that turns, a turn every 0.9 s;
+     * with animations off it stands still. One animator per icon, kept on the view. Once the scan
+     * is over the icon [applyPrimaryCard] and [applyWifiStatus] chose stands upright again.
+     */
+    private fun spinScanIcon(context: Context, icon: ImageView, scanning: Boolean) {
+        val running = icon.getTag(R.id.home_wifi_scan_spin) as? ValueAnimator
+        if (!scanning) {
+            running?.cancel()
+            icon.setTag(R.id.home_wifi_scan_spin, null)
+            icon.rotation = 0f
+            return
+        }
+        icon.setImageResource(R.drawable.ic_wifi_scanning_white)
+        if (running != null || !animationsEnabled(context)) return
+        val spin = ValueAnimator.ofFloat(0f, 360f).apply {
+            duration = SCAN_SPIN_MS
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = android.view.animation.LinearInterpolator()
+            addUpdateListener { icon.rotation = it.animatedValue as Float }
+        }
+        icon.setTag(R.id.home_wifi_scan_spin, spin)
+        spin.start()
+    }
+
+    /**
+     * After layout, for a card narrower than it was drawn for, one step per layout. The main
+     * button drops its icon when icon and label together are cut (a portrait phone, in a language
+     * with long words): the label is what the button says. Then the WiFi line, if shown: it first
+     * takes the header spacer's share, then its name steps down to the subtitle size and takes two
+     * lines, and the line under it drops the bars and (a hint, never the percentage) takes two
+     * lines, then three. Each holds while the card keeps its width. Returns whether anything changed, so
+     * the caller lays out again.
+     */
+    fun fitCardWidth(context: Context, rootView: View): Boolean {
+        val res = context.resources
+        val width = contentWidthOf(rootView)
+        val action = rootView.findViewById<TextView>(R.id.home_primary_action)
+        if (action?.visibility == View.VISIBLE && action.layout != null &&
+            action.getTag(R.id.home_action_icon_fit) != width &&
+            action.text != action.contentDescription && action.contentDescription != null &&
+            (0 until action.layout.lineCount).any { action.layout.getEllipsisCount(it) > 0 }
+        ) {
+            action.text = action.contentDescription
+            action.setTag(R.id.home_action_icon_fit, width)
+            return true
+        }
+        val name = rootView.findViewById<TextView>(R.id.home_wifi_name)
+        val smaller = res.getDimension(R.dimen.home_card_subtitle)
+        if (rootView.findViewById<View>(R.id.home_wifi_status)?.visibility != View.VISIBLE) return false
+        val nameCut = name?.visibility == View.VISIBLE && name.layout != null &&
+            (0 until name.layout.lineCount).any { name.layout.getEllipsisCount(it) > 0 }
+        val meta = rootView.findViewById<TextView>(R.id.home_wifi_meta)
+        val bars = rootView.findViewById<View>(R.id.home_wifi_bars)
+        val metaCut = meta?.visibility == View.VISIBLE && meta.layout != null && meta.text.isNotEmpty() &&
+            (meta.width == 0 || (0 until meta.layout.lineCount).any { meta.layout.getEllipsisCount(it) > 0 })
+        // First the WiFi line takes the spacer's share of the header row (a portrait card).
+        val spacer = rootView.findViewById<View>(R.id.home_primary_header_spacer)
+        if ((nameCut || metaCut) && spacer?.visibility == View.VISIBLE) {
+            spacer.visibility = View.GONE
+            spacer.setTag(R.id.home_wifi_meta_fit, width)
+            return true
+        }
+        if (nameCut && name!!.textSize > smaller) {
+            name.setTextSize(TypedValue.COMPLEX_UNIT_PX, smaller)
+            name.setTag(R.id.home_wifi_name, width)
+            return true
+        }
+        if (nameCut && name!!.maxLines < 2) {
+            // Still too long at the smaller size (a portrait phone): two lines rather than a cut.
+            name.maxLines = 2
+            name.setTag(R.id.home_wifi_name, width)
+            return true
+        }
+        // The line under the name: the bars go first, since the percentage beside them says the
+        // same; then a hint may take two lines, then three. The percentage is never broken.
+        if (metaCut && bars?.visibility == View.VISIBLE) {
+            bars.visibility = View.GONE
+            bars.setTag(R.id.home_wifi_meta_fit, true)
+            meta!!.setTag(R.id.home_wifi_meta_fit, width)
+            return true
+        }
+        if (metaCut && meta!!.maxLines < 3 && meta.getTag(R.id.home_wifi_meta) == true) {
+            meta.maxLines += 1
+            meta.setTag(R.id.home_wifi_meta_fit, width)
+            return true
+        }
+        return false
+    }
+
+    private fun contentWidthOf(rootView: View): Int =
+        (rootView.findViewById<View>(R.id.home_primary_actions)?.parent as? View)?.width ?: 0
+
+    private const val SCAN_SPIN_MS = 900L
+    private const val ACTION_TINT = 0.07f
+    private const val BAND_WASH_ALPHA_DARK = 0x59
+
+    /** What the main button leads with: the link for a connect, the arrow back to a session. */
+    internal fun actionIconRes(decision: Decision, usbAsWireless: Boolean = false): Int = when (decision.status) {
+        Status.ACTIVE_SESSION -> R.drawable.ic_launch_white
+        Status.SEARCHING -> R.drawable.ic_refresh_white
+        Status.RECONNECTING -> R.drawable.ic_link_white
+        else -> when (decision.primary) {
+            Connection.USB -> if (usbAsWireless) R.drawable.ic_link_white else R.drawable.ic_usb_white
+            Connection.WIFI -> R.drawable.ic_link_white
+            Connection.SELF -> R.drawable.ic_launch_white
+        }
+    }
+
+    /**
+     * [label] led by the icon [iconRes] in [color], the size of the main button's icon dimen. In
+     * the text rather than a compound drawable, so the pair stays centered together and still
+     * breaks onto two lines on a narrow phone.
+     */
+    private fun withLeadingIcon(context: Context, iconRes: Int, label: String, @ColorInt color: Int): CharSequence {
+        val icon = androidx.appcompat.content.res.AppCompatResources.getDrawable(context, iconRes)?.mutate()
+            ?: return label
+        val size = context.resources.getDimensionPixelSize(R.dimen.home_cta_icon)
+        icon.setBounds(0, 0, size, size)
+        androidx.core.graphics.drawable.DrawableCompat.setTint(icon, color)
+        val gap = context.resources.getDimensionPixelSize(R.dimen.home_wifi_meta_gap)
+        return android.text.SpannableStringBuilder("\uFFFC").apply {
+            setSpan(LeadingIconSpan(icon, gap), 0, 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            append(label)
+        }
+    }
+
+    /** Draws [icon] centered on the text's line, followed by [gap]. */
+    private class LeadingIconSpan(private val icon: Drawable, private val gap: Int) : android.text.style.ReplacementSpan() {
+        override fun getSize(paint: Paint, text: CharSequence?, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
+            fm?.let { paint.getFontMetricsInt(it) }
+            return icon.bounds.width() + gap
+        }
+
+        override fun draw(
+            canvas: Canvas, text: CharSequence?, start: Int, end: Int,
+            x: Float, top: Int, y: Int, bottom: Int, paint: Paint
+        ) {
+            val fm = paint.fontMetricsInt
+            val centerY = y + (fm.ascent + fm.descent) / 2f
+            canvas.save()
+            canvas.translate(x, centerY - icon.bounds.height() / 2f)
+            icon.draw(canvas)
+            canvas.restore()
+        }
+    }
+
+    /** [from] moved [amount] (0..1) of the way to [to], channel by channel. */
+    private fun blend(@ColorInt from: Int, @ColorInt to: Int, amount: Float): Int {
+        fun ch(shift: Int): Int {
+            val a = (from shr shift) and 0xFF
+            val b = (to shr shift) and 0xFF
+            return (a + (b - a) * amount).toInt().coerceIn(0, 255)
+        }
+        return (0xFF shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
+    private val WIFI_BARS = intArrayOf(
+        R.drawable.ic_wifi_bars_0, R.drawable.ic_wifi_bars_1, R.drawable.ic_wifi_bars_2,
+        R.drawable.ic_wifi_bars_3, R.drawable.ic_wifi_bars_4,
+    )
+
+    /**
      * The apps row, and the area holding it and the widgets, exist only while Open Headunit is the
      * launcher, and the row takes the height the main
      * button's icon would use. With the favorites switched off it keeps "All", the only way left
      * to the other apps.
      */
     fun applyFavoritesVisibility(rootView: View, isLauncherActive: Boolean, showFavorites: Boolean) {
-        // The whole area, not only its rows: an empty area that is still visible keeps the gap
-        // above it, and outside launcher mode the main button then ended short of the driver bar.
+        val widgetsVisible = rootView.findViewById<View>(R.id.home_widgets_scroll)?.visibility == View.VISIBLE
+        val favoritesVisible = isLauncherActive && showFavorites
         rootView.findViewById<View>(R.id.home_favorites_area)?.visibility =
-            if (isLauncherActive) View.VISIBLE else View.GONE
-        rootView.findViewById<View>(R.id.home_favorites)?.visibility = if (isLauncherActive) View.VISIBLE else View.GONE
+            if (isLauncherActive && (showFavorites || widgetsVisible)) View.VISIBLE else View.GONE
+        rootView.findViewById<View>(R.id.home_favorites)?.visibility =
+            if (favoritesVisible) View.VISIBLE else View.GONE
+        // "All" lives in the sidebar in launcher mode (replacing Exit), so keep the row's tile hidden.
+        rootView.findViewById<View>(R.id.apps_button)?.visibility = View.GONE
         rootView.findViewById<View>(R.id.home_primary_icon_tile)?.visibility =
             if (isLauncherActive) View.GONE else View.VISIBLE
         favoriteSlotIds.forEach {
-            rootView.findViewById<View>(it)?.visibility = if (showFavorites) View.VISIBLE else View.GONE
+            rootView.findViewById<View>(it)?.visibility = if (favoritesVisible) View.VISIBLE else View.GONE
         }
     }
 

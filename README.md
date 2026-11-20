@@ -92,6 +92,7 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 - **Google Maps in Portrait Mode:** Touch interactions (searching, scrolling) within Google Maps may not work as expected when using Portrait Mode on some devices. **Fix:** Try reducing the **Pixel density (DPI)** setting to **below 200** (e.g., 190) in the app settings. This often restores full functionality.
 - **Wireless Connection Drops:** If the connection drops frequently, disable **"WiFi Assistant"** or **"Switch between networks"** in your phone's WiFi settings to prevent it from killing the connection due to "no internet." Check battery saving options.
 - **Self-mode on Android 10 (Q) and below:** Google has disabled the automatic wireless projection startup for Android 10 and below in Android Auto versions 16.4 and higher. While Self-mode still works on newer Android versions, it is normally impossible to trigger projection on Android 10 and below directly with recent Google app updates. **Workaround:** You can still use Self-mode on these devices by starting the built-in Android Auto Headunit Server and connecting via Wi-Fi mode (loopback). See the [Troubleshooting Guide](https://github.com/andreknieriem/open-headunit/wiki/Troubleshooting#self-mode-on-android-10-q-and-below) for step-by-step instructions.
+- **Reconnect does nothing until Bluetooth is restarted (Native Mode, Android 12 and older):** After a session ends, the hands-free link to the phone can go dead — the phone stops answering wake pokes, and only toggling Bluetooth on the phone or the unit (or restarting the app) recovers it. Open Headunit now notices the repeated failures and cycles **this unit's own** Bluetooth radio once per attempt, because Android Auto only starts wireless when it sees a Bluetooth connection change. That lever does not exist from Android 13 on, where `BluetoothAdapter.disable()` is a no-op — there the phone has to raise the connection itself. **Fix:** make sure the phone's Bluetooth is on, then open **Settings → Wireless Connection → Re-measure the Bluetooth wake** to clear a stored result that may be holding the cycle back.
 - **WiFi Direct takes a long time to connect:** One user traced this to Google Assistant in Android Auto. With Gemini on newer Android Auto versions it runs smoothly again. We do not know why.
 - **Stuck on "Android Auto is starting":** Check your video codec in the settings, and set it to H.264 if your device does not support H.265. Some devices have a broken H.265 decoder, which leaves the app stuck on this message.
 
@@ -99,6 +100,17 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 - more customization options for the UI and the app itself
 
 ## Changelog
+### 4.1.0-beta1
+- Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
+- Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
+- Allow embedding the projection activity, thanks to @codepdbh
+- Feat: Send volume buttons to the phone, and add speed-dependent volume, thanks to @Megalodon-sharky
+- Feat(usb): add wireless dongle display option for home screen
+- Enable selected Bluetooth adapter before Native AA startup, thanks to @KingHavok
+- Add "Show over lock screen": map and directions while locked, no input to the phone, thanks to @DukeShank
+- Feat(home): move All Apps button to sidebar in launcher mode
+- Display: reconnect in the remembered shape, and redraw instead of stretching when the screen turns, thanks to @tamer1an
+
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar
 - Home: a separate switch for the widgets, and a panel opacity slider

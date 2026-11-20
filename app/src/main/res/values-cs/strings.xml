@@ -342,7 +342,7 @@
     <string name="auto_connect_help">Tyto metody se spouštějí automaticky při otevření aplikace. Zapněte požadované metody a přetažením nastavte jejich pořadí. Použije se první zapnutá metoda, která uspěje.</string>
     <string name="auto_connect_screen_help">Určuje, jak se aplikace po otevření připojí sama. Zapněte požadované metody a přetažením je seřaďte do pořadí zkoušení. Použije se první, která uspěje. Prodleva dá Wi-Fi čas probudit se na pomalém autorádiu. Nic z toho nemění připojení, které spustíte sami. Uložit změny použije.</string>
     <string name="dpi_screen_help">Nastavuje hustotu pixelů, ve které Android Auto vykresluje. Vyšší DPI zvětší ikony a text, takže se na obrazovku vejde méně. Nižší DPI je zmenší, takže se vejde více. Automaticky používá hustotu tohoto zařízení. Nová hodnota platí od dalšího připojení.</string>
-    <string name="keymap_screen_help">Přiřazuje klávesy a tlačítka tohoto autorádia k akcím Android Auto. Klepněte na řádek a stiskněte klávesu, kterou chcete přiřadit. Resetovat odstraní všechna vaše přiřazení a vrátí výchozí nastavení. Použijte to, když klávesa na volantu nebo panelu dělá něco jiného.</string>
+    <string name="keymap_screen_help">Přiřazuje klávesy a tlačítka tohoto autorádia k akcím: klávese Android Auto, akci obrazovky projekce nebo spuštění aplikace. Klepněte na Přidat přiřazení klávesy, stiskněte klávesu a vyberte akci. Klepnutím na přiřazení ho změníte nebo odeberete. Resetovat odstraní všechna přiřazení.</string>
     <string name="customization_screen_help">Mění vzhled domovské obrazovky této aplikace: obrázek na pozadí, barvy a velikost čtyř tlačítek a velikost textu. Noční nastavení řídí pozadí v tmavém režimu. Nic z toho nemění, co Android Auto zobrazuje v projekci.</string>
     <string name="loading_screen_screen_help">Nastavuje obrázek nebo krátké video zobrazené při spouštění Android Auto. Vyberte obrázek nebo video do 10 MB, přizpůsobte je obrazovce a krátké animace přehrávejte ve smyčce. Můžete také skrýt úvodní text. Odebrat vrátí výchozí obrazovku.</string>
     <string name="auto_connect_priority">Priorita %d</string>
@@ -446,6 +446,22 @@
     <string name="key_mappings_reset">Mapování kláves obnoveno</string>
     <string name="press_key_to_assign">Stiskněte klávesu pro přiřazení k \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' přiřazeno k \'%2$s\'</string>
+    <string name="action_picker_title">Vyberte akci</string>
+    <string name="action_remove_binding">Odebrat přiřazení</string>
+    <string name="action_section_projection">Obrazovka projekce</string>
+    <string name="action_section_aa_keys">Klávesy Android Auto</string>
+    <string name="action_section_apps">Aplikace</string>
+    <string name="action_launch_app">Spustit aplikaci…</string>
+    <string name="action_launch_named_app">Spustit %s</string>
+    <string name="action_aa_key_code">Klávesa Android Auto %d</string>
+    <string name="action_selected">Vybráno</string>
+    <string name="action_search_keywords">akce spustit otevřít aplikace zkratka</string>
+    <string name="keymap_add_binding">Přidat přiřazení klávesy</string>
+    <string name="keymap_press_new_key">Stiskněte klávesu nebo tlačítko, které chcete přiřadit…</string>
+    <string name="keymap_no_bindings">Zatím nejsou přiřazeny žádné klávesy. Klepněte na Přidat přiřazení klávesy, stiskněte klávesu a vyberte, co má dělat.</string>
+    <string name="keymap_bindings_header">Přiřazení kláves</string>
+    <string name="keymap_tester_hint">Stiskněte libovolnou klávesu nebo tlačítko na volantu a uvidíte zde jeho název a kód.</string>
+    <string name="keymap_tester_last">Poslední klávesa: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Poslední stisk klávesy: %1$s (%2$d)</string>
     <string name="scan">Skenovat</string>
     <string name="scanning_network">Skenování sítě…</string>
@@ -683,6 +699,14 @@
     <string name="server_mode_manual">Ruční</string>
     <string name="server_mode_auto">Automaticky</string>
     <string name="server_mode_help">Automaticky hledá v síti server autorádia v telefonu a připojí se samo. Ruční nehledá. Připojíte se ze seznamu sítí nebo adresou telefonu.</string>
+    <string name="headunit_server_network_label">Způsob připojení</string>
+    <string name="headunit_server_network_phone">Hotspot telefonu</string>
+    <string name="headunit_server_network_unit">Hotspot jednotky</string>
+    <string name="headunit_server_network_shared">Společná Wi-Fi</string>
+    <string name="headunit_server_network_help">Kterou Wi-Fi sdílí telefon a tato jednotka. Hotspot telefonu: tato jednotka se připojí k hotspotu telefonu. Do té doby hledání telefonu čeká a Připojit přes WiFi nejdřív hledá hotspot. Hotspot jednotky: telefon se připojí k přístupovému bodu této jednotky. Společná Wi-Fi: oba jsou na stejném routeru a nic se nemění.</string>
+    <string name="headunit_server_auto_wifi_scan">Hledat hotspot automaticky</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Dokud je zobrazená domovská obrazovka a není připojena Wi-Fi.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Dokud je zobrazená domovská obrazovka a tato jednotka není v žádné síti Wi-Fi, požádá Android o hledání Wi-Fi: hned, dvě minuty každých 35 sekund, pak jednou za minutu. Jednotka se tak dřív připojí k hotspotu telefonu. Android povoluje čtyři hledání za dvě minuty a na pozadí žádné.</string>
 
     <string name="helper_strategy_label">Metoda připojení pomocníka</string>
     <string name="helper_strategy_help">Určuje, jak telefon a toto autorádio sdílejí síť v režimu Wireless Helper. Společná Wi-Fi používá síť, kterou už sdílejí oba. Wi-Fi Direct vytvoří soukromé spojení. Zařízení v okolí je beta. Hotspot telefonu se připojí k hotspotu telefonu. Hotspot autorádia udělá z tohoto autorádia přístupový bod. Změňte ho, když telefon toto autorádio nenajde.</string>
@@ -1308,6 +1332,10 @@
     <string name="raise_projection_during_call">Zůstat v Android Auto během hovorů</string>
     <string name="raise_projection_during_call_description">Pouze samostatný režim. Vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto.</string>
     <string name="raise_projection_during_call_summary">Jen samostatný režim. Zobrazí projekci nad obrazovkou hovoru v telefonu.</string>
+    <string name="show_over_lock_screen">Zobrazit na zamykací obrazovce</string>
+    <string name="show_over_lock_screen_summary">Mapa a navigace zůstanou viditelné i při zamčení. Dotyky a tlačítka nefungují.</string>
+    <string name="show_over_lock_screen_help">Zobrazí obraz Android Auto přes zamykací obrazovku, takže mapu a navigaci lze číst bez odemčení. Dokud je tato jednotka zamčená, do telefonu nic nedorazí: dotyky, tlačítka, otočný ovladač i hlasové tlačítko jsou blokovány a do popředí se přesune mapa. Stiskem Zpět jednotku odemknete pomocí PIN, gesta nebo hesla; poté vše funguje jako obvykle. Hudba, hovory a hlasový asistent v samotném telefonu nejsou ovlivněny.</string>
+    <string name="show_over_lock_screen_locked_toast">Zamčeno: jen mapa. Stiskem Zpět odemknete.</string>
     <string name="audio_stream_settings">Zvukové streamy</string>
     <string name="audio_stream_settings_description">Vyberte systémový stream, na kterém hraje každý kanál Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto posílá zvuk třemi kanály: Média, Navigace a Systémové zvuky. Každý se do autorádia dostane určitým systémovým streamem a zvolený stream určuje, kterým tlačítkem hlasitosti se řídí a u řady autorádií i to, zda se pro něj vůbec zapne zesilovač. Tlačítkem reproduktoru si před uložením přehrajte na streamu zkušební tón.</string>
@@ -1857,4 +1885,17 @@
     <string name="usb_wireless_dongle_help">Zapněte, pokud se připojujete přes bezdrátový USB adaptér, například AAWireless nebo Carlinkit. Open Headunit nerozezná adaptér od kabelu, proto tato volba změní popisky na domovské obrazovce na bezdrátové.</string>
     <string name="home_subtitle_usb_dongle">Bezdrátově</string>
     <string name="home_action_connect_wireless_dongle">Připojit bezdrátově</string>
+    <string name="home_wifi_not_connected">Wi-Fi není připojeno</string>
+    <string name="home_wifi_off">Wi-Fi je vypnuté</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi připojeno</string>
+    <string name="home_wifi_scanning">Hledání…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_hotspot_waiting">Čekání na hotspot telefonu…</string>
+    <string name="home_hotspot_not_found">Žádná Wi-Fi není připojena. Je hotspot telefonu zapnutý?</string>
+    <string name="home_wifi_hotspot_hint">Je hotspot telefonu zapnutý?</string>
+    <string name="home_wifi_off_hint">Zapněte ji pro připojení</string>
 </resources>

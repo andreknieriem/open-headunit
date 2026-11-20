@@ -592,7 +592,7 @@
     <string name="auto_connect_help">Ces méthodes s\'exécutent automatiquement à l\'ouverture de l\'application. Activez celles que vous souhaitez, puis faites-les glisser pour définir l\'ordre. La première méthode activée qui réussit est utilisée.</string>
     <string name="auto_connect_screen_help">Définit comment l\'application se connecte seule à son ouverture. Activez les méthodes voulues et faites-les glisser dans l\'ordre d\'essai. La première qui réussit est utilisée. Le délai laisse au WiFi le temps de se réveiller sur un appareil lent. Rien ici ne modifie une connexion que vous lancez vous-même. Enregistrer applique les changements.</string>
     <string name="dpi_screen_help">Définit la densité de pixels utilisée par Android Auto pour dessiner. Un DPI plus élevé agrandit les icônes et le texte, donc moins de contenu tient à l\'écran. Un DPI plus bas les réduit, donc plus de contenu tient. Automatique utilise la densité de cet appareil. La nouvelle valeur s\'applique à la prochaine connexion.</string>
-    <string name="keymap_screen_help">Associe les touches et boutons de cet appareil à des actions d\'Android Auto. Touchez une ligne, puis appuyez sur la touche à assigner. Réinitialiser supprime toutes vos associations et rétablit les valeurs par défaut. Utilisez-le quand une touche du volant ou du panneau fait autre chose que prévu.</string>
+    <string name="keymap_screen_help">Associe les touches et boutons de cet appareil à des actions : une touche Android Auto, une action de l\'écran de projection ou le lancement d\'une app. Touchez « Ajouter une association de touche », appuyez sur la touche, puis choisissez l\'action. Touchez une association pour la modifier ou la supprimer. Réinitialiser supprime toutes les associations.</string>
     <string name="customization_screen_help">Change l\'apparence de l\'écran d\'accueil de cette application : l\'image de fond, les couleurs et la taille des quatre boutons, et la taille du texte. Le réglage nuit gère le fond en mode sombre. Rien de cela ne change ce qu\'Android Auto affiche dans la projection.</string>
     <string name="loading_screen_screen_help">Définit l\'image ou la courte vidéo affichée pendant le démarrage d\'Android Auto. Choisissez une image ou une vidéo de 10 Mo maximum, adaptez-la à l\'écran et mettez les courtes animations en boucle. Vous pouvez aussi masquer le texte de démarrage. Supprimer rétablit l\'écran par défaut.</string>
     <string name="auto_connect_priority">Priorité %d</string>
@@ -772,6 +772,22 @@
     <string name="key_mappings_reset">Raccourcis clavier réinitialisés</string>
     <string name="press_key_to_assign">Appuyez sur une touche à assigner à « %s »…</string>
     <string name="key_assigned">« %1$s » assignée à « %2$s »</string>
+    <string name="action_picker_title">Choisir une action</string>
+    <string name="action_remove_binding">Supprimer l\'association</string>
+    <string name="action_section_projection">Écran de projection</string>
+    <string name="action_section_aa_keys">Touches Android Auto</string>
+    <string name="action_section_apps">Applications</string>
+    <string name="action_launch_app">Lancer une app…</string>
+    <string name="action_launch_named_app">Lancer %s</string>
+    <string name="action_aa_key_code">Touche Android Auto %d</string>
+    <string name="action_selected">Sélectionné</string>
+    <string name="action_search_keywords">action lancer ouvrir app application raccourci</string>
+    <string name="keymap_add_binding">Ajouter une association de touche</string>
+    <string name="keymap_press_new_key">Appuyez sur la touche ou le bouton à associer…</string>
+    <string name="keymap_no_bindings">Aucune touche n\'est associée. Touchez « Ajouter une association de touche », appuyez sur une touche, puis choisissez son action.</string>
+    <string name="keymap_bindings_header">Associations de touches</string>
+    <string name="keymap_tester_hint">Appuyez sur une touche ou un bouton du volant pour voir ici son nom et son code.</string>
+    <string name="keymap_tester_last">Dernière touche : %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Dernière touche pressée : %1$s (%2$d)</string>
     <string name="scan">Scanner</string>
     <string name="scanning_network">Analyse du réseau…</string>
@@ -1065,6 +1081,14 @@
     <string name="server_mode_manual">Manuel</string>
     <string name="server_mode_auto">Auto</string>
     <string name="server_mode_help">Auto cherche sur le réseau le serveur de l\'autoradio sur le téléphone et s\'y connecte seul. Manuel ne cherche pas. Vous vous connectez depuis la liste des réseaux ou avec l\'adresse du téléphone.</string>
+    <string name="headunit_server_network_label">Méthode de connexion</string>
+    <string name="headunit_server_network_phone">Hotspot téléphone</string>
+    <string name="headunit_server_network_unit">Hotspot unité</string>
+    <string name="headunit_server_network_shared">Wi-Fi commun</string>
+    <string name="headunit_server_network_help">Le Wi-Fi que le téléphone et cette unité partagent. Hotspot téléphone : cette unité rejoint le point d’accès du téléphone. D’ici là, la recherche du téléphone attend, et Connexion WiFi cherche d’abord le point d’accès. Hotspot unité : le téléphone rejoint le point d’accès de cette unité. Wi-Fi commun : les deux sont sur le même routeur, et rien ne change.</string>
+    <string name="headunit_server_auto_wifi_scan">Chercher le point d’accès automatiquement</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Tant que l’accueil est affiché et qu’aucun Wi-Fi n’est connecté.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Tant que l’écran d’accueil est affiché et que cette unité n’est connectée à aucun Wi-Fi, elle demande à Android une recherche Wi-Fi : tout de suite, toutes les 35 secondes pendant deux minutes, puis une fois par minute. L’unité rejoint ainsi plus tôt le point d’accès du téléphone. Android autorise quatre recherches en deux minutes, et aucune en arrière-plan.</string>
 
     <string name="helper_strategy_label">Stratégie de connexion de l\'assistant</string>
     <string name="helper_strategy_help">Choisit comment le téléphone et cet appareil partagent un réseau en mode Assistant sans fil. Wifi commun utilise un réseau déjà partagé par les deux. WiFi Direct crée une liaison privée. Google Nearby est en bêta. Point d\'accès du téléphone rejoint le point d\'accès du téléphone. Point d\'accès de l\'autoradio fait de cet appareil le point d\'accès. Changez-le si le téléphone ne trouve pas cet appareil.</string>
@@ -1364,6 +1388,10 @@
     <string name="raise_projection_during_call">Rester dans Android Auto pendant les appels</string>
     <string name="raise_projection_during_call_description">Mode Self uniquement. Ramène la projection par-dessus l\'écran d\'appel du téléphone pour répondre et raccrocher depuis l\'interface Android Auto.</string>
     <string name="raise_projection_during_call_summary">Mode autonome uniquement. Affiche la projection par-dessus l\'écran d\'appel du téléphone.</string>
+    <string name="show_over_lock_screen">Afficher sur l\'écran de verrouillage</string>
+    <string name="show_over_lock_screen_summary">Carte et guidage restent visibles une fois verrouillé. Toucher et touches sans effet.</string>
+    <string name="show_over_lock_screen_help">Affiche l\'image d\'Android Auto par-dessus l\'écran de verrouillage, pour lire la carte et le guidage sans déverrouiller. Tant que cet appareil est verrouillé, rien n\'atteint le téléphone : les appuis, les touches, la molette et la touche vocale sont retenus, et la carte passe au premier plan. Appuyez sur Retour pour déverrouiller avec votre code PIN, schéma ou mot de passe ; ensuite tout fonctionne normalement. La musique, les appels et l\'assistant vocal du téléphone lui-même ne sont pas concernés.</string>
+    <string name="show_over_lock_screen_locked_toast">Verrouillé : carte uniquement. Appuyez sur Retour pour déverrouiller.</string>
     <string name="audio_stream_settings">Flux audio</string>
     <string name="audio_stream_settings_description">Choisissez le flux système sur lequel joue chaque canal Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto envoie l\'audio sur trois canaux : Multimédia, Guidage et Sons système. Chacun parvient à l\'autoradio sur un flux système. Le flux choisi détermine la touche de volume utilisée et, sur de nombreux autoradios, si l\'amplificateur sort du mode muet pour ce canal. Utilisez le bouton haut-parleur pour écouter une tonalité de test sur le flux avant d\'enregistrer.</string>
@@ -1902,4 +1930,17 @@
     <string name="usb_wireless_dongle_help">Activez cette option si vous utilisez un adaptateur USB sans fil comme AAWireless ou Carlinkit. Open Headunit ne peut pas différencier un dongle d’un câble ; cette option remplace donc les libellés câble par sans fil sur l’écran d’accueil.</string>
     <string name="home_subtitle_usb_dongle">Sans fil</string>
     <string name="home_action_connect_wireless_dongle">Connecter sans fil</string>
+    <string name="home_wifi_not_connected">Wi-Fi non connecté</string>
+    <string name="home_wifi_off">Le Wi-Fi est désactivé</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi connecté</string>
+    <string name="home_wifi_scanning">Recherche…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_status_description">Wi-Fi : %1$s</string>
+    <string name="home_hotspot_waiting">En attente du point d’accès du téléphone…</string>
+    <string name="home_hotspot_not_found">Aucun Wi-Fi connecté. Le point d’accès du téléphone est-il activé ?</string>
+    <string name="home_wifi_hotspot_hint">Point d’accès du téléphone activé ?</string>
+    <string name="home_wifi_off_hint">Activez-le pour vous connecter</string>
 </resources>

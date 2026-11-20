@@ -30,15 +30,4 @@
         android:layout_weight="1"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-    <TextView
-        android:id="@+id/keypress_debugger_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="20dp"
-        android:gravity="center"
-        android:text="Press any key to test..."
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="?android:attr/textColorSecondary" />
-
 </LinearLayout>

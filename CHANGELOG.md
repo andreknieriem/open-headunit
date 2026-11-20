@@ -1,10 +1,15 @@
 # Changelog
-### 4.1.0 (upcoming)
+### 4.1.0-beta1
 - Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
 - Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
 - Allow embedding the projection activity, thanks to @codepdbh
 - Feat: Send volume buttons to the phone, and add speed-dependent volume, thanks to @Megalodon-sharky
 - Feat(usb): add wireless dongle display option for home screen
+- Enable selected Bluetooth adapter before Native AA startup, thanks to @KingHavok
+- Add "Show over lock screen": map and directions while locked, no input to the phone, thanks to @DukeShank
+- Feat(home): move All Apps button to sidebar in launcher mode
+- Display: reconnect in the remembered shape, and redraw instead of stretching when the screen turns, thanks to @tamer1an
+- Feat(wifi): Headunit Server asks which network the phone and the unit share. On the phone's hotspot the search waits for the unit to join it, Connect over WiFi scans for the hotspot first, and the main card shows the WiFi network, band and signal; an optional automatic scan helps a slow unit join. The main button becomes a pill led by an icon
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

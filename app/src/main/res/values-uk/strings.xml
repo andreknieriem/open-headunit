@@ -342,7 +342,7 @@
     <string name="auto_connect_help">Ці методи запускаються автоматично при відкритті застосунку. Увімкніть потрібні та перетягніть для встановлення порядку. Буде використано перший увімкнений метод, який спрацює.</string>
     <string name="auto_connect_screen_help">Визначає, як застосунок підключається сам під час відкриття. Увімкніть потрібні способи й перетягніть їх у порядку спроб. Використовується перший успішний. Затримка дає Wi-Fi час прокинутися на повільному пристрої. Ніщо тут не змінює підключення, яке ви запускаєте самі. Кнопка «Зберегти» застосовує зміни.</string>
     <string name="dpi_screen_help">Задає щільність пікселів, з якою малює Android Auto. Більший DPI збільшує значки й текст, тому на екрані вміщується менше. Менший DPI зменшує їх, і вміщується більше. «Автоматично» бере щільність цього пристрою. Нове значення діє з наступного підключення.</string>
-    <string name="keymap_screen_help">Призначає клавіші й кнопки цього пристрою на дії Android Auto. Торкніться рядка й натисніть клавішу для призначення. «Скинути» видаляє всі ваші призначення й повертає типові значення. Скористайтеся цим, якщо клавіша на кермі чи панелі робить не те.</string>
+    <string name="keymap_screen_help">Призначає клавіші й кнопки цього пристрою на дії: клавішу Android Auto, дію екрана проєкції або запуск додатка. Торкніться «Додати призначення клавіші», натисніть клавішу й виберіть дію. Торкніться призначення, щоб змінити або видалити його. «Скинути» видаляє всі призначення.</string>
     <string name="customization_screen_help">Змінює вигляд головного екрана застосунку: фонове зображення, кольори та розмір чотирьох кнопок і розмір тексту. Нічне налаштування задає тло в темному режимі. Ніщо з цього не змінює того, що Android Auto показує в проєкції.</string>
     <string name="loading_screen_screen_help">Задає зображення або коротке відео, що показується під час запуску Android Auto. Виберіть зображення чи відео до 10 МБ, масштабуйте його під екран і ввімкніть повтор для короткої анімації. Можна також сховати текст запуску. «Видалити» повертає типовий екран.</string>
     <string name="auto_connect_priority">Пріоритет %d</string>
@@ -446,6 +446,22 @@
     <string name="key_mappings_reset">Розкладку клавіш скинуто</string>
     <string name="press_key_to_assign">Натисніть клавішу, яку потрібно призначити для «%s»…</string>
     <string name="key_assigned">Клавішу «%1$s» призначено для «%2$s»</string>
+    <string name="action_picker_title">Виберіть дію</string>
+    <string name="action_remove_binding">Видалити призначення</string>
+    <string name="action_section_projection">Екран проєкції</string>
+    <string name="action_section_aa_keys">Клавіші Android Auto</string>
+    <string name="action_section_apps">Додатки</string>
+    <string name="action_launch_app">Запустити додаток…</string>
+    <string name="action_launch_named_app">Запустити %s</string>
+    <string name="action_aa_key_code">Клавіша Android Auto %d</string>
+    <string name="action_selected">Вибрано</string>
+    <string name="action_search_keywords">дія запустити відкрити додаток ярлик</string>
+    <string name="keymap_add_binding">Додати призначення клавіші</string>
+    <string name="keymap_press_new_key">Натисніть клавішу або кнопку, яку хочете призначити…</string>
+    <string name="keymap_no_bindings">Клавіші ще не призначено. Торкніться «Додати призначення клавіші», натисніть клавішу й виберіть, що вона робить.</string>
+    <string name="keymap_bindings_header">Призначення клавіш</string>
+    <string name="keymap_tester_hint">Натисніть будь-яку клавішу або кнопку на кермі, щоб побачити тут її назву й код.</string>
+    <string name="keymap_tester_last">Остання клавіша: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Останнє натискання: %1$s (%2$d)</string>
     <string name="scan">Сканувати</string>
     <string name="scanning_network">Сканування мережі…</string>
@@ -684,6 +700,14 @@
     <string name="server_mode_manual">Вручну</string>
     <string name="server_mode_auto">Авто</string>
     <string name="server_mode_help">«Авто» шукає в мережі сервер головного пристрою на телефоні й підключається сам. «Вручну» не шукає. Ви підключаєтеся зі списку мереж або за адресою телефона.</string>
+    <string name="headunit_server_network_label">Спосіб підключення</string>
+    <string name="headunit_server_network_phone">Точка телефона</string>
+    <string name="headunit_server_network_unit">Точка пристрою</string>
+    <string name="headunit_server_network_shared">Спільний Wi-Fi</string>
+    <string name="headunit_server_network_help">Який Wi-Fi спільний для телефона й цього пристрою. Точка телефона: пристрій підключається до точки доступу телефона. До того пошук телефона чекає, а «Підключити через Wi-Fi» спершу шукає точку доступу. Точка пристрою: телефон підключається до точки доступу цього пристрою. Спільний Wi-Fi: обидва в одному роутері, нічого не змінюється.</string>
+    <string name="headunit_server_auto_wifi_scan">Шукати точку доступу автоматично</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Поки відкрито головний екран і Wi-Fi не підключено.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Поки відкрито головний екран і пристрій не підключено до жодної мережі Wi-Fi, він просить Android виконати пошук Wi-Fi: одразу, кожні 35 секунд протягом двох хвилин, потім раз на хвилину. Так пристрій раніше підключається до точки доступу телефона. Android дозволяє чотири пошуки за дві хвилини і жодного у фоні.</string>
 
     <string name="helper_strategy_label">Метод підключення (Helper)</string>
     <string name="helper_strategy_help">Обирає, як телефон і цей пристрій ділять мережу в режимі Wireless Helper. «Спільний Wi-Fi» використовує мережу, у якій уже є обидва. Wi-Fi Direct створює приватне з\'єднання. «Пристрої поруч» перебувають в бета-версії. «Точка доступу телефона» приєднується до точки доступу телефона. «Точка доступу магнітоли» робить цей пристрій точкою доступу. Змініть спосіб, якщо телефон не знаходить цей пристрій.</string>
@@ -1309,6 +1333,10 @@
     <string name="raise_projection_during_call">Залишатися в Android Auto під час дзвінків</string>
     <string name="raise_projection_during_call_description">Лише Самостійний режим. Повертає проєкцію поверх екрана виклику телефону, щоб відповідати на дзвінки та завершувати їх в інтерфейсі Android Auto.</string>
     <string name="raise_projection_during_call_summary">Лише в автономному режимі. Показує проєкцію поверх екрана дзвінка на телефоні.</string>
+    <string name="show_over_lock_screen">Показувати поверх екрана блокування</string>
+    <string name="show_over_lock_screen_summary">Карта й маршрут видно і під час блокування. Дотики та кнопки не діють.</string>
+    <string name="show_over_lock_screen_help">Показує зображення Android Auto поверх екрана блокування, щоб карту й маршрут можна було бачити без розблокування. Поки цей пристрій заблоковано, на телефон нічого не передається: дотики, кнопки, поворотний контролер і кнопка голосу затримуються, а карта виводиться на передній план. Натисніть «Назад», щоб розблокувати за допомогою PIN-коду, ключа або пароля; після цього все працює як зазвичай. Музика, дзвінки та голосовий помічник на самому телефоні не зачіпаються.</string>
+    <string name="show_over_lock_screen_locked_toast">Заблоковано: лише карта. Натисніть «Назад», щоб розблокувати.</string>
     <string name="audio_stream_settings">Аудіопотоки</string>
     <string name="audio_stream_settings_description">Виберіть системний потік, через який відтворюється кожен канал Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto передає звук трьома каналами: «Мультимедіа», «Підказки» та «Системні звуки». Кожен потрапляє до магнітоли через системний потік, і вибраний потік визначає, якій кнопці гучності він підпорядковується та, на багатьох магнітолах, чи ввімкнеться для нього підсилювач узагалі. Натисніть кнопку динаміка, щоб почути тестовий сигнал на потоці перед збереженням.</string>
@@ -1860,4 +1888,17 @@
     <string name="usb_wireless_dongle_help">Увімкніть, якщо підключаєтеся через бездротовий USB-адаптер, як-от AAWireless або Carlinkit. Open Headunit не може відрізнити адаптер від кабелю, тому цей параметр змінює підписи на головному екрані з кабелю на бездротове з’єднання.</string>
     <string name="home_subtitle_usb_dongle">Бездротово</string>
     <string name="home_action_connect_wireless_dongle">Підключити бездротово</string>
+    <string name="home_wifi_not_connected">Wi-Fi не підключено</string>
+    <string name="home_wifi_off">Wi-Fi вимкнено</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi підключено</string>
+    <string name="home_wifi_scanning">Пошук…</string>
+    <string name="home_wifi_band_24">2,4 ГГц</string>
+    <string name="home_wifi_band_5">5 ГГц</string>
+    <string name="home_wifi_band_6">6 ГГц</string>
+    <string name="home_wifi_signal">%1$d %%</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_hotspot_waiting">Очікування точки доступу телефона…</string>
+    <string name="home_hotspot_not_found">Wi-Fi не підключено. Чи ввімкнено точку доступу телефона?</string>
+    <string name="home_wifi_hotspot_hint">Чи ввімкнено точку доступу телефона?</string>
+    <string name="home_wifi_off_hint">Увімкніть для підключення</string>
 </resources>

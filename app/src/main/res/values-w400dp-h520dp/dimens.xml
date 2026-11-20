@@ -47,4 +47,14 @@
     <dimen name="home_widget_padding">10dp</dimen>
     <dimen name="home_widget_strip_min">72dp</dimen>
     <dimen name="home_widget_strip_max">220dp</dimen>
+    <!-- Headunit Server's WiFi line beside the main card's icon. -->
+    <dimen name="home_wifi_status_gap">18dp</dimen>
+    <dimen name="home_wifi_dot">10dp</dimen>
+    <dimen name="home_wifi_meta_gap">10dp</dimen>
+    <dimen name="home_wifi_chip_padding_h">10dp</dimen>
+    <dimen name="home_wifi_bars_width">24dp</dimen>
+    <dimen name="home_wifi_bars_height">20dp</dimen>
+    <!-- The network name, and the icon the main button leads with (the size of its label). -->
+    <dimen name="home_wifi_name_text">32sp</dimen>
+    <dimen name="home_cta_icon">38dp</dimen>
 </resources>

@@ -341,7 +341,7 @@
     <string name="auto_connect_help">这些方式会在应用打开时自动执行。启用您想要的方式，然后拖动以设置顺序。系统会使用第一个成功的已启用方式。</string>
     <string name="auto_connect_screen_help">设置应用打开时如何自动连接。开启所需的方式，并拖动排列尝试顺序。使用第一个成功的方式。延迟可让速度较慢的车机有时间唤醒 Wi-Fi。这里的设置不会影响你自己发起的连接。点按“保存”即可应用更改。</string>
     <string name="dpi_screen_help">设置 Android Auto 绘制时使用的像素密度。DPI 越高，图标和文字越大，屏幕容纳的内容越少。DPI 越低，图标和文字越小，容纳的内容越多。“自动”使用本设备的密度。新值将在下次连接时生效。</string>
-    <string name="keymap_screen_help">将本车机的按键映射到 Android Auto 操作。点按一行，然后按下要分配的按键。“重置”会删除你的所有映射并恢复默认值。方向盘或面板按键响应错误时可使用。</string>
+    <string name="keymap_screen_help">将本车机的按键绑定到操作：Android Auto 按键、投屏界面操作或启动应用。点按“添加按键绑定”，按下按键，然后选择操作。点按某个绑定可更改或移除它。“重置”会移除所有绑定。</string>
     <string name="customization_screen_help">更改本应用主屏幕的外观：背景图片、四个按钮的颜色和大小，以及文字大小。夜间设置控制深色模式下的背景。这些都不会改变 Android Auto 在投屏中显示的内容。</string>
     <string name="loading_screen_screen_help">设置 Android Auto 启动时显示的图片或短视频。可选择不超过 10 MB 的图片或视频，缩放以适应屏幕，并循环播放短动画。也可以隐藏启动文字。“移除”会恢复默认屏幕。</string>
     <string name="auto_connect_priority">优先级 %d</string>
@@ -445,6 +445,22 @@
     <string name="key_mappings_reset">按键映射已重置</string>
     <string name="press_key_to_assign">按下按键以分配给 \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' 已分配给 \'%2$s\'</string>
+    <string name="action_picker_title">选择操作</string>
+    <string name="action_remove_binding">移除绑定</string>
+    <string name="action_section_projection">投屏界面</string>
+    <string name="action_section_aa_keys">Android Auto 按键</string>
+    <string name="action_section_apps">应用</string>
+    <string name="action_launch_app">启动应用…</string>
+    <string name="action_launch_named_app">启动 %s</string>
+    <string name="action_aa_key_code">Android Auto 按键 %d</string>
+    <string name="action_selected">已选择</string>
+    <string name="action_search_keywords">操作 启动 打开 应用 快捷方式</string>
+    <string name="keymap_add_binding">添加按键绑定</string>
+    <string name="keymap_press_new_key">请按下要绑定的按键或按钮…</string>
+    <string name="keymap_no_bindings">尚未绑定任何按键。点按“添加按键绑定”，按下按键，然后选择它的操作。</string>
+    <string name="keymap_bindings_header">按键绑定</string>
+    <string name="keymap_tester_hint">按下任意按键或方向盘按钮，即可在此查看其名称和代码。</string>
+    <string name="keymap_tester_last">最后按键：%1$s（%2$d），%3$s</string>
     <string name="last_key_press">上次按键：%1$s (%2$d)</string>
     <string name="scan">扫描</string>
     <string name="scanning_network">正在扫描网络…</string>
@@ -683,6 +699,14 @@
     <string name="server_mode_manual">手动</string>
     <string name="server_mode_auto">自动</string>
     <string name="server_mode_help">“自动”会在网络中搜索手机上的车机服务器并自动连接。“手动”不搜索。你可以从网络列表连接，或使用手机的地址连接。</string>
+    <string name="headunit_server_network_label">连接方式</string>
+    <string name="headunit_server_network_phone">手机热点</string>
+    <string name="headunit_server_network_unit">本机热点</string>
+    <string name="headunit_server_network_shared">共用 WLAN</string>
+    <string name="headunit_server_network_help">手机和本机共用哪个 WLAN。手机热点：本机连接手机的热点。在连上之前，查找手机会等待，“通过 WiFi 连接”会先扫描热点。本机热点：手机连接本机的接入点。共用 WLAN：两者连在同一个路由器上，一切照旧。</string>
+    <string name="headunit_server_auto_wifi_scan">自动扫描热点</string>
+    <string name="headunit_server_auto_wifi_scan_summary">主屏幕显示中且未连接 WLAN 时。</string>
+    <string name="headunit_server_auto_wifi_scan_help">主屏幕显示中且本机未连接任何 WLAN 网络时，会请求 Android 扫描 WLAN：立即一次，两分钟内每 35 秒一次，之后每分钟一次。这样本机能更快连上手机热点。Android 允许两分钟内扫描四次，后台不允许扫描。</string>
 
     <string name="helper_strategy_label">助手连接策略</string>
     <string name="helper_strategy_help">选择在唤醒助手模式下手机与本车机如何共用网络。“普通 Wifi”使用双方已共用的网络。WiFi Direct 建立专用链路。“搜索附近设备”为测试版。“手机热点”加入手机的热点。“车机热点”将本车机作为接入点。手机找不到本车机时再更改。</string>
@@ -1304,6 +1328,10 @@
     <string name="raise_projection_during_call">通话期间停留在 Android Auto</string>
     <string name="raise_projection_during_call_description">仅限本机模式。将投屏画面重新显示在手机的通话界面之上，这样就能在 Android Auto 界面中接听和结束通话。</string>
     <string name="raise_projection_during_call_summary">仅限独立模式。在手机的通话界面上方显示投屏。</string>
+    <string name="show_over_lock_screen">在锁屏上显示</string>
+    <string name="show_over_lock_screen_summary">锁定时仍显示地图和路线指引。触摸和按键无效。</string>
+    <string name="show_over_lock_screen_help">在锁屏上方显示 Android Auto 画面，无需解锁即可查看地图和路线指引。此设备锁定期间，不会有任何操作传到手机：触摸、按键、旋钮控制器和语音键都会被拦下，并把地图切换到前台。按“返回”可用 PIN 码、图案或密码解锁；之后一切照常工作。手机本身的音乐、通话和语音助理不受影响。</string>
+    <string name="show_over_lock_screen_locked_toast">已锁定：仅显示地图。按“返回”解锁。</string>
     <string name="audio_stream_settings">音频流</string>
     <string name="audio_stream_settings_description">选择每个 Android Auto 通道使用哪个系统流播放。</string>
     <string name="audio_stream_settings_info">Android Auto 通过媒体、导航语音和系统提示音三个通道传送音频。每个通道都会以某个系统流交给车机，所选的流决定它跟随哪个音量键，在许多车机上还决定功放是否会为它取消静音。保存前，可点按喇叭按钮在该流上播放测试音。</string>
@@ -1855,4 +1883,17 @@
     <string name="usb_wireless_dongle_help">如果您通过 AAWireless 或 Carlinkit 等无线 USB 适配器连接，请开启此选项。Open Headunit 无法区分适配器与数据线，开启后会将主屏幕上的文字从有线更改为无线。</string>
     <string name="home_subtitle_usb_dongle">无线连接</string>
     <string name="home_action_connect_wireless_dongle">无线连接</string>
+    <string name="home_wifi_not_connected">WLAN 未连接</string>
+    <string name="home_wifi_off">WLAN 已关闭</string>
+    <string name="home_wifi_connected_unnamed">WLAN 已连接</string>
+    <string name="home_wifi_scanning">正在扫描…</string>
+    <string name="home_wifi_band_24">2.4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WLAN：%1$s</string>
+    <string name="home_hotspot_waiting">正在等待手机热点…</string>
+    <string name="home_hotspot_not_found">未连接 WLAN。手机热点已开启吗？</string>
+    <string name="home_wifi_hotspot_hint">手机热点已开启吗？</string>
+    <string name="home_wifi_off_hint">开启后即可连接</string>
 </resources>

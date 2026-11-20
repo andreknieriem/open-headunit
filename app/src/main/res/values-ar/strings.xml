@@ -342,7 +342,7 @@
     <string name="auto_connect_help">تعمل هذه الطرق تلقائيا عند فتح التطبيق. قم بتمكين الطرق التي تريدها، ثم اسحب لضبط الترتيب. سيتم استخدام أول طريقة ممكّنة تنجح.</string>
     <string name="auto_connect_screen_help">يحدد كيف يتصل التطبيق تلقائيًا عند فتحه. فعّل الطرق التي تريدها واسحبها إلى ترتيب المحاولة. تُستخدم أول طريقة تنجح. يمنح التأخير شبكة Wi-Fi وقتًا للاستيقاظ على وحدة بطيئة. لا شيء هنا يغيّر اتصالًا تبدأه بنفسك. يطبّق «حفظ» التغييرات.</string>
     <string name="dpi_screen_help">يحدد كثافة البكسلات التي يرسم بها Android Auto. تكبّر قيمة DPI الأعلى الأيقونات والنص فيتسع أقل على الشاشة. تصغّرها قيمة DPI الأدنى فيتسع أكثر. «تلقائي» يستخدم كثافة هذا الجهاز. تُطبَّق القيمة الجديدة عند الاتصال التالي.</string>
-    <string name="keymap_screen_help">يربط مفاتيح هذه الوحدة وأزرارها بإجراءات Android Auto. المس صفًا ثم اضغط المفتاح المراد تعيينه. تحذف «إعادة تعيين» كل تعييناتك وتعود إلى الإعدادات الافتراضية. استخدمها عندما ينفذ مفتاح في عجلة القيادة أو اللوحة إجراءً خاطئًا.</string>
+    <string name="keymap_screen_help">يربط مفاتيح هذه الوحدة وأزرارها بإجراءات: مفتاح Android Auto، أو إجراء على شاشة الإسقاط، أو تشغيل تطبيق. المس «إضافة ربط مفتاح»، واضغط المفتاح، ثم اختر الإجراء. المس ربطًا لتغييره أو إزالته. تحذف «إعادة تعيين» كل الروابط.</string>
     <string name="customization_screen_help">يغيّر مظهر الشاشة الرئيسية لهذا التطبيق: صورة الخلفية وألوان الأزرار الأربعة وحجمها وحجم النص. يتحكم الإعداد الليلي في الخلفية في الوضع الداكن. لا يغيّر أيٌّ من هذا ما يعرضه Android Auto في الإسقاط.</string>
     <string name="loading_screen_screen_help">يحدد الصورة أو الفيديو القصير المعروض أثناء بدء Android Auto. اختر صورة أو فيديو حتى 10 ميغابايت، وكيّفه ليناسب الشاشة، وكرّر الرسوم المتحركة القصيرة. يمكنك أيضًا إخفاء نص البدء. تعيد «إزالة» الشاشة الافتراضية.</string>
     <string name="auto_connect_priority">الأولوية %d</string>
@@ -446,6 +446,22 @@
     <string name="key_mappings_reset">تمت إعادة تعيين اختصارات المفاتيح</string>
     <string name="press_key_to_assign">اضغط على مفتاح لتعيينه إلى \'%s\'…</string>
     <string name="key_assigned">تم تعيين \'%1$s\' إلى \'%2$s\'</string>
+    <string name="action_picker_title">اختر إجراءً</string>
+    <string name="action_remove_binding">إزالة الربط</string>
+    <string name="action_section_projection">شاشة الإسقاط</string>
+    <string name="action_section_aa_keys">مفاتيح Android Auto</string>
+    <string name="action_section_apps">التطبيقات</string>
+    <string name="action_launch_app">تشغيل تطبيق…</string>
+    <string name="action_launch_named_app">تشغيل %s</string>
+    <string name="action_aa_key_code">مفتاح Android Auto %d</string>
+    <string name="action_selected">محدد</string>
+    <string name="action_search_keywords">إجراء تشغيل فتح تطبيق اختصار</string>
+    <string name="keymap_add_binding">إضافة ربط مفتاح</string>
+    <string name="keymap_press_new_key">اضغط المفتاح أو الزر الذي تريد ربطه…</string>
+    <string name="keymap_no_bindings">لا توجد مفاتيح مربوطة بعد. المس «إضافة ربط مفتاح»، واضغط مفتاحًا، ثم اختر ما يفعله.</string>
+    <string name="keymap_bindings_header">ربط المفاتيح</string>
+    <string name="keymap_tester_hint">اضغط أي مفتاح أو زر في عجلة القيادة لترى اسمه ورمزه هنا.</string>
+    <string name="keymap_tester_last">آخر مفتاح: %1$s (%2$d)، %3$s</string>
     <string name="last_key_press">آخر ضغطة مفتاح: %1$s (%2$d)</string>
     <string name="scan">فحص</string>
     <string name="scanning_network">جارٍ فحص الشبكة…</string>
@@ -683,6 +699,14 @@
     <string name="server_mode_manual">يدوي</string>
     <string name="server_mode_auto">تلقائي</string>
     <string name="server_mode_help">«تلقائي» يبحث في الشبكة عن خادم الوحدة الرئيسية على الهاتف ويتصل تلقائيًا. «يدوي» لا يبحث. تتصل من قائمة الشبكات أو بعنوان الهاتف.</string>
+    <string name="headunit_server_network_label">طريقة الاتصال</string>
+    <string name="headunit_server_network_phone">نقطة اتصال الهاتف</string>
+    <string name="headunit_server_network_unit">نقطة اتصال الوحدة</string>
+    <string name="headunit_server_network_shared">WiFi مشترك</string>
+    <string name="headunit_server_network_help">شبكة WiFi التي يتشاركها الهاتف وهذه الوحدة. نقطة اتصال الهاتف: تنضم هذه الوحدة إلى نقطة اتصال الهاتف. وحتى ذلك الحين ينتظر البحث عن الهاتف، ويبحث اتصل عبر واي فاي عن نقطة الاتصال أولاً. نقطة اتصال الوحدة: ينضم الهاتف إلى نقطة وصول هذه الوحدة. WiFi مشترك: كلاهما على الموجّه نفسه، ولا يتغير شيء.</string>
+    <string name="headunit_server_auto_wifi_scan">البحث عن نقطة الاتصال تلقائيًا</string>
+    <string name="headunit_server_auto_wifi_scan_summary">ما دامت الشاشة الرئيسية ظاهرة ولا توجد شبكة WiFi متصلة.</string>
+    <string name="headunit_server_auto_wifi_scan_help">ما دامت الشاشة الرئيسية ظاهرة وهذه الوحدة غير متصلة بأي شبكة WiFi، تطلب من Android بحثًا عن WiFi: فورًا، ثم كل 35 ثانية لمدة دقيقتين، ثم مرة كل دقيقة. وهكذا تنضم الوحدة إلى نقطة اتصال الهاتف أسرع. يسمح Android بأربع عمليات بحث في دقيقتين، ولا يسمح بأي منها في الخلفية.</string>
 
     <string name="helper_strategy_label">طريقة اتصال المساعد</string>
     <string name="helper_strategy_help">يختار كيف يتشارك الهاتف وهذه الوحدة شبكة في وضع Wireless Helper. يستخدم «WiFi عادي» شبكة يتشاركها الطرفان أصلًا. ينشئ WiFi Direct رابطًا خاصًا. «الأجهزة القريبة» نسخة تجريبية. تنضم «نقطة اتصال الهاتف» إلى نقطة اتصال الهاتف. تجعل «نقطة اتصال الشاشة» هذه الوحدة نقطة الوصول. غيّره إذا لم يعثر الهاتف على هذه الوحدة.</string>
@@ -1308,6 +1332,10 @@
     <string name="raise_projection_during_call">البقاء في Android Auto أثناء المكالمات</string>
     <string name="raise_projection_during_call_description">الوضع الذاتي فقط. يُعيد العرض فوق شاشة اتصال الهاتف بحيث يتم الرد على المكالمات وإنهاؤها من واجهة Android Auto.</string>
     <string name="raise_projection_during_call_summary">للوضع الذاتي فقط. يعرض الإسقاط فوق شاشة المكالمة في الهاتف.</string>
+    <string name="show_over_lock_screen">عرض فوق شاشة القفل</string>
+    <string name="show_over_lock_screen_summary">تبقى الخريطة والاتجاهات ظاهرة أثناء القفل. اللمس والأزرار لا تعمل.</string>
+    <string name="show_over_lock_screen_help">يعرض صورة Android Auto فوق شاشة القفل، لتتمكن من قراءة الخريطة والاتجاهات دون فتح القفل. أثناء قفل هذا الجهاز لا يصل أي شيء إلى الهاتف: يتم حجب اللمس والأزرار ووحدة التحكم الدوّارة وزر الصوت، وتُعرض الخريطة في المقدمة. اضغط رجوع لفتح القفل برمز PIN أو النمط أو كلمة المرور؛ بعد ذلك يعمل كل شيء كالمعتاد. لا تتأثر الموسيقى والمكالمات والمساعد الصوتي على الهاتف نفسه.</string>
+    <string name="show_over_lock_screen_locked_toast">مقفل: الخريطة فقط. اضغط رجوع لفتح القفل.</string>
     <string name="audio_stream_settings">تدفقات الصوت</string>
     <string name="audio_stream_settings_description">اختر تدفق النظام الذي تُشغَّل عليه كل قناة من قنوات Android Auto.</string>
     <string name="audio_stream_settings_info">يرسل Android Auto الصوت عبر ثلاث قنوات: الوسائط، والإرشادات، وأصوات النظام. تصل كل قناة إلى وحدة الرأس عبر تدفق نظام، والتدفق الذي تختاره يحدد مفتاح مستوى الصوت الذي تتبعه، وفي كثير من الوحدات ما إذا كان مكبر الصوت سيعمل لها أصلًا. استخدم زر السماعة لسماع نغمة اختبار على التدفق قبل الحفظ.</string>
@@ -1858,4 +1886,17 @@
     <string name="usb_wireless_dongle_help">فعّل هذا الخيار إذا كنت تتصل عبر محول USB لاسلكي مثل AAWireless أو Carlinkit. لا يستطيع Open Headunit التمييز بين الدونجل والكابل، لذا يغيّر هذا الخيار تسميات الشاشة الرئيسية من سلكي إلى لاسلكي.</string>
     <string name="home_subtitle_usb_dongle">لاسلكياً</string>
     <string name="home_action_connect_wireless_dongle">الاتصال لاسلكياً</string>
+    <string name="home_wifi_not_connected">شبكة WiFi غير متصلة</string>
+    <string name="home_wifi_off">WiFi مغلق</string>
+    <string name="home_wifi_connected_unnamed">WiFi متصل</string>
+    <string name="home_wifi_scanning">جارٍ البحث…</string>
+    <string name="home_wifi_band_24">2.4 غيغاهرتز</string>
+    <string name="home_wifi_band_5">5 غيغاهرتز</string>
+    <string name="home_wifi_band_6">6 غيغاهرتز</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">بانتظار نقطة اتصال الهاتف…</string>
+    <string name="home_hotspot_not_found">لا توجد شبكة WiFi متصلة. هل نقطة اتصال الهاتف مفعّلة؟</string>
+    <string name="home_wifi_hotspot_hint">هل نقطة اتصال الهاتف مفعّلة؟</string>
+    <string name="home_wifi_off_hint">شغّله للاتصال</string>
 </resources>

@@ -341,7 +341,7 @@
     <string name="auto_connect_help">Deze methoden worden automatisch uitgevoerd bij het openen van de app. Schakel de gewenste in en sleep om de volgorde te bepalen. De eerste ingeschakelde methode die slaagt, wordt gebruikt.</string>
     <string name="auto_connect_screen_help">Bepaalt hoe de app zichzelf verbindt bij het openen. Schakel de gewenste methoden in en sleep ze in de volgorde waarin ze worden geprobeerd. De eerste die lukt wordt gebruikt. De vertraging geeft wifi tijd om wakker te worden op een traag apparaat. Niets hier verandert een verbinding die je zelf start. Met Opslaan worden de wijzigingen toegepast.</string>
     <string name="dpi_screen_help">Bepaalt de pixeldichtheid waarmee Android Auto tekent. Een hogere DPI maakt pictogrammen en tekst groter, zodat er minder op het scherm past. Een lagere DPI maakt ze kleiner, zodat er meer op past. Automatisch gebruikt de dichtheid van dit apparaat. De nieuwe waarde geldt bij de volgende verbinding.</string>
-    <string name="keymap_screen_help">Koppelt de toetsen en knoppen van dit apparaat aan acties van Android Auto. Tik op een rij en druk dan op de toets die je wilt toewijzen. Reset verwijdert al je toewijzingen en herstelt de standaardwaarden. Gebruik dit als een stuur- of paneeltoets het verkeerde doet.</string>
+    <string name="keymap_screen_help">Wijst de toetsen en knoppen van dit apparaat toe aan acties: een Android Auto-toets, een actie van het projectiescherm of het starten van een app. Tik op Toetstoewijzing toevoegen, druk op de toets en kies de actie. Tik op een toewijzing om die te wijzigen of te verwijderen. Reset verwijdert alle toewijzingen.</string>
     <string name="customization_screen_help">Verandert hoe het startscherm van deze app eruitziet: de achtergrondafbeelding, de kleuren en grootte van de vier knoppen en de tekstgrootte. De nachtinstelling bepaalt de achtergrond in de donkere modus. Niets hiervan verandert wat Android Auto in de projectie toont.</string>
     <string name="loading_screen_screen_help">Bepaalt de afbeelding of korte video die wordt getoond terwijl Android Auto start. Kies een afbeelding of video tot 10 MB, schaal die naar het scherm en laat korte animaties herhalen. Je kunt ook de starttekst verbergen. Verwijderen herstelt het standaardscherm.</string>
     <string name="auto_connect_priority">Prioriteit %d</string>
@@ -445,6 +445,22 @@
     <string name="key_mappings_reset">Toetstoewijzingen opnieuw ingesteld</string>
     <string name="press_key_to_assign">Druk op een toets om toe te wijzen aan \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' toegewezen aan \'%2$s\'</string>
+    <string name="action_picker_title">Actie kiezen</string>
+    <string name="action_remove_binding">Toewijzing verwijderen</string>
+    <string name="action_section_projection">Projectiescherm</string>
+    <string name="action_section_aa_keys">Android Auto-toetsen</string>
+    <string name="action_section_apps">Apps</string>
+    <string name="action_launch_app">App starten…</string>
+    <string name="action_launch_named_app">%s starten</string>
+    <string name="action_aa_key_code">Android Auto-toets %d</string>
+    <string name="action_selected">Geselecteerd</string>
+    <string name="action_search_keywords">actie app starten openen snelkoppeling</string>
+    <string name="keymap_add_binding">Toetstoewijzing toevoegen</string>
+    <string name="keymap_press_new_key">Druk op de toets of knop die je wilt toewijzen…</string>
+    <string name="keymap_no_bindings">Er zijn nog geen toetsen toegewezen. Tik op Toetstoewijzing toevoegen, druk op een toets en kies wat die doet.</string>
+    <string name="keymap_bindings_header">Toetstoewijzingen</string>
+    <string name="keymap_tester_hint">Druk op een toets of stuurknop om hier de naam en code te zien.</string>
+    <string name="keymap_tester_last">Laatste toets: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Laatste toetsaanslag: %1$s (%2$d)</string>
     <string name="scan">Scannen</string>
     <string name="scanning_network">Netwerk scannen…</string>
@@ -683,6 +699,14 @@
     <string name="server_mode_manual">Handmatig</string>
     <string name="server_mode_auto">Automatisch</string>
     <string name="server_mode_help">Automatisch zoekt op het netwerk naar de headunit-server op de telefoon en verbindt zelf. Handmatig zoekt niet. Je verbindt via de netwerklijst of met het adres van de telefoon.</string>
+    <string name="headunit_server_network_label">Verbindingsmethode</string>
+    <string name="headunit_server_network_phone">Telefoonhotspot</string>
+    <string name="headunit_server_network_unit">Unithotspot</string>
+    <string name="headunit_server_network_shared">Gedeelde wifi</string>
+    <string name="headunit_server_network_help">Welke wifi de telefoon en deze unit delen. Telefoonhotspot: deze unit maakt verbinding met de hotspot van de telefoon. Tot dan wacht het zoeken naar de telefoon, en Verbinden via WiFi zoekt eerst naar de hotspot. Unithotspot: de telefoon maakt verbinding met het toegangspunt van deze unit. Gedeelde wifi: beide zitten op dezelfde router, en er verandert niets.</string>
+    <string name="headunit_server_auto_wifi_scan">Automatisch naar de hotspot zoeken</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Zolang het startscherm open is en er geen wifi verbonden is.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Zolang het startscherm zichtbaar is en deze unit op geen enkel wifinetwerk zit, vraagt hij Android om een wifiscan: meteen, twee minuten lang elke 35 seconden, daarna eens per minuut. Zo maakt de unit eerder verbinding met de hotspot van de telefoon. Android staat vier scans in twee minuten toe, en geen op de achtergrond.</string>
 
     <string name="helper_strategy_label">Verbindingsmethode (Helper)</string>
     <string name="helper_strategy_help">Bepaalt hoe de telefoon en dit apparaat een netwerk delen in de modus Wireless Helper. Gemeenschappelijke WiFi gebruikt een netwerk dat beide al delen. WiFi Direct maakt een privéverbinding. Apparaten in de buurt zitten in bèta. Telefoon-hotspot maakt verbinding met de hotspot van de telefoon. Headunit-hotspot maakt dit apparaat het toegangspunt. Wijzig dit als de telefoon dit apparaat niet vindt.</string>
@@ -1312,6 +1336,10 @@
     <string name="raise_projection_during_call">In Android Auto blijven tijdens gesprekken</string>
     <string name="raise_projection_during_call_description">Alleen Self Mode. Haalt de projectie terug over het belscherm van de telefoon, zodat gesprekken in de Android Auto-interface worden aangenomen en beëindigd.</string>
     <string name="raise_projection_during_call_summary">Alleen in de zelfstandige modus. Toont de projectie over het gespreksscherm van de telefoon.</string>
+    <string name="show_over_lock_screen">Boven vergrendelscherm tonen</string>
+    <string name="show_over_lock_screen_summary">Kaart en route blijven zichtbaar als vergrendeld. Aanraken en knoppen doen niets.</string>
+    <string name="show_over_lock_screen_help">Toont het Android Auto-beeld boven het vergrendelscherm, zodat kaart en routebeschrijving zonder ontgrendelen te lezen zijn. Zolang dit apparaat vergrendeld is, bereikt niets de telefoon: aanrakingen, knoppen, de draaiknop en de spraakknop worden tegengehouden en de kaart komt naar voren. Druk op Terug om te ontgrendelen met je pincode, patroon of wachtwoord; daarna werkt alles zoals gewoonlijk. Muziek, gesprekken en de spraakassistent op de telefoon zelf worden niet beïnvloed.</string>
+    <string name="show_over_lock_screen_locked_toast">Vergrendeld: alleen kaart. Druk op Terug om te ontgrendelen.</string>
     <string name="audio_stream_settings">Audiostreams</string>
     <string name="audio_stream_settings_description">Kies via welke systeemstream elk Android Auto-kanaal wordt afgespeeld.</string>
     <string name="audio_stream_settings_info">Android Auto verstuurt audio via drie kanalen: Media, Navigatiestem en Systeemgeluiden. Elk kanaal bereikt de headunit via een systeemstream. De gekozen stream bepaalt welke volumetoets erbij hoort en, op veel headunits, of de versterker er wel voor wordt aangezet. Gebruik de luidsprekerknop om vóór het opslaan een testtoon op de stream te horen.</string>
@@ -1861,4 +1889,17 @@
     <string name="usb_wireless_dongle_help">Schakel dit in als je verbindt via een draadloze USB-adapter zoals AAWireless of Carlinkit. Open Headunit kan een dongle niet van een kabel onderscheiden, dus deze optie verandert de startschermteksten van kabel naar draadloos.</string>
     <string name="home_subtitle_usb_dongle">Draadloos</string>
     <string name="home_action_connect_wireless_dongle">Draadloos verbinden</string>
+    <string name="home_wifi_not_connected">Wifi niet verbonden</string>
+    <string name="home_wifi_off">Wifi staat uit</string>
+    <string name="home_wifi_connected_unnamed">Wifi verbonden</string>
+    <string name="home_wifi_scanning">Zoeken…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">Wifi: %1$s</string>
+    <string name="home_hotspot_waiting">Wachten op de hotspot van de telefoon…</string>
+    <string name="home_hotspot_not_found">Geen wifi verbonden. Staat de hotspot van de telefoon aan?</string>
+    <string name="home_wifi_hotspot_hint">Staat de hotspot van de telefoon aan?</string>
+    <string name="home_wifi_off_hint">Zet het aan om te verbinden</string>
 </resources>

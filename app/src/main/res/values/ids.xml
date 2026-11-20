@@ -10,6 +10,11 @@
     <item name="home_progress_shine" type="id" />
     <item name="home_progress_shine_detach" type="id" />
     <item name="home_tile_shine" type="id" />
+    <!-- The card icon's turning ring while a WiFi scan is out, and the widths the WiFi line was fitted to. -->
+    <item name="home_wifi_scan_spin" type="id" />
+    <item name="home_wifi_meta_fit" type="id" />
+    <!-- The card width the main button dropped its icon at. -->
+    <item name="home_action_icon_fit" type="id" />
     <item name="home_tile_shine_detach" type="id" />
     <!-- The favorite apps' own page, on a screen too small for them beside the main button. -->
     <item name="home_page_apps" type="id" />

@@ -668,7 +668,7 @@
     <string name="auto_connect_help">Metode ini berjalan otomatis saat aplikasi dibuka. Aktifkan metode yang diinginkan, lalu seret untuk mengatur urutan. Metode aktif pertama yang berhasil akan digunakan.</string>
     <string name="auto_connect_screen_help">Mengatur cara aplikasi terhubung sendiri saat dibuka. Aktifkan metode yang diinginkan dan seret ke urutan percobaan. Metode pertama yang berhasil dipakai. Jeda memberi waktu bagi Wi-Fi untuk aktif di unit yang lambat. Tidak ada yang di sini mengubah koneksi yang Anda mulai sendiri. Simpan menerapkan perubahan.</string>
     <string name="dpi_screen_help">Mengatur kepadatan piksel yang dipakai Android Auto untuk menggambar. DPI lebih tinggi membuat ikon dan teks lebih besar, jadi lebih sedikit yang muat di layar. DPI lebih rendah membuatnya lebih kecil, jadi lebih banyak yang muat. Otomatis memakai kepadatan perangkat ini. Nilai baru berlaku pada koneksi berikutnya.</string>
-    <string name="keymap_screen_help">Memetakan tombol unit ini ke tindakan Android Auto. Ketuk satu baris, lalu tekan tombol yang akan ditetapkan. Atur Ulang menghapus semua pemetaan Anda dan kembali ke bawaan. Gunakan saat tombol kemudi atau panel melakukan hal yang salah.</string>
+    <string name="keymap_screen_help">Menetapkan tombol unit ini ke tindakan: tombol Android Auto, tindakan layar proyeksi, atau membuka aplikasi. Ketuk Tambah penetapan tombol, tekan tombolnya, lalu pilih tindakan. Ketuk penetapan untuk mengubah atau menghapusnya. Atur Ulang menghapus semua penetapan.</string>
     <string name="customization_screen_help">Mengubah tampilan layar utama aplikasi ini: gambar latar, warna dan ukuran empat tombol, serta ukuran teks. Setelan malam mengatur latar di mode gelap. Tidak satu pun mengubah apa yang ditampilkan Android Auto pada proyeksi.</string>
     <string name="loading_screen_screen_help">Mengatur gambar atau video singkat yang ditampilkan saat Android Auto dimulai. Pilih gambar atau video hingga 10 MB, skalakan agar pas dengan layar, dan ulang animasi pendek. Anda juga bisa menyembunyikan teks awal. Hapus kembali ke layar bawaan.</string>
     <string name="auto_connect_priority">Prioritas %d</string>
@@ -938,6 +938,22 @@
     <string name="key_mappings_reset">Pemetaan tombol diatur ulang</string>
     <string name="press_key_to_assign">Tekan tombol untuk menetapkan ke \'%s\'…</string>
     <string name="key_assigned">\'%1$s\' ditetapkan ke \'%2$s\'</string>
+    <string name="action_picker_title">Pilih tindakan</string>
+    <string name="action_remove_binding">Hapus penetapan</string>
+    <string name="action_section_projection">Layar proyeksi</string>
+    <string name="action_section_aa_keys">Tombol Android Auto</string>
+    <string name="action_section_apps">Aplikasi</string>
+    <string name="action_launch_app">Buka aplikasi…</string>
+    <string name="action_launch_named_app">Buka %s</string>
+    <string name="action_aa_key_code">Tombol Android Auto %d</string>
+    <string name="action_selected">Dipilih</string>
+    <string name="action_search_keywords">tindakan buka luncurkan aplikasi pintasan</string>
+    <string name="keymap_add_binding">Tambah penetapan tombol</string>
+    <string name="keymap_press_new_key">Tekan tombol yang ingin ditetapkan…</string>
+    <string name="keymap_no_bindings">Belum ada tombol yang ditetapkan. Ketuk Tambah penetapan tombol, tekan tombol, lalu pilih tindakannya.</string>
+    <string name="keymap_bindings_header">Penetapan tombol</string>
+    <string name="keymap_tester_hint">Tekan tombol apa pun atau tombol kemudi untuk melihat nama dan kodenya di sini.</string>
+    <string name="keymap_tester_last">Tombol terakhir: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Tombol Terakhir Ditekan: %1$s (%2$d)</string>
     <string name="scan">Pindai</string>
     <string name="scanning_network">Memindai Jaringan…</string>
@@ -1180,6 +1196,10 @@
     <string name="raise_projection_during_call">Tetap di Android Auto selama panggilan</string>
     <string name="raise_projection_during_call_description">Khusus Mode Mandiri. Membawa proyeksi kembali ke atas layar panggilan ponsel sehingga panggilan dijawab dan diakhiri dalam antarmuka Android Auto.</string>
     <string name="raise_projection_during_call_summary">Hanya untuk Mode Mandiri. Menampilkan proyeksi di atas layar panggilan ponsel.</string>
+    <string name="show_over_lock_screen">Tampilkan di atas layar kunci</string>
+    <string name="show_over_lock_screen_summary">Peta dan petunjuk arah tetap terlihat saat terkunci. Sentuhan dan tombol tidak berfungsi.</string>
+    <string name="show_over_lock_screen_help">Menampilkan gambar Android Auto di atas layar kunci, sehingga peta dan petunjuk arah dapat dibaca tanpa membuka kunci. Selama unit ini terkunci, tidak ada yang diteruskan ke ponsel: sentuhan, tombol, pengontrol putar, dan tombol suara ditahan, dan peta dibawa ke depan. Tekan Kembali untuk membuka kunci dengan PIN, pola, atau sandi; setelah itu semuanya berfungsi seperti biasa. Musik, panggilan, dan asisten suara di ponsel itu sendiri tidak terpengaruh.</string>
+    <string name="show_over_lock_screen_locked_toast">Terkunci: hanya peta. Tekan Kembali untuk membuka kunci.</string>
     <string name="kill_on_disconnect_warning_title">Peringatan</string>
     <string name="kill_on_disconnect_warning">Setelan sambungan ulang berikut bertentangan dengan penutupan aplikasi saat koneksi terputus:\n\n%1$s\n\nSetelan koneksi awal Anda (hubungkan otomatis, mulai otomatis) tetap berfungsi saat head unit menyala. Namun, setelah koneksi pertama terputus, aplikasi langsung ditutup dan tidak mencoba menghubungkan kembali.\n\nCatatan: Beberapa head unit aftermarket tidak pernah mati sepenuhnya. Perangkat itu masuk ke mode hibernasi, seperti ponsel yang layarnya terkunci tetapi tidak pernah benar-benar mati. Jika opsi ini aktif, aplikasi ditutup setelah koneksi pertama terputus dan mungkin tidak terbuka lagi secara otomatis saat mesin dinyalakan berikutnya.\n\nNonaktifkan setelan sambungan ulang di atas?</string>
     <string name="kill_on_disconnect_disable_and_enable">Nonaktifkan dan aktifkan</string>
@@ -1272,6 +1292,14 @@
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Otomatis</string>
     <string name="server_mode_help">Otomatis mencari server head unit di ponsel melalui jaringan dan terhubung sendiri. Manual tidak mencari. Anda terhubung dari daftar jaringan atau dengan alamat ponsel.</string>
+    <string name="headunit_server_network_label">Metode Koneksi</string>
+    <string name="headunit_server_network_phone">Hotspot ponsel</string>
+    <string name="headunit_server_network_unit">Hotspot unit</string>
+    <string name="headunit_server_network_shared">WiFi bersama</string>
+    <string name="headunit_server_network_help">WiFi mana yang dipakai bersama oleh ponsel dan unit ini. Hotspot ponsel: unit ini bergabung ke hotspot ponsel. Sampai saat itu, pencarian ponsel menunggu, dan Hubungkan lewat Wi-Fi memindai hotspot terlebih dahulu. Hotspot unit: ponsel bergabung ke titik akses unit ini. WiFi bersama: keduanya di router yang sama, dan tidak ada yang berubah.</string>
+    <string name="headunit_server_auto_wifi_scan">Pindai hotspot secara otomatis</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Selama layar utama tampil dan tidak ada WiFi tersambung.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Selama layar utama tampil dan unit ini tidak berada di jaringan WiFi mana pun, unit meminta Android memindai WiFi: segera, setiap 35 detik selama dua menit, lalu sekali per menit. Dengan begitu unit lebih cepat bergabung ke hotspot ponsel. Android mengizinkan empat pemindaian dalam dua menit, dan tidak ada di latar belakang.</string>
 
     <string name="helper_strategy_label">Strategi Koneksi Helper</string>
     <string name="helper_strategy_help">Memilih cara ponsel dan unit ini berbagi jaringan dalam mode Wireless Helper. Wi-Fi Umum memakai jaringan yang sudah dipakai keduanya. WiFi Direct membuat tautan privat. Google Nearby masih beta. Hotspot Ponsel bergabung ke hotspot ponsel. Hotspot Headunit menjadikan unit ini titik akses. Ubah jika ponsel tidak menemukan unit ini.</string>
@@ -1904,4 +1932,17 @@
     <string name="usb_wireless_dongle_help">Aktifkan ini jika Anda terhubung melalui adaptor USB nirkabel seperti AAWireless atau Carlinkit. Open Headunit tidak dapat membedakan dongle dari kabel, jadi opsi ini mengubah label layar utama dari kabel menjadi nirkabel.</string>
     <string name="home_subtitle_usb_dongle">Secara nirkabel</string>
     <string name="home_action_connect_wireless_dongle">Hubungkan secara nirkabel</string>
+    <string name="home_wifi_not_connected">WiFi tidak terhubung</string>
+    <string name="home_wifi_off">WiFi mati</string>
+    <string name="home_wifi_connected_unnamed">WiFi terhubung</string>
+    <string name="home_wifi_scanning">Memindai…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">Menunggu hotspot ponsel…</string>
+    <string name="home_hotspot_not_found">Tidak ada WiFi tersambung. Apakah hotspot ponsel menyala?</string>
+    <string name="home_wifi_hotspot_hint">Apakah hotspot ponsel menyala?</string>
+    <string name="home_wifi_off_hint">Nyalakan untuk terhubung</string>
 </resources>

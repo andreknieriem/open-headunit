@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
 import android.content.BroadcastReceiver
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -38,7 +39,11 @@ import com.andrerinas.openheadunit.input.GestureOutcomePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.input.RemoteTouchPolicy
 import com.andrerinas.openheadunit.input.TouchCoordinateMapper
+import com.andrerinas.openheadunit.input.InputAction
+import com.andrerinas.openheadunit.input.InputActionCodec
+import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.input.TwoFingerGestureTracker
+import com.andrerinas.openheadunit.main.AppLauncher
 import com.andrerinas.openheadunit.utils.ActivityState
 import kotlinx.coroutines.launch
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
@@ -48,6 +53,7 @@ import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ScreenPower
+import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
@@ -67,6 +73,7 @@ import com.andrerinas.openheadunit.view.PerformanceOverlay
 import com.andrerinas.openheadunit.view.NightProjectionOverlay
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.ProjectionHealthRecorder
+import com.andrerinas.openheadunit.utils.ScreenOrientationPolicy
 import com.andrerinas.openheadunit.utils.SystemUI
 import com.andrerinas.openheadunit.aap.AapService
 import android.content.IntentFilter
@@ -96,7 +103,22 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private lateinit var projectionView: IProjectionView
     private val videoDecoder: VideoDecoder by lazy { App.provide(this).videoDecoder }
     private val settings: Settings by lazy { Settings(this) }
-    private val cachedKeyCodes: Map<Int, Int> by lazy { settings.keyCodes }
+    private val cachedKeyBindings: Map<Int, InputAction> by lazy { settings.keyBindings }
+
+    // "Show over lock screen": the open exit dialog (closed when the unit locks), the last
+    // "Locked" hint, and the receiver that follows screen-off and unlock.
+    private var exitDialog: androidx.appcompat.app.AlertDialog? = null
+    private var lastLockedHintMs = 0L
+    private var isLockStateReceiverRegistered = false
+    private val lockStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_OFF -> refreshLockedInput("screen off", screenOff = true)
+                Intent.ACTION_SCREEN_ON -> refreshLockedInput("screen on")
+                Intent.ACTION_USER_PRESENT -> refreshLockedInput("unlocked")
+            }
+        }
+    }
     private var isSurfaceSet = false
     private var ownedSurface: android.view.Surface? = null
     private var overlayState = OverlayState.STARTING
@@ -145,9 +167,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val overlayOrigin = IntArray(2)
     private val gestureHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val twoFingerLongPress = Runnable {
-        if (twoFingerTracker?.still == true &&
-            settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
-            lastTwoFingerEvent?.let { finishTwoFingerGesture(settings.longPressTwoFingerGesture, it, "LONG_PRESS") }
+        val action = settings.gestureAction(Settings.GestureSlot.LONG_PRESS)
+        if (twoFingerTracker?.still == true && action != InputAction.None) {
+            lastTwoFingerEvent?.let { finishTwoFingerGesture(action, it, "LONG_PRESS") }
         }
     }
     // A pending tap whose last finger stays down past the window: the phone gets that finger.
@@ -371,6 +393,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      * the window itself.
      */
     private val warmRelaunchCheckRunnable = Runnable { maybeRecoverWarmRelaunch() }
+
+    /** The window shape the session was last redrawn for while this stayed in front, or null. */
+    private var shapeRedrawnFor: ScreenOrientationPolicy.Normalisation? = null
+    private val shapeCheckRunnable = Runnable { redrawIfTurned() }
 
     /** Starts the no-picture window afresh, for a new surface or a return to a kept one. */
     private fun armWarmRelaunch() {
@@ -1101,6 +1127,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyShowOverLockScreen()
         applyTurnScreenOn(intent)
         // [FIX] applyOrientationSettings() must be called AFTER super.onCreate() so that the
         // Activity window is fully initialized before we lock the orientation. Calling it before
@@ -1132,7 +1159,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                showExitDialog()
+                // While locked, Back is the way to unlock: the system shows its PIN screen.
+                if (LockedInputPolicy.engaged) requestUnlock() else showExitDialog()
             }
         })
 
@@ -1153,6 +1181,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     lastSurfaceSetMs = 0L
                     relaunchRecovery.resetSession()
                 }
+            }
+        }
+
+        // Keys bound to a projection-screen action reach the service first; this screen runs them.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                commManager.localActions.collect { performLocalAction(it) }
             }
         }
 
@@ -1246,6 +1281,16 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         ContextCompat.registerReceiver(this, finishReceiver, android.content.IntentFilter("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES"), ContextCompat.RECEIVER_NOT_EXPORTED)
         isFinishReceiverRegistered = true
+
+        // Registered for the activity's whole life, not onResume/onPause: screen-off pauses it,
+        // and screen-off is exactly the moment the input hold has to engage.
+        ContextCompat.registerReceiver(this, lockStateReceiver, IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }, ContextCompat.RECEIVER_NOT_EXPORTED)
+        isLockStateReceiverRegistered = true
+        refreshLockedInput("create")
 
         AppLog.i("HeadUnit for Android Auto (tm) - Copyright 2011-2015 Michael A. Reid., since 2025 André Rinas All Rights Reserved...")
 
@@ -1363,6 +1408,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         settleFocusCycle()
         watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
         watchdogHandler.removeCallbacks(returnRearmRunnable)
+        watchdogHandler.removeCallbacks(shapeCheckRunnable)
         watchdogHandler.removeCallbacks(watchdogRunnable)
         watchdogHandler.removeCallbacks(videoWatchdogRunnable)
         watchdogHandler.removeCallbacks(reconnectingWatchdog)
@@ -1421,12 +1467,20 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         super.onResume()
         isForeground = true
         userLeftDeliberately = false
+        // Again here: the setting may have changed in the settings screen.
+        applyShowOverLockScreen()
+        refreshLockedInput("resume")
         closeCallRaiseEpisode("the projection is back in front")
         AppLog.i("AapProjectionActivity: onResume")
         // Show the one-time rename notice even here, on top of an active projection.
         RenameNotice.maybeShow(this, App.provide(this).settings)
         Aa174Notice.maybeShow(this, App.provide(this).settings)
-        applyStickyOrientation()
+        // The whole rule, not only the session hold: an orientation changed in Settings while this
+        // was paused arrived while its receiver was unregistered.
+        applyOrientationSettings()
+        // Back in front, a window turned while it was away (behind the keyguard, say) is a new turn.
+        shapeRedrawnFor = null
+        scheduleShapeCheck()
         if (!isProjectionPausedByDevice && isSurfaceSet && commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) {
             commManager.retakeVideoFocusForKeyframe()
         }
@@ -1476,13 +1530,73 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
             launchIntent?.getBooleanExtra(EXTRA_TURN_SCREEN_ON, false) == true) {
             setTurnScreenOn(true)
-            ScreenPower.requestDismissKeyguard(this, "AapProjectionActivity")
+            // Shown over the lock screen, the map needs no unlock; Back asks for it when wanted.
+            if (!settings.showOverLockScreen) {
+                ScreenPower.requestDismissKeyguard(this, "AapProjectionActivity")
+            }
         }
+    }
+
+    /** Lets the window cover the keyguard when "Show over lock screen" is on. */
+    private fun applyShowOverLockScreen() {
+        val on = settings.showOverLockScreen
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(on)
+        } else {
+            @Suppress("DEPRECATION")
+            val flag = android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+            if (on) window.addFlags(flag) else window.clearFlags(flag)
+        }
+    }
+
+    /** True when the unit needs its PIN, pattern or password; null when the system would not say. */
+    private fun isDeviceLockedNow(): Boolean? = try {
+        val km = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) km.isDeviceLocked
+        else km.isKeyguardLocked && km.isKeyguardSecure
+    } catch (e: Exception) {
+        null
+    }
+
+    /**
+     * Turns the input hold on or off from the current lock state. Turning it on closes this
+     * screen's dialogs and brings Android Auto's map to the front.
+     */
+    private fun refreshLockedInput(reason: String, screenOff: Boolean = false) {
+        val enabled = settings.showOverLockScreen
+        val deviceLocked = if (LockedInputPolicy.needsLockState(enabled, screenOff)) isDeviceLockedNow() else null
+        val engage = LockedInputPolicy.shouldEngage(enabled, deviceLocked, screenOff)
+        if (engage == LockedInputPolicy.engaged) return
+        LockedInputPolicy.engaged = engage
+        AppLog.i("AapProjectionActivity: locked-unit input hold ${if (engage) "on" else "off"} ($reason)")
+        if (!engage) return
+        exitDialog?.dismiss()
+        exitDialog = null
+        (supportFragmentManager.findFragmentByTag("quick_settings") as? androidx.fragment.app.DialogFragment)
+            ?.dismissAllowingStateLoss()
+        clearTwoFingerTracking()
+        // Straight to the transport, past the keymap: this is Android Auto's own map key.
+        commManager.send(LockedInputPolicy.KEYCODE_AA_NAVIGATION, true)
+        commManager.send(LockedInputPolicy.KEYCODE_AA_NAVIGATION, false)
+    }
+
+    /** Asks the system to lift the keyguard; a secure one shows its PIN, pattern or password screen. */
+    private fun requestUnlock() {
+        ScreenPower.requestDismissKeyguard(this, "AapProjectionActivity (Back on a locked unit)")
+    }
+
+    /** A short "Locked" note on a touch, at most once every few seconds (rain on the panel). */
+    private fun showLockedHint() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastLockedHintMs < LOCKED_HINT_INTERVAL_MS) return
+        lastLockedHintMs = now
+        ToastUtils.showToast(this, getString(R.string.show_over_lock_screen_locked_toast), Toast.LENGTH_SHORT)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
+            refreshLockedInput("focus")
             setFullscreen() // Reapply fullscreen mode if window gains focus
             touchOverlayView?.requestFocus()
         }
@@ -1835,6 +1949,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     private fun showExitDialog() {
+        // Its entries (stop, settings, background) are not for a locked unit.
+        if (LockedInputPolicy.engaged) return
         // Copy the live configuration: a blank one resets the font scale on API 17-23.
         val exitScale = settings.uiScaleExitDialogPercent / 100f
         val dialogContext = if (exitScale != 1f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -1915,6 +2031,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         dialogWindow?.addFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
         dialogWindow?.let { SystemUI.applySystemBars(it, mode) }
         dialog.show()
+        exitDialog = dialog
         dialogWindow?.let {
             SystemUI.applySystemBars(it, mode)
             it.clearFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
@@ -2178,6 +2295,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val commManager get() = App.provide(this).commManager
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // A locked unit takes no touch at all: not Android Auto's, not this screen's buttons or
+        // gestures. Re-read the lock state on each new touch in case a broadcast was missed.
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) refreshLockedInput("touch")
+        if (LockedInputPolicy.engaged) {
+            if (ev.actionMasked == MotionEvent.ACTION_DOWN) showLockedHint()
+            return true
+        }
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             consumeGestureUntilUp = false
             clearTwoFingerTracking()
@@ -2211,7 +2335,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
                     if (tracker.mayBecome(enabledGestures())) {
                         lastTwoFingerEvent = MotionEvent.obtain(ev)
-                        if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
+                        if (settings.gestureAction(Settings.GestureSlot.LONG_PRESS) != InputAction.None) {
                             gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
                         }
                     } else {
@@ -2237,12 +2361,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     lastTwoFingerEvent = MotionEvent.obtain(ev)
                 }
                 val action = when (swipe) {
-                    TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.leftTwoFingerGesture
-                    TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.rightTwoFingerGesture
-                    TwoFingerGestureTracker.Swipe.DOWN -> settings.downTwoFingerGesture
-                    null -> Settings.GestureAction.DISABLED
+                    TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.gestureAction(Settings.GestureSlot.LEFT)
+                    TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.gestureAction(Settings.GestureSlot.RIGHT)
+                    TwoFingerGestureTracker.Swipe.DOWN -> settings.gestureAction(Settings.GestureSlot.DOWN)
+                    null -> InputAction.None
                 }
-                if (action != Settings.GestureAction.DISABLED) {
+                if (action != InputAction.None) {
                     finishTwoFingerGesture(action, ev, swipe?.name.orEmpty())
                     return true
                 }
@@ -2275,8 +2399,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 val tap = tracker?.tap(enabledGestures(), ev.eventTime)
                 if (tap != null) {
                     val action = when (tap) {
-                        TwoFingerGestureTracker.Tap.LEFT_TAP -> settings.leftTapTwoFingerGesture
-                        TwoFingerGestureTracker.Tap.RIGHT_TAP -> settings.rightTapTwoFingerGesture
+                        TwoFingerGestureTracker.Tap.LEFT_TAP -> settings.gestureAction(Settings.GestureSlot.LEFT_TAP)
+                        TwoFingerGestureTracker.Tap.RIGHT_TAP -> settings.gestureAction(Settings.GestureSlot.RIGHT_TAP)
                     }
                     finishTwoFingerGesture(action, ev, tap.name)
                     return true
@@ -2311,9 +2435,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         lastTwoFingerEvent = null
     }
 
-    private fun finishTwoFingerGesture(action: Settings.GestureAction, event: MotionEvent, source: String) {
+    private fun finishTwoFingerGesture(action: InputAction, event: MotionEvent, source: String) {
         remoteTouch.recognise()
-        AppLog.i("AapProjectionActivity: two-finger gesture $source -> $action, withheld from Android Auto")
+        AppLog.i("AapProjectionActivity: two-finger gesture $source -> ${InputActionCodec.encode(action)}, withheld from Android Auto")
         val cancel = MotionEvent.obtain(event)
         cancel.action = MotionEvent.ACTION_CANCEL
         consumeGestureUntilUp = true
@@ -2331,12 +2455,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         (touchOverlayView?.width?.takeIf { it > 0 } ?: HeadUnitScreenConfig.getUsableWidth()).toFloat()
 
     private fun enabledGestures() = TwoFingerGestureTracker.Enabled(
-        left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
-        right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
-        longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED,
-        leftTap = settings.leftTapTwoFingerGesture != Settings.GestureAction.DISABLED,
-        rightTap = settings.rightTapTwoFingerGesture != Settings.GestureAction.DISABLED,
-        down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED
+        left = settings.gestureAction(Settings.GestureSlot.LEFT) != InputAction.None,
+        right = settings.gestureAction(Settings.GestureSlot.RIGHT) != InputAction.None,
+        longPress = settings.gestureAction(Settings.GestureSlot.LONG_PRESS) != InputAction.None,
+        leftTap = settings.gestureAction(Settings.GestureSlot.LEFT_TAP) != InputAction.None,
+        rightTap = settings.gestureAction(Settings.GestureSlot.RIGHT_TAP) != InputAction.None,
+        down = settings.gestureAction(Settings.GestureSlot.DOWN) != InputAction.None
     )
 
     /** Runs on every start too, so a strength changed in settings while the dimmer is on takes effect. */
@@ -2364,8 +2488,19 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         container.addView(dimmer, DimmerLayerPolicy.index(kinds))
     }
 
-    private fun performTouchGesture(action: Settings.GestureAction): Boolean = when (GestureOutcomePolicy.decide(action)) {
-        GestureOutcomePolicy.Outcome.None -> false
+    /** What a gesture does: the same choices a key binding has. */
+    private fun performTouchGesture(action: InputAction): Boolean = when (action) {
+        InputAction.None -> false
+        is InputAction.Local -> performLocalAction(action.kind)
+        is InputAction.AaKey -> {
+            commManager.sendLogicalKey(action.keyCode, true, source = "gesture")
+            commManager.sendLogicalKey(action.keyCode, false, source = "gesture")
+            true
+        }
+        is InputAction.LaunchApp -> AppLauncher.launch(this, action.target)
+    }
+
+    private fun performLocalAction(action: LocalAction): Boolean = when (GestureOutcomePolicy.decide(action)) {
         GestureOutcomePolicy.Outcome.ShowExitDialog -> {
             showExitDialog()
             true
@@ -2483,7 +2618,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val prevUsableW = HeadUnitScreenConfig.getUsableWidth()
         val prevUsableH = HeadUnitScreenConfig.getUsableHeight()
         val anchorMoved = HeadUnitScreenConfig.updateSurfaceDimensions(width, height)
-        val shouldCache = !App.isPiPActive
+        // Only a projection on screen is remembered: a surface laid out behind the keyguard is the
+        // keyguard's portrait, and the next session would be negotiated from it.
+        val shouldCache = HeadUnitScreenConfig.readingDescribesProjection(this)
 
         // Cache the usable area, already normalised by the screen config, even when it matched.
         val canvasW = HeadUnitScreenConfig.getUsableWidth()
@@ -2497,7 +2634,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             settings.cachedSurfaceHeight = canvasH
             settings.cachedSurfaceSettingsHash = canvasHash
         } else if (!shouldCache) {
-            AppLog.i("[UI_DEBUG_FIX] Skipping surface dimension cache update due to transient orientation mismatch: ${width}x${height}")
+            AppLog.i("[UI_DEBUG_FIX] Not remembering the ${width}x${height} surface: the projection is not on screen (keyguard, dark screen or picture-in-picture)")
         }
         if (anchorMoved) {
             AppLog.i("[UI_DEBUG_FIX] Surface mismatch! Expected: ${prevUsableW}x${prevUsableH}, Actual: ${width}x${height}")
@@ -2708,11 +2845,23 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             return super.dispatchKeyEvent(event)
         }
 
+        // Locked: Back goes on to the back callback (which asks to unlock), volume stays local,
+        // everything else is dropped here. The transport would drop it too.
+        if (LockedInputPolicy.engaged) {
+            return when (event.keyCode) {
+                KeyEvent.KEYCODE_BACK,
+                KeyEvent.KEYCODE_VOLUME_UP,
+                KeyEvent.KEYCODE_VOLUME_DOWN,
+                KeyEvent.KEYCODE_VOLUME_MUTE -> super.dispatchKeyEvent(event)
+                else -> true
+            }
+        }
+
         // 1. Let the system handle volume keys and unmapped back keys.
         // If Back was explicitly learned in Keymap and transport is running,
         // route it through CommManager so it can be remapped and sent to Android Auto.
         if (commManager.connectionState.value is CommManager.ConnectionState.TransportStarted &&
-            ProjectionKeyPolicy.shouldRouteBackKeyToProjection(cachedKeyCodes, event.keyCode)) {
+            ProjectionKeyPolicy.shouldRouteBackKeyToProjection(cachedKeyBindings, event.keyCode)) {
             commManager.sendKey(event.keyCode, action == KeyEvent.ACTION_DOWN, event.downTime, "projection")
             return true
         }
@@ -2746,6 +2895,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private fun onKeyEvent(keyCode: Int, isPress: Boolean) {
         // Broadcasts (e.g. from CarKeyReceiver) still use this path.
+        if (LockedInputPolicy.engaged) {
+            AppLog.i("AapProjectionActivity: key broadcast $keyCode ignored, the unit is locked")
+            return
+        }
         if (ProjectionKeyPolicy.isHomeKey(keyCode)) {
             if (isPress) {
                 AppLog.i("AapProjectionActivity: KEYCODE_HOME broadcast received -> returning to App Home")
@@ -2756,18 +2909,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         commManager.sendKey(keyCode, isPress, null, "key-broadcast")
     }
 
-    private fun applyStickyOrientation() {
-        if (settings.screenOrientation == Settings.ScreenOrientation.AUTO && HeadUnitScreenConfig.isResolutionLocked) {
-            val target = if (HeadUnitScreenConfig.getNegotiatedWidth() > HeadUnitScreenConfig.getNegotiatedHeight()) {
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            } else {
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            }
-            if (requestedOrientation != target) {
-                AppLog.i("[UI_DEBUG] Sticky Orientation: Session active, forcing orientation to $target")
-                requestedOrientation = target
-            }
+    /** Holds a locked session to the shape it negotiated; true when that hold is in force. */
+    private fun applyStickyOrientation(): Boolean {
+        if (!HeadUnitScreenConfig.isResolutionLocked) return false
+        val target = ScreenOrientationPolicy.sessionOrientation(
+            settings.screenOrientation,
+            negotiatedLandscape = HeadUnitScreenConfig.getNegotiatedWidth() > HeadUnitScreenConfig.getNegotiatedHeight(),
+        ) ?: return false
+        if (requestedOrientation != target) {
+            AppLog.i("[UI_DEBUG] Sticky Orientation: Session active (${settings.screenOrientation}), forcing orientation to $target")
+            requestedOrientation = target
         }
+        return true
     }
 
     override fun onDestroy() {
@@ -2796,6 +2949,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             unregisterReceiver(keyEventReceiver)
             isKeyEventReceiverRegistered = false
         }
+        // The input hold keeps its last state on purpose: a unit that was locked stays held
+        // until the next projection screen reads the lock state again.
+        if (isLockStateReceiverRegistered) {
+            unregisterReceiver(lockStateReceiver)
+            isLockStateReceiverRegistered = false
+        }
+        exitDialog = null
         // Defensive cleanup: if the activity is destroyed while the loading
         // overlay is still up (early connection failure, system kill,
         // configuration change before first frame), the VideoView's surface
@@ -2821,6 +2981,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     companion object {
         /** Long enough for a surface callback to arrive first on a return, short enough to beat the stall window. */
         private const val RETURN_REARM_DELAY_MS = 300L
+        /** Shortest gap between two "Locked" hints. */
+        private const val LOCKED_HINT_INTERVAL_MS = 5_000L
         const val EXTRA_FOCUS = "focus"
 
         /** Set by a caller that opens this screen just before it starts a session. */
@@ -2873,16 +3035,52 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         if (!HeadUnitScreenConfig.isResolutionLocked) {
             HeadUnitScreenConfig.init(this, resources.displayMetrics, settings)
         }
+        scheduleShapeCheck()
+    }
+
+    private fun scheduleShapeCheck() {
+        watchdogHandler.removeCallbacks(shapeCheckRunnable)
+        watchdogHandler.postDelayed(shapeCheckRunnable, ScreenOrientationPolicy.SHAPE_SETTLE_MS)
+    }
+
+    /** Ends a session whose window settled in the other shape, so it lands again drawn in that one. */
+    private fun redrawIfTurned() {
+        val negotiated = HeadUnitScreenConfig.announcedShape()
+        val window = when (resources.configuration.orientation) {
+            android.content.res.Configuration.ORIENTATION_LANDSCAPE -> ScreenOrientationPolicy.Normalisation.LANDSCAPE
+            android.content.res.Configuration.ORIENTATION_PORTRAIT -> ScreenOrientationPolicy.Normalisation.PORTRAIT
+            else -> null
+        }
+        val connected = commManager.isConnected
+        val ours = HeadUnitScreenConfig.readingDescribesProjection(this)
+        if (!connected || !ScreenOrientationPolicy.redrawsSession(negotiated, window, ours, shapeRedrawnFor)) {
+            // Only when the two disagree: the same shape is the common case and has nothing to say.
+            if (window != null && window != negotiated) {
+                AppLog.i(
+                    "[AapProjectionActivity] The window is $window and the stream ${negotiated ?: "unknown"}, " +
+                        "not redrawing: connected=$connected, our window=$ours, already redrawn for ${shapeRedrawnFor ?: "nothing"}."
+                )
+            }
+            return
+        }
+        AppLog.i(
+            "[AapProjectionActivity] The window turned $window under a session drawn $negotiated: " +
+                "reconnecting so Android Auto draws it $window."
+        )
+        shapeRedrawnFor = window
+        commManager.disconnect(
+            isUserExit = false,
+            honorKillOnDisconnect = false,
+            reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+        )
     }
 
     private fun applyOrientationSettings() {
+        if (applyStickyOrientation()) return
         val screenOrientation = settings.screenOrientation
         if (screenOrientation == Settings.ScreenOrientation.AUTO) {
-            applyStickyOrientation()
-            if (!HeadUnitScreenConfig.isResolutionLocked) {
-                // Before resolution is locked, allow sensor to orient the activity
-                requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR
-            }
+            // Before resolution is locked, allow sensor to orient the activity
+            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR
         } else {
             requestedOrientation = screenOrientation.androidOrientation
         }

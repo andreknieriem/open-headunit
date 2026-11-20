@@ -123,6 +123,7 @@ class HomeFragment : Fragment() {
     private lateinit var wifiTile: View
     private lateinit var exitButton: View
     private lateinit var appsButton: View
+    private var sidebarAppsButton: View? = null
     private var primaryAction: View? = null
     private var primaryCancel: View? = null
     private lateinit var favoriteSlots: List<View>
@@ -133,6 +134,10 @@ class HomeFragment : Fragment() {
     private var reconnectTarget: HomePrimaryPolicy.Connection? = null
     private var reconnectSecondsLeft = 0
     private var autoConnectCancelled = false
+    /** The WiFi line beside the main card's icon and the wait for the phone's hotspot; live while started. */
+    private var homeWifiStatus: HomeWifiStatus? = null
+    /** Whether the card was last drawn waiting for the hotspot, so a change redraws all of it. */
+    private var renderedHotspotWait = false
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
     private var activeDialog: androidx.appcompat.app.AlertDialog? = null
@@ -224,6 +229,7 @@ class HomeFragment : Fragment() {
         wifiTile = container.findViewById(R.id.wifi_button)
         exitButton = container.findViewById(R.id.exit_button)
         appsButton = container.findViewById(R.id.apps_button)
+        sidebarAppsButton = container.findViewById(R.id.sidebar_apps_button)
         primaryAction = container.findViewById(R.id.home_primary_action)
         primaryCancel = container.findViewById(R.id.home_primary_cancel)
         favoriteSlots = HomeUiHelper.favoriteSlotIds.mapNotNull { container.findViewById(it) }
@@ -249,6 +255,7 @@ class HomeFragment : Fragment() {
         ).forEach { id ->
             container.findViewById<View>(id)?.setOnLongClickListener { showPageMenu(widgetPage = null) }
         }
+        setupWifiStatus()
         setupListeners()
     }
 
@@ -441,6 +448,82 @@ class HomeFragment : Fragment() {
         cancelAutoConnectCountdown()
     }
 
+    /**
+     * Headunit Server on the phone's hotspot (see [HomeWifiStatusPolicy]): the WiFi line beside the
+     * card's icon, and the main button's wait for the unit to join the hotspot. Redraws the whole
+     * home when the wait starts or ends, since the card's buttons and subtitle change with it.
+     */
+    private fun setupWifiStatus() {
+        homeWifiStatus = HomeWifiStatus(requireContext()) {
+            if (homeWifiStatus?.isWaitingForHotspot != renderedHotspotWait) renderHome() else renderWifiStatus()
+        }
+    }
+
+    private fun phoneHotspotChosen(settings: Settings): Boolean =
+        HomeWifiStatusPolicy.appliesTo(settings.wifiConnectionMode, settings.headunitServerNetwork)
+
+    /**
+     * The main button's Headunit Server press on the phone's hotspot, while the unit is on no WiFi
+     * network: scans (or asks for WiFi to be turned on) and searches for the phone once the unit
+     * has joined. Returns false, having done nothing, everywhere else; the press then does what it
+     * always did.
+     */
+    private fun waitForPhoneHotspotFirst(): Boolean {
+        val ctx = context ?: return false
+        val status = homeWifiStatus ?: return false
+        if (!phoneHotspotChosen(App.provide(ctx).settings)) return false
+        if (status.isWaitingForHotspot) {
+            // A second press during the wait is the same request: scan again, keep waiting.
+            status.requestScan()
+            return true
+        }
+        val action = HomeWifiStatusPolicy.connectAction(status.facts(), status.unitHotspotUp())
+        AppLog.i("HomeFragment: phone hotspot chosen, main button -> $action")
+        if (action == HomeWifiStatusPolicy.ConnectAction.CONNECT) return false
+        status.waitForHotspot(
+            scanNow = action == HomeWifiStatusPolicy.ConnectAction.SCAN_AND_WAIT,
+            onJoined = {
+                AppLog.i("HomeFragment: the unit joined a WiFi network; searching for the phone")
+                if (isAdded) startHeadunitServerSearch(quietWhenSearching = true)
+            },
+            onTimedOut = {
+                AppLog.i("HomeFragment: no WiFi network joined within ${HomeWifiStatusPolicy.JOIN_WAIT_MS / 1000}s")
+                context?.let { ToastUtils.showToast(it, getString(R.string.home_hotspot_not_found), Toast.LENGTH_LONG, force = true) }
+            },
+        )
+        if (action == HomeWifiStatusPolicy.ConnectAction.TURN_WIFI_ON_AND_WAIT) status.askToTurnWifiOn()
+        showFirstPage(animate = true)
+        renderHome()
+        return true
+    }
+
+    /** The scans the home makes by itself, when the user turned them on for the phone's hotspot. */
+    private fun startAutoWifiScanIfChosen() {
+        val status = homeWifiStatus ?: return
+        val appSettings = App.provide(requireContext()).settings
+        if (!phoneHotspotChosen(appSettings) || !appSettings.headunitServerAutoWifiScan) return
+        status.startAutoScan {
+            HomeWifiStatusPolicy.shouldAutoScan(
+                enabled = true, facts = status.facts(),
+                unitHotspotUp = status.unitHotspotUp(), sessionActive = commManager.isConnected,
+            )
+        }
+    }
+
+    private fun renderWifiStatus() {
+        val root = view ?: return
+        val status = homeWifiStatus ?: return
+        val ctx = context ?: return
+        val decision = decision ?: return
+        val appSettings = App.provide(ctx).settings
+        val line = HomeWifiStatusPolicy.line(
+            phoneHotspot = phoneHotspotChosen(appSettings),
+            cardIsWifi = decision.primary == HomePrimaryPolicy.Connection.WIFI,
+            facts = status.facts(),
+        )
+        HomeUiHelper.applyWifiStatus(ctx, root, appSettings, decision, homePalette(ctx), line, status.isScanning)
+    }
+
     private fun renderHome() {
         val ctx = context ?: return
         val root = view ?: return
@@ -478,6 +561,10 @@ class HomeFragment : Fragment() {
             networkLine = ConnectionStageTracker.network.value?.let { networkText(it) }
         )
         HomeUiHelper.fitDriverBar(root, appSettings.homeButtonScalePercent)
+        val waiting = homeWifiStatus?.isWaitingForHotspot == true
+        renderedHotspotWait = waiting
+        HomeUiHelper.applyHotspotWait(ctx, root, waiting)
+        renderWifiStatus()
         renderHomeInfo()
         reportBringUpOwner()
         // Cancel, the progress bar and the step come and go with the status, so the lines that fit
@@ -551,6 +638,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun onPrimaryCancelClicked() {
+        // While the card waits for the phone's hotspot, Cancel ends that wait and nothing else:
+        // the search the service may be running beside it is the upstream Cancel's to stop.
+        if (homeWifiStatus?.isWaitingForHotspot == true) {
+            AppLog.i("HomeFragment: hotspot wait cancelled from the home")
+            homeWifiStatus?.cancelWait()
+            return
+        }
         // During the countdown Cancel only ends the countdown, even when the pill was hidden for it
         // (HomePrimaryPolicy.homeTellsBringUp): the card then shows the listening step with its own
         // Cancel, which is the one that stops the bring-up.
@@ -700,6 +794,7 @@ class HomeFragment : Fragment() {
             isDefaultLauncher = CarLauncherManager.isDefaultLauncher(ctx)
         )
         exitButton.visibility = if (shouldShowExit) View.VISIBLE else View.GONE
+        sidebarAppsButton?.visibility = if (!shouldShowExit && isLauncherActive) View.VISIBLE else View.GONE
         HomeUiHelper.applyFavoritesVisibility(root, isLauncherActive, appSettings.showHomeFavoriteApps)
         if (isLauncherActive) {
             AppDrawerFragment.preload(ctx)
@@ -736,6 +831,11 @@ class HomeFragment : Fragment() {
         if (!isAdded || view !== root) return
         val card = root.findViewById<View>(R.id.home_primary_card) ?: return
         if (card.height <= 0) return
+        // Width first: a narrower network name changes the layout the height fit reads.
+        if (HomeUiHelper.fitCardWidth(requireContext(), root)) {
+            scheduleCardFit(root)
+            return
+        }
         val pushBefore = root.findViewById<View>(R.id.home_primary_header)?.paddingTop ?: 0
         setNoticePush(root, statusNoticesPush(root))
         val stepShown = decision?.stage != null
@@ -1235,6 +1335,9 @@ class HomeFragment : Fragment() {
         // The widgets switch turns the row off, add tile included.
         if (!appSettings.isCarLauncherActive || !appSettings.showHomeWidgets || widgetRowOnItsOwnPage(appSettings)) {
             scroll.visibility = View.GONE
+            if (root.findViewById<View>(R.id.home_favorites)?.visibility != View.VISIBLE) {
+                root.findViewById<View>(R.id.home_favorites_area)?.visibility = View.GONE
+            }
             return
         }
 
@@ -1253,9 +1356,13 @@ class HomeFragment : Fragment() {
         }
         if (row.childCount == 0) {
             scroll.visibility = View.GONE
+            if (root.findViewById<View>(R.id.home_favorites)?.visibility != View.VISIBLE) {
+                root.findViewById<View>(R.id.home_favorites_area)?.visibility = View.GONE
+            }
             return
         }
         scroll.visibility = View.VISIBLE
+        root.findViewById<View>(R.id.home_favorites_area)?.visibility = View.VISIBLE
         val addTileHeight = ctx.resources.getDimensionPixelSize(R.dimen.home_favorites_height)
         val tallest = ids.maxOfOrNull { HomeWidgets.minHeightPx(ctx, it) } ?: 0
         // One frame later: changing the row's height or hiding it inside the layout pass does not
@@ -1578,15 +1685,7 @@ class HomeFragment : Fragment() {
 
     private fun onFavoriteClicked(slot: Int) {
         val target = App.provide(requireContext()).settings.homeFavoriteApps[slot]
-        val launched = when (target) {
-            is FavoriteTarget.Empty -> false
-            is FavoriteTarget.App -> AppDrawerFragment.launchPackage(requireContext(), target.packageName)
-            is FavoriteTarget.Shortcut ->
-                LauncherShortcuts.launch(requireContext(), target.packageName, target.shortcutId) ||
-                    // Unreadable outside the home role: the app is the closest thing that still opens.
-                    (!LauncherShortcuts.canRead(requireContext()) &&
-                        AppDrawerFragment.launchPackage(requireContext(), target.packageName))
-        }
+        val launched = AppLauncher.launch(requireContext(), target)
         if (!launched) openAppDrawer(favoriteSlot = slot)
     }
 
@@ -1772,6 +1871,7 @@ class HomeFragment : Fragment() {
 
     private fun setupListeners() {
         appsButton.setOnClickListener { openAppDrawer() }
+        sidebarAppsButton?.setOnClickListener { openAppDrawer() }
         exitButton.setOnClickListener { exitApp() }
         selfModeTile.setOnClickListener { onSelfModeClicked() }
         usbTile.setOnClickListener { onUsbClicked() }
@@ -1915,6 +2015,31 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * Headunit Server (Auto)'s one-shot search, as the main button has always started it.
+     * [quietWhenSearching] for the search after a hotspot join, which the service has usually begun
+     * by itself already: saying "already scanning" then would read as a fault.
+     */
+    private fun startHeadunitServerSearch(quietWhenSearching: Boolean = false) {
+        if (commManager.isConnected) {
+            // Already connected
+        } else if (AapService.scanningState.value) {
+            if (!quietWhenSearching) {
+                ToastUtils.showToast(requireContext(), getString(R.string.already_scanning), Toast.LENGTH_SHORT)
+            }
+        } else {
+            ToastUtils.showToast(requireContext(), getString(R.string.searching_headunit_server), Toast.LENGTH_SHORT)
+            (requireActivity() as? MainActivity)?.beginAutoConnect(
+                "manual WiFi headunit server scan",
+                MainActivity.ConnectionUiMode.OVERLAY
+            )
+            val intent = Intent(requireContext(), AapService::class.java).apply {
+                action = AapService.ACTION_START_WIRELESS_SCAN
+            }
+            ContextCompat.startForegroundService(requireContext(), intent)
+        }
+    }
+
     private fun onWifiClicked() {
         if (showsBringUp(HomePrimaryPolicy.Connection.WIFI)) return
         // With a session up the wireless tile is the way back to it, the same as the USB one. It
@@ -1926,21 +2051,8 @@ class HomeFragment : Fragment() {
         val mode = App.provide(requireContext()).settings.wifiConnectionMode
         when (mode) {
             WifiLauncherMode.AUTO -> { // Auto (Headunit Server) - One-Shot Scan
-                if (commManager.isConnected) {
-                    // Already connected
-                } else if (AapService.scanningState.value) {
-                    ToastUtils.showToast(requireContext(), getString(R.string.already_scanning), Toast.LENGTH_SHORT)
-                } else {
-                    ToastUtils.showToast(requireContext(), getString(R.string.searching_headunit_server), Toast.LENGTH_SHORT)
-                    (requireActivity() as? MainActivity)?.beginAutoConnect(
-                        "manual WiFi headunit server scan",
-                        MainActivity.ConnectionUiMode.OVERLAY
-                    )
-                    val intent = Intent(requireContext(), AapService::class.java).apply {
-                        action = AapService.ACTION_START_WIRELESS_SCAN
-                    }
-                    ContextCompat.startForegroundService(requireContext(), intent)
-                }
+                // On the phone's hotspot with no WiFi yet, the unit joins it first.
+                if (!waitForPhoneHotspotFirst()) startHeadunitServerSearch()
             }
             WifiLauncherMode.HELPER -> { // Helper (Wireless Launcher)
                 if (commManager.isConnected) {
@@ -2158,7 +2270,7 @@ class HomeFragment : Fragment() {
         val interior = HomePagesHintPolicy.Box(cardBox.left + padH, cardBox.top + padV, cardBox.right - padH, cardBox.bottom - padV)
         val occupied = listOf(
             R.id.home_primary_icon_tile, R.id.home_countdown, R.id.home_primary_progress,
-            R.id.home_primary_actions, R.id.home_info,
+            R.id.home_primary_actions, R.id.home_info, R.id.home_wifi_status,
         ).mapNotNull { id -> root.findViewById<View>(id)?.takeIf { it.isShown && it.width > 0 }?.let { boxIn(root, it) } } +
             listOf(R.id.home_primary_kicker, R.id.home_primary_title, R.id.home_primary_subtitle, R.id.home_primary_detail)
                 .mapNotNull { id -> root.findViewById<TextView>(id)?.takeIf { it.isShown && it.width > 0 }?.let { textBox(root, it) } }
@@ -2368,6 +2480,9 @@ class HomeFragment : Fragment() {
         // A host that is not listening holds an empty widget view, so this runs before the row is
         // built in onResume.
         HomeWidgets.startListening(requireContext())
+        homeWifiStatus?.start()
+        startAutoWifiScanIfChosen()
+        renderWifiStatus()
         reportBringUpOwner(started = true)
         activity?.window?.decorView?.viewTreeObserver?.addOnGlobalLayoutListener(issueBannerWatcher)
     }
@@ -2383,6 +2498,7 @@ class HomeFragment : Fragment() {
     override fun onStop() {
         super.onStop()
         HomeWidgets.stopListening()
+        homeWifiStatus?.stop()
         mainViewModel.homeShowsBringUp.value = false
         // Started again by the next render, once the home is back on screen.
         view?.let { HomeUiHelper.stopShines(it) }

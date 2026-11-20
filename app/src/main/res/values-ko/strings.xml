@@ -389,7 +389,7 @@
     <string name="auto_connect_help">앱을 열면 이 연결 방법들이 자동으로 실행됩니다. 원하는 방법을 사용 설정한 뒤 드래그하여 순서를 정하세요. 사용 설정된 방법 중 가장 먼저 연결에 성공한 방법을 사용합니다.</string>
     <string name="auto_connect_screen_help">앱을 열 때 스스로 연결하는 방법을 설정합니다. 원하는 방법을 사용 설정하고 시도할 순서대로 끌어 놓으세요. 처음으로 성공한 방법이 사용됩니다. 지연 시간은 느린 기기에서 Wi-Fi가 깨어날 시간을 줍니다. 직접 시작한 연결은 여기서 바뀌지 않습니다. 저장을 누르면 변경사항이 적용됩니다.</string>
     <string name="dpi_screen_help">Android Auto가 화면을 그릴 때 쓰는 픽셀 밀도를 설정합니다. DPI가 높으면 아이콘과 글자가 커져서 화면에 들어가는 내용이 줄어듭니다. DPI가 낮으면 작아져서 더 많이 들어갑니다. 자동은 이 기기의 밀도를 사용합니다. 새 값은 다음 연결부터 적용됩니다.</string>
-    <string name="keymap_screen_help">이 기기의 키와 버튼을 Android Auto 동작에 할당합니다. 행을 탭한 다음 할당할 키를 누르세요. 초기화하면 지정한 할당이 모두 삭제되고 기본값으로 돌아갑니다. 핸들이나 패널의 키가 잘못 동작할 때 사용하세요.</string>
+    <string name="keymap_screen_help">이 기기의 키와 버튼에 동작을 할당합니다. Android Auto 키, 프로젝션 화면 동작, 앱 실행 중에서 고를 수 있습니다. 키 할당 추가를 탭하고 키를 누른 다음 동작을 선택하세요. 할당을 탭하면 변경하거나 해제할 수 있습니다. 초기화하면 모든 할당이 삭제됩니다.</string>
     <string name="customization_screen_help">이 앱 홈 화면의 모양을 변경합니다. 배경 이미지, 버튼 4개의 색상과 크기, 글자 크기가 해당됩니다. 야간 설정은 다크 모드의 배경을 제어합니다. 이 중 어느 것도 Android Auto가 투사 화면에 표시하는 내용을 바꾸지 않습니다.</string>
     <string name="loading_screen_screen_help">Android Auto가 시작되는 동안 표시할 이미지나 짧은 동영상을 설정합니다. 10MB 이하의 이미지나 동영상을 선택하고, 화면에 맞게 크기를 조정하며, 짧은 애니메이션은 반복 재생할 수 있습니다. 시작 문구를 숨길 수도 있습니다. 제거하면 기본 화면으로 돌아갑니다.</string>
     <string name="auto_connect_priority">우선순위 %d</string>
@@ -513,6 +513,22 @@
     <string name="key_mappings_reset">키 매핑을 초기화했습니다.</string>
     <string name="press_key_to_assign">\'%s\'에 할당할 키를 누르세요…</string>
     <string name="key_assigned">\'%2$s\'에 \'%1$s\' 키를 할당했습니다.</string>
+    <string name="action_picker_title">동작 선택</string>
+    <string name="action_remove_binding">할당 해제</string>
+    <string name="action_section_projection">프로젝션 화면</string>
+    <string name="action_section_aa_keys">Android Auto 키</string>
+    <string name="action_section_apps">앱</string>
+    <string name="action_launch_app">앱 실행…</string>
+    <string name="action_launch_named_app">%s 실행</string>
+    <string name="action_aa_key_code">Android Auto 키 %d</string>
+    <string name="action_selected">선택됨</string>
+    <string name="action_search_keywords">동작 실행 열기 앱 바로가기</string>
+    <string name="keymap_add_binding">키 할당 추가</string>
+    <string name="keymap_press_new_key">할당할 키나 버튼을 누르세요…</string>
+    <string name="keymap_no_bindings">아직 할당된 키가 없습니다. 키 할당 추가를 탭하고 키를 누른 다음 동작을 선택하세요.</string>
+    <string name="keymap_bindings_header">키 할당</string>
+    <string name="keymap_tester_hint">아무 키나 핸들 버튼을 누르면 여기에 이름과 코드가 표시됩니다.</string>
+    <string name="keymap_tester_last">마지막 키: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">마지막으로 누른 키: %1$s(%2$d)</string>
     <string name="scan">검색</string>
     <string name="scanning_network">네트워크 검색 중…</string>
@@ -767,6 +783,14 @@
     <string name="server_mode_manual">수동</string>
     <string name="server_mode_auto">자동</string>
     <string name="server_mode_help">자동은 네트워크에서 휴대전화의 헤드유닛 서버를 찾아 자동으로 연결합니다. 수동은 찾지 않습니다. 네트워크 목록에서 연결하거나 휴대전화 주소로 연결합니다.</string>
+    <string name="headunit_server_network_label">연결 방법</string>
+    <string name="headunit_server_network_phone">휴대폰 핫스팟</string>
+    <string name="headunit_server_network_unit">기기 핫스팟</string>
+    <string name="headunit_server_network_shared">공유 Wi-Fi</string>
+    <string name="headunit_server_network_help">휴대폰과 이 기기가 함께 쓰는 Wi-Fi입니다. 휴대폰 핫스팟: 이 기기가 휴대폰 핫스팟에 연결합니다. 그때까지 휴대폰 검색은 기다리고, Wi-Fi로 연결은 먼저 핫스팟을 검색합니다. 기기 핫스팟: 휴대폰이 이 기기의 액세스 포인트에 연결합니다. 공유 Wi-Fi: 둘 다 같은 공유기에 있으며 바뀌는 것은 없습니다.</string>
+    <string name="headunit_server_auto_wifi_scan">핫스팟 자동 검색</string>
+    <string name="headunit_server_auto_wifi_scan_summary">홈 화면이 표시되고 Wi-Fi에 연결되지 않은 동안.</string>
+    <string name="headunit_server_auto_wifi_scan_help">홈 화면이 표시되고 이 기기가 어떤 Wi-Fi 네트워크에도 연결되지 않은 동안 Android에 Wi-Fi 검색을 요청합니다: 즉시, 2분 동안 35초마다, 그 후 1분마다. 그러면 기기가 휴대폰 핫스팟에 더 빨리 연결됩니다. Android는 2분에 4번까지 검색을 허용하며 백그라운드에서는 허용하지 않습니다.</string>
 
     <string name="helper_strategy_label">Wireless Helper 연결 방식</string>
     <string name="helper_strategy_help">Wireless Helper 모드에서 휴대전화와 이 기기가 네트워크를 공유하는 방법을 선택합니다. 같은 Wi-Fi 네트워크는 둘 다 이미 사용하는 네트워크를 씁니다. Wi-Fi Direct는 전용 링크를 만듭니다. Google Nearby는 베타입니다. 휴대전화 핫스팟은 휴대전화의 핫스팟에 연결합니다. 헤드유닛 핫스팟은 이 기기를 액세스 포인트로 만듭니다. 휴대전화가 이 기기를 찾지 못하면 변경하세요.</string>
@@ -1301,6 +1325,10 @@
     <string name="raise_projection_during_call">통화 중에도 Android Auto 유지</string>
     <string name="raise_projection_during_call_description">단독 모드에서만 사용할 수 있습니다. 휴대전화의 통화 화면 위에 Android Auto 화면을 다시 표시하여 Android Auto에서 통화를 받고 끊을 수 있게 합니다.</string>
     <string name="raise_projection_during_call_summary">단독 모드 전용입니다. 휴대전화의 통화 화면 위에 투사 화면을 표시합니다.</string>
+    <string name="show_over_lock_screen">잠금 화면 위에 표시</string>
+    <string name="show_over_lock_screen_summary">잠겨 있어도 지도와 길 안내가 보입니다. 터치와 버튼은 작동하지 않습니다.</string>
+    <string name="show_over_lock_screen_help">Android Auto 화면을 잠금 화면 위에 표시하여 잠금을 해제하지 않고도 지도와 길 안내를 볼 수 있습니다. 이 기기가 잠겨 있는 동안에는 휴대전화로 아무것도 전달되지 않습니다. 터치, 버튼, 로터리 컨트롤러, 음성 버튼이 차단되고 지도가 앞으로 표시됩니다. 뒤로를 누르면 PIN, 패턴 또는 비밀번호로 잠금을 해제할 수 있으며, 그 후에는 평소처럼 작동합니다. 휴대전화 자체의 음악, 통화, 음성 비서에는 영향이 없습니다.</string>
+    <string name="show_over_lock_screen_locked_toast">잠김: 지도만 표시. 잠금 해제하려면 뒤로를 누르세요.</string>
     <string name="audio_stream_settings">오디오 스트림</string>
     <string name="audio_stream_settings_description">각 Android Auto 오디오 채널에 사용할 시스템 스트림을 선택하세요.</string>
     <string name="audio_stream_settings_info">Android Auto는 미디어, 안내 음성, 시스템 소리의 세 채널로 오디오를 보냅니다. 각 채널의 오디오는 시스템 스트림으로 헤드유닛에 전달됩니다. 선택한 스트림에 따라 볼륨 키로 조절하는 음량 항목이 달라집니다. 많은 헤드유닛에서는 앰프의 음소거가 해제되는지도 스트림에 따라 달라집니다. 저장하기 전에 스피커 버튼으로 해당 스트림의 테스트음을 들어 보세요.</string>
@@ -1851,4 +1879,17 @@
     <string name="usb_wireless_dongle_help">AAWireless 또는 Carlinkit 같은 무선 USB 어댑터를 통해 연결하는 경우 켜세요. Open Headunit은 동글과 일반 케이블을 구분할 수 없으므로, 이 옵션으로 홈 화면 표시를 유선에서 무선으로 바꿉니다.</string>
     <string name="home_subtitle_usb_dongle">무선으로</string>
     <string name="home_action_connect_wireless_dongle">무선으로 연결</string>
+    <string name="home_wifi_not_connected">Wi-Fi 연결 안 됨</string>
+    <string name="home_wifi_off">Wi-Fi 꺼짐</string>
+    <string name="home_wifi_connected_unnamed">Wi-Fi 연결됨</string>
+    <string name="home_wifi_scanning">검색 중…</string>
+    <string name="home_wifi_band_24">2.4GHz</string>
+    <string name="home_wifi_band_5">5GHz</string>
+    <string name="home_wifi_band_6">6GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">Wi-Fi: %1$s</string>
+    <string name="home_hotspot_waiting">휴대폰 핫스팟을 기다리는 중…</string>
+    <string name="home_hotspot_not_found">연결된 Wi-Fi가 없습니다. 휴대폰 핫스팟이 켜져 있나요?</string>
+    <string name="home_wifi_hotspot_hint">휴대폰 핫스팟이 켜져 있나요?</string>
+    <string name="home_wifi_off_hint">연결하려면 켜세요</string>
 </resources>

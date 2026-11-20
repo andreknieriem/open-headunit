@@ -362,7 +362,7 @@
     <string name="auto_connect_help">Các phương thức này chạy tự động khi mở ứng dụng. Bật các mục mong muốn rồi kéo để sắp thứ tự. Phương thức đầu tiên thành công sẽ được dùng.</string>
     <string name="auto_connect_screen_help">Đặt cách ứng dụng tự kết nối khi mở. Bật các phương thức bạn muốn và kéo chúng theo thứ tự thử. Phương thức thành công đầu tiên được dùng. Độ trễ cho Wi-Fi thời gian khởi động trên thiết bị chậm. Không mục nào ở đây thay đổi kết nối do bạn tự bắt đầu. Lưu sẽ áp dụng các thay đổi.</string>
     <string name="dpi_screen_help">Đặt mật độ điểm ảnh mà Android Auto dùng để vẽ. DPI cao hơn làm biểu tượng và chữ lớn hơn, nên màn hình chứa được ít hơn. DPI thấp hơn làm chúng nhỏ hơn, nên chứa được nhiều hơn. Tự động dùng mật độ của thiết bị này. Giá trị mới áp dụng từ lần kết nối tiếp theo.</string>
-    <string name="keymap_screen_help">Gán các phím và nút của thiết bị này cho thao tác của Android Auto. Chạm vào một hàng rồi nhấn phím cần gán. Đặt lại xóa mọi phép gán của bạn và về mặc định. Dùng khi phím trên vô lăng hoặc bảng điều khiển làm sai việc.</string>
+    <string name="keymap_screen_help">Gán các phím và nút của thiết bị này cho thao tác: một phím Android Auto, một thao tác trên màn hình chiếu hoặc mở một ứng dụng. Chạm Thêm phép gán phím, nhấn phím rồi chọn thao tác. Chạm vào một phép gán để đổi hoặc xóa. Đặt lại xóa mọi phép gán.</string>
     <string name="customization_screen_help">Đổi giao diện màn hình chính của ứng dụng này: ảnh nền, màu sắc và kích thước của bốn nút, cùng cỡ chữ. Cài đặt ban đêm điều khiển nền ở chế độ tối. Không mục nào đổi những gì Android Auto hiển thị trên màn hình chiếu.</string>
     <string name="loading_screen_screen_help">Đặt hình ảnh hoặc video ngắn hiển thị khi Android Auto khởi động. Chọn hình ảnh hoặc video tối đa 10 MB, co giãn cho vừa màn hình và lặp lại các hoạt ảnh ngắn. Bạn cũng có thể ẩn chữ khởi động. Xóa sẽ về màn hình mặc định.</string>
     <string name="auto_connect_priority">Ưu tiên %d</string>
@@ -486,6 +486,22 @@
     <string name="key_mappings_reset">Đã đặt lại gán phím</string>
     <string name="press_key_to_assign">Bấm phím để gán cho \'%s\'…</string>
     <string name="key_assigned">Đã gán \'%1$s\' cho \'%2$s\'</string>
+    <string name="action_picker_title">Chọn thao tác</string>
+    <string name="action_remove_binding">Xóa phép gán</string>
+    <string name="action_section_projection">Màn hình chiếu</string>
+    <string name="action_section_aa_keys">Phím Android Auto</string>
+    <string name="action_section_apps">Ứng dụng</string>
+    <string name="action_launch_app">Mở ứng dụng…</string>
+    <string name="action_launch_named_app">Mở %s</string>
+    <string name="action_aa_key_code">Phím Android Auto %d</string>
+    <string name="action_selected">Đã chọn</string>
+    <string name="action_search_keywords">thao tác mở khởi chạy ứng dụng lối tắt</string>
+    <string name="keymap_add_binding">Thêm phép gán phím</string>
+    <string name="keymap_press_new_key">Nhấn phím hoặc nút bạn muốn gán…</string>
+    <string name="keymap_no_bindings">Chưa có phím nào được gán. Chạm Thêm phép gán phím, nhấn một phím rồi chọn việc nó làm.</string>
+    <string name="keymap_bindings_header">Phép gán phím</string>
+    <string name="keymap_tester_hint">Nhấn phím bất kỳ hoặc nút trên vô lăng để xem tên và mã của nó tại đây.</string>
+    <string name="keymap_tester_last">Phím cuối: %1$s (%2$d), %3$s</string>
     <string name="last_key_press">Phím bấm gần nhất: %1$s (%2$d)</string>
     <string name="scan">Quét</string>
     <string name="scanning_network">Đang quét mạng…</string>
@@ -709,6 +725,14 @@
     <string name="server_mode_manual">Thủ công</string>
     <string name="server_mode_auto">Tự động</string>
     <string name="server_mode_help">Tự động tìm máy chủ của đầu xe trên điện thoại qua mạng và tự kết nối. Thủ công không tìm. Bạn kết nối từ danh sách mạng hoặc bằng địa chỉ của điện thoại.</string>
+    <string name="headunit_server_network_label">Cách kết nối</string>
+    <string name="headunit_server_network_phone">Điểm phát điện thoại</string>
+    <string name="headunit_server_network_unit">Điểm phát của máy</string>
+    <string name="headunit_server_network_shared">WiFi chung</string>
+    <string name="headunit_server_network_help">WiFi mà điện thoại và máy này dùng chung. Điểm phát điện thoại: máy này kết nối vào điểm phát của điện thoại. Cho đến lúc đó, việc tìm điện thoại sẽ chờ, và Kết nối qua WiFi sẽ quét tìm điểm phát trước. Điểm phát của máy: điện thoại kết nối vào điểm truy cập của máy này. WiFi chung: cả hai cùng một bộ định tuyến, và không có gì thay đổi.</string>
+    <string name="headunit_server_auto_wifi_scan">Tự động quét tìm điểm phát</string>
+    <string name="headunit_server_auto_wifi_scan_summary">Khi màn hình chính đang hiện và chưa kết nối WiFi.</string>
+    <string name="headunit_server_auto_wifi_scan_help">Khi màn hình chính đang hiện và máy này không ở mạng WiFi nào, máy sẽ nhờ Android quét WiFi: ngay lập tức, mỗi 35 giây trong hai phút, sau đó mỗi phút một lần. Nhờ vậy máy kết nối vào điểm phát của điện thoại sớm hơn. Android cho phép bốn lần quét trong hai phút và không cho phép khi chạy nền.</string>
 
     <string name="helper_strategy_label">Chiến lược kết nối Helper</string>
     <string name="helper_strategy_help">Chọn cách điện thoại và thiết bị này dùng chung mạng ở chế độ Wireless Helper. WiFi chung dùng mạng mà cả hai đã có. WiFi Direct tạo liên kết riêng. Google Nearby đang ở bản beta. Hotspot điện thoại tham gia điểm phát của điện thoại. Hotspot Headunit biến thiết bị này thành điểm truy cập. Hãy đổi khi điện thoại không tìm thấy thiết bị này.</string>
@@ -1308,6 +1332,10 @@
     <string name="raise_projection_during_call">Ở lại Android Auto trong khi gọi điện</string>
     <string name="raise_projection_during_call_description">Chỉ áp dụng cho Chế độ độc lập. Đưa màn hình chiếu trở lại phía trên màn hình cuộc gọi của điện thoại, để trả lời và kết thúc cuộc gọi trong giao diện Android Auto.</string>
     <string name="raise_projection_during_call_summary">Chỉ dành cho Chế độ độc lập. Hiện màn hình chiếu trên màn hình cuộc gọi của điện thoại.</string>
+    <string name="show_over_lock_screen">Hiển thị trên màn hình khóa</string>
+    <string name="show_over_lock_screen_summary">Bản đồ và chỉ đường vẫn hiển thị khi khóa. Chạm và nút bấm không có tác dụng.</string>
+    <string name="show_over_lock_screen_help">Hiển thị hình ảnh Android Auto trên màn hình khóa để có thể xem bản đồ và chỉ đường mà không cần mở khóa. Khi thiết bị này đang khóa, không có gì được gửi tới điện thoại: thao tác chạm, nút bấm, núm xoay và nút giọng nói đều bị giữ lại, và bản đồ được đưa lên phía trước. Nhấn Quay lại để mở khóa bằng mã PIN, hình mở khóa hoặc mật khẩu; sau đó mọi thứ hoạt động như bình thường. Nhạc, cuộc gọi và trợ lý giọng nói trên chính điện thoại không bị ảnh hưởng.</string>
+    <string name="show_over_lock_screen_locked_toast">Đã khóa: chỉ bản đồ. Nhấn Quay lại để mở khóa.</string>
     <string name="audio_stream_settings">Luồng âm thanh</string>
     <string name="audio_stream_settings_description">Chọn luồng hệ thống mà mỗi kênh Android Auto sẽ phát trên đó.</string>
     <string name="audio_stream_settings_info">Android Auto gửi âm thanh qua ba kênh: Đa phương tiện, Chỉ dẫn và Âm thanh hệ thống. Mỗi kênh được chuyển tới đầu máy qua một luồng hệ thống. Luồng bạn chọn quyết định kênh đó theo phím âm lượng nào và, trên nhiều đầu máy, có bật tiếng bộ khuếch đại cho kênh đó hay không. Hãy dùng nút loa để nghe âm thanh thử trên luồng trước khi lưu.</string>
@@ -1859,4 +1887,17 @@
     <string name="usb_wireless_dongle_help">Bật tùy chọn này nếu bạn kết nối qua bộ chuyển đổi USB không dây như AAWireless hoặc Carlinkit. Open Headunit không thể phân biệt dongle với cáp, nên tùy chọn này đổi nhãn màn hình chính từ cáp sang không dây.</string>
     <string name="home_subtitle_usb_dongle">Không dây</string>
     <string name="home_action_connect_wireless_dongle">Kết nối không dây</string>
+    <string name="home_wifi_not_connected">Chưa kết nối WiFi</string>
+    <string name="home_wifi_off">WiFi đang tắt</string>
+    <string name="home_wifi_connected_unnamed">Đã kết nối WiFi</string>
+    <string name="home_wifi_scanning">Đang quét…</string>
+    <string name="home_wifi_band_24">2,4 GHz</string>
+    <string name="home_wifi_band_5">5 GHz</string>
+    <string name="home_wifi_band_6">6 GHz</string>
+    <string name="home_wifi_signal">%1$d%%</string>
+    <string name="home_wifi_status_description">WiFi: %1$s</string>
+    <string name="home_hotspot_waiting">Đang chờ điểm phát của điện thoại…</string>
+    <string name="home_hotspot_not_found">Chưa kết nối WiFi. Điểm phát của điện thoại đã bật chưa?</string>
+    <string name="home_wifi_hotspot_hint">Điểm phát của điện thoại đã bật chưa?</string>
+    <string name="home_wifi_off_hint">Bật lên để kết nối</string>
 </resources>

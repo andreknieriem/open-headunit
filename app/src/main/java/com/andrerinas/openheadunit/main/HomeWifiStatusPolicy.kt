@@ -27,6 +27,11 @@ object HomeWifiStatusPolicy {
         val rssiDbm: Int? = null,
     )
 
+    /** WifiInfo.getFrequency is API 21: below it [read] must not run, or the home crashes as it draws. */
+    fun frequencyMhz(sdk: Int, read: () -> Int?): Int? = if (sdk >= FREQUENCY_API) read() else null
+
+    private const val FREQUENCY_API = 21
+
     enum class Kind { HIDDEN, OFF, NOT_CONNECTED, CONNECTED }
 
     enum class Band { GHZ_2_4, GHZ_5, GHZ_6 }

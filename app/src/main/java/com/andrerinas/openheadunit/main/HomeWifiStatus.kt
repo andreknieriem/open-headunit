@@ -211,7 +211,7 @@ class HomeWifiStatus(context: Context, private val onChanged: () -> Unit) {
             wifiEnabled = enabled,
             connected = connected,
             rawSsid = info?.ssid,
-            frequencyMhz = info?.frequency?.takeIf { Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP },
+            frequencyMhz = HomeWifiStatusPolicy.frequencyMhz(Build.VERSION.SDK_INT) { info?.frequency },
             rssiDbm = info?.rssi,
         )
     }

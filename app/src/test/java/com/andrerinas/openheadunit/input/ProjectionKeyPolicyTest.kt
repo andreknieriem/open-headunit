@@ -136,27 +136,60 @@ class ProjectionKeyPolicyTest {
     @Test
     fun `an unbound volume key stays with the firmware`() {
         for (code in volumeKeys) {
-            assertTrue(ProjectionKeyPolicy.firmwareKeepsKey(code, emptyMap(), false, false))
+            assertTrue(ProjectionKeyPolicy.firmwareKeepsKey(code, emptyMap(), false, false, false))
         }
     }
 
     @Test
     fun `a bound volume key or volume to the phone is not left to the firmware`() {
         val bindings = mapOf(up to InputAction.AaKey(KeyEvent.KEYCODE_DPAD_CENTER))
-        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, bindings, false, false))
-        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, emptyMap(), true, false))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, bindings, false, false, false))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, emptyMap(), true, false, false))
     }
 
     @Test
     fun `a locked unit leaves every volume key to the firmware`() {
         val bindings = mapOf(up to InputAction.AaKey(KeyEvent.KEYCODE_DPAD_CENTER))
-        assertTrue(ProjectionKeyPolicy.firmwareKeepsKey(up, bindings, true, true))
-        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(KeyEvent.KEYCODE_MEDIA_NEXT, emptyMap(), false, true))
+        assertTrue(ProjectionKeyPolicy.firmwareKeepsKey(up, bindings, true, true, false))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(KeyEvent.KEYCODE_MEDIA_NEXT, emptyMap(), false, true, false))
+    }
+
+    @Test
+    fun `an ignored volume key is not left to the firmware`() {
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, mapOf(up to InputAction.Ignore), false, false, false))
+    }
+
+    @Test
+    fun `physical key routes drop an ignored key`() {
+        for (src in listOf("projection", "mediasession", "carkey", "key-broadcast", "remote-keycode")) {
+            assertTrue(src, ProjectionKeyPolicy.isIgnored(mapOf(87 to InputAction.Ignore), 87, src))
+        }
+    }
+
+    @Test
+    fun `routes with no wheel press keep an ignored key`() {
+        for (src in listOf("media-key-intent", "transport-control", "remote-command", "remote-mute",
+            "auto-resume", "assistant", "volume-to-phone", "unknown")) {
+            assertFalse(src, ProjectionKeyPolicy.isIgnored(mapOf(87 to InputAction.Ignore), 87, src))
+        }
+    }
+
+    @Test
+    fun `a key with another binding or none is not ignored`() {
+        assertFalse(ProjectionKeyPolicy.isIgnored(mapOf(88 to InputAction.Ignore), 87, "carkey"))
+        assertFalse(ProjectionKeyPolicy.isIgnored(mapOf(87 to InputAction.AaKey(85)), 87, "carkey"))
+        assertFalse(ProjectionKeyPolicy.isIgnored(mapOf(87 to InputAction.None), 87, "carkey"))
+    }
+
+    @Test
+    fun `an unbound volume key while learning is not left to the firmware`() {
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, emptyMap(), false, false, true))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, emptyMap(), false, true, true))
     }
 
     @Test
     fun `other keys and no key are not left to the firmware`() {
-        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(KeyEvent.KEYCODE_MEDIA_NEXT, emptyMap(), false, false))
-        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(null, emptyMap(), false, true))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(KeyEvent.KEYCODE_MEDIA_NEXT, emptyMap(), false, false, false))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(null, emptyMap(), false, true, false))
     }
 }

@@ -369,7 +369,7 @@
     <string name="auto_connect_help">Aceste metode rulează automat la deschiderea aplicației. Activează-le pe cele dorite, apoi trage de ele pentru a le ordona. Se va folosi prima metodă reușită.</string>
     <string name="auto_connect_screen_help">Stabilește cum se conectează aplicația singură la deschidere. Activează metodele dorite și trage-le în ordinea de încercare. Se folosește prima care reușește. Întârzierea dă timp Wi-Fi-ului să se trezească pe o unitate lentă. Nimic de aici nu schimbă o conexiune pornită de tine. Cu Salvează se aplică modificările.</string>
     <string name="dpi_screen_help">Stabilește densitatea de pixeli cu care desenează Android Auto. Un DPI mai mare mărește pictogramele și textul, deci încape mai puțin pe ecran. Un DPI mai mic le micșorează, deci încape mai mult. Automat folosește densitatea acestui dispozitiv. Valoarea nouă se aplică la următoarea conectare.</string>
-    <string name="keymap_screen_help">Asociază tastele și butoanele acestei unități cu acțiuni: o tastă Android Auto, o acțiune a ecranului de proiecție sau deschiderea unei aplicații. Atinge Adaugă asociere de tastă, apasă tasta, apoi alege acțiunea. Atinge o asociere ca s-o modifici sau s-o elimini. Resetează șterge toate asocierile.</string>
+    <string name="keymap_screen_help">Asociază tastele și butoanele acestei unități cu acțiuni: o tastă Android Auto, o acțiune a ecranului de proiecție sau deschiderea unei aplicații. Atinge Adaugă asociere de tastă, apasă tasta, apoi alege acțiunea. Atinge o asociere ca s-o modifici sau s-o elimini. Nicio acțiune ignoră tasta pe toate căile fizice. Resetează șterge toate asocierile.</string>
     <string name="customization_screen_help">Schimbă aspectul ecranului de start al acestei aplicații: imaginea de fundal, culorile și dimensiunea celor patru butoane și dimensiunea textului. Setarea de noapte controlează fundalul în modul întunecat. Nimic din toate acestea nu schimbă ce afișează Android Auto în proiecție.</string>
     <string name="loading_screen_screen_help">Stabilește imaginea sau videoclipul scurt afișat cât pornește Android Auto. Alege o imagine sau un videoclip de până la 10 MB, scalează-l pe ecran și repetă animațiile scurte în buclă. Poți ascunde și textul de pornire. Cu Elimină se revine la ecranul implicit.</string>
     <string name="auto_connect_priority">Prioritate %d</string>
@@ -478,6 +478,7 @@
     <string name="key_assigned">\'%1$s\' a fost asociat cu \'%2$s\'</string>
     <string name="action_picker_title">Alege acțiunea</string>
     <string name="action_remove_binding">Elimină asocierea</string>
+    <string name="key_do_nothing">Nicio acțiune</string>
     <string name="action_section_projection">Ecran de proiecție</string>
     <string name="action_section_aa_keys">Taste Android Auto</string>
     <string name="action_section_apps">Aplicații</string>

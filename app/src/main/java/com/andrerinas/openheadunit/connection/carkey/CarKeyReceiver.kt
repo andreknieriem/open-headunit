@@ -8,6 +8,7 @@ import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.carkey.byd.CarBydReceiver
 import com.andrerinas.openheadunit.connection.carkey.fyt.CarFYTReceiver
 import com.andrerinas.openheadunit.contract.KeyIntent
+import com.andrerinas.openheadunit.input.KeyLearnPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 
 interface CarKeyReceiver {
@@ -49,6 +50,7 @@ interface CarKeyReceiver {
         context.sendBroadcast(
             Intent(KeyIntent.action).apply {
                 setPackage(context.packageName)
+                putExtra(KeyLearnPolicy.EXTRA_ROUTE, "carkey")
                 putExtra(
                     KeyIntent.extraEvent,
                     KeyEvent(

@@ -258,6 +258,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     fun deliverVpn() { vpnCommands.toList().forEach { vpnRequests.runIfCurrent(it) { tunnel = true } }; vpnCommands.clear() }
     private fun safeMediaSessionCall(action: (FixtureMedia) -> Unit) { action(FixtureMedia()) }
     private fun updateMediaSessionState(connected: Boolean) {}
+    private fun applyKeyLearnState() {}
     fun deliverHomeCommand() {
         val intent = homeCommands.removeAt(0)
         when (intent.action) {

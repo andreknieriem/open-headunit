@@ -128,6 +128,7 @@ class Service {
     fun applyPlaceholderMediaMetadata() {}
     fun safeMediaSessionCall(action: (MediaSession)->Unit) { action(MediaSession()) }
     fun updateMediaSessionState(active: Boolean) {}
+    fun applyKeyLearnState() {}
     fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) { reconnects++ }
     suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {}
     fun rearmWirelessAfterWiredSession(quiesced: Boolean, standDownPending: Boolean=false)=false

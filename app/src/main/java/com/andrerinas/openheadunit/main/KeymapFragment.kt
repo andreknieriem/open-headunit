@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +26,7 @@ import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.input.BydPanelKey
 import com.andrerinas.openheadunit.input.InputAction
 import com.andrerinas.openheadunit.input.InputActionCodec
+import com.andrerinas.openheadunit.input.KeyLearnPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.IntentFilters
 import com.andrerinas.openheadunit.utils.Settings
@@ -45,6 +47,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
 
     /** True while the "press a key" dialog waits for the key to bind. */
     private var assigning = false
+    private val seenKeys = HashMap<Pair<Int, Int>, Long>()
     private var assignDialog: androidx.appcompat.app.AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +87,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         view.isFocusableInTouchMode = true
         view.requestFocus()
         view.setOnKeyListener { _, _, event ->
-            onKeyEvent(event)
+            onKeyEvent(event, "window")
         }
     }
 
@@ -111,6 +114,8 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         assigning = true
 
         // Using MaterialAlertDialogBuilder with DarkAlertDialog style for consistency and compatibility
+        // Dialog.dismiss() posts its listener, which can run after the detach: no requireContext() there.
+        val carKeys = App.provide(requireContext()).carKeysManager
         assignDialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
             .setTitle(R.string.keymap_add_binding)
             .setMessage(R.string.keymap_press_new_key)
@@ -118,15 +123,17 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
             .setOnDismissListener {
                 assigning = false
                 assignDialog = null
+                carKeys.setAssignDialogOpen(false)
             }
             .create()
 
         // Important: We need to set the listener on the dialog to catch keys like ENTER
         assignDialog?.setOnKeyListener { _, _, event ->
-            onKeyEvent(event)
+            onKeyEvent(event, "dialog")
         }
 
         assignDialog?.show()
+        carKeys.setAssignDialogOpen(true)
     }
 
     private fun openActionPicker(physicalKey: Int) {
@@ -139,7 +146,8 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
                 tag = physicalKey.toString(),
                 title = physicalKeyName(physicalKey),
                 current = settings.keyBindings[physicalKey] ?: InputAction.None,
-                noneLabelResId = R.string.action_remove_binding
+                noneLabelResId = R.string.action_remove_binding,
+                offerIgnore = KeymapAssignPolicy.offersIgnore(physicalKey)
             )
         )
     }
@@ -172,7 +180,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
                 @Suppress("DEPRECATION")
                 intent.getParcelableExtra(KeyIntent.extraEvent)
             }
-            onKeyEvent(event)
+            onKeyEvent(event, intent.getStringExtra(KeyLearnPolicy.EXTRA_ROUTE) ?: "broadcast")
         }
     }
 
@@ -188,6 +196,13 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         super.onPause()
         context?.let { App.provide(it).carKeysManager.stopLearning() }
         context?.unregisterReceiver(keyCodeReceiver)
+    }
+
+    override fun onDestroyView() {
+        // A recreation fires no dismiss listener for the leaked window, so clear the flag here.
+        context?.let { App.provide(it).carKeysManager.setAssignDialogOpen(false) }
+        assignDialog?.dismiss()
+        super.onDestroyView()
     }
 
     override fun onAttach(context: Context) {
@@ -206,7 +221,9 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         super.onDetach()
     }
 
-    override fun onKeyEvent(event: KeyEvent?): Boolean {
+    override fun onKeyEvent(event: KeyEvent?): Boolean = onKeyEvent(event, "window")
+
+    private fun onKeyEvent(event: KeyEvent?, route: String): Boolean {
         // Still attached while the action picker is on top of it: keys are not ours then.
         if (event == null || view == null) return false
 
@@ -217,9 +234,14 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         val keyName = physicalKeyName(keyCode)
         val actionName = if (event.action == KeyEvent.ACTION_DOWN) "DOWN" else "UP"
         
-        AppLog.i("KeymapFragment: Captured $keyName ($keyCode) $actionName")
-        
-        showTester(getString(R.string.keymap_tester_last, keyName, keyCode, actionName))
+        // The same press can arrive on several routes; the first one counts.
+        val now = SystemClock.elapsedRealtime()
+        if (KeyLearnPolicy.isCopy(seenKeys, keyCode, event.action, now)) return assigning
+        seenKeys[keyCode to event.action] = now
+
+        AppLog.i("KeymapFragment: Captured $keyName ($keyCode) $actionName route=$route")
+
+        showTester(getString(R.string.keymap_tester_last, keyName, keyCode, "$actionName ($route)"))
 
         if (assigning) {
             // Only finish on ACTION_UP, so the release of the key never reaches the next screen.

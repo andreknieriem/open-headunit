@@ -119,7 +119,8 @@ class CarKeyBroadcastReceiver : BroadcastReceiver(), CarKeyReceiver {
         if (isOrderedBroadcast) {
             val app = App.provide(context)
             val keepsKey = ProjectionKeyPolicy.firmwareKeepsKey(keyCodeIn(action, intent),
-                app.settings.keyBindings, app.settings.volumeKeysToPhone, LockedInputPolicy.engaged)
+                app.settings.keyBindings, app.settings.volumeKeysToPhone, LockedInputPolicy.engaged,
+                app.commManager.keyLearning?.invoke() == true)
             if (app.commManager.isConnected && !keepsKey) {
                 abortBroadcast()
             }

@@ -9,7 +9,15 @@ class CarKeysManager {
     private val registered: MutableSet<CarKeyReceiver> = mutableSetOf()
 
     private var isSessionActive = false
-    private var isLearningActive = false
+    @Volatile private var isLearningActive = false
+
+    val isLearning: Boolean get() = isLearningActive
+
+    @Volatile private var assignDialogOpen = false
+    val isAssignDialogOpen: Boolean get() = assignDialogOpen
+
+    /** Tells the service to reach, or release, the media button route. */
+    var onLearnStateChanged: (() -> Unit)? = null
 
     /**
      * Registers baseline (non-session-scoped) receivers like CarKeyBroadcastReceiver and CarBydReceiver.
@@ -58,6 +66,7 @@ class CarKeysManager {
         isLearningActive = true
         registerIdleReceivers(context)
         registerSessionReceivers(context)
+        onLearnStateChanged?.invoke()
     }
 
     /**
@@ -68,6 +77,12 @@ class CarKeysManager {
         if (!isSessionActive) {
             unregisterSessionReceivers()
         }
+        onLearnStateChanged?.invoke()
+    }
+
+    fun setAssignDialogOpen(open: Boolean) {
+        assignDialogOpen = open
+        onLearnStateChanged?.invoke()
     }
 
     private fun registerSessionReceivers(context: Context) {
@@ -105,7 +120,6 @@ class CarKeysManager {
      */
     fun unregisterAll() {
         isSessionActive = false
-        isLearningActive = false
         try {
             for (r in registered) {
                 try {

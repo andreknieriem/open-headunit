@@ -27,7 +27,15 @@ class SelfLauncherManager(
     private val wifiLauncherManager: WifiLauncherManager
 ) {
 
+    /** Fires after [isActive] changes, so a reader of the flag can look again. */
+    var onActiveChanged: (() -> Unit)? = null
+
     var isActive: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            onActiveChanged?.invoke()
+        }
 
     /**
      * True from the moment a launch is accepted until its launchers have finished running.

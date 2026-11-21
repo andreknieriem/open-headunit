@@ -36,11 +36,21 @@ object ProjectionKeyPolicy {
 
     /**
      * The head unit's firmware must act on this key, so the receiver leaves the broadcast alive.
-     * A locked unit keeps every volume key, as the projection screen does.
+     * A locked unit keeps every volume key, as the projection screen does; the keymap screen keeps none.
      */
-    fun firmwareKeepsKey(keyCode: Int?, bindings: Map<Int, InputAction>, volumeToPhone: Boolean, locked: Boolean): Boolean {
-        if (keyCode == null) return false
-        return (locked && isVolumeKey(keyCode)) || isLocalKey(keyCode, bindings, volumeToPhone, "carkey")
+    fun firmwareKeepsKey(
+        keyCode: Int?, bindings: Map<Int, InputAction>, volumeToPhone: Boolean, locked: Boolean, learning: Boolean,
+    ): Boolean {
+        if (keyCode == null || learning) return false
+        return lockKeepsKey(keyCode, locked) || isLocalKey(keyCode, bindings, volumeToPhone, "carkey")
+    }
+
+    // Routes where a user pressed a physical key. A notification button or a command is not one.
+    private val physicalSources = setOf("projection", "mediasession", "carkey", "key-broadcast", "remote-keycode")
+
+    /** The user chose Do nothing for this physical key, and it came from a physical route. */
+    fun isIgnored(bindings: Map<Int, InputAction>, keyCode: Int, source: String): Boolean {
+        return bindings[keyCode] == InputAction.Ignore && source in physicalSources
     }
 
     private fun isBound(bindings: Map<Int, InputAction>, keyCode: Int): Boolean =

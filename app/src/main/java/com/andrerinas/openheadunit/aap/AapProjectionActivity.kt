@@ -2531,7 +2531,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     /** What a gesture does: the same choices a key binding has. */
     private fun performTouchGesture(action: InputAction): Boolean = when (action) {
-        InputAction.None -> false
+        InputAction.None, InputAction.Ignore -> false
         is InputAction.Local -> performLocalAction(action.kind)
         is InputAction.AaKey -> {
             commManager.sendLogicalKey(action.keyCode, true, source = "gesture")
@@ -2903,6 +2903,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         }
 
+        if (ProjectionKeyPolicy.isIgnored(cachedKeyBindings, event.keyCode, "projection")) {
+            return true
+        }
+
         // 1. Let the system handle unmapped back keys and local volume keys.
         // If Back was explicitly learned in Keymap and transport is running,
         // route it through CommManager so it can be remapped and sent to Android Auto.
@@ -2947,6 +2951,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             AppLog.i("AapProjectionActivity: key broadcast $keyCode ignored, the unit is locked")
             return
         }
+        if (ProjectionKeyPolicy.isIgnored(cachedKeyBindings, keyCode, "key-broadcast")) return
         if (ProjectionKeyPolicy.isHomeKey(keyCode)) {
             if (isPress) {
                 AppLog.i("AapProjectionActivity: KEYCODE_HOME broadcast received -> returning to App Home")

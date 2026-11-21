@@ -30,7 +30,7 @@ class CommManagerKeyRouteTest {
     private val volumeUp = KeyEvent.KEYCODE_VOLUME_UP
     private val volumeMute = KeyEvent.KEYCODE_VOLUME_MUTE
 
-    private class Rig(bindings: Map<Int, InputAction>, volumeToPhone: Boolean = false) {
+    private class Rig(bindings: Map<Int, InputAction>, volumeToPhone: Boolean = false, learning: Boolean = false) {
         val transport: AapTransport = mock(AapTransport::class.java)
         val comm: CommManager = mock(CommManager::class.java, CALLS_REAL_METHODS)
         val keyStates = mutableMapOf<Int, KeyDebouncePolicy.KeyState>()
@@ -44,6 +44,7 @@ class CommManagerKeyRouteTest {
             set("_connectionState", MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.TransportStarted))
             set("_transport", transport)
             set("keyStates", keyStates)
+            set("keyLearning", { learning })
         }
 
         private fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
@@ -86,6 +87,25 @@ class CommManagerKeyRouteTest {
         verify(r.transport, never()).send(anyInt(), anyBoolean())
     }
 
+    @Test fun anIgnoredKeySendsNothingFromCarkey() {
+        val r = Rig(mapOf(KeyEvent.KEYCODE_MEDIA_NEXT to InputAction.Ignore))
+        r.comm.sendKey(KeyEvent.KEYCODE_MEDIA_NEXT, true, null, "carkey")
+        r.comm.sendKey(KeyEvent.KEYCODE_MEDIA_NEXT, false, null, "carkey")
+        verify(r.transport, never()).send(anyInt(), anyBoolean())
+    }
+
+    @Test fun anIgnoredKeyStillGoesOutFromAnAppCommand() {
+        val r = Rig(mapOf(KeyEvent.KEYCODE_DPAD_CENTER to InputAction.Ignore))
+        r.comm.sendKey(KeyEvent.KEYCODE_DPAD_CENTER, true, null, "remote-command")
+        verify(r.transport).send(KeyEvent.KEYCODE_DPAD_CENTER, true)
+    }
+
+    @Test fun anIgnoredVolumeKeyFromACommandStaysLocal() {
+        val r = Rig(mapOf(volumeUp to InputAction.Ignore))
+        r.comm.sendKey(volumeUp, true, null, "remote-command")
+        verify(r.transport, never()).send(anyInt(), anyBoolean())
+    }
+
     @Test fun volumeToPhoneSendsFromEveryRoute() {
         for (src in listOf("carkey", "key-broadcast", "remote-keycode", "volume-to-phone")) {
             val r = Rig(emptyMap(), volumeToPhone = true)
@@ -110,5 +130,20 @@ class CommManagerKeyRouteTest {
         val r = Rig(emptyMap())
         r.comm.sendKey(volumeUp, true, 10L, "carkey")
         assertTrue(r.keyStates.isEmpty())
+    }
+
+    @Test fun learningHoldsKeysFromTheWire() {
+        for (src in listOf("carkey", "key-broadcast", "mediasession")) {
+            val r = Rig(emptyMap(), learning = true)
+            r.comm.sendKey(KeyEvent.KEYCODE_MEDIA_NEXT, true, 10L, src)
+            verify(r.transport, never()).send(anyInt(), anyBoolean())
+            assertTrue(r.keyStates.isEmpty())
+        }
+    }
+
+    @Test fun learningStillLetsAutoResumeOut() {
+        val r = Rig(emptyMap(), learning = true)
+        r.comm.sendKey(KeyEvent.KEYCODE_MEDIA_NEXT, true, null, "auto-resume")
+        verify(r.transport).send(KeyEvent.KEYCODE_MEDIA_NEXT, true)
     }
 }

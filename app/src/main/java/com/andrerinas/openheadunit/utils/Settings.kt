@@ -2649,6 +2649,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("use-gradient-background", false)
         set(value) { prefs.edit().putBoolean("use-gradient-background", value).apply() }
 
+    /** Own solid color for the app background and the system bars, as opaque ARGB. 0 is not set. */
+    var customBackgroundColor: Int
+        get() = prefs.getInt("custom-background-color", 0)
+        set(value) { prefs.edit().putInt("custom-background-color", value).apply() }
+
     var aaMonochromeEnabled: Boolean
         get() = prefs.getBoolean("aa-monochrome-enabled", false)
         set(value) { prefs.edit().putBoolean("aa-monochrome-enabled", value).apply() }

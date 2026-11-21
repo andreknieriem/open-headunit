@@ -92,6 +92,10 @@ class CustomizationFragment : Fragment() {
     private var rowColorSelfMode: View? = null
     private var rowColorUsb: View? = null
     private var rowColorWifi: View? = null
+
+    private var rowBgColor: View? = null
+    private var indicatorBgColor: View? = null
+    private var txtBgColorValue: TextView? = null
     private var switchAutoMonochromeNight: SwitchMaterial? = null
     private var switchShowFavoriteApps: SwitchMaterial? = null
     private var switchShowWidgets: SwitchMaterial? = null
@@ -229,6 +233,10 @@ class CustomizationFragment : Fragment() {
         rowColorSelfMode = view.findViewById(R.id.row_color_self_mode)
         rowColorUsb = view.findViewById(R.id.row_color_usb)
         rowColorWifi = view.findViewById(R.id.row_color_wifi)
+        rowBgColor = view.findViewById(R.id.row_bg_color)
+        indicatorBgColor = view.findViewById(R.id.indicator_bg_color)
+        txtBgColorValue = view.findViewById(R.id.txt_bg_color_value)
+        rowBgColor?.setOnClickListener { showBackgroundColorDialog() }
         switchAutoMonochromeNight = view.findViewById(R.id.switch_auto_monochrome_night)
         switchShowFavoriteApps = view.findViewById(R.id.switch_show_favorite_apps)
         switchShowWidgets = view.findViewById(R.id.switch_show_widgets)
@@ -821,6 +829,17 @@ class CustomizationFragment : Fragment() {
 
         switchAutoMonochromeNight?.isChecked = settings.autoMonochromeButtonsAtNight
 
+        val ownBgColor = settings.customBackgroundColor
+        indicatorBgColor?.background = GradientDrawable().apply {
+            setColor(if (ownBgColor != 0) ownBgColor else Color.parseColor("#296ddb"))
+            cornerRadius = 12f * ctx.resources.displayMetrics.density
+        }
+        txtBgColorValue?.text = if (ownBgColor != 0) {
+            String.format("#%06X", 0xFFFFFF and ownBgColor)
+        } else {
+            getString(R.string.bg_color_summary)
+        }
+
         val showsSelf = settings.showsSelf()
         val showsUsb = settings.showsUsb()
         val showsWifi = settings.showsWifi()
@@ -994,6 +1013,96 @@ class CustomizationFragment : Fragment() {
                 hexEditText.removeTextChangedListener(textWatcher)
                 val imm = ctx.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
                 imm?.hideSoftInputFromWindow(hexEditText.windowToken, 0)
+            }
+            .show()
+    }
+
+    /**
+     * RGB sliders, a number field per channel and a #RRGGBB field, all kept in step. Every change
+     * shows at once on the window and the system panels; cancelling or dismissing puts the saved
+     * look back.
+     */
+    private fun showBackgroundColorDialog() {
+        val ctx = context ?: return
+        val host = activity as? BaseActivity
+        val view = layoutInflater.inflate(R.layout.dialog_background_color, null)
+        val preview = view.findViewById<View>(R.id.bgc_preview)
+        val sliders = listOf(R.id.bgc_slider_r, R.id.bgc_slider_g, R.id.bgc_slider_b)
+            .map { view.findViewById<com.google.android.material.slider.Slider>(it) }
+        val fields = listOf(R.id.bgc_value_r, R.id.bgc_value_g, R.id.bgc_value_b)
+            .map { view.findViewById<android.widget.EditText>(it) }
+        val hex = view.findViewById<TextInputEditText>(R.id.bgc_hex)
+
+        val saved = settings.customBackgroundColor
+        var color = if (saved != 0) saved else Color.parseColor("#999999")
+        var syncing = false
+        var committed = false
+
+        fun show(newColor: Int, skip: View?) {
+            color = 0xFF000000.toInt() or (newColor and 0xFFFFFF)
+            syncing = true
+            val channels = intArrayOf(Color.red(color), Color.green(color), Color.blue(color))
+            for (i in 0..2) {
+                sliders[i].value = channels[i].toFloat()
+                if (fields[i] !== skip) {
+                    fields[i].setText(channels[i].toString())
+                    fields[i].setSelection(fields[i].text.length)
+                }
+            }
+            if (hex !== skip) hex.setText(String.format("#%06X", 0xFFFFFF and color))
+            syncing = false
+            preview.setBackgroundColor(color)
+            host?.previewBackgroundColor(color)
+        }
+
+        for (i in 0..2) {
+            sliders[i].addOnChangeListener { _, value, fromUser ->
+                if (!fromUser || syncing) return@addOnChangeListener
+                val rgb = intArrayOf(Color.red(color), Color.green(color), Color.blue(color))
+                rgb[i] = value.toInt()
+                show(Color.rgb(rgb[0], rgb[1], rgb[2]), null)
+            }
+            fields[i].doOnTextChanged { text, _, _, _ ->
+                if (syncing) return@doOnTextChanged
+                val value = text?.toString()?.toIntOrNull() ?: return@doOnTextChanged
+                val rgb = intArrayOf(Color.red(color), Color.green(color), Color.blue(color))
+                rgb[i] = value.coerceIn(0, 255)
+                // The field being typed in is left alone, so a half-typed number is not rewritten.
+                show(Color.rgb(rgb[0], rgb[1], rgb[2]), fields[i])
+            }
+        }
+        hex.doOnTextChanged { text, _, _, _ ->
+            if (syncing) return@doOnTextChanged
+            val input = text?.toString()?.trim().orEmpty().removePrefix("#")
+            if (input.length == 6) {
+                val parsed = input.toIntOrNull(16) ?: return@doOnTextChanged
+                show(parsed, hex)
+            }
+        }
+
+        show(color, null)
+        // The first show() only filled the dialog: nothing is previewed until the user changes it.
+        if (saved == 0) host?.previewBackgroundColor(0)
+
+        MaterialAlertDialogBuilder(ctx)
+            .setView(view)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                committed = true
+                settings.customBackgroundColor = color
+                notifyMainActivityBackgroundChanged()
+                refreshUI()
+            }
+            .setNeutralButton(R.string.bg_color_default_value) { _, _ ->
+                committed = true
+                settings.customBackgroundColor = 0
+                notifyMainActivityBackgroundChanged()
+                refreshUI()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .setOnDismissListener {
+                if (!committed) notifyMainActivityBackgroundChanged()
+                val imm = ctx.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                imm?.hideSoftInputFromWindow(hex.windowToken, 0)
             }
             .show()
     }

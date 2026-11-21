@@ -1976,4 +1976,11 @@
     <string name="home_hotspot_not_found">No WiFi joined. Is the phone’s hotspot on?</string>
     <string name="home_wifi_hotspot_hint">Is the phone’s hotspot on?</string>
     <string name="home_wifi_off_hint">Turn it on to connect</string>
+    <string name="bg_color_title">Panel background color</string>
+    <string name="bg_color_summary">Own color for the system panels</string>
+    <string name="bg_color_default_value">Default</string>
+    <string name="bg_color_red">Red</string>
+    <string name="bg_color_green">Green</string>
+    <string name="bg_color_blue">Blue</string>
+    <string name="bg_color_hex_hint">Color (#RRGGBB)</string>
 </resources>

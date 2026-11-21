@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.utils.SystemUI
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -122,6 +123,8 @@ open class BaseActivity : AppCompatActivity() {
 
     fun applyWindowBackground() {
         val settings = Settings(this)
+        // The own color paints the system bars only, never the window background.
+        applyBarColorsFor(settings.customBackgroundColor)
         currentHomeBackgroundImagePath = settings.homeBackgroundImagePath
         val path = settings.homeBackgroundImagePath
         val file = if (path.isNotEmpty()) File(path) else null
@@ -160,6 +163,18 @@ open class BaseActivity : AppCompatActivity() {
         } else {
             resetWindowBackgroundToTheme()
         }
+    }
+
+    /**
+     * Shows [color] on the system bars without saving it, so the
+     * color picker can preview live. 0 returns to the saved look.
+     */
+    fun previewBackgroundColor(color: Int) {
+        applyBarColorsFor(if (color != 0) color else Settings(this).customBackgroundColor)
+    }
+
+    private fun applyBarColorsFor(color: Int) {
+        SystemUI.applyBarColors(window, color, Settings(this).fullscreenMode)
     }
 
     protected fun resetWindowBackgroundToTheme() {

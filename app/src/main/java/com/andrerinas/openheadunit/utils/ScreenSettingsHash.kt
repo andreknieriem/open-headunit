@@ -25,6 +25,10 @@ object ScreenSettingsHash {
         videoFitMode: Int,
         forcedScale: Boolean,
         normalisation: ScreenOrientationPolicy.Normalisation,
+        // Which panel the reading came from. Not the metric the note above warns about: an id names
+        // a display rather than moving with a decoration, and a canvas measured on one display says
+        // nothing about another.
+        displayId: Int = DisplayTargetPolicy.DEFAULT_DISPLAY_ID,
     ): Int {
         var hash = 17
         hash = 31 * hash + resolutionId
@@ -40,6 +44,7 @@ object ScreenSettingsHash {
         hash = 31 * hash + videoFitMode
         hash = 31 * hash + (if (forcedScale) 1 else 0)
         hash = 31 * hash + normalisation.ordinal
+        hash = 31 * hash + displayId
         return hash
     }
 }

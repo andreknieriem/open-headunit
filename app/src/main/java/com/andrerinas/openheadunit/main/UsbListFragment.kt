@@ -33,6 +33,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
 import com.andrerinas.openheadunit.connection.usb.UsbManifestFilter
+import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
@@ -235,7 +236,10 @@ class UsbListFragment : Fragment() {
                         putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
                         addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                     }
-                    mContext.startActivity(aapIntent)
+                    mContext.startActivity(
+                        aapIntent,
+                        DisplayTargets.projectionLaunchOptions(mContext, Settings(mContext)),
+                    )
                 } else if (device.isInAccessoryMode) {
                     // Device is in Accessory Mode but we are NOT connected.
                     // Start connection immediately.

@@ -1,0 +1,15 @@
+# Starts the Open Headunit USB display at boot. Install with:
+#   sudo cp ohu-display.service /etc/systemd/system/
+#   sudo systemctl enable --now ohu-display
+# and set the panel's size on the ExecStart line.
+[Unit]
+Description=Open Headunit USB display receiver
+After=multi-user.target
+
+[Service]
+ExecStart=/opt/ohu-display/setup-gadget.sh --width 1024 --height 600 --dpi 160
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

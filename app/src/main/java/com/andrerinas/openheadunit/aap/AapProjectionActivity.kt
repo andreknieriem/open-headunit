@@ -55,6 +55,7 @@ import com.andrerinas.openheadunit.decoder.video.VideoDimensions
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ScreenPower
+import com.andrerinas.openheadunit.input.KeyLearnPolicy
 import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.input.LockedViewPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
@@ -74,6 +75,7 @@ import com.andrerinas.openheadunit.view.ProjectionView
 import com.andrerinas.openheadunit.view.TextureProjectionView
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
+import com.andrerinas.openheadunit.utils.TsMainUiAudioChannel
 import com.andrerinas.openheadunit.view.OverlayTouchView
 import com.andrerinas.openheadunit.view.PerformanceOverlay
 import com.andrerinas.openheadunit.view.NightProjectionOverlay
@@ -1114,7 +1116,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         override fun onReceive(context: Context, intent: Intent) {
             val event: KeyEvent? = IntentCompat.getParcelableExtra(intent, KeyIntent.extraEvent, KeyEvent::class.java)
             event?.let {
-                onKeyEvent(it.keyCode, it.action == KeyEvent.ACTION_DOWN)
+                onKeyEvent(it.keyCode, it.action == KeyEvent.ACTION_DOWN, intent.getStringExtra(KeyLearnPolicy.EXTRA_ROUTE))
             }
         }
     }
@@ -1480,6 +1482,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         keyBindingSnapshot.reload()
         closeCallRaiseEpisode("the projection is back in front")
         AppLog.i("AapProjectionActivity: onResume")
+        // Coming back from the stock car screen on a Topway unit leaves the speakers on the car.
+        TsMainUiAudioChannel.restore(this, "projection resumed")
         // Show the one-time rename notice even here, on top of an active projection.
         RenameNotice.maybeShow(this, App.provide(this).settings)
         Aa174Notice.maybeShow(this, App.provide(this).settings)
@@ -2945,7 +2949,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         return true
     }
 
-    private fun onKeyEvent(keyCode: Int, isPress: Boolean) {
+    private fun onKeyEvent(keyCode: Int, isPress: Boolean, route: String?) {
         // Broadcasts (e.g. from CarKeyReceiver) still use this path.
         if (LockedInputPolicy.engaged) {
             AppLog.i("AapProjectionActivity: key broadcast $keyCode ignored, the unit is locked")
@@ -2959,6 +2963,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             return
         }
+        if (!ProjectionKeyPolicy.broadcastSendsKey(route)) return
         commManager.sendKey(keyCode, isPress, null, "key-broadcast")
     }
 

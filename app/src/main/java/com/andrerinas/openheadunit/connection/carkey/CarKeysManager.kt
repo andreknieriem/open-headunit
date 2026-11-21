@@ -26,7 +26,7 @@ class CarKeysManager {
     fun registerIdleReceivers(context: Context) {
         try {
             for (r in all) {
-                if (!r.isSupported || r.isSessionScoped)
+                if (r.isSessionScoped || !r.isSupportedOn(context))
                     continue
 
                 if (!registered.contains(r)) {
@@ -53,9 +53,7 @@ class CarKeysManager {
      */
     fun onSessionEnded() {
         isSessionActive = false
-        if (!isLearningActive) {
-            unregisterSessionReceivers()
-        }
+        unregisterSessionReceivers()
     }
 
     /**
@@ -74,9 +72,7 @@ class CarKeysManager {
      */
     fun stopLearning() {
         isLearningActive = false
-        if (!isSessionActive) {
-            unregisterSessionReceivers()
-        }
+        unregisterSessionReceivers()
         onLearnStateChanged?.invoke()
     }
 
@@ -88,7 +84,8 @@ class CarKeysManager {
     private fun registerSessionReceivers(context: Context) {
         try {
             for (r in all) {
-                if (!r.isSupported || !r.isSessionScoped)
+                if (!r.isSessionScoped || !wantsSessionReceiver(r.servesLearning, isSessionActive, isLearningActive) ||
+                    !r.isSupportedOn(context))
                     continue
 
                 if (!registered.contains(r)) {
@@ -102,8 +99,11 @@ class CarKeysManager {
         }
     }
 
+    /** Unregisters each session-scoped receiver that neither the session nor the keymap screen wants now. */
     private fun unregisterSessionReceivers() {
-        val toRemove = registered.filter { it.isSessionScoped }
+        val toRemove = registered.filter {
+            it.isSessionScoped && !wantsSessionReceiver(it.servesLearning, isSessionActive, isLearningActive)
+        }
         for (r in toRemove) {
             try {
                 r.unregister()
@@ -145,5 +145,11 @@ class CarKeysManager {
 
     fun isSUNeeded(): Boolean {
         return registered.any { it.isSUNeeded }
+    }
+
+    companion object {
+        /** A session-scoped receiver runs during a session, or for the keymap screen if it serves learning. */
+        internal fun wantsSessionReceiver(servesLearning: Boolean, sessionActive: Boolean, learning: Boolean): Boolean =
+            sessionActive || (learning && servesLearning)
     }
 }

@@ -12,6 +12,12 @@
         <package android:name="com.syu.ms" />
         <!-- Rootless HCT bridge discovery when SELinux hides /dev/goc_serial. -->
         <package android:name="android.microntek.mtcser" />
+        <!-- Vendor key services whose presence turns a car key route on. -->
+        <package android:name="com.roadrover.carinfo" />
+        <package android:name="com.dftc.carinput" />
+        <package android:name="com.olaelectric.hmiclient" />
+        <!-- Topway stock UI: asked to hand the speakers back after its car screen. -->
+        <package android:name="com.ts.MainUI" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

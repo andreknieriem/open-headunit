@@ -19,11 +19,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.connection.carkey.CarKeyReceiver
 import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.input.BydPanelKey
+import com.andrerinas.openheadunit.input.DynavinPanelKey
+import com.andrerinas.openheadunit.input.QfWheelKey
+import com.andrerinas.openheadunit.input.TopwayKey
 import com.andrerinas.openheadunit.input.InputAction
 import com.andrerinas.openheadunit.input.InputActionCodec
 import com.andrerinas.openheadunit.input.KeyLearnPolicy
@@ -154,7 +158,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
 
     private val keyCodeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == "com.andrerinas.openheadunit.DEBUG_KEY") {
+            if (intent.action == CarKeyReceiver.DEBUG_KEY_ACTION) {
                 val action = (intent.getStringExtra("action") ?: "unknown").replace("com.andrerinas.openheadunit.", "")
                 
                 // Try to find a keycode in various common extras
@@ -188,7 +192,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         super.onResume()
         App.provide(requireContext()).carKeysManager.startLearning(requireContext())
         val filter = IntentFilters.keyEvent
-        filter.addAction("com.andrerinas.openheadunit.DEBUG_KEY")
+        filter.addAction(CarKeyReceiver.DEBUG_KEY_ACTION)
         ContextCompat.registerReceiver(requireContext(), keyCodeReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
@@ -262,6 +266,9 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
      */
     private fun physicalKeyName(keyCode: Int): String {
         BydPanelKey.label(keyCode)?.let { return it }
+        DynavinPanelKey.label(keyCode)?.let { return it }
+        TopwayKey.label(keyCode)?.let { return it }
+        QfWheelKey.label(keyCode)?.let { return it }
         return try {
             KeyEvent.keyCodeToString(keyCode).replace("KEYCODE_", "")
         } catch (e: Exception) {

@@ -3,7 +3,9 @@ package com.andrerinas.openheadunit.connection.carkey
 import android.content.Intent
 import android.view.KeyEvent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -76,5 +78,20 @@ class CarKeyBroadcastReceiverKeyTest {
         assertNull(CarKeyBroadcastReceiver.keyCodeIn("android.intent.action.C3_HARDKEY", intent("android.intent.extra.c3_hardkey_keycode" to 24)))
         assertNull(CarKeyBroadcastReceiver.keyCodeIn("com.eryanet.music.next", intent("keycode" to 24)))
         assertNull(CarKeyBroadcastReceiver.keyCodeIn("com.nwd.action.ACTION_KEY_VALUE", intent()))
+    }
+
+    @Test
+    fun `MainUI's track skip ids are left to it only where it is installed`() {
+        assertTrue(CarKeyBroadcastReceiver.leftToMainUi("com.microntek.irkeyDown", 45, true))
+        assertTrue(CarKeyBroadcastReceiver.leftToMainUi("com.microntek.irkeyUp", 46, true))
+        assertFalse(CarKeyBroadcastReceiver.leftToMainUi("com.microntek.irkeyDown", 45, false))
+        assertFalse(CarKeyBroadcastReceiver.leftToMainUi(media, 45, true))
+    }
+
+    @Test
+    fun `other microntek ids still reach the keymap and the phone on a MainUI unit`() {
+        assertFalse(CarKeyBroadcastReceiver.leftToMainUi("com.microntek.irkeyDown", 3, true))
+        assertFalse(CarKeyBroadcastReceiver.leftToMainUi("com.microntek.irkeyUp", 87, true))
+        assertFalse(CarKeyBroadcastReceiver.leftToMainUi("com.microntek.irkeyDown", -1, true))
     }
 }

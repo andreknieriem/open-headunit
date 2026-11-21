@@ -13,6 +13,11 @@ object ProjectionKeyPolicy {
                 bindings[KeyEvent.KEYCODE_BACK].let { it != null && it != InputAction.None }
     }
 
+    /** A car key route sends its press to CommManager itself, so its key broadcast must not send it again. */
+    fun broadcastSendsKey(route: String?): Boolean = route?.startsWith(CAR_KEY_ROUTE) != true
+
+    private const val CAR_KEY_ROUTE = "carkey"
+
     fun isHomeKey(keyCode: Int): Boolean {
         return keyCode == KeyEvent.KEYCODE_HOME
     }
@@ -50,7 +55,8 @@ object ProjectionKeyPolicy {
 
     /** The user chose Do nothing for this physical key, and it came from a physical route. */
     fun isIgnored(bindings: Map<Int, InputAction>, keyCode: Int, source: String): Boolean {
-        return bindings[keyCode] == InputAction.Ignore && source in physicalSources
+        return bindings[keyCode] == InputAction.Ignore &&
+            (source in physicalSources || source.startsWith("carkey-"))
     }
 
     private fun isBound(bindings: Map<Int, InputAction>, keyCode: Int): Boolean =

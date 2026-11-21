@@ -13,6 +13,7 @@ import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.TsMainUiAudioChannel
 
 /**
  * A comprehensive receiver for steering wheel and hardware buttons,
@@ -51,6 +52,14 @@ class CarKeyBroadcastReceiver : BroadcastReceiver(), CarKeyReceiver {
             action.endsWith("MEDIA_BUTTON") || action.endsWith("KEY_EVENT")
                 || action == "com.tencent.qqmusiccar.action.MEDIA_BUTTON_INNER_ONKEY"
                 || action == "cn.kuwo.kwmusicauto.action.MEDIA_BUTTON"
+
+        /**
+         * Topway MainUI fires irkeyDown, never irkeyUp, with its own ids 45/46 on a track skip. Android
+         * Auto reads them as Q/R held down and shows the focus cursor; the real key arrives as a key event.
+         */
+        internal fun leftToMainUi(action: String, keyCode: Int, mainUiPresent: Boolean): Boolean =
+            mainUiPresent && (keyCode == 45 || keyCode == 46) &&
+                (action == "com.microntek.irkeyDown" || action == "com.microntek.irkeyUp")
 
         /** The key an intent carries, read with no side effect. Virtual ids and commands give null. */
         internal fun keyCodeIn(action: String, intent: Intent): Int? {
@@ -108,11 +117,16 @@ class CarKeyBroadcastReceiver : BroadcastReceiver(), CarKeyReceiver {
         AppLog.i("CarKeyReceiver: Handling intent action: $action")
 
         // Broadcast for KeymapFragment debugger (raw intent data)
-        context.sendBroadcast(Intent("com.andrerinas.openheadunit.DEBUG_KEY").apply {
+        context.sendBroadcast(Intent(CarKeyReceiver.DEBUG_KEY_ACTION).apply {
             setPackage(context.packageName)
             putExtra("action", action)
             intent.extras?.let { putExtras(it) }
         })
+
+        if (leftToMainUi(action, intent.getIntExtra("keyCode", -1), TsMainUiAudioChannel.isPresent(context))) {
+            AppLog.i("CarKeyReceiver: Leaving $action ${intent.getIntExtra("keyCode", -1)} to Topway MainUI, the real key arrives as a key event")
+            return
+        }
 
         // Abort so the built-in radio stays quiet, only during a session and never for a key
         // the firmware must act on.

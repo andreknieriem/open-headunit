@@ -1,11 +1,27 @@
 package com.andrerinas.openheadunit.input
 
 import android.view.KeyEvent
+import com.andrerinas.openheadunit.connection.carkey.CarKeyReceiver
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProjectionKeyPolicyTest {
+
+    @Test
+    fun `a car key broadcast does not send its key a second time`() {
+        // BYD, FYT and the OEM broadcast receiver use the default route; vendor routes add a suffix.
+        assertFalse(ProjectionKeyPolicy.broadcastSendsKey(CarKeyReceiver.SOURCE))
+        assertFalse(ProjectionKeyPolicy.broadcastSendsKey("carkey-topway"))
+        assertFalse(ProjectionKeyPolicy.broadcastSendsKey("carkey-ola"))
+    }
+
+    @Test
+    fun `a key broadcast from any other sender still sends its key`() {
+        // Third-party KeyIntents and the media button receiver carry no route.
+        assertTrue(ProjectionKeyPolicy.broadcastSendsKey(null))
+        assertTrue(ProjectionKeyPolicy.broadcastSendsKey("session"))
+    }
 
     @Test
     fun `unmapped back key keeps system back behavior`() {
@@ -161,7 +177,7 @@ class ProjectionKeyPolicyTest {
 
     @Test
     fun `physical key routes drop an ignored key`() {
-        for (src in listOf("projection", "mediasession", "carkey", "key-broadcast", "remote-keycode")) {
+        for (src in listOf("projection", "mediasession", "carkey", "key-broadcast", "remote-keycode", "carkey-topway")) {
             assertTrue(src, ProjectionKeyPolicy.isIgnored(mapOf(87 to InputAction.Ignore), 87, src))
         }
     }

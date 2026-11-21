@@ -225,6 +225,7 @@ class AapService : Service() {
     private var lastAaMediaMetadata: MediaPlayback.MediaMetaData? = null
     private var lastAaPlaybackPositionMs: Long = 0L
     private var lastAaPlaybackIsPlaying: Boolean? = null
+    private var lastAaPlaybackPaused = false
     private val reconnectPlayback = ReconnectPlaybackSnapshot()
     private var mediaSessionIsPlaying = false
     private var mediaMetadataDecodeJob: Job? = null
@@ -501,7 +502,7 @@ class AapService : Service() {
     fun nativeAttemptInFlight(): Boolean? =
         (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.isAttemptInFlight()
 
-    fun updateMediaSessionState(isPlaying: Boolean) {
+    fun updateMediaSessionState(isPlaying: Boolean, paused: Boolean = false) {
         if (!shouldActivateMediaSession()) {
             mediaSessionIsPlaying = false
             safeMediaSessionCall {
@@ -522,15 +523,8 @@ class AapService : Service() {
                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
                 PlaybackStateCompat.ACTION_PLAY_PAUSE
 
-        var state: Int
-
-        if (isPlaying) {
-            state = PlaybackStateCompat.STATE_PLAYING
-            actions = actions or PlaybackStateCompat.ACTION_PAUSE
-        } else {
-            state = PlaybackStateCompat.STATE_STOPPED
-            actions = actions or PlaybackStateCompat.ACTION_PLAY
-        }
+        val state = MediaSessionStatePolicy.sessionState(isPlaying, paused)
+        actions = actions or if (isPlaying) PlaybackStateCompat.ACTION_PAUSE else PlaybackStateCompat.ACTION_PLAY
 
         safeMediaSessionCall {
             it.setPlaybackState(
@@ -541,7 +535,7 @@ class AapService : Service() {
             )
         }
         AppLog.d(
-            "MediaSession: State updated to ${if (isPlaying) "PLAYING" else "STOPPED"}, positionMs=$lastAaPlaybackPositionMs"
+            "MediaSession: State updated to ${if (isPlaying) "PLAYING" else if (paused) "PAUSED" else "STOPPED"}, positionMs=$lastAaPlaybackPositionMs"
         )
     }
 
@@ -602,6 +596,7 @@ class AapService : Service() {
             if (aaPresentationSession != null) clearAaPresentationMetadata()
             lastAaPlaybackPositionMs = 0L
             lastAaPlaybackIsPlaying = null
+            lastAaPlaybackPaused = false
             aaPresentationSession = session
         }
         return true
@@ -624,9 +619,12 @@ class AapService : Service() {
         val isPlayingFromStatus = resolveIsPlayingFromStatus(status)
         lastAaPlaybackIsPlaying = isPlayingFromStatus
         mediaSessionIsPlaying = isPlayingFromStatus
+        lastAaPlaybackPaused = MediaSessionStatePolicy.phonePaused(
+            if (status.hasState()) status.state else null, lastAaPlaybackPaused,
+        )
 
         if (!shouldSyncAaMediaMetadata()) return
-        updateMediaSessionState(isPlayingFromStatus)
+        updateMediaSessionState(isPlayingFromStatus, lastAaPlaybackPaused)
         lastAaMediaMetadata?.let { updateMediaNotification(it) }
     }
 
@@ -1635,7 +1633,8 @@ class AapService : Service() {
         // Link audio focus state changes to our MediaSession state
         commManager.onAudioFocusStateChanged = { isPlaying ->
             if (shouldActivateMediaSession()) {
-                updateMediaSessionState(isPlaying)
+                // The phone releases focus after a pause, so a focus loss must not turn PAUSED into STOPPED.
+                updateMediaSessionState(isPlaying, lastAaPlaybackPaused)
             }
         }
 
@@ -2026,6 +2025,7 @@ class AapService : Service() {
             deliberate = state.isClean || state.isUserExit,
         )
         lastAaPlaybackIsPlaying = null
+        lastAaPlaybackPaused = false
         cachedAaAlbumArtBitmap = null
         mediaNotification.cancel()
         applyPlaceholderMediaMetadata()

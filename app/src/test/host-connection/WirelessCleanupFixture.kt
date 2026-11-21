@@ -115,7 +115,7 @@ class Service {
     val USER_EXIT_COOLDOWN_MS=5000L
     val usbLauncherManager=UnitManager(); val nightModeManager: UnitManager?=UnitManager(); val carKeysManager=UnitManager()
     var autoResumePlaybackJob: Job?=null; var mediaMetadataDecodeJob: Job?=null
-    var lastAaMediaMetadata: Any?=null; var lastAaPlaybackPositionMs=0L; var lastAaPlaybackIsPlaying: Boolean?=null
+    var lastAaMediaMetadata: Any?=null; var lastAaPlaybackPositionMs=0L; var lastAaPlaybackIsPlaying: Boolean?=null; var lastAaPlaybackPaused=false
     var cachedAaAlbumArtBitmap: Any?=null
     val reconnectPlayback=ReconnectPlayback(); val mediaNotification=MediaNotification()
     var gpsStops=0; var wifiReleases=0; var vpnStops=0; var reconnects=0; var deadlineCancels=0

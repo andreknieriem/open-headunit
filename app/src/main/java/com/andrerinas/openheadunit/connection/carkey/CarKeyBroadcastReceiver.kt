@@ -10,6 +10,8 @@ import androidx.core.content.IntentCompat
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.contract.KeyIntent
+import com.andrerinas.openheadunit.input.LockedInputPolicy
+import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 
 /**
@@ -44,6 +46,35 @@ class CarKeyBroadcastReceiver : BroadcastReceiver(), CarKeyReceiver {
             "com.tencent.qqmusiccar.action.MEDIA_BUTTON_INNER_ONKEY",
             "cn.kuwo.kwmusicauto.action.MEDIA_BUTTON"
         )
+
+        private fun isMediaButtonAction(action: String): Boolean =
+            action.endsWith("MEDIA_BUTTON") || action.endsWith("KEY_EVENT")
+                || action == "com.tencent.qqmusiccar.action.MEDIA_BUTTON_INNER_ONKEY"
+                || action == "cn.kuwo.kwmusicauto.action.MEDIA_BUTTON"
+
+        /** The key an intent carries, read with no side effect. Virtual ids and commands give null. */
+        internal fun keyCodeIn(action: String, intent: Intent): Int? {
+            if (isMediaButtonAction(action)) {
+                val event = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+                if (event != null) return event.keyCode
+                if ((intent.getStringExtra("command") ?: intent.getStringExtra("cmd")) != null) return null
+                return intent.getIntExtra("keycode", -1).takeIf { it > 0 }
+                    ?: intent.getIntExtra("key_code", -1).takeIf { it > 0 }
+            }
+            return when (action) {
+                "com.microntek.irkeyDown", "com.microntek.irkeyUp" ->
+                    intent.getIntExtra("keyCode", -1).takeIf { it != -1 }
+                "android.intent.action.C3_HARDKEY" -> {
+                    val keyCode = intent.getIntExtra("android.intent.extra.c3_hardkey_keycode", -1)
+                    val c3Action = intent.getIntExtra("android.intent.extra.c3_hardkey_action", -1)
+                    keyCode.takeIf { it != -1 && c3Action != -1 }
+                }
+                "com.winca.service.Setting.KEY_ACTION" ->
+                    intent.getIntExtra("com.winca.service.Setting.KEY_ACTION_EXTRA", -1).takeIf { it != -1 }
+                "IKeyClick.KEY_CLICK" -> intent.getIntExtra("CLICK_KEY", -1).takeIf { it != -1 }
+                else -> null
+            }
+        }
     }
 
     private var context: Context? = null
@@ -83,16 +114,19 @@ class CarKeyBroadcastReceiver : BroadcastReceiver(), CarKeyReceiver {
             intent.extras?.let { putExtras(it) }
         })
 
-        // Try to abort broadcast to prevent other apps (like built-in radio) from reacting,
-        // but ONLY while an active Android Auto projection session is ongoing.
-        if (isOrderedBroadcast && App.provide(context).commManager.isConnected) {
-            abortBroadcast()
+        // Abort so the built-in radio stays quiet, only during a session and never for a key
+        // the firmware must act on.
+        if (isOrderedBroadcast) {
+            val app = App.provide(context)
+            val keepsKey = ProjectionKeyPolicy.firmwareKeepsKey(keyCodeIn(action, intent),
+                app.settings.keyBindings, app.settings.volumeKeysToPhone, LockedInputPolicy.engaged)
+            if (app.commManager.isConnected && !keepsKey) {
+                abortBroadcast()
+            }
         }
 
         // 1. Standard / OEM Media Button extraction (already has KeyEvent with proper DOWN/UP)
-        if (action.endsWith("MEDIA_BUTTON") || action.endsWith("KEY_EVENT")
-            || action == "com.tencent.qqmusiccar.action.MEDIA_BUTTON_INNER_ONKEY"
-            || action == "cn.kuwo.kwmusicauto.action.MEDIA_BUTTON") {
+        if (isMediaButtonAction(action)) {
             val event = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
             if (event != null) {
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {

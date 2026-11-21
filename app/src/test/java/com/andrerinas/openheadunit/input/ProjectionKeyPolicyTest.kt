@@ -84,4 +84,79 @@ class ProjectionKeyPolicyTest {
         assertFalse(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_BACK))
         assertFalse(ProjectionKeyPolicy.isVolumeKey(KeyEvent.KEYCODE_MEDIA_NEXT))
     }
+
+    private val up = KeyEvent.KEYCODE_VOLUME_UP
+    private val volumeKeys = listOf(KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_MUTE)
+
+    @Test
+    fun `unbound volume keys are local`() {
+        for (code in volumeKeys) {
+            assertTrue(ProjectionKeyPolicy.isLocalKey(code, emptyMap(), false, "carkey"))
+        }
+    }
+
+    @Test
+    fun `a bound volume key is not local`() {
+        val bindings = mapOf(up to InputAction.AaKey(KeyEvent.KEYCODE_DPAD_CENTER))
+        assertFalse(ProjectionKeyPolicy.isLocalKey(up, bindings, false, "carkey"))
+        assertTrue(ProjectionKeyPolicy.isLocalKey(KeyEvent.KEYCODE_VOLUME_DOWN, bindings, false, "carkey"))
+        assertTrue(ProjectionKeyPolicy.isLocalKey(up, mapOf(up to InputAction.None), false, "carkey"))
+    }
+
+    @Test
+    fun `volume to the phone makes no volume key local`() {
+        for (code in volumeKeys) {
+            for (src in listOf("carkey", "remote-keycode", "projection")) {
+                assertFalse(ProjectionKeyPolicy.isLocalKey(code, emptyMap(), true, src))
+            }
+        }
+    }
+
+    @Test
+    fun `the mute command source is never local`() {
+        assertFalse(ProjectionKeyPolicy.isLocalKey(KeyEvent.KEYCODE_VOLUME_MUTE, emptyMap(), false, "remote-mute"))
+        assertTrue(ProjectionKeyPolicy.isLocalKey(KeyEvent.KEYCODE_VOLUME_MUTE, emptyMap(), false, "remote-keycode"))
+    }
+
+    @Test
+    fun `mute key 91 back and media keys are not volume keys`() {
+        for (code in listOf(KeyEvent.KEYCODE_MUTE, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_MEDIA_NEXT)) {
+            assertFalse(ProjectionKeyPolicy.isVolumeKey(code))
+            assertFalse(ProjectionKeyPolicy.isLocalKey(code, emptyMap(), false, "carkey"))
+        }
+    }
+
+    @Test
+    fun `a locked unit keeps only volume keys`() {
+        for (code in volumeKeys) assertTrue(ProjectionKeyPolicy.lockKeepsKey(code, true))
+        assertFalse(ProjectionKeyPolicy.lockKeepsKey(up, false))
+        assertFalse(ProjectionKeyPolicy.lockKeepsKey(KeyEvent.KEYCODE_MEDIA_NEXT, true))
+    }
+
+    @Test
+    fun `an unbound volume key stays with the firmware`() {
+        for (code in volumeKeys) {
+            assertTrue(ProjectionKeyPolicy.firmwareKeepsKey(code, emptyMap(), false, false))
+        }
+    }
+
+    @Test
+    fun `a bound volume key or volume to the phone is not left to the firmware`() {
+        val bindings = mapOf(up to InputAction.AaKey(KeyEvent.KEYCODE_DPAD_CENTER))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, bindings, false, false))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(up, emptyMap(), true, false))
+    }
+
+    @Test
+    fun `a locked unit leaves every volume key to the firmware`() {
+        val bindings = mapOf(up to InputAction.AaKey(KeyEvent.KEYCODE_DPAD_CENTER))
+        assertTrue(ProjectionKeyPolicy.firmwareKeepsKey(up, bindings, true, true))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(KeyEvent.KEYCODE_MEDIA_NEXT, emptyMap(), false, true))
+    }
+
+    @Test
+    fun `other keys and no key are not left to the firmware`() {
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(KeyEvent.KEYCODE_MEDIA_NEXT, emptyMap(), false, false))
+        assertFalse(ProjectionKeyPolicy.firmwareKeepsKey(null, emptyMap(), false, true))
+    }
 }

@@ -6,6 +6,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 
 object KeyCode {
 
+    // 65539 is RADIO on the wire; the code stays local and is never sent.
     const val KEY_NIGHT_MODE = 65539
 
     val supported = listOf(
@@ -115,7 +116,7 @@ object KeyCode {
         224, // KEYCODE_WAKEUP → Voice Command
         264, 265, 267, // STEM_PRIMARY, STEM_1, STEM_3 (steering wheel)
         268, 269, 270, 271, // Rotary controller
-        65536, 65537, 65538 // Rotary controller
+        65536, 65537, 65538 // 65536 rotary controller, 65537 MEDIA, 65538 NAVIGATION
     ).distinct().sorted()
 
     /**

@@ -1513,6 +1513,7 @@ class AapTransport(
 
         if (aapKeyCode == KeyEvent.KEYCODE_UNKNOWN) {
             AppLog.i("Unknown: $keyCode")
+            return
         }
 
         val ts = SystemClock.elapsedRealtime()

@@ -85,8 +85,8 @@ class RemoteControlReceiver : BroadcastReceiver() {
                     commManager.sendKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, false, null, "remote-command")
                 }
                 "mute", "volume_mute" -> {
-                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, true, null, "remote-command")
-                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, false, null, "remote-command")
+                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, true, null, "remote-mute")
+                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, false, null, "remote-mute")
                 }
                 "voice", "mic", "microphone", "search" -> {
                     commManager.sendKey(KeyEvent.KEYCODE_SEARCH, true, null, "remote-command")
@@ -99,8 +99,8 @@ class RemoteControlReceiver : BroadcastReceiver() {
                         ?: intent.getIntExtra("key_code", -1).takeIf { it > 0 }
                     if (extraKeyCode != null) {
                         AppLog.i("RemoteControlReceiver: raw keycode=$extraKeyCode from command=$command")
-                        commManager.sendKey(extraKeyCode, true, null, "remote-command")
-                        commManager.sendKey(extraKeyCode, false, null, "remote-command")
+                        commManager.sendKey(extraKeyCode, true, null, "remote-keycode")
+                        commManager.sendKey(extraKeyCode, false, null, "remote-keycode")
                     } else {
                         AppLog.i("RemoteControlReceiver: Unknown command='$command' from action='$action'")
                     }

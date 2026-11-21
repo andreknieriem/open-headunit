@@ -15,6 +15,7 @@ import com.andrerinas.openheadunit.input.KeyBindingPolicy
 import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
+import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.main.AppLauncher
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.utils.AppLog
@@ -1344,8 +1345,20 @@ class CommManager(
             return
         }
 
+        val bindings = settings.keyBindings
+
+        // A volume key nobody bound stays on the head unit; sending it moves Android Auto's focus.
+        if (ProjectionKeyPolicy.isLocalKey(keyCode, bindings, settings.volumeKeysToPhone, source)) {
+            AppLog.d("CommManager: Keeping key $keyCode local (src=$source)")
+            return
+        }
+        if (ProjectionKeyPolicy.lockKeepsKey(keyCode, LockedInputPolicy.engaged)) {
+            AppLog.d("CommManager: Keeping key $keyCode local, the unit is locked (src=$source)")
+            return
+        }
+
         // 1. Bindings (physical key -> action). An unbound key goes on as itself.
-        val logicalCode = when (val resolution = KeyBindingPolicy.resolve(settings.keyBindings, keyCode, isPress)) {
+        val logicalCode = when (val resolution = KeyBindingPolicy.resolve(bindings, keyCode, isPress)) {
             is KeyBindingPolicy.Resolution.SendToAa -> resolution.logicalCode
             is KeyBindingPolicy.Resolution.Swallow -> return
             is KeyBindingPolicy.Resolution.Run -> {

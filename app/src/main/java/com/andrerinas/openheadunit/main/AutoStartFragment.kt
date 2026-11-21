@@ -61,6 +61,9 @@ class AutoStartFragment : Fragment() {
     private enum class BtPickerTarget { AUTO_START, AUTO_DISCONNECT }
     private var btPickerTarget = BtPickerTarget.AUTO_START
     private var pendingAutoStartWifiSsid: String? = null
+    private var pendingAutoStartOnBle: Boolean? = null
+    private var pendingAutoStartBleTarget: String? = null
+    private var pendingAutoStartBleCooldownSeconds: Int? = null
     private var pendingReopenOnReconnection: Boolean? = null
 
     private var hasChanges = false
@@ -73,6 +76,21 @@ class AutoStartFragment : Fragment() {
             showBluetoothDeviceSelector(btPickerTarget)
         } else {
             showBluetoothPermissionDeniedDialog()
+        }
+    }
+
+    private val bleScanPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            pendingAutoStartOnBle = true
+            checkChanges()
+            updateSettingsList()
+        } else {
+            pendingAutoStartOnBle = false
+            checkChanges()
+            updateSettingsList()
+            showBlePermissionDeniedDialog()
         }
     }
 
@@ -108,6 +126,9 @@ class AutoStartFragment : Fragment() {
         pendingExternalPowerScreenOff = settings.externalPowerScreenOff
         pendingAutoStartOnWifi = settings.autoStartOnWifi
         pendingAutoStartWifiSsid = settings.autoStartWifiSsid
+        pendingAutoStartOnBle = settings.autoStartOnBleProximity
+        pendingAutoStartBleTarget = settings.autoStartBleTarget
+        pendingAutoStartBleCooldownSeconds = settings.autoStartBleCooldownSeconds
         pendingReopenOnReconnection = settings.rawReopenOnReconnection
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
@@ -228,6 +249,9 @@ class AutoStartFragment : Fragment() {
             if (it != settings.autoStartWifiSsid) settings.autoStartWifiSsid = it
             Settings.syncAutoStartWifiSsidToDeviceStorage(requireContext(), it)
         }
+        pendingAutoStartOnBle?.let { if (it != settings.autoStartOnBleProximity) settings.autoStartOnBleProximity = it }
+        pendingAutoStartBleTarget?.let { if (it != settings.autoStartBleTarget) settings.autoStartBleTarget = it.trim() }
+        pendingAutoStartBleCooldownSeconds?.let { if (it != settings.autoStartBleCooldownSeconds) settings.autoStartBleCooldownSeconds = it }
         pendingReopenOnReconnection?.let { if (it != settings.rawReopenOnReconnection) settings.rawReopenOnReconnection = it }
         settings.autoDisconnectBluetoothDeviceMacs = pendingAutoDisconnectBtMacs.toSet()
         pendingAutoDisconnectBtDelaySeconds?.let { if (it != settings.autoDisconnectBtDelaySeconds) settings.autoDisconnectBtDelaySeconds = it }
@@ -296,6 +320,9 @@ class AutoStartFragment : Fragment() {
                 pendingExternalPowerScreenOff != settings.externalPowerScreenOff ||
                 pendingAutoStartOnWifi != settings.autoStartOnWifi ||
                 pendingAutoStartWifiSsid != settings.autoStartWifiSsid ||
+                pendingAutoStartOnBle != settings.autoStartOnBleProximity ||
+                pendingAutoStartBleTarget != settings.autoStartBleTarget ||
+                pendingAutoStartBleCooldownSeconds != settings.autoStartBleCooldownSeconds ||
                 pendingReopenOnReconnection != settings.rawReopenOnReconnection
 
         updateSaveButtonState()
@@ -546,13 +573,60 @@ class AutoStartFragment : Fragment() {
                     }
                 ))
             }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "autoStartBle",
+                    nameResId = R.string.auto_start_ble_label,
+                    descriptionResId = R.string.auto_start_ble_description,
+                    helpResId = R.string.auto_start_ble_help,
+                    isChecked = pendingAutoStartOnBle == true,
+                    onCheckedChanged = { isChecked ->
+                        if (isChecked) {
+                            val neededPerm = requiredBleScanPermission()
+                            if (neededPerm != null &&
+                                ContextCompat.checkSelfPermission(requireContext(), neededPerm) !=
+                                android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                bleScanPermissionLauncher.launch(neededPerm)
+                                return@ToggleSettingEntry
+                            }
+                        }
+                        pendingAutoStartOnBle = isChecked
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
+
+                if (pendingAutoStartOnBle == true) {
+                    items.add(SettingItem.SettingEntry(
+                        stableId = "autoStartBleTarget",
+                        nameResId = R.string.auto_start_ble_target_label,
+                        helpResId = R.string.auto_start_ble_target_help,
+                        value = if (pendingAutoStartBleTarget.isNullOrBlank()) getString(R.string.wifi_ssid_not_set) else pendingAutoStartBleTarget!!,
+                        onClick = { showBleTargetInputDialog() }
+                    ))
+                    val cooldownSec = pendingAutoStartBleCooldownSeconds
+                        ?: com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.DEFAULT_COOLDOWN_SECONDS
+                    items.add(SettingItem.SettingEntry(
+                        stableId = "autoStartBleCooldown",
+                        nameResId = R.string.auto_start_ble_cooldown_label,
+                        helpResId = R.string.auto_start_ble_cooldown_help,
+                        value = getString(R.string.auto_start_ble_cooldown_seconds, cooldownSec),
+                        onClick = { showBleCooldownDialog() }
+                    ))
+                }
+            }
         }
 
         // Hide options that do not apply to the chosen connection types. The Bluetooth rows decide
         // when a wireless or Self Mode session starts and stops; USB has its own attach and
         // detach, so a USB-only unit does not see them.
         val usbIds = setOf("usbConnectOnPlugIn", "autoStartUsb", "reopenOnReconnection")
-        val wifiIds = setOf("autoStartWifiWarning", "autoStartWifi", "autoStartWifiSsid")
+        val wifiIds = setOf(
+            "autoStartWifiWarning", "autoStartWifi", "autoStartWifiSsid",
+            "autoStartBle", "autoStartBleTarget", "autoStartBleCooldown",
+        )
         val btIds = setOf("autoStartBt", "autoDisconnectBt", "autoDisconnectBtDelay")
         val filtered = items.filterNot { item ->
             (item.stableId in usbIds && !settings.showsUsb()) ||
@@ -582,7 +656,14 @@ class AutoStartFragment : Fragment() {
             settings.listenForUsbDevices),
         onWifi = pendingAutoStartOnWifi == true,
         btTriggerCount = pendingAutoStartBtMacs.size,
+        onBle = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && pendingAutoStartOnBle == true,
     )
+
+    private fun requiredBleScanPermission(): String? = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> android.Manifest.permission.BLUETOOTH_SCAN
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> android.Manifest.permission.ACCESS_FINE_LOCATION
+        else -> null
+    }
 
     private fun requestOverlayPermission() {
         try {
@@ -737,9 +818,23 @@ class AutoStartFragment : Fragment() {
     }
 
     private fun showBluetoothPermissionDeniedDialog() {
+        showPermissionDeniedDialog(
+            R.string.bt_permission_denied_title,
+            R.string.bt_permission_denied_message
+        )
+    }
+
+    private fun showBlePermissionDeniedDialog() {
+        showPermissionDeniedDialog(
+            R.string.ble_permission_denied_title,
+            R.string.ble_permission_denied_message
+        )
+    }
+
+    private fun showPermissionDeniedDialog(titleResId: Int, messageResId: Int) {
         MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(R.string.bt_permission_denied_title)
-            .setMessage(R.string.bt_permission_denied_message)
+            .setTitle(titleResId)
+            .setMessage(messageResId)
             .setPositiveButton(R.string.open_settings) { _, _ ->
                 try {
                     val intent = Intent(
@@ -768,6 +863,65 @@ class AutoStartFragment : Fragment() {
             .setView(input)
             .setPositiveButton(R.string.save) { _, _ ->
                 pendingAutoStartWifiSsid = input.text.toString()
+                checkChanges()
+                updateSettingsList()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        dialog.window?.clearFlags(
+            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
+        )
+        dialog.show()
+        input.requestFocus()
+    }
+
+    private fun showBleTargetInputDialog() {
+        val input = EditText(requireContext())
+        input.inputType = InputType.TYPE_CLASS_TEXT
+        input.setText(pendingAutoStartBleTarget)
+        input.setSelection(input.text.length)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.auto_start_ble_target_hint)
+            .setMessage(R.string.auto_start_ble_target_help)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                pendingAutoStartBleTarget = input.text.toString().trim()
+                checkChanges()
+                updateSettingsList()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        dialog.window?.clearFlags(
+            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
+        )
+        dialog.show()
+        input.requestFocus()
+    }
+
+    private fun showBleCooldownDialog() {
+        val current = pendingAutoStartBleCooldownSeconds
+            ?: com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.DEFAULT_COOLDOWN_SECONDS
+        val input = EditText(requireContext())
+        input.inputType = InputType.TYPE_CLASS_NUMBER
+        input.setText(current.toString())
+        input.setSelection(input.text.length)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.auto_start_ble_cooldown_label)
+            .setMessage(R.string.auto_start_ble_cooldown_help)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val sec = input.text.toString().toIntOrNull()
+                    ?: com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.DEFAULT_COOLDOWN_SECONDS
+                pendingAutoStartBleCooldownSeconds = sec.coerceIn(
+                    com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.MIN_COOLDOWN_SECONDS,
+                    com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.MAX_COOLDOWN_SECONDS,
+                )
                 checkChanges()
                 updateSettingsList()
             }

@@ -37,9 +37,10 @@ class AutomationActivity : AppCompatActivity() {
         finish()
     }
 
-    /** `headunit://connect?ip=…`, `disconnect`, `exit`, `nightmode?state=…`. */
+    /** `headunit://connect?ip=…`, `wireless`, `disconnect`, `exit`, `nightmode?state=…`. */
     private fun actionFor(host: String?): String? = when (host) {
         "connect" -> HeadUnitCommand.ACTION_CONNECT
+        "wireless" -> HeadUnitCommand.ACTION_START_WIRELESS_SCAN
         "disconnect" -> HeadUnitCommand.ACTION_DISCONNECT
         "exit" -> HeadUnitCommand.ACTION_STOP_SERVICE
         "nightmode" -> HeadUnitCommand.ACTION_SET_NIGHT_MODE

@@ -74,12 +74,18 @@ object HfpServiceRecordPolicy {
      * The stage separates the two causes. Stuck where we opened means the phone answered nothing at
      * all, which is what one already serving another device's hands-free link does; stopping later
      * means it answered and then stalled. Only success was logged before, so a refusal said nothing.
+     *
+     * The first case names its usual cause because the phone's own log, not this one, holds it:
+     * back in the car a Z Fold3 logged "okToAcceptConnection: Blocked by isNewConnectionAcceptable"
+     * for every poke while its two audio-device places went to the car's Bluetooth and earbuds.
      */
     fun standInRefusalReason(initiated: Boolean, stage: HfpSlcInitiator.Stage): String? = when {
         !initiated || stage == HfpSlcInitiator.Stage.ESTABLISHED -> null
         stage == HfpSlcInitiator.Stage.IDLE || stage == HfpSlcInitiator.Stage.BRSF ->
             "it answered nothing at all, which is what a phone already giving another device its " +
-                "hands-free connection does"
+                "hands-free connection does. Most phones hold two Bluetooth audio devices at a time, " +
+                "so the car's own Bluetooth and a pair of earbuds leave no place for this unit: " +
+                "disconnect one, or check that Calls is on for this unit in the phone's Bluetooth settings"
         else -> "it stopped answering after $stage"
     }
 }

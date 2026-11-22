@@ -12,10 +12,16 @@
         android:background="?attr/colorSurface"
         app:elevation="0dp">
 
+        <!-- Two lines, the key or gesture and "Choose action": grown to fit rather than held to
+             one action bar's height, which cut the second line with a large system font. The
+             bottom padding matches the toolbar's own 4dp title margin, which its measuring leaves
+             out once the two lines outgrow the minimum height. -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="wrap_content"
+            android:minHeight="?attr/actionBarSize"
+            android:paddingBottom="4dp"
             app:navigationIcon="@drawable/ic_arrow_back_white"
             app:navigationIconTint="?android:attr/textColorPrimary"
             app:title="@string/action_picker_title"

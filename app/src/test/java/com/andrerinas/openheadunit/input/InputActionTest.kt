@@ -14,6 +14,7 @@ class InputActionTest {
 
     @Test fun everyKindOfActionSurvivesEncoding() {
         roundTrip(InputAction.None)
+        roundTrip(InputAction.Ignore)
         roundTrip(InputAction.AaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
         roundTrip(InputAction.AaKey(KeyCode.KEY_NIGHT_MODE))
         LocalAction.values().forEach { roundTrip(InputAction.Local(it)) }
@@ -23,6 +24,7 @@ class InputActionTest {
 
     @Test fun theStoredFormIsReadable() {
         assertEquals("key:85", InputActionCodec.encode(InputAction.AaKey(85)))
+        assertEquals("ignore", InputActionCodec.encode(InputAction.Ignore))
         assertEquals("local:dim", InputActionCodec.encode(InputAction.Local(LocalAction.DIM_SCREEN)))
         assertEquals("app:com.example", InputActionCodec.encode(InputAction.LaunchApp(FavoriteTarget.App("com.example"))))
     }
@@ -56,6 +58,26 @@ class InputActionTest {
         assertEquals(Resolution.Run(app), KeyBindingPolicy.resolve(bindings, 1001, false))
         assertEquals(Resolution.Swallow, KeyBindingPolicy.resolve(bindings, 132, true))
         assertEquals(Resolution.Run(dim), KeyBindingPolicy.resolve(bindings, 132, false))
+    }
+
+    @Test fun aKeyBoundToDoNothingGoesNowhereEitherWay() {
+        // A steering wheel's OK meant for the car's own system, and any other key, media included.
+        val bindings = mapOf(
+            KeyEvent.KEYCODE_DPAD_CENTER to InputAction.Ignore,
+            KeyEvent.KEYCODE_MEDIA_NEXT to InputAction.Ignore,
+        )
+        for (key in bindings.keys) {
+            assertEquals(Resolution.Ignored, KeyBindingPolicy.resolve(bindings, key, true))
+            assertEquals(Resolution.Ignored, KeyBindingPolicy.resolve(bindings, key, false))
+        }
+        // and the keys next to it are left alone
+        assertEquals(Resolution.Unbound, KeyBindingPolicy.resolve(bindings, KeyEvent.KEYCODE_ENTER, true))
+    }
+
+    @Test fun doNothingIsNotDefault() {
+        // Default (None) sends the key as itself; Do nothing (Ignore) does not. They must never meet.
+        assertEquals(Resolution.Unbound, KeyBindingPolicy.resolve(mapOf(23 to InputAction.None), 23, true))
+        assertEquals(Resolution.Ignored, KeyBindingPolicy.resolve(mapOf(23 to InputAction.Ignore), 23, true))
     }
 
     @Test fun unboundKeysPassThrough() {

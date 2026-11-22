@@ -369,7 +369,7 @@
     <string name="auto_connect_help">Bu yöntemler uygulama açıldığında otomatik olarak çalışır. İstediklerinizi etkinleştirin, ardından sırayı ayarlamak için sürükleyin. Başarılı olan ilk etkin yöntem kullanılacaktır.</string>
     <string name="auto_connect_screen_help">Uygulamanın açılışta kendi kendine nasıl bağlanacağını belirler. İstediğiniz yöntemleri açın ve denenecekleri sıraya sürükleyin. Başarılı olan ilk yöntem kullanılır. Gecikme, yavaş bir ünitede Wi-Fi\'ye uyanma süresi tanır. Burada hiçbir şey sizin başlattığınız bağlantıyı değiştirmez. Kaydet değişiklikleri uygular.</string>
     <string name="dpi_screen_help">Android Auto\'nun çizim yaptığı piksel yoğunluğunu belirler. Yüksek DPI simgeleri ve metni büyütür, ekrana daha az şey sığar. Düşük DPI bunları küçültür, daha fazla şey sığar. Otomatik, bu cihazın yoğunluğunu kullanır. Yeni değer bir sonraki bağlantıda uygulanır.</string>
-    <string name="keymap_screen_help">Bu ünitenin tuşlarını ve düğmelerini eylemlere atar: bir Android Auto tuşu, yansıtma ekranı eylemi veya bir uygulamayı başlatma. Tuş ataması ekle\'ye dokunun, tuşa basın, ardından eylemi seçin. Değiştirmek veya kaldırmak için bir atamaya dokunun. Sıfırla tüm atamaları kaldırır.</string>
+    <string name="keymap_screen_help">Bu ünitenin tuşlarını ve düğmelerini eylemlere atar: bir Android Auto tuşu, yansıtma ekranı eylemi veya bir uygulamayı başlatma. Tuş ataması ekle\'ye dokunun, tuşa basın, ardından eylemi seçin. Değiştirmek veya kaldırmak için bir atamaya dokunun. Sıfırla tüm atamaları kaldırır. Hiçbir şey yapma, bir tuşun Android Auto\'ya ulaşmasını engeller; örneğin aracın kendi sistemi için olan bir direksiyon tuşu.</string>
     <string name="customization_screen_help">Bu uygulamanın ana ekranının görünümünü değiştirir: arka plan resmi, dört düğmenin renkleri ve boyutu ile metin boyutu. Gece ayarı, karanlık moddaki arka planı belirler. Bunların hiçbiri Android Auto\'nun yansıtmada gösterdiklerini değiştirmez.</string>
     <string name="loading_screen_screen_help">Android Auto başlarken gösterilen resmi veya kısa videoyu belirler. 10 MB\'a kadar bir resim ya da video seçin, ekrana sığacak şekilde ölçekleyin ve kısa animasyonları döngüye alın. Başlangıç metnini de gizleyebilirsiniz. Kaldır, varsayılan ekrana döner.</string>
     <string name="auto_connect_priority">Öncelik %d</string>
@@ -471,6 +471,7 @@
     <string name="key_assigned">\'%1$s\', \'%2$s\' tuşuna atandı</string>
     <string name="action_picker_title">Eylem seç</string>
     <string name="action_remove_binding">Atamayı kaldır</string>
+    <string name="action_do_nothing">Hiçbir şey yapma</string>
     <string name="action_section_projection">Yansıtma ekranı</string>
     <string name="action_section_aa_keys">Android Auto tuşları</string>
     <string name="action_section_apps">Uygulamalar</string>

@@ -30,6 +30,7 @@ class ActionPickerFragment : Fragment() {
         private const val ARG_TITLE = "title"
         private const val ARG_CURRENT = "current"
         private const val ARG_NONE_LABEL = "none_label"
+        private const val ARG_OFFERS_DO_NOTHING = "offers_do_nothing"
 
         /** Result bundle: the chosen action, encoded with [InputActionCodec]. */
         const val RESULT_ACTION = "action"
@@ -38,12 +39,17 @@ class ActionPickerFragment : Fragment() {
 
         private const val APP_PICK_KEY = "action_picker_app"
 
-        fun args(requestKey: String, tag: String, title: String, current: InputAction, noneLabelResId: Int) = bundleOf(
+        /** [offersDoNothing] for keys: [InputAction.Ignore] next to the none row. A gesture's none already does nothing. */
+        fun args(
+            requestKey: String, tag: String, title: String, current: InputAction, noneLabelResId: Int,
+            offersDoNothing: Boolean = false,
+        ) = bundleOf(
             ARG_REQUEST_KEY to requestKey,
             ARG_TAG to tag,
             ARG_TITLE to title,
             ARG_CURRENT to InputActionCodec.encode(current),
             ARG_NONE_LABEL to noneLabelResId,
+            ARG_OFFERS_DO_NOTHING to offersDoNothing,
         )
     }
 
@@ -92,6 +98,9 @@ class ActionPickerFragment : Fragment() {
         val selected = current
         val items = mutableListOf<SettingItem>()
         items += row("none", getString(requireArguments().getInt(ARG_NONE_LABEL)), InputAction.None, selected)
+        if (requireArguments().getBoolean(ARG_OFFERS_DO_NOTHING)) {
+            items += row("ignore", getString(R.string.action_do_nothing), InputAction.Ignore, selected)
+        }
 
         items += SettingItem.CategoryHeader("projection", R.string.action_section_projection)
         ActionCatalog.localActions.forEach { items += row(it.action.id(), getString(it.nameResId), it.action, selected) }

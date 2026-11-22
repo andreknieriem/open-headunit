@@ -2490,7 +2490,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     /** What a gesture does: the same choices a key binding has. */
     private fun performTouchGesture(action: InputAction): Boolean = when (action) {
-        InputAction.None -> false
+        // Ignore is never offered for a gesture; one that somehow holds it does nothing, like None.
+        InputAction.None, InputAction.Ignore -> false
         is InputAction.Local -> performLocalAction(action.kind)
         is InputAction.AaKey -> {
             commManager.sendLogicalKey(action.keyCode, true, source = "gesture")

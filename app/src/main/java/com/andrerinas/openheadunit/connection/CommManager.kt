@@ -1348,6 +1348,10 @@ class CommManager(
         val logicalCode = when (val resolution = KeyBindingPolicy.resolve(settings.keyBindings, keyCode, isPress)) {
             is KeyBindingPolicy.Resolution.SendToAa -> resolution.logicalCode
             is KeyBindingPolicy.Resolution.Swallow -> return
+            is KeyBindingPolicy.Resolution.Ignored -> {
+                if (isPress) AppLog.i("CommManager: Key $keyCode is bound to do nothing; not sent (src=$source)")
+                return
+            }
             is KeyBindingPolicy.Resolution.Run -> {
                 runBoundAction(resolution.action, keyCode)
                 return
@@ -1430,7 +1434,7 @@ class CommManager(
         when (action) {
             is InputAction.Local -> _localActions.tryEmit(action.kind)
             is InputAction.LaunchApp -> AppLauncher.launch(context, action.target)
-            is InputAction.AaKey, InputAction.None -> Unit
+            is InputAction.AaKey, InputAction.None, InputAction.Ignore -> Unit
         }
     }
 

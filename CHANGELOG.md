@@ -10,6 +10,7 @@
 - Feat(home): move All Apps button to sidebar in launcher mode
 - Display: reconnect in the remembered shape, and redraw instead of stretching when the screen turns, thanks to @tamer1an
 - Feat(wifi): Headunit Server asks which network the phone and the unit share. On the phone's hotspot the search waits for the unit to join it, Connect over WiFi scans for the hotspot first, and the main card shows the WiFi network, band and signal; an optional automatic scan helps a slow unit join. The main button becomes a pill led by an icon
+- Feat(keymap): a key can be bound to "Do nothing", so a key meant for something else (a steering wheel's OK that drives the car's own system) never reaches Android Auto
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

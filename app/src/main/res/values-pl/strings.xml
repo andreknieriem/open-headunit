@@ -342,7 +342,7 @@
     <string name="auto_connect_help">Te metody uruchamiają się automatycznie przy otwieraniu aplikacji. Włącz te, które chcesz, i przeciągnij, aby ustawić kolejność. Zostanie użyta pierwsza włączona metoda, która się powiedzie.</string>
     <string name="auto_connect_screen_help">Określa, jak aplikacja łączy się sama po otwarciu. Włącz wybrane metody i przeciągnij je w kolejności prób. Użyta zostanie pierwsza, która się powiedzie. Opóźnienie daje Wi-Fi czas na wybudzenie na wolnej stacji. Nic tutaj nie zmienia połączenia, które uruchamiasz sam. Zapisz stosuje zmiany.</string>
     <string name="dpi_screen_help">Ustawia gęstość pikseli, z jaką rysuje Android Auto. Wyższe DPI powiększa ikony i tekst, więc na ekranie mieści się mniej. Niższe DPI je zmniejsza, więc mieści się więcej. Automatyczne używa gęstości tego urządzenia. Nowa wartość obowiązuje od następnego połączenia.</string>
-    <string name="keymap_screen_help">Przypisuje klawisze i przyciski tej stacji do działań: klawisza Android Auto, działania ekranu projekcji lub uruchomienia aplikacji. Dotknij Dodaj przypisanie klawisza, naciśnij klawisz i wybierz działanie. Dotknij przypisania, aby je zmienić lub usunąć. Resetuj usuwa wszystkie przypisania.</string>
+    <string name="keymap_screen_help">Przypisuje klawisze i przyciski tej stacji do działań: klawisza Android Auto, działania ekranu projekcji lub uruchomienia aplikacji. Dotknij Dodaj przypisanie klawisza, naciśnij klawisz i wybierz działanie. Dotknij przypisania, aby je zmienić lub usunąć. Resetuj usuwa wszystkie przypisania. Nic nie rób sprawia, że klawisz nie trafia do Android Auto, na przykład przycisk na kierownicy przeznaczony dla fabrycznego systemu auta.</string>
     <string name="customization_screen_help">Zmienia wygląd ekranu głównego tej aplikacji: obraz tła, kolory i rozmiar czterech przycisków oraz rozmiar tekstu. Ustawienie nocne steruje tłem w trybie ciemnym. Nic z tego nie zmienia tego, co Android Auto pokazuje w projekcji.</string>
     <string name="loading_screen_screen_help">Ustawia obraz lub krótki film pokazywany podczas uruchamiania Android Auto. Wybierz obraz lub film do 10 MB, dopasuj go do ekranu i zapętl krótkie animacje. Możesz też ukryć tekst startowy. Usuń przywraca ekran domyślny.</string>
     <string name="auto_connect_priority">Priorytet %d</string>
@@ -448,6 +448,7 @@
     <string name="key_assigned">\'%1$s\' przypisano do \'%2$s\'</string>
     <string name="action_picker_title">Wybierz działanie</string>
     <string name="action_remove_binding">Usuń przypisanie</string>
+    <string name="action_do_nothing">Nic nie rób</string>
     <string name="action_section_projection">Ekran projekcji</string>
     <string name="action_section_aa_keys">Klawisze Android Auto</string>
     <string name="action_section_apps">Aplikacje</string>

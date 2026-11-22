@@ -51,6 +51,7 @@ object ActionCatalog {
 
     fun label(context: Context, action: InputAction): String = when (action) {
         InputAction.None -> context.getString(R.string.gesture_action_disabled)
+        InputAction.Ignore -> context.getString(R.string.action_do_nothing)
         is InputAction.Local -> context.getString(localActions.first { it.action == action }.nameResId)
         is InputAction.AaKey -> aaKeys.firstOrNull { it.action == action }?.let { context.getString(it.nameResId) }
             ?: context.getString(R.string.action_aa_key_code, action.keyCode)

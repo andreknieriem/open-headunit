@@ -9282,48 +9282,48 @@ public final class Input {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\012\013input.proto\022.com.andrerinas.openheadun" +
-      "it.aap.protocol.proto\032\014common.proto\"J\012\003K" +
-      "ey\022\017\012\007keycode\030\001 \002(\015\022\014\012\004down\030\002 \002(\010\022\021\012\011met" +
-      "astate\030\003 \001(\015\022\021\012\011longpress\030\004 \001(\010\"M\012\010KeyEv" +
-      "ent\022A\012\004keys\030\001 \003(\01323.com.andrerinas.openh" +
-      "eadunit.aap.protocol.proto.Key\"\317\003\012\012Touch" +
-      "Event\022X\012\014pointer_data\030\001 \003(\0132B.com.andrer" +
+      "\n\013input.proto\022.com.andrerinas.openheadun" +
+      "it.aap.protocol.proto\032\014common.proto\"J\n\003K" +
+      "ey\022\017\n\007keycode\030\001 \002(\r\022\014\n\004down\030\002 \002(\010\022\021\n\tmet" +
+      "astate\030\003 \001(\r\022\021\n\tlongpress\030\004 \001(\010\"M\n\010KeyEv" +
+      "ent\022A\n\004keys\030\001 \003(\01323.com.andrerinas.openh" +
+      "eadunit.aap.protocol.proto.Key\"\317\003\n\nTouch" +
+      "Event\022X\n\014pointer_data\030\001 \003(\0132B.com.andrer" +
       "inas.openheadunit.aap.protocol.proto.Tou" +
-      "chEvent.Pointer\022\024\012\014action_index\030\002 \001(\015\022X\012" +
+      "chEvent.Pointer\022\024\n\014action_index\030\002 \001(\r\022X\n" +
       "\006action\030\003 \002(\0162H.com.andrerinas.openheadu" +
       "nit.aap.protocol.proto.TouchEvent.Pointe" +
-      "rAction\0323\012\007Pointer\022\011\012\001x\030\001 \002(\015\022\011\012\001y\030\002 \002(\015" +
-      "\022\022\012\012pointer_id\030\003 \002(\015\"\301\001\012\015PointerAction\022\025" +
-      "\012\021TOUCH_ACTION_DOWN\020\000\022\023\012\017TOUCH_ACTION_UP" +
-      "\020\001\022\025\012\021TOUCH_ACTION_MOVE\020\002\022\027\012\023TOUCH_ACTIO" +
-      "N_CANCEL\020\003\022\030\012\024TOUCH_ACTION_OUTSIDE\020\004\022\035\012\031" +
-      "TOUCH_ACTION_POINTER_DOWN\020\005\022\033\012\027TOUCH_ACT" +
-      "ION_POINTER_UP\020\006\"3\012\021RelativeEvent_Rel\022\017\012" +
-      "\007keycode\030\001 \002(\015\022\015\012\005delta\030\002 \002(\005\"`\012\015Relativ" +
-      "eEvent\022O\012\004data\030\001 \003(\0132A.com.andrerinas.op" +
+      "rAction\0323\n\007Pointer\022\t\n\001x\030\001 \002(\r\022\t\n\001y\030\002 \002(\r" +
+      "\022\022\n\npointer_id\030\003 \002(\r\"\301\001\n\rPointerAction\022\025" +
+      "\n\021TOUCH_ACTION_DOWN\020\000\022\023\n\017TOUCH_ACTION_UP" +
+      "\020\001\022\025\n\021TOUCH_ACTION_MOVE\020\002\022\027\n\023TOUCH_ACTIO" +
+      "N_CANCEL\020\003\022\030\n\024TOUCH_ACTION_OUTSIDE\020\004\022\035\n\031" +
+      "TOUCH_ACTION_POINTER_DOWN\020\005\022\033\n\027TOUCH_ACT" +
+      "ION_POINTER_UP\020\006\"3\n\021RelativeEvent_Rel\022\017\n" +
+      "\007keycode\030\001 \002(\r\022\r\n\005delta\030\002 \002(\005\"`\n\rRelativ" +
+      "eEvent\022O\n\004data\030\001 \003(\0132A.com.andrerinas.op" +
       "enheadunit.aap.protocol.proto.RelativeEv" +
-      "ent_Rel\"3\012\021AbsoluteEvent_Abs\022\017\012\007keycode\030" +
-      "\001 \002(\015\022\015\012\005value\030\002 \002(\005\"`\012\015AbsoluteEvent\022O\012" +
+      "ent_Rel\"3\n\021AbsoluteEvent_Abs\022\017\n\007keycode\030" +
+      "\001 \002(\r\022\r\n\005value\030\002 \002(\005\"`\n\rAbsoluteEvent\022O\n" +
       "\004data\030\001 \003(\0132A.com.andrerinas.openheaduni" +
       "t.aap.protocol.proto.AbsoluteEvent_Abs\"\331" +
-      "\003\012\013InputReport\022\021\012\011timestamp\030\001 \002(\004\022\027\012\017dis" +
-      "p_channel_id\030\002 \001(\005\022O\012\013touch_event\030\003 \001(\0132" +
+      "\003\n\013InputReport\022\021\n\ttimestamp\030\001 \002(\004\022\027\n\017dis" +
+      "p_channel_id\030\002 \001(\005\022O\n\013touch_event\030\003 \001(\0132" +
       ":.com.andrerinas.openheadunit.aap.protoc" +
-      "ol.proto.TouchEvent\022K\012\011key_event\030\004 \001(\01328" +
+      "ol.proto.TouchEvent\022K\n\tkey_event\030\004 \001(\01328" +
       ".com.andrerinas.openheadunit.aap.protoco" +
-      "l.proto.KeyEvent\022U\012\016absolute_event\030\005 \001(\013" +
+      "l.proto.KeyEvent\022U\n\016absolute_event\030\005 \001(\013" +
       "2=.com.andrerinas.openheadunit.aap.proto" +
-      "col.proto.AbsoluteEvent\022U\012\016relative_even" +
+      "col.proto.AbsoluteEvent\022U\n\016relative_even" +
       "t\030\006 \001(\0132=.com.andrerinas.openheadunit.aa" +
-      "p.protocol.proto.RelativeEvent\022R\012\016touchp" +
+      "p.protocol.proto.RelativeEvent\022R\n\016touchp" +
       "ad_event\030\007 \001(\0132:.com.andrerinas.openhead" +
-      "unit.aap.protocol.proto.TouchEvent\"%\012\021Ke" +
-      "yBindingRequest\022\020\012\010keycodes\030\001 \003(\005\"`\012\017Bin" +
-      "dingResponse\022M\012\006status\030\001 \002(\0162=.com.andre" +
+      "unit.aap.protocol.proto.TouchEvent\"%\n\021Ke" +
+      "yBindingRequest\022\020\n\010keycodes\030\001 \003(\005\"`\n\017Bin" +
+      "dingResponse\022M\n\006status\030\001 \002(\0162=.com.andre" +
       "rinas.openheadunit.aap.protocol.proto.Me" +
-      "ssageStatus*C\012\007MsgType\022\013\012\005EVENT\020\201\200\002\022\024\012\016B" +
-      "INDINGREQUEST\020\202\200\002\022\025\012\017BINDINGRESPONSE\020\203\200\002" +
+      "ssageStatus*C\n\007MsgType\022\013\n\005EVENT\020\201\200\002\022\024\n\016B" +
+      "INDINGREQUEST\020\202\200\002\022\025\n\017BINDINGRESPONSE\020\203\200\002" +
       "B\007B\005Input"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor

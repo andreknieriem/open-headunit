@@ -1984,12 +1984,12 @@ public final class Media {
     int getSessionId();
 
     /**
-     * <code>required uint32 ack = 2;</code>
+     * <code>optional uint32 ack = 2;</code>
      * @return Whether the ack field is set.
      */
     boolean hasAck();
     /**
-     * <code>required uint32 ack = 2;</code>
+     * <code>optional uint32 ack = 2;</code>
      * @return The ack.
      */
     int getAck();
@@ -2070,7 +2070,7 @@ public final class Media {
     public static final int ACK_FIELD_NUMBER = 2;
     private int ack_ = 0;
     /**
-     * <code>required uint32 ack = 2;</code>
+     * <code>optional uint32 ack = 2;</code>
      * @return Whether the ack field is set.
      */
     @java.lang.Override
@@ -2078,7 +2078,7 @@ public final class Media {
       return ((bitField0_ & 0x00000002) != 0);
     }
     /**
-     * <code>required uint32 ack = 2;</code>
+     * <code>optional uint32 ack = 2;</code>
      * @return The ack.
      */
     @java.lang.Override
@@ -2123,10 +2123,6 @@ public final class Media {
       if (isInitialized == 0) return false;
 
       if (!hasSessionId()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasAck()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -2476,9 +2472,6 @@ public final class Media {
         if (!hasSessionId()) {
           return false;
         }
-        if (!hasAck()) {
-          return false;
-        }
         return true;
       }
 
@@ -2583,7 +2576,7 @@ public final class Media {
 
       private int ack_ ;
       /**
-       * <code>required uint32 ack = 2;</code>
+       * <code>optional uint32 ack = 2;</code>
        * @return Whether the ack field is set.
        */
       @java.lang.Override
@@ -2591,7 +2584,7 @@ public final class Media {
         return ((bitField0_ & 0x00000002) != 0);
       }
       /**
-       * <code>required uint32 ack = 2;</code>
+       * <code>optional uint32 ack = 2;</code>
        * @return The ack.
        */
       @java.lang.Override
@@ -2599,7 +2592,7 @@ public final class Media {
         return ack_;
       }
       /**
-       * <code>required uint32 ack = 2;</code>
+       * <code>optional uint32 ack = 2;</code>
        * @param value The ack to set.
        * @return This builder for chaining.
        */
@@ -2611,7 +2604,7 @@ public final class Media {
         return this;
       }
       /**
-       * <code>required uint32 ack = 2;</code>
+       * <code>optional uint32 ack = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearAck() {
@@ -10848,7 +10841,7 @@ public final class Media {
       "ts\030\002 \002(\r\022\032\n\022number_of_channels\030\003 \002(\r\"8\n\005" +
       "Start\022\022\n\nsession_id\030\001 \002(\005\022\033\n\023configurati" +
       "on_index\030\002 \002(\r\"D\n\003Ack\022\022\n\nsession_id\030\001 \002(" +
-      "\005\022\013\n\003ack\030\002 \002(\r\022\034\n\024receive_timestamp_ns\030\003" +
+      "\005\022\013\n\003ack\030\002 \001(\r\022\034\n\024receive_timestamp_ns\030\003" +
       " \003(\004\"0\n\032AudioUnderflowNotification\022\022\n\nse" +
       "ssion_id\030\001 \002(\005\"_\n\021MicrophoneRequest\022\014\n\004o" +
       "pen\030\001 \002(\010\022\023\n\013anc_enabled\030\002 \001(\010\022\022\n\nec_ena" +

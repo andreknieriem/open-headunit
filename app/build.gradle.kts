@@ -314,3 +314,8 @@ kotlin {
         jvmTarget.set(JvmTarget.JVM_1_8)
     }
 }
+
+// Two test JVMs cut the local suite from about 2.5 to 1.7 minutes; both orders pass.
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 2
+}

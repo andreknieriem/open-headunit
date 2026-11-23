@@ -2,12 +2,13 @@
 
 ## `android-ci.yml` — Android CI
 
-Runs on every pull request and on pushes to `main`. Two parallel jobs:
+Runs on every pull request and on pushes to `main`. The jobs run in parallel:
 
 | Check                         | What it does                                                                                                                                         | Intended to block? |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------: |
 | **Build (github debug)**      | `./gradlew :app:assembleGithubDebug` — compiles the app (including native code and the `:contract` module) and uploads the debug APK as an artifact. |        Yes         |
-| **Unit tests (github debug)** | Runs `./gradlew :app:testGithubDebugUnitTest`, then the connection lifecycle harness. Uploads JVM reports and harness diagnostics.                   |        Yes         |
+| **Unit tests (github debug)** | Runs `./gradlew :app:testGithubDebugUnitTest`, then the connection lifecycle harness. Failing tests show as PR annotations. Uploads JVM reports and harness diagnostics.                   |        Yes         |
+| **Source checks (workflows, generated protobuf)** | `actionlint` and `zizmor` on `.github/workflows` (`.github/zizmor.yml` accepts actions pinned to tags), then protoc 25.1 on each `.proto`, failing if the committed Java in `aap/protocol/proto` changes. Seconds, no Gradle. | Yes |
 
 "Intended to block" reflects the design; a failing check only actually
 prevents merge once the [branch-protection rule](#branch-protection) below is
@@ -23,6 +24,7 @@ these status checks:
 
 - `Build (github debug)`
 - `Unit tests (github debug)`
+- `Source checks (workflows, generated protobuf)`
 
 ### Notes
 
@@ -54,4 +56,11 @@ these status checks:
   occasionally arrive corrupt on GitHub-hosted runners.
 - **Action pinning:** all actions (GitHub first-party and third-party alike)
   are pinned to major-version tags. Maintainers who want stricter supply-chain
-  hygiene can repin them to full commit SHAs.
+  hygiene can repin them to full commit SHAs and drop the `ref-pin` policy in
+  `.github/zizmor.yml`. Dependabot (`.github/dependabot.yml`) opens one grouped
+  PR a month when an action has a newer tag. Every checkout sets
+  `persist-credentials: false`, so no later step can read the token from disk.
+- **Robolectric jars.** Robolectric fetches its Android jars from Maven
+  Central at test time into `~/.m2`, which `setup-gradle` does not cache. A
+  failed fetch fails whole test classes ("classMethod FAILED" with an
+  `IOException` in `MavenArtifactFetcher`), so the unit-test job caches them.

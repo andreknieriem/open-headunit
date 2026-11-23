@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32
 
 import android.annotation.SuppressLint
+import android.annotation.TargetApi
+import androidx.annotation.RequiresApi
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -24,7 +26,9 @@ import java.util.UUID
  * BLE client for the Esp32Relay. The session stays open after the display snapshot is sent
  * so later RFCOMM bytes can cross the same link.
  */
-class Esp32RelayClient(context: Context) {
+// Only built at API 23 and up (Esp32RelaySession.isSupported), so lint checks the constructor calls only.
+@TargetApi(Build.VERSION_CODES.M)
+class Esp32RelayClient @RequiresApi(Build.VERSION_CODES.M) constructor(context: Context) {
     private val app = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private val adapter: BluetoothAdapter? =

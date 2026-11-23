@@ -238,6 +238,8 @@ android {
         variant.outputs
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
+        // minSdk 16: D8 rewrites Java 8 library calls (removeIf, Map.forEach, java.time) to a bundled copy.
+        isCoreLibraryDesugaringEnabled = true
                 var outputFileName = "${variant.applicationId}_${variant.versionName}_debug.apk"
                 if(variant.buildType.name == "release") {
                     outputFileName = "${variant.applicationId}_${variant.versionName}.apk"
@@ -287,6 +289,7 @@ dependencies {
 
     // DexMaker for runtime subclassing (Hotspot Fix)
     implementation("com.linkedin.dexmaker:dexmaker:2.28.3")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     // Glide for image/GIF loading (custom loading screen)
     implementation("com.github.bumptech.glide:glide:4.16.0")

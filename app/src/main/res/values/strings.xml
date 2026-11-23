@@ -747,16 +747,16 @@
     <string name="pref_enable_floating_button_help">Displays a floating button over the OEM launcher and other apps to quickly return to Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Connection Status Indicator</string>
     <string name="pref_floating_button_connection_status_summary">Fade the button while a phone is connected.</string>
-    <string name="pref_floating_button_connection_status_help">Uses Disconnected Opacity when no phone is connected, and fades to Floating Button Opacity while a phone is connected. At 0% the button is hidden and lets taps through.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Uses Disconnected Opacity when no phone is connected, and fades to Floating Button Opacity while a phone is connected. At 0% the button is hidden and lets taps through.</string>
     <string name="pref_floating_button_size_title">Floating Button Size</string>
     <string name="pref_floating_button_size_help">The size of the floating button, from 32 to 120 dp. A larger button is easier to hit while you drive.</string>
     <string name="pref_floating_button_opacity_title">Floating Button Opacity</string>
     <string name="pref_floating_button_opacity_help">How solid the floating button looks, from 10% to 100%. With Connection Status Indicator on, this value applies only while a phone is connected.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Disconnected Opacity</string>
-    <string name="pref_floating_button_disconnected_opacity_help">How solid the floating button looks while no phone is connected. At 0%, the button is hidden and taps go through to the screen below it.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">How solid the floating button looks while no phone is connected. At 0%, the button is hidden and taps go through to the screen below it.</string>
     <string name="pref_floating_button_x_title">Horizontal Position (X)</string>
     <string name="pref_floating_button_y_title">Vertical Position (Y)</string>
-    <string name="pref_floating_button_position_help">Where the floating button sits on the screen. For X, 0% is the left edge and 100% is the right edge. For Y, 0% is the top edge and 100% is the bottom edge. The button always stays fully on the screen.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Where the floating button sits on the screen. For X, 0% is the left edge and 100% is the right edge. For Y, 0% is the top edge and 100% is the bottom edge. The button always stays fully on the screen.</string>
     <string name="pref_aa_exit_action_title">Android Auto Exit Action</string>
     <string name="pref_aa_exit_action_summary">Action when tapping Exit inside the Android Auto app drawer.</string>
     <string name="pref_aa_exit_action_help">Chooses what happens when you tap Exit in Android Auto. Return to OEM Launcher shows this unit\'s own home screen. Return to App Home shows this app\'s home screen. With these two, the phone stays connected. Disconnect Session ends the session. When this app is the car launcher, Return to OEM Launcher acts as Return to App Home.</string>
@@ -926,7 +926,7 @@
     <string name="attach_hw_dsp_equalizer_description">Attaches a dummy Equalizer effect to the audio session to force hardware DSP routing on specific headunits. Keep disabled if using ViPER4Android / ViperFX or if sound is muffled on older Android versions.</string>
     <string name="attach_hw_dsp_equalizer_summary">Attach a dummy Equalizer to force hardware DSP routing on some units.</string>
     <string name="audio_volume_offset">Audio Volume Offset</string>
-    <string name="audio_volume_offset_help">Sets the loudness of three Android Auto sound streams on this unit: media, navigation guidance and system sounds. Each goes from 0% to 200%. 100% plays a stream as the phone sends it. Use it to balance navigation against music.</string>
+    <string name="audio_volume_offset_help" formatted="false">Sets the loudness of three Android Auto sound streams on this unit: media, navigation guidance and system sounds. Each goes from 0% to 200%. 100% plays a stream as the phone sends it. Use it to balance navigation against music.</string>
     <string name="microphone_settings">Microphone Settings</string>
     <string name="use_head_unit_microphone">Head unit microphone</string>
     <string name="use_head_unit_microphone_description">On: Android Auto hears this device\'s microphone. Off: this device never records and the phone uses its own microphone, or a headset or intercom paired to the phone, so the voice assistant still works. Needs Android 11 or newer on the phone.</string>

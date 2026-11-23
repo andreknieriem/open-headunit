@@ -718,16 +718,16 @@
     <string name="pref_enable_floating_button_help">แสดงปุ่มลอยทับลอนเชอร์เดิมและแอปอื่นๆ เพื่อกลับสู่ Open Headunit ได้อย่างรวดเร็ว</string>
     <string name="pref_floating_button_connection_status_title">ตัวบ่งชี้สถานะการเชื่อมต่อ</string>
     <string name="pref_floating_button_connection_status_summary">ทำให้ปุ่มจางลงขณะที่เชื่อมต่อโทรศัพท์</string>
-    <string name="pref_floating_button_connection_status_help">ใช้ความทึบเมื่อไม่ได้เชื่อมต่อ เมื่อไม่มีโทรศัพท์เชื่อมต่อ และค่อยๆ จางเป็นความทึบของปุ่มลอยขณะที่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อนและปล่อยให้การแตะผ่านไป</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">ใช้ความทึบเมื่อไม่ได้เชื่อมต่อ เมื่อไม่มีโทรศัพท์เชื่อมต่อ และค่อยๆ จางเป็นความทึบของปุ่มลอยขณะที่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อนและปล่อยให้การแตะผ่านไป</string>
     <string name="pref_floating_button_size_title">ขนาดปุ่มลอย</string>
     <string name="pref_floating_button_size_help">ขนาดของปุ่มลอย ตั้งแต่ 32 ถึง 120 dp ปุ่มที่ใหญ่กว่าแตะได้ง่ายกว่าขณะขับรถ</string>
     <string name="pref_floating_button_opacity_title">ความทึบของปุ่มลอย</string>
     <string name="pref_floating_button_opacity_help">ความชัดของปุ่มลอย ตั้งแต่ 10% ถึง 100% เมื่อเปิดตัวบ่งชี้สถานะการเชื่อมต่อ ค่านี้ใช้เฉพาะขณะที่มีโทรศัพท์เชื่อมต่ออยู่</string>
     <string name="pref_floating_button_disconnected_opacity_title">ความทึบเมื่อไม่ได้เชื่อมต่อ</string>
-    <string name="pref_floating_button_disconnected_opacity_help">ความชัดของปุ่มลอยขณะที่ไม่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อน และการแตะจะทะลุไปยังหน้าจอด้านล่าง</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">ความชัดของปุ่มลอยขณะที่ไม่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อน และการแตะจะทะลุไปยังหน้าจอด้านล่าง</string>
     <string name="pref_floating_button_x_title">ตำแหน่งแนวนอน (X)</string>
     <string name="pref_floating_button_y_title">ตำแหน่งแนวตั้ง (Y)</string>
-    <string name="pref_floating_button_position_help">ตำแหน่งของปุ่มลอยบนหน้าจอ สำหรับ X ค่า 0% คือขอบซ้าย และ 100% คือขอบขวา สำหรับ Y ค่า 0% คือขอบบน และ 100% คือขอบล่าง ปุ่มจะอยู่ในหน้าจอทั้งปุ่มเสมอ</string>
+    <string name="pref_floating_button_position_help" formatted="false">ตำแหน่งของปุ่มลอยบนหน้าจอ สำหรับ X ค่า 0% คือขอบซ้าย และ 100% คือขอบขวา สำหรับ Y ค่า 0% คือขอบบน และ 100% คือขอบล่าง ปุ่มจะอยู่ในหน้าจอทั้งปุ่มเสมอ</string>
     <string name="pref_aa_exit_action_title">การกระทำเมื่อออกจาก Android Auto</string>
     <string name="pref_aa_exit_action_summary">การกระทำเมื่อแตะ ออก ภายในหน้ารวมแอปของ Android Auto</string>
     <string name="pref_aa_exit_action_help">เลือกสิ่งที่เกิดขึ้นเมื่อคุณแตะออกใน Android Auto กลับสู่ลอนเชอร์ติดรถ จะแสดงหน้าจอหลักของอุปกรณ์เอง กลับสู่หน้าแรกของแอปจะแสดงหน้าจอหลักของแอปนี้ ทั้งสองแบบโทรศัพท์ยังคงเชื่อมต่ออยู่ ยกเลิกการเชื่อมต่อเซสชันจะจบเซสชัน เมื่อแอปนี้เป็นตัวเปิดแอปของรถ กลับสู่ลอนเชอร์ติดรถ จะทำงานเหมือนกลับสู่หน้าแรกของแอป</string>
@@ -833,7 +833,7 @@
     <string name="attach_hw_dsp_equalizer_description">แนบเอฟเฟกต์อีควอไลเซอร์จำลองกับเซสชันเสียงเพื่อบังคับให้ส่งเสียงผ่าน DSP ฮาร์ดแวร์บนเฮดยูนิตบางรุ่น ควรปิดไว้หากใช้ ViPER4Android / ViperFX หรือเสียงอู้อี้บน Android รุ่นเก่า</string>
     <string name="attach_hw_dsp_equalizer_summary">เชื่อมอีควอไลเซอร์ปลอมเพื่อบังคับการส่งผ่าน DSP ฮาร์ดแวร์บนบางเครื่อง</string>
     <string name="audio_volume_offset">การชดเชยระดับเสียง</string>
-    <string name="audio_volume_offset_help">กำหนดความดังของสตรีมเสียง Android Auto สามแบบบนอุปกรณ์นี้ ได้แก่ มีเดีย เสียงนำทาง และเสียงระบบ แต่ละแบบปรับได้ตั้งแต่ 0% ถึง 200% ที่ 100% จะเล่นสตรีมตามที่โทรศัพท์ส่งมา ใช้เพื่อปรับสมดุลระหว่างเสียงนำทางกับเพลง</string>
+    <string name="audio_volume_offset_help" formatted="false">กำหนดความดังของสตรีมเสียง Android Auto สามแบบบนอุปกรณ์นี้ ได้แก่ มีเดีย เสียงนำทาง และเสียงระบบ แต่ละแบบปรับได้ตั้งแต่ 0% ถึง 200% ที่ 100% จะเล่นสตรีมตามที่โทรศัพท์ส่งมา ใช้เพื่อปรับสมดุลระหว่างเสียงนำทางกับเพลง</string>
     <string name="microphone_settings">การตั้งค่าไมโครโฟน</string>
     <string name="use_head_unit_microphone">ไมโครโฟนของเฮดยูนิต</string>
     <string name="use_head_unit_microphone_description">เปิด: Android Auto ได้ยินเสียงจากไมโครโฟนของอุปกรณ์นี้ ปิด: อุปกรณ์นี้จะไม่บันทึกเสียงเลย และโทรศัพท์จะใช้ไมโครโฟนของตัวเอง หรือชุดหูฟังหรืออินเตอร์คอมที่จับคู่กับโทรศัพท์ ผู้ช่วยเสียงจึงยังใช้งานได้ ต้องใช้ Android 11 ขึ้นไปบนโทรศัพท์</string>

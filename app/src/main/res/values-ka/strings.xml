@@ -425,7 +425,7 @@
     <string name="attach_hw_dsp_equalizer_description">ამატებს ფიქტიურ ეკვალაიზერის ეფექტს აუდიო სესიას აპარატურული DSP მარშრუტიზაციის იძულებით ჩართვისთვის. დატოვეთ გამორთული თუ იყენებთ ViPER4Android / ViperFX-ს ან თუ ხმა დახშულია ძველ Android ვერსიებზე.</string>
     <string name="attach_hw_dsp_equalizer_summary">აერთებს ყალბ ეკვალაიზერს, რათა ზოგ მოწყობილობაზე აპარატურული DSP-ით მარშრუტიზაცია აიძულოს.</string>
     <string name="audio_volume_offset">აუდიოს ხმის დონის კორექტირება</string>
-    <string name="audio_volume_offset_help">ადგენს Android Auto-ს სამი ხმოვანი ნაკადის ხმას ამ მოწყობილობაზე: მედია, ნავიგაციის მითითებები და სისტემური ხმები. თითოეული 0%-დან 200%-მდეა. 100%-ზე ნაკადი ისე უკრავს, როგორც ტელეფონი აგზავნის. გამოიყენეთ ნავიგაციისა და მუსიკის დასაბალანსებლად.</string>
+    <string name="audio_volume_offset_help" formatted="false">ადგენს Android Auto-ს სამი ხმოვანი ნაკადის ხმას ამ მოწყობილობაზე: მედია, ნავიგაციის მითითებები და სისტემური ხმები. თითოეული 0%-დან 200%-მდეა. 100%-ზე ნაკადი ისე უკრავს, როგორც ტელეფონი აგზავნის. გამოიყენეთ ნავიგაციისა და მუსიკის დასაბალანსებლად.</string>
     <string name="microphone_settings">მიკროფონის პარამეტრები</string>
     <string name="use_head_unit_microphone">მაგნიტოლას მიკროფონი</string>
     <string name="use_head_unit_microphone_description">ჩართული: Android Auto ისმენს ამ მოწყობილობის მიკროფონს. გამორთული: ეს მოწყობილობა არასოდეს იწერს და ტელეფონი იყენებს საკუთარ მიკროფონს, ან ტელეფონთან დაწყვილებულ ყურსასმენს ან ინტერკომს, ასე რომ ხმოვანი ასისტენტი კვლავ მუშაობს. ტელეფონზე საჭიროა Android 11 ან უფრო ახალი.</string>
@@ -1470,16 +1470,16 @@
     <string name="pref_enable_floating_button_help">აჩვენებს მცურავ ღილაკს სისტემურ ლაუნჩერსა და აპებზე Open Headunit-ში სწრაფად დასაბრუნებლად.</string>
     <string name="pref_floating_button_connection_status_title">კავშირის სტატუსის ინდიკატორი</string>
     <string name="pref_floating_button_connection_status_summary">ამცირებს ღილაკის გამოკვეთილობას, სანამ ტელეფონი დაკავშირებულია.</string>
-    <string name="pref_floating_button_connection_status_help">ტელეფონის არარსებობისას იყენებს გათიშულის გამჭვირვალობას, ხოლო ტელეფონის დაკავშირებისას ქრება მცურავი ღილაკის გამჭვირვალობამდე. 0%-ზე ღილაკი დამალულია და შეხებებს გაატარებს.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">ტელეფონის არარსებობისას იყენებს გათიშულის გამჭვირვალობას, ხოლო ტელეფონის დაკავშირებისას ქრება მცურავი ღილაკის გამჭვირვალობამდე. 0%-ზე ღილაკი დამალულია და შეხებებს გაატარებს.</string>
     <string name="pref_floating_button_size_title">მცურავი ღილაკის ზომა</string>
     <string name="pref_floating_button_size_help">მოლივლივე ღილაკის ზომა, 32-დან 120 dp-მდე. უფრო დიდ ღილაკს მართვისას უფრო ადვილად შეეხებით.</string>
     <string name="pref_floating_button_opacity_title">მცურავი ღილაკის გამჭვირვალობა</string>
     <string name="pref_floating_button_opacity_help">რამდენად მკვრივია მოლივლივე ღილაკი, 10%-დან 100%-მდე. თუ „კავშირის სტატუსის ინდიკატორი“ ჩართულია, ეს მნიშვნელობა მხოლოდ მაშინ მოქმედებს, როცა ტელეფონი დაკავშირებულია.</string>
     <string name="pref_floating_button_disconnected_opacity_title">გათიშულის გამჭვირვალობა</string>
-    <string name="pref_floating_button_disconnected_opacity_help">რამდენად მკვრივია მოლივლივე ღილაკი, როცა ტელეფონი დაკავშირებული არ არის. 0%-ზე ღილაკი დამალულია და შეხება ქვედა ეკრანზე გადადის.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">რამდენად მკვრივია მოლივლივე ღილაკი, როცა ტელეფონი დაკავშირებული არ არის. 0%-ზე ღილაკი დამალულია და შეხება ქვედა ეკრანზე გადადის.</string>
     <string name="pref_floating_button_x_title">ჰორიზონტალური პოზიცია (X)</string>
     <string name="pref_floating_button_y_title">ვერტიკალური პოზიცია (Y)</string>
-    <string name="pref_floating_button_position_help">სად მდებარეობს მოლივლივე ღილაკი ეკრანზე. X-ისთვის 0% მარცხენა კიდეა, 100% — მარჯვენა კიდე. Y-ისთვის 0% ზედა კიდეა, 100% — ქვედა კიდე. ღილაკი ყოველთვის მთლიანად ეკრანზე რჩება.</string>
+    <string name="pref_floating_button_position_help" formatted="false">სად მდებარეობს მოლივლივე ღილაკი ეკრანზე. X-ისთვის 0% მარცხენა კიდეა, 100% — მარჯვენა კიდე. Y-ისთვის 0% ზედა კიდეა, 100% — ქვედა კიდე. ღილაკი ყოველთვის მთლიანად ეკრანზე რჩება.</string>
     <string name="pref_aa_exit_action_title">Android Auto-დან გასვლის მოქმედება</string>
     <string name="pref_aa_exit_action_summary">მოქმედება Android Auto-ს მენიუში გასვლაზე დაჭერისას.</string>
     <string name="pref_aa_exit_action_help">ირჩევს, რა მოხდეს, როცა Android Auto-ში „გასვლას“ შეეხებით. „სისტემურ ლაუნჩერზე დაბრუნება“ აჩვენებს ამ მოწყობილობის საკუთარ მთავარ ეკრანს. „აპლიკაციის მთავარზე დაბრუნება“ აჩვენებს ამ აპის მთავარ ეკრანს. ამ ორით ტელეფონი დაკავშირებული რჩება. „სესიის კავშირის გაწყვეტა“ სესიას ასრულებს. როცა ეს აპი ავტომობილის ლაუნჩერია, „სისტემურ ლაუნჩერზე დაბრუნება“ „აპლიკაციის მთავარზე დაბრუნების“ მსგავსად მუშაობს.</string>

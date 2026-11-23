@@ -415,7 +415,7 @@
     <string name="attach_hw_dsp_equalizer_description">Belirli multimedya cihazlarında donanım DSP yönlendirmesini zorlamak için ses oturumuna sahte bir ekolayzır efekti ekler. ViPER4Android / ViperFX kullanıyorsanız veya eski Android sürümlerinde ses boğuk çıkıyorsa kapalı tutun.</string>
     <string name="attach_hw_dsp_equalizer_summary">Bazı ünitelerde donanım DSP yönlendirmesini zorlamak için sahte bir ekolayzır ekler.</string>
     <string name="audio_volume_offset">Ses seviyesi ofseti</string>
-    <string name="audio_volume_offset_help">Bu ünitedeki üç Android Auto ses akışının yüksekliğini belirler: medya, navigasyon yönlendirmesi ve sistem sesleri. Her biri %0 ile %200 arasındadır. %100, akışı telefonun gönderdiği gibi çalar. Navigasyon ile müziği dengelemek için kullanın.</string>
+    <string name="audio_volume_offset_help" formatted="false">Bu ünitedeki üç Android Auto ses akışının yüksekliğini belirler: medya, navigasyon yönlendirmesi ve sistem sesleri. Her biri %0 ile %200 arasındadır. %100, akışı telefonun gönderdiği gibi çalar. Navigasyon ile müziği dengelemek için kullanın.</string>
     <string name="mic_input_source">Mikrofon Giriş Kaynağı</string>
     <string name="mic_input_source_description">Mikrofon için ses kaynağını seçin.</string>
     <string name="mic_input_source_help">Uygulamanın kayıt yaptığı Android ses kaynağını seçer. Varsayılan, kararı sisteme bırakır. Dahili Mikrofon ham sesi kaydeder. Ses Tanıma ve Sesli İletişim, sistemin kendi gürültü ve yankı filtrelerini ekler. Bluetooth Kulaklık, bir Bluetooth kulaklık üzerinden kaydeder. Telefon sizi duyamıyorsa değiştirin. Android Auto bağlıysa bir değişikliği kaydetmek oturumu durdurur.</string>
@@ -1478,16 +1478,16 @@
     <string name="pref_enable_floating_button_help">Open Headunit\'e hızlıca dönmek için OEM başlatıcı ve diğer uygulamaların üzerinde kayan bir düğme gösterir.</string>
     <string name="pref_floating_button_connection_status_title">Bağlantı Durumu Göstergesi</string>
     <string name="pref_floating_button_connection_status_summary">Telefon bağlıyken düğmeyi soluklaştırır.</string>
-    <string name="pref_floating_button_connection_status_help">Telefon bağlı değilken Bağlantı Kesikken Opaklık değerini kullanır, telefon bağlıyken Kayan Düğme Opaklığına doğru soluklaşır. %0\'da düğme gizlenir ve dokunuşları geçirir.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Telefon bağlı değilken Bağlantı Kesikken Opaklık değerini kullanır, telefon bağlıyken Kayan Düğme Opaklığına doğru soluklaşır. %0\'da düğme gizlenir ve dokunuşları geçirir.</string>
     <string name="pref_floating_button_size_title">Kayan Düğme Boyutu</string>
     <string name="pref_floating_button_size_help">Yüzen düğmenin boyutu, 32 ile 120 dp arasında. Daha büyük bir düğmeye araç kullanırken dokunmak daha kolaydır.</string>
     <string name="pref_floating_button_opacity_title">Kayan Düğme Opaklığı</string>
     <string name="pref_floating_button_opacity_help">Yüzen düğmenin ne kadar belirgin görüneceği, %10 ile %100 arasında. Bağlantı Durumu Göstergesi açıksa bu değer yalnızca bir telefon bağlıyken geçerlidir.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Bağlantı Kesikken Opaklık</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Hiçbir telefon bağlı değilken yüzen düğmenin ne kadar belirgin görüneceği. %0\'da düğme gizlidir ve dokunuşlar altındaki ekrana geçer.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Hiçbir telefon bağlı değilken yüzen düğmenin ne kadar belirgin görüneceği. %0\'da düğme gizlidir ve dokunuşlar altındaki ekrana geçer.</string>
     <string name="pref_floating_button_x_title">Yatay Konum (X)</string>
     <string name="pref_floating_button_y_title">Dikey Konum (Y)</string>
-    <string name="pref_floating_button_position_help">Yüzen düğmenin ekrandaki yeri. X için %0 sol kenar, %100 sağ kenardır. Y için %0 üst kenar, %100 alt kenardır. Düğme her zaman tamamen ekranda kalır.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Yüzen düğmenin ekrandaki yeri. X için %0 sol kenar, %100 sağ kenardır. Y için %0 üst kenar, %100 alt kenardır. Düğme her zaman tamamen ekranda kalır.</string>
     <string name="pref_aa_exit_action_title">Android Auto Çıkış Eylemi</string>
     <string name="pref_aa_exit_action_summary">Android Auto uygulama çekmecesinde Çıkış\'a dokunulduğunda yapılacak eylem.</string>
     <string name="pref_aa_exit_action_help">Android Auto\'da Çıkış\'a dokunduğunuzda ne olacağını seçer. OEM Başlatıcıya Dön, ünitenin kendi ana ekranını gösterir. Uygulama Ana Sayfasına Dön, bu uygulamanın ana ekranını gösterir. Bu ikisinde telefon bağlı kalır. Bağlantıyı kes, oturumu bitirir. Bu uygulama aracın başlatıcısıysa OEM Başlatıcıya Dön, Uygulama Ana Sayfasına Dön gibi çalışır.</string>

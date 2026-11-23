@@ -389,7 +389,7 @@
     <string name="attach_hw_dsp_equalizer_description">Připojí k relaci zvuku virtuální ekvalizér pro vynucení směrování přes HW DSP na specifických autorádiích. Ponechte vypnuté, pokud používáte ViPER4Android / ViperFX nebo pokud je zvuk na starších verzích Androidu tlumený.</string>
     <string name="attach_hw_dsp_equalizer_summary">Připojí fiktivní ekvalizér, který na některých autorádiích vynutí směrování přes hardwarový DSP.</string>
     <string name="audio_volume_offset">Posun hlasitosti</string>
-    <string name="audio_volume_offset_help">Nastavuje hlasitost tří zvukových proudů Android Auto na této jednotce: médií, navigačních pokynů a systémových zvuků. Každý má rozsah od 0 % do 200 %. Při 100 % se proud přehrává tak, jak ho posílá telefon. Použijte to k vyvážení navigace a hudby.</string>
+    <string name="audio_volume_offset_help" formatted="false">Nastavuje hlasitost tří zvukových proudů Android Auto na této jednotce: médií, navigačních pokynů a systémových zvuků. Každý má rozsah od 0 % do 200 %. Při 100 % se proud přehrává tak, jak ho posílá telefon. Použijte to k vyvážení navigace a hudby.</string>
     <string name="mic_input_source">Zdroj vstupu mikrofonu</string>
     <string name="mic_input_source_description">Vyberte zdroj zvuku pro mikrofon.</string>
     <string name="mic_input_source_help">Vybírá zdroj zvuku Androidu, ze kterého aplikace nahrává. „Výchozí“ nechá rozhodnout systém. „Mikrofon“ nahrává surový zvuk. „Rozpoznávání hlasu“ a „Hlasová komunikace“ přidávají systémové filtry šumu a ozvěny. „Bluetooth náhlavní souprava“ nahrává přes náhlavní soupravu Bluetooth. Změňte to, pokud vás telefon neslyší. Pokud je Android Auto připojeno, uložení změny ukončí relaci.</string>
@@ -1484,16 +1484,16 @@
     <string name="pref_enable_floating_button_help">Zobrazí plovoucí tlačítko nad OEM spouštěčem a jinými aplikacemi pro rychlý návrat do Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indikátor stavu připojení</string>
     <string name="pref_floating_button_connection_status_summary">Ztlumí tlačítko, dokud je připojen telefon.</string>
-    <string name="pref_floating_button_connection_status_help">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu přejde na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu přejde na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
     <string name="pref_floating_button_size_title">Velikost plovoucího tlačítka</string>
     <string name="pref_floating_button_size_help">Velikost plovoucího tlačítka, od 32 do 120 dp. Větší tlačítko se při řízení snáze trefí.</string>
     <string name="pref_floating_button_opacity_title">Neprůhlednost plovoucího tlačítka</string>
     <string name="pref_floating_button_opacity_help">Jak nepropustně plovoucí tlačítko vypadá, od 10 % do 100 %. Při zapnutém indikátoru stavu připojení platí tato hodnota jen tehdy, když je telefon připojen.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Neprůhlednost při odpojení</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Jak nepropustně plovoucí tlačítko vypadá, dokud není připojen žádný telefon. Při 0 % je tlačítko skryté a klepnutí projdou na obrazovku pod ním.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Jak nepropustně plovoucí tlačítko vypadá, dokud není připojen žádný telefon. Při 0 % je tlačítko skryté a klepnutí projdou na obrazovku pod ním.</string>
     <string name="pref_floating_button_x_title">Vodorovná pozice (X)</string>
     <string name="pref_floating_button_y_title">Svislá pozice (Y)</string>
-    <string name="pref_floating_button_position_help">Kde na obrazovce plovoucí tlačítko leží. U X je 0 % levý okraj a 100 % pravý okraj. U Y je 0 % horní okraj a 100 % dolní okraj. Tlačítko vždy zůstane celé na obrazovce.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Kde na obrazovce plovoucí tlačítko leží. U X je 0 % levý okraj a 100 % pravý okraj. U Y je 0 % horní okraj a 100 % dolní okraj. Tlačítko vždy zůstane celé na obrazovce.</string>
     <string name="pref_aa_exit_action_title">Akce při ukončení Android Auto</string>
     <string name="pref_aa_exit_action_summary">Akce po klepnutí na Ukončit v nabídce aplikací Android Auto.</string>
     <string name="pref_aa_exit_action_help">Určuje, co se stane po klepnutí na Ukončit v Android Auto. „Návrat do OEM spouštěče“ zobrazí vlastní domovskou obrazovku této jednotky. „Zpět na úvod aplikace“ zobrazí domovskou obrazovku této aplikace. U těchto dvou zůstane telefon připojen. „Odpojit relaci“ ukončí relaci. Pokud je tato aplikace launcherem vozidla, „Návrat do OEM spouštěče“ funguje jako „Zpět na úvod aplikace“.</string>

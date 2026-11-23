@@ -214,8 +214,13 @@ class CommManager(
         /** AAP handshake complete; the transport is ready to send and receive messages. */
         object TransportStarted : ConnectionState()
 
-        /** A non-fatal error occurred. The manager transitions to [Disconnected] immediately after. */
-        data class Error(val message: String) : ConnectionState()
+        /**
+         * A non-fatal error occurred. The manager transitions to [Disconnected] immediately after.
+         * Not a data class: StateFlow drops an equal value, so a repeated failure must still emit.
+         */
+        class Error(val message: String) : ConnectionState() {
+            override fun toString() = "Error(message=$message)"
+        }
     }
 
     /** IO-bound coroutine scope for all async connection work. SupervisorJob prevents one

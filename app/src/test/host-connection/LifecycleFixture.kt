@@ -26,7 +26,7 @@ private sealed class ConnectionState {
     object StartingTransport : ConnectionState()
     object HandshakeComplete : ConnectionState()
     object TransportStarted : ConnectionState()
-    data class Error(val message: String) : ConnectionState()
+    class Error(val message: String) : ConnectionState() { override fun toString() = "Error(message=$message)" }
     // PRODUCTION DISCONNECTED_STATE
 
 }

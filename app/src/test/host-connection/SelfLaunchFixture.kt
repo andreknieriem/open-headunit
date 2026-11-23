@@ -74,7 +74,7 @@ class CommManager {
         object StartingTransport : ConnectionState()
         object HandshakeComplete : ConnectionState()
         object TransportStarted : ConnectionState()
-        data class Error(val message: String) : ConnectionState()
+        class Error(val message: String) : ConnectionState() { override fun toString() = "Error(message=$message)" }
     }
     private val transportLifecycleLock = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null

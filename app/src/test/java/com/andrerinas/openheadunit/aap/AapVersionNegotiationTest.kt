@@ -18,7 +18,7 @@ class AapVersionNegotiationTest {
     }
 
     @Test
-    fun `reads the version the phone selected, not the one we asked for`() {
+    fun `reads the version in the phone's answer`() {
         val r = AapVersionNegotiation.parse(frame(1, 6, 0), 12)!!
         assertEquals(1, r.major)
         assertEquals(6, r.minor)

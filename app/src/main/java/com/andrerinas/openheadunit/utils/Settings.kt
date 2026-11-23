@@ -265,6 +265,13 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("show-navigation-notifications", value).apply()
         }
 
+    /** Ask the phone for protocol 1.6, so it sends the full navigation step with lanes (see FullNavigationProfile). */
+    var fullNavigationData: Boolean
+        get() = prefs.getBoolean("full-navigation-data", false)
+        set(value) {
+            prefs.edit().putBoolean("full-navigation-data", value).apply()
+        }
+
     /** Mirror phone now-playing (title, artist, duration, art) in the system media session. */
     var syncMediaSessionWithAaMetadata: Boolean
         get() = prefs.getBoolean(KEY_SYNC_MEDIA_SESSION_AA_METADATA, false)

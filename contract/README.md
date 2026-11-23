@@ -149,3 +149,47 @@ Modes and Routines picks up.
 
 Deep links and shortcuts go through an activity, so an automation app sending them needs "Display
 over other apps". The receiver above does not — prefer it.
+
+
+## Frame forwarding (navigation and media messages for companion apps)
+
+An app the user has ticked in Settings → Companion apps gets the phone's Android Auto
+navigation and media-playback messages **unchanged**, so it can do its own parsing (an instrument-cluster display, a logger).
+Nothing is sent while no app is ticked, and no app is ticked by default.
+
+An explicit broadcast (`setPackage`) per ticked app, per message:
+
+| | |
+|---|---|
+| action | `com.andrerinas.openheadunit.AAP_FRAME` |
+| `v` | int, contract version, `1` |
+| `channel` | String, `"nav"` or `"media"` (message ids repeat per channel) |
+| `msg` | int, the Android Auto message id as on the wire |
+| `payload` | byte[], the protobuf payload, unchanged |
+| `seq` | long, +1 per forwarded message |
+
+Forwarded: `nav` 32769 (start), 32770 (stop), 32771 (status), 32772 (`NextTurnDetail`, turn icon removed), 32773 (`NextTurnDistanceEvent`), 32774 (`NavigationState`), 32775 (`NavigationCurrentPosition`);
+`media` 32769 (`MediaPlaybackStatus`), 32771 (`MediaMetaData`). Album art (field 4 of `MediaMetaData`) is removed unless the user
+switched "Include album art" on (same screen).
+
+Privacy: the receiving app is identified by package name and the SHA-256 digest of its signing certificate(s), pinned when the user
+ticks it; if the installed package no longer matches, nothing is sent. This replaces a signature-level permission, so receiving
+apps do not have to be signed with this app's key. Payloads are never logged or stored, and nothing is forwarded while no phone is
+projecting. A receiving app should clear its navigation state on `SESSION_STATE` `disconnected` / `failed`.
+
+`NAVIGATION_UPDATE` (see `HeadUnitIntent.kt`) is the parsed alternative, but it is sent with a signature-level permission,
+so only apps signed with Open Headunit's own key receive it.
+
+Which navigation messages arrive depends on the phone, which sends one of two formats per session, never both:
+
+| | legacy | full |
+|---|---|---|
+| messages | 32772 `NextTurnDetail`, 32773 `NextTurnDistanceEvent` | 32774 `NavigationState`, 32775 `NavigationCurrentPosition` |
+| content | one icon code, road, distance | maneuver type, lanes, cue, destination, distances, ETA |
+| when | default (this app asks for protocol 1.2) | Settings → "Full navigation data (lanes)" on (protocol 1.6, 0.5 s interval) |
+
+The phone picks the format from the protocol version the head unit claims: from 1.6 on the full one, below it the legacy one
+(1.4 was tested and still gets the legacy pair). The switch announces what Zlink 6.0.38 announces (protocol 1.6, a 500 ms
+navigation interval, the Desktop Head Unit software build); recordings of Zlink sessions hold only the full format. It takes
+effect on the next connection.
+32769 (start) is sent by this app to the phone when the navigation channel opens; the phone sends the turn messages only after it.

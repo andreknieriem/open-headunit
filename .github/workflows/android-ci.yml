@@ -192,3 +192,125 @@ jobs:
             echo "::error::Generated protobuf Java is out of date with app/src/main/proto"
             exit 1
           fi
+
+  lint-gate:
+    name: Lint (old Android APIs, format strings)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # -PlintGate runs NewApi, InlinedApi, StringFormatMatches and StringFormatInvalid only,
+      # and fails on any finding not in app/lint-baseline-gate.xml (see app/build.gradle.kts).
+      - name: Run lint gate
+        run: ./gradlew :app:lintGithubDebug -PlintGate --stacktrace
+
+      - name: Summarise new findings
+        if: ${{ failure() }}
+        run: |
+          {
+            echo "### New lint findings"
+            echo "A call above minSdk 16 crashes old units; guard it with Build.VERSION.SDK_INT or use an older API."
+            echo '```'
+            grep -E "Error: " app/build/reports/lint-results-githubDebug.txt | head -n 50 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload lint report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-gate-report
+          path: app/build/reports/lint-results-githubDebug.*
+          if-no-files-found: ignore
+
+  dex-api-check:
+    name: Dex API check (java.* above minSdk)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-github-debug-apk
+          path: apk
+
+      # Lint misses Java 8 members called on Kotlin collection types, such as removeIf on an
+      # ArrayList. This reads the built dex and fails on a java.* call above minSdk 16 that
+      # app/dex-api-baseline.txt does not list. Uses the runner's newest SDK tools.
+      - name: Check java.* calls against minSdk 16
+        run: |
+          dexdump="$(printf '%s\n' "$ANDROID_HOME"/build-tools/*/dexdump | sort -V | tail -n 1)"
+          api="$(printf '%s\n' "$ANDROID_HOME"/platforms/android-*/data/api-versions.xml | sort -V | tail -n 1)"
+          echo "Using $dexdump and $api"
+          python3 -I .github/scripts/dex-api-check.py apk/*.apk "$api" "$dexdump" 16 app/dex-api-baseline.txt
+
+  emulator-smoke:
+    name: Start-up on API ${{ matrix.api-level }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [16, 19, 21, 23]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-github-debug-apk
+          path: apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Robolectric runs API 23 and up only, so this is the one check on the old versions
+      # minSdk 16 allows. Animations stay on: the runner turns them off through
+      # "settings put global", which API 16 does not have.
+      - name: Start the app on the emulator
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: default
+          arch: x86
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: bash .github/scripts/emulator-smoke.sh
+
+      - name: Upload smoke logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-api-${{ matrix.api-level }}
+          path: smoke/
+          if-no-files-found: warn
+          retention-days: 14

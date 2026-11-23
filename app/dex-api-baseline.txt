@@ -1,0 +1,6 @@
+API 19: com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket.getInetAddress:()Ljava/net/InetAddress; -> java/net/InetAddress.getLoopbackAddress()Ljava/net/InetAddress;
+API 24: com.andrerinas.openheadunit.connection.wifi.scan.WifiScanUserService.readState$lambda$1:(Ljava/util/concurrent/CompletableFuture;Ljava/lang/Boolean;)V -> java/util/concurrent/CompletableFuture.complete(Ljava/lang/Object;)Z
+API 24: com.andrerinas.openheadunit.connection.wifi.scan.WifiScanUserService.readState:(I)I -> java/util/concurrent/CompletableFuture
+API 24: com.andrerinas.openheadunit.connection.wifi.scan.WifiScanUserService.readState:(I)I -> java/util/concurrent/CompletableFuture.<init>()V
+API 24: com.andrerinas.openheadunit.connection.wifi.scan.WifiScanUserService.readState:(I)I -> java/util/concurrent/CompletableFuture.get(JLjava/util/concurrent/TimeUnit;)Ljava/lang/Object;
+API 19: com.andrerinas.openheadunit.connection.wifi.scan.WifiScanUserService.writeState:(II)V -> java/lang/ReflectiveOperationException.getCause()Ljava/lang/Throwable;

@@ -226,11 +226,30 @@ android {
         disable += "FragmentLiveDataObserve"
         disable += "FragmentBackPressedCallback"
         disable += "FragmentAddMenuProvider"
+
+        // CI passes -PlintGate: only the checks that crash old units or break a locale's format
+        // string, failing on any finding the baseline does not already list.
+        if (providers.gradleProperty("lintGate").isPresent) {
+            val gate = setOf(
+                "NewApi", "InlinedApi", "StringFormatMatches", "StringFormatInvalid",
+                // Crashes on Android 12 to 14 with targetSdk 36: Bluetooth permissions, receiver and
+                // PendingIntent flags, implicit intents, foreground service and exact alarm permissions.
+                "MissingPermission", "UnspecifiedRegisterReceiverFlag", "UnspecifiedImmutableFlag",
+                "MutableImplicitPendingIntent", "UnsafeImplicitIntentLaunch", "ForegroundServicePermission",
+                "ScheduleExactAlarm",
+            )
+            checkOnly += gate
+            error += gate
+            baseline = file("lint-baseline-gate.xml")
+            abortOnError = true
+        }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        // minSdk 16: D8 rewrites Java 8 library calls (removeIf, Map.forEach, java.time) to a bundled copy.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     applicationVariants.all {
@@ -238,8 +257,6 @@ android {
         variant.outputs
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
-        // minSdk 16: D8 rewrites Java 8 library calls (removeIf, Map.forEach, java.time) to a bundled copy.
-        isCoreLibraryDesugaringEnabled = true
                 var outputFileName = "${variant.applicationId}_${variant.versionName}_debug.apk"
                 if(variant.buildType.name == "release") {
                     outputFileName = "${variant.applicationId}_${variant.versionName}.apk"
@@ -282,6 +299,7 @@ dependencies {
 
     // Multidex
     implementation("androidx.multidex:multidex:2.0.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     // Navigation Component
     implementation("androidx.navigation:navigation-fragment-ktx:2.3.5")
@@ -289,7 +307,6 @@ dependencies {
 
     // DexMaker for runtime subclassing (Hotspot Fix)
     implementation("com.linkedin.dexmaker:dexmaker:2.28.3")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     // Glide for image/GIF loading (custom loading screen)
     implementation("com.github.bumptech.glide:glide:4.16.0")

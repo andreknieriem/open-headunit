@@ -2,6 +2,8 @@ package com.andrerinas.openheadunit.view
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -10,13 +12,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
+import android.widget.Space
 import android.widget.TextView
-import androidx.core.content.ContextCompat
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.MarginLayoutParamsCompat
 import androidx.core.view.ViewCompat
+import androidx.core.widget.TextViewCompat
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.main.settings.SettingsDrawables
+import com.andrerinas.openheadunit.main.settings.SettingsPalette
 import com.andrerinas.openheadunit.utils.DisplayLayoutPolicy
 import com.andrerinas.openheadunit.utils.DisplayLayoutPolicy.Choice
 import com.andrerinas.openheadunit.utils.DisplayLayoutPolicy.Pane
@@ -28,7 +34,8 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.TextInputEditText
 
 /**
- * Two steps for the Android Auto density: a layout card, then a text size, a slider or Auto.
+ * Two steps for the Android Auto density: a layout card, then a text size or Auto. A slider and a
+ * number field sit under Advanced. A preview shows the result, beside the controls on a wide screen.
  * It holds no rule: [DisplayLayoutPolicy] answers every question. Used by the wizard and the DPI screen.
  */
 @SuppressLint("ClickableViewAccessibility")
@@ -36,15 +43,23 @@ class DpiLayoutPickerView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyle: Int = 0
 ) : LinearLayout(context, attrs, defStyle) {
 
-    private val cardsScroll: HorizontalScrollView
+    private val controls: View
+    private val previewCard: MaterialCardView
     private val cards: LinearLayout
-    private val singleLabel: TextView
     private val sketch: DpiLayoutSketchView
     private val sizes: MaterialButtonToggleGroup
+    private val advancedToggle: MaterialButton
+    private val advanced: View
     private val slider: Slider
     private val input: TextInputEditText
     private val expected: TextView
     private val edgeNote: TextView
+
+    private val palette = SettingsPalette.from(context)
+    private val twoPane = resources.getBoolean(R.bool.dpi_picker_two_pane)
+    private val cardViews = ArrayList<MaterialCardView>()
+    private var builtSteps: List<Int>? = null
+    private var advancedOpen = false
 
     private var cw = 0
     private var ch = 0
@@ -61,19 +76,21 @@ class DpiLayoutPickerView @JvmOverloads constructor(
     private var ready = false
 
     init {
-        orientation = VERTICAL
         // Focus lands here when the number field gives it up, so the keyboard does not open on show.
         isFocusableInTouchMode = true
         LayoutInflater.from(context).inflate(R.layout.view_dpi_layout_picker, this, true)
-        cardsScroll = findViewById(R.id.dpi_cards_scroll)
+        controls = findViewById(R.id.dpi_controls)
+        previewCard = findViewById(R.id.dpi_preview_card)
         cards = findViewById(R.id.dpi_cards)
-        singleLabel = findViewById(R.id.dpi_single_label)
         sketch = findViewById(R.id.dpi_sketch)
         sizes = findViewById(R.id.dpi_sizes)
+        advancedToggle = findViewById(R.id.dpi_advanced_toggle)
+        advanced = findViewById(R.id.dpi_advanced)
         slider = findViewById(R.id.dpi_slider)
         input = findViewById(R.id.dpi_input)
         expected = findViewById(R.id.dpi_expected)
         edgeNote = findViewById(R.id.dpi_edge_note)
+        arrange()
 
         slider.addOnChangeListener { _, value, _ ->
             if (!isBinding) setManual(value.toInt())
@@ -88,6 +105,11 @@ class DpiLayoutPickerView @JvmOverloads constructor(
             if (!checked) { post { render() }; return@addOnButtonCheckedListener }
             val tag = findViewById<View>(id)?.tag
             if (tag == AUTO_TAG) setAuto() else if (tag is Int) setManual(tag)
+        }
+        advancedToggle.setOnClickListener {
+            if (advancedOpen) { commitInput(); dismissKeyboard() }
+            advancedOpen = !advancedOpen
+            renderAdvanced()
         }
         // Consuming DONE skips TextView's own handling, so the keyboard is lowered by hand: some
         // head units never lower it. IME_NULL is the hardware Enter key.
@@ -132,6 +154,9 @@ class DpiLayoutPickerView @JvmOverloads constructor(
         manualDpi = if (storedDpi > 0) storedDpi else (choices.firstOrNull()?.let { DisplayLayoutPolicy.autoDensity(it) } ?: DisplayLayoutPolicy.SLIDER_MIN)
         pane = if (auto) openPane?.takeIf { p -> choices.any { it.pane == p } } ?: choices.firstOrNull()?.pane
         else DisplayLayoutPolicy.layoutOf(cw, ch, manualDpi).pane?.takeIf { p -> choices.any { it.pane == p } } ?: choices.firstOrNull()?.pane
+        // A density no size button names is visible only on the slider, so open it.
+        val onStep = choiceOf(pane)?.let { manualDpi in DisplayLayoutPolicy.sizeSteps(it) } ?: false
+        if (!auto && !onStep) advancedOpen = true
         val max = DisplayLayoutPolicy.sliderMax(portrait, clamp).coerceAtLeast(DisplayLayoutPolicy.SLIDER_MIN + 1)
         isBinding = true
         // A Slider throws when its value is above valueTo, so drop it to valueFrom first.
@@ -141,6 +166,32 @@ class DpiLayoutPickerView @JvmOverloads constructor(
         buildCards()
         render()
     }
+
+    /** One column with the preview on top, or the preview beside the controls on a wide screen. */
+    private fun arrange() {
+        orientation = if (twoPane) HORIZONTAL else VERTICAL
+        isBaselineAligned = false
+        if (twoPane) {
+            removeView(previewCard)
+            addView(previewCard)
+            controls.layoutParams = LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 3f)
+            previewCard.layoutParams = LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 2f).apply {
+                MarginLayoutParamsCompat.setMarginStart(this, dp(24))
+            }
+        } else {
+            (previewCard.layoutParams as LayoutParams).bottomMargin = dp(16)
+        }
+        sketch.maxHeightPx = dp(if (twoPane) 240 else 160)
+        previewCard.setCardBackgroundColor(palette.container)
+        previewCard.strokeColor = palette.outlineVariant
+        previewCard.strokeWidth = if (palette.outlinedGroups) dp(1) else 0
+        edgeNote.setTextColor(palette.onSurfaceVariant)
+        val tint = ColorStateList.valueOf(palette.primary)
+        advancedToggle.setTextColor(tint)
+        advancedToggle.iconTint = tint
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun choiceOf(p: Pane?): Choice? = choices.firstOrNull { it.pane == p }
 
@@ -181,42 +232,50 @@ class DpiLayoutPickerView @JvmOverloads constructor(
         onPickChanged?.invoke()
     }
 
+    /** Cards share a row at equal width; a narrow screen wraps three or four into rows of two. */
+    private fun columnsFor(count: Int): Int {
+        if (count <= 2) return count
+        val available = (resources.configuration.screenWidthDp - 48) * (if (twoPane) 3 else 5) / 5
+        return if (available / count >= MIN_CARD_WIDTH_DP) count else 2
+    }
+
     private fun buildCards() {
         cards.removeAllViews()
-        val single = choices.size <= 1
-        cardsScroll.visibility = if (single) GONE else VISIBLE
-        singleLabel.visibility = if (single && choices.isNotEmpty()) VISIBLE else GONE
-        singleLabel.text = choices.firstOrNull()?.let { paneLabel(context, it.pane) } ?: ""
-        if (single) return
-        val density = resources.displayMetrics.density
-        for (c in choices) {
-            val card = MaterialCardView(context).apply {
-                tag = c.pane
-                isClickable = true
-                isFocusable = true
-                radius = 8 * density
-                layoutParams = LinearLayout.LayoutParams((CARD_WIDTH_DP * density).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                    MarginLayoutParamsCompat.setMarginEnd(this, (8 * density).toInt())
+        cardViews.clear()
+        if (choices.isEmpty()) return
+        val columns = columnsFor(choices.size)
+        val inflater = LayoutInflater.from(context)
+        choices.chunked(columns).forEachIndexed { rowIndex, rowChoices ->
+            val row = LinearLayout(context).apply {
+                orientation = HORIZONTAL
+                isBaselineAligned = false
+            }
+            rowChoices.forEachIndexed { i, c ->
+                val card = inflater.inflate(R.layout.view_dpi_layout_card, row, false) as MaterialCardView
+                card.tag = c.pane
+                card.findViewById<TextView>(R.id.dpi_card_label).text = paneLabel(context, c.pane)
+                card.findViewById<DpiLayoutSketchView>(R.id.dpi_card_thumb).apply {
+                    // A lone card would repeat the preview, so it shows its name only.
+                    visibility = if (choices.size > 1) VISIBLE else GONE
+                    maxHeightPx = dp(THUMB_MAX_HEIGHT_DP)
+                    setLayout(DisplayLayoutPolicy.layoutOf(cw, ch, c.high), DisplayLayoutPolicy.dp(cw, c.high), DisplayLayoutPolicy.dp(ch, c.high))
                 }
-                setOnClickListener { pickPane(c.pane) }
+                // The only layout a screen reaches is shown, not offered.
+                if (choices.size > 1) card.setOnClickListener { pickPane(c.pane) } else {
+                    card.isClickable = false
+                    card.isFocusable = false
+                }
+                if (i > 0) MarginLayoutParamsCompat.setMarginStart(card.layoutParams as LayoutParams, dp(8))
+                row.addView(card)
+                cardViews += card
             }
-            val body = LinearLayout(context).apply {
-                orientation = VERTICAL
-                val pad = (8 * density).toInt()
-                setPadding(pad, pad, pad, pad)
+            // An empty cell keeps a short last row at the width of the rows above.
+            repeat(columns - rowChoices.size) {
+                row.addView(Space(context), LayoutParams(0, 0, 1f).apply { MarginLayoutParamsCompat.setMarginStart(this, dp(8)) })
             }
-            val thumb = DpiLayoutSketchView(context).apply {
-                val layout = DisplayLayoutPolicy.layoutOf(cw, ch, c.high)
-                setLayout(layout, DisplayLayoutPolicy.dp(cw, c.high), DisplayLayoutPolicy.dp(ch, c.high))
-            }
-            body.addView(thumb, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            body.addView(TextView(context).apply {
-                text = paneLabel(context, c.pane)
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, (6 * density).toInt(), 0, 0)
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            card.addView(body)
-            cards.addView(card)
+            cards.addView(row, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                if (rowIndex > 0) topMargin = dp(8)
+            })
         }
     }
 
@@ -224,47 +283,77 @@ class DpiLayoutPickerView @JvmOverloads constructor(
         isBinding = true
         val d = effectiveDpi()
         val c = choiceOf(pane)
-        for (i in 0 until cards.childCount) {
-            val card = cards.getChildAt(i) as MaterialCardView
-            val on = card.tag == pane
-            card.strokeWidth = ((if (on) 3 else 1) * resources.displayMetrics.density).toInt()
-            card.strokeColor = if (on) themeColor(com.google.android.material.R.attr.colorPrimary) else themeColor(android.R.attr.textColorSecondary)
-        }
+        for (card in cardViews) renderCard(card, card.tag == pane)
         sketch.setLayout(DisplayLayoutPolicy.layoutOf(cw, ch, d), DisplayLayoutPolicy.dp(cw, d), DisplayLayoutPolicy.dp(ch, d))
-        buildSizeButtons(c, d)
+        renderSizeButtons(c)
         val max = slider.valueTo.toInt()
         slider.value = d.coerceIn(DisplayLayoutPolicy.SLIDER_MIN, max).toFloat()
         if (input.text?.toString() != d.toString()) input.setText(d.toString())
         val name = DisplayLayoutPolicy.nameFor(cw, ch, d, clamp)
-        expected.text = describe(context, name) ?.let { context.getString(R.string.dpi_expected_format, it) } ?: ""
+        expected.text = describe(context, name)?.let { context.getString(R.string.dpi_expected_format, it) }
+            ?: context.getString(R.string.dpi_value_format, d)
         edgeNote.visibility = if (c != null && DisplayLayoutPolicy.sizeSteps(c).size > 1) VISIBLE else GONE
+        renderAdvanced()
         isBinding = false
     }
 
-    private fun buildSizeButtons(c: Choice?, d: Int) {
-        sizes.removeAllViews()
-        val steps = c?.let { DisplayLayoutPolicy.sizeSteps(it) } ?: emptyList()
-        var checkedId = View.NO_ID
-        fun add(label: String, tag: Any, checked: Boolean) {
-            val b = MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                id = ViewCompat.generateViewId()
-                text = label
-                this.tag = tag
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+    /** The picked card takes the selected container colour, a primary outline and a check by its name. */
+    private fun renderCard(card: MaterialCardView, on: Boolean) {
+        card.isChecked = on
+        card.setCardBackgroundColor(if (on) palette.secondaryContainer else palette.surface)
+        card.strokeColor = if (on) palette.primary else palette.outline
+        card.strokeWidth = dp(if (on) 2 else 1)
+        val label = card.findViewById<TextView>(R.id.dpi_card_label)
+        val color = if (on) palette.onSecondaryContainer else palette.onSurface
+        label.setTextColor(color)
+        val check = if (on) AppCompatResources.getDrawable(context, R.drawable.ic_sym_check)?.let {
+            DrawableCompat.wrap(it.mutate()).apply {
+                DrawableCompat.setTint(this, color)
+                setBounds(0, 0, dp(18), dp(18))
             }
-            sizes.addView(b)
-            if (checked) checkedId = b.id
+        } else null
+        TextViewCompat.setCompoundDrawablesRelative(label, check, null, null, null)
+    }
+
+    private fun renderSizeButtons(c: Choice?) {
+        val steps = c?.let { DisplayLayoutPolicy.sizeSteps(it) } ?: emptyList()
+        if (steps != builtSteps) buildSizeButtons(steps, c != null)
+        var checkedId = View.NO_ID
+        for (i in 0 until sizes.childCount) {
+            val b = sizes.getChildAt(i) as MaterialButton
+            val on = if (b.tag == AUTO_TAG) auto else !auto && b.tag == manualDpi
+            if (on) { checkedId = b.id; b.setIconResource(R.drawable.ic_sym_check) } else b.icon = null
         }
-        steps.forEachIndexed { i, step -> add(stepLabel(context, i), step, !auto && manualDpi == step) }
-        if (c != null) add(context.getString(R.string.auto), AUTO_TAG, auto)
         sizes.clearChecked()
         if (checkedId != View.NO_ID) sizes.check(checkedId)
     }
 
-    private fun themeColor(attr: Int): Int {
-        val tv = android.util.TypedValue()
-        context.theme.resolveAttribute(attr, tv, true)
-        return if (tv.resourceId != 0) ContextCompat.getColor(context, tv.resourceId) else tv.data
+    private fun buildSizeButtons(steps: List<Int>, withAuto: Boolean) {
+        builtSteps = steps
+        sizes.removeAllViews()
+        val inflater = LayoutInflater.from(context)
+        val background = SettingsDrawables.checkedColors(palette.secondaryContainer, Color.TRANSPARENT)
+        val text = SettingsDrawables.checkedColors(palette.onSecondaryContainer, palette.onSurface)
+        fun add(label: String, tag: Any) {
+            val b = inflater.inflate(R.layout.view_dpi_size_button, sizes, false) as MaterialButton
+            b.id = ViewCompat.generateViewId()
+            b.text = label
+            b.tag = tag
+            b.backgroundTintList = background
+            b.setTextColor(text)
+            b.iconTint = text
+            b.strokeColor = ColorStateList.valueOf(palette.outline)
+            b.rippleColor = ColorStateList.valueOf(palette.secondaryContainer)
+            sizes.addView(b)
+        }
+        steps.forEachIndexed { i, step -> add(stepLabel(context, i), step) }
+        if (withAuto) add(context.getString(R.string.auto), AUTO_TAG)
+        sizes.visibility = if (sizes.childCount > 0) VISIBLE else GONE
+    }
+
+    private fun renderAdvanced() {
+        advanced.visibility = if (advancedOpen) VISIBLE else GONE
+        advancedToggle.setIconResource(if (advancedOpen) R.drawable.ic_arrow_up else R.drawable.ic_arrow_down)
     }
 
     /** Parses the typed number, clamps it into the slider's range and applies it; restores on bad input. */
@@ -297,7 +386,8 @@ class DpiLayoutPickerView @JvmOverloads constructor(
 
     companion object {
         private const val AUTO_TAG = "auto"
-        private const val CARD_WIDTH_DP = 150
+        private const val MIN_CARD_WIDTH_DP = 132
+        private const val THUMB_MAX_HEIGHT_DP = 96
 
         fun paneLabel(context: Context, pane: Pane): String = context.getString(
             when (pane) {

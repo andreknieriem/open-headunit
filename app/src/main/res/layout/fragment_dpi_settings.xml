@@ -46,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:textColor="?attr/colorError"
-                android:textAppearance="?attr/textAppearanceCaption"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
@@ -62,7 +62,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:textColor="?attr/colorError"
-                android:textAppearance="?attr/textAppearanceCaption"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:visibility="gone" />
 
             <TextView
@@ -70,7 +70,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="@string/onb_dpi_help"
-                android:textAppearance="?attr/textAppearanceCaption" />
+                android:textAppearance="?attr/textAppearanceBodySmall" />
 
         </LinearLayout>
     </ScrollView>

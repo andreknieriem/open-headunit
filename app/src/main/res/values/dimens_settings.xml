@@ -48,4 +48,6 @@
     <dimen name="settings_action_button_text_size">15sp</dimen>
     <dimen name="settings_text_button_min_height">40dp</dimen>
     <dimen name="settings_scope_notice_radius">16dp</dimen>
+    <!-- The DPI picker puts its preview beside the controls on a wide screen. -->
+    <bool name="dpi_picker_two_pane">false</bool>
 </resources>

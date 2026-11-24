@@ -1334,8 +1334,8 @@
     <string name="failed_aa_not_system">Sikertelen: Az Android Auto nincs rendszeralkalmazásként telepítve!</string>
     <string name="failed_aa_not_installed">Sikertelen: Az Android Auto nincs telepítve!</string>
     <string name="raise_projection_during_call">Maradás az Android Autóban hívások alatt</string>
-    <string name="raise_projection_during_call_description">Csak önálló módban. Visszahozza a vetítést a telefon hívásképernyője fölé, így a hívások az Android Auto felületén fogadhatók és fejezhetők be.</string>
-    <string name="raise_projection_during_call_summary">Csak Önálló módban. A kivetítést a telefon hívóképernyője fölött jeleníti meg.</string>
+    <string name="raise_projection_during_call_description">Önálló módban visszahozza a vetítést a telefon hívóképernyője fölé, így a hívások az Android Auto felületén fogadhatók és fejezhetők be. FYT fejegységeken kéri az egységet, hogy ne jelenítse meg saját hívássávját vagy hívóképernyőjét, amíg az Android Auto az előtérben van. Nem biztos, hogy minden egységen vagy firmware-verzión működik.</string>
+    <string name="raise_projection_during_call_summary">Önálló mód és FYT-egységek. Elrejti a hívóképernyőt. Nem mindenhol működik.</string>
     <string name="show_over_lock_screen">Megjelenítés a lezárási képernyőn</string>
     <string name="show_over_lock_screen_summary">A térkép és az útvonal zárolva is látható marad. Érintés és gombok nem működnek.</string>
     <string name="show_over_lock_screen_help">Az Android Auto képét a lezárási képernyő fölött mutatja, így a térkép és az útvonal feloldás nélkül is olvasható. Amíg ez az egység zárolva van, semmi sem jut el a telefonig: az érintéseket, a gombokat, a forgó vezérlőt és a hanggombot visszatartja, a térképet pedig előtérbe hozza. A Vissza gombbal feloldhatja PIN-kóddal, mintával vagy jelszóval; utána minden a szokásos módon működik. A telefonon futó zenét, hívásokat és hangasszisztenst ez nem érinti.</string>

@@ -280,11 +280,10 @@ class Settings(private val context: Context) {
         }
 
     /**
-     * In Self Mode, put the projection back on top when a call covers it.
+     * Keep a call screen off the projection: Android Auto's own call UI is already on it.
      *
-     * Android Auto's own call UI is already on the projected surface, so the phone's call screen
-     * only hides it. Self Mode only: anywhere else the call screen is on the phone, not on the
-     * head unit.
+     * In Self Mode the projection comes back over the phone's call screen. On an FYT unit, in
+     * every mode, the unit is asked not to draw its own call bar or page.
      */
     var raiseProjectionDuringCall: Boolean
         get() = prefs.getBoolean("raise-projection-during-call", true)

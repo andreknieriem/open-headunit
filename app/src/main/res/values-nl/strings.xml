@@ -1338,8 +1338,8 @@
     <string name="failed_aa_not_system">Mislukt: Android Auto is niet geïnstalleerd als systeem-app!</string>
     <string name="failed_aa_not_installed">Mislukt: Android Auto is niet geïnstalleerd!</string>
     <string name="raise_projection_during_call">In Android Auto blijven tijdens gesprekken</string>
-    <string name="raise_projection_during_call_description">Alleen Self Mode. Haalt de projectie terug over het belscherm van de telefoon, zodat gesprekken in de Android Auto-interface worden aangenomen en beëindigd.</string>
-    <string name="raise_projection_during_call_summary">Alleen in de zelfstandige modus. Toont de projectie over het gespreksscherm van de telefoon.</string>
+    <string name="raise_projection_during_call_description">In de zelfstandige modus haalt dit de projectie terug over het belscherm van de telefoon, zodat gesprekken in de Android Auto-interface worden aangenomen en beëindigd. Op FYT-units vraagt het de unit om geen eigen gespreksbalk of gespreksscherm te tonen terwijl Android Auto vooraan staat. Dit werkt mogelijk niet op elke unit of firmwareversie.</string>
+    <string name="raise_projection_during_call_summary">Zelfstandige modus en FYT-units. Verbergt het belscherm. Soms niet mogelijk.</string>
     <string name="show_over_lock_screen">Boven vergrendelscherm tonen</string>
     <string name="show_over_lock_screen_summary">Kaart en route blijven zichtbaar als vergrendeld. Aanraken en knoppen doen niets.</string>
     <string name="show_over_lock_screen_help">Toont het Android Auto-beeld boven het vergrendelscherm, zodat kaart en routebeschrijving zonder ontgrendelen te lezen zijn. Zolang dit apparaat vergrendeld is, bereikt niets de telefoon: aanrakingen, knoppen, de draaiknop en de spraakknop worden tegengehouden en de kaart komt naar voren. Druk op Terug om te ontgrendelen met je pincode, patroon of wachtwoord; daarna werkt alles zoals gewoonlijk. Muziek, gesprekken en de spraakassistent op de telefoon zelf worden niet beïnvloed.</string>

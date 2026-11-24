@@ -1333,8 +1333,8 @@
     <string name="failed_aa_not_system">Fehlgeschlagen: Android Auto ist nicht als System-App installiert!</string>
     <string name="failed_aa_not_installed">Fehlgeschlagen: Android Auto ist nicht installiert!</string>
     <string name="raise_projection_during_call">Während Anrufen in Android Auto bleiben</string>
-    <string name="raise_projection_during_call_description">Nur im Self Mode. Holt die Projektion wieder über den Anrufbildschirm des Smartphones, damit Anrufe in der Android-Auto-Oberfläche angenommen und beendet werden.</string>
-    <string name="raise_projection_during_call_summary">Nur im Self Mode. Die Projektion über dem Anrufbildschirm des Smartphones zeigen.</string>
+    <string name="raise_projection_during_call_description">Im Self Mode holt die Projektion wieder über den Anrufbildschirm des Smartphones, damit Anrufe in der Android-Auto-Oberfläche angenommen und beendet werden. Auf FYT-Geräten fordert die App das Gerät auf, die eigene Anrufleiste und den eigenen Anrufbildschirm nicht anzuzeigen, solange Android Auto im Vordergrund ist. Das funktioniert nicht auf jedem Gerät oder mit jeder Firmware-Version.</string>
+    <string name="raise_projection_during_call_summary">Self Mode und FYT-Geräte. Blendet den Anrufbildschirm aus. Nicht immer möglich.</string>
     <string name="show_over_lock_screen">Über dem Sperrbildschirm anzeigen</string>
     <string name="show_over_lock_screen_summary">Karte und Route bleiben gesperrt sichtbar. Berührungen und Tasten wirken nicht.</string>
     <string name="show_over_lock_screen_help">Zeigt das Android-Auto-Bild über dem Sperrbildschirm, damit Karte und Routenführung ohne Entsperren lesbar sind. Solange dieses Gerät gesperrt ist, erreicht nichts das Smartphone: Berührungen, Tasten, der Drehregler und die Sprachtaste werden zurückgehalten, und die Karte wird in den Vordergrund geholt. Mit Zurück entsperren Sie per PIN, Muster oder Passwort; danach funktioniert alles wie gewohnt. Musik, Anrufe und der Sprachassistent auf dem Smartphone selbst sind nicht betroffen.</string>

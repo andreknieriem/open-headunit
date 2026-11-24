@@ -1305,8 +1305,8 @@
     <string name="kill_on_disconnect_description">Automatically close the app when Android Auto disconnects.</string>
     <string name="kill_on_disconnect_help">Closes the app when Android Auto disconnects, so the unit goes back to its own screens. Turn it on if the unit must show its own launcher after each drive. It does nothing while this app is the car launcher. If Reopen on reconnection, Start on boot or Start on screen on is on, the app warns you first, because those want the app open.</string>
     <string name="raise_projection_during_call">Stay in Android Auto during calls</string>
-    <string name="raise_projection_during_call_description">Self Mode only. Brings the projection back over the phone\'s call screen so calls are answered and ended in the Android Auto interface.</string>
-    <string name="raise_projection_during_call_summary">Self Mode only. Show the projection over the phone\'s call screen.</string>
+    <string name="raise_projection_during_call_description">In Self Mode, brings the projection back over the phone\'s call screen so calls are answered and ended in the Android Auto interface. On FYT head units, asks the unit not to show its own call bar or call screen while Android Auto is in front. This may not work on every unit or firmware version.</string>
+    <string name="raise_projection_during_call_summary">Self Mode and FYT units. Hides the call screen. May not work on every unit.</string>
     <string name="show_over_lock_screen">Show over lock screen</string>
     <string name="show_over_lock_screen_summary">Map and directions stay visible while locked. Touches and keys do nothing.</string>
     <string name="show_over_lock_screen_help">Shows the Android Auto picture over the lock screen, so the map and directions can be read without unlocking. While this unit is locked, nothing reaches the phone: touches, keys, the rotary controller and the voice key are held back, and the map is brought to the front. Press Back to unlock with your PIN, pattern or password; after that everything works as usual. Music, calls and the voice assistant on the phone itself are not affected.</string>

@@ -1390,8 +1390,8 @@
     <string name="failed_aa_not_system">Échec : Android Auto n\'est pas installé en tant qu\'application système !</string>
     <string name="failed_aa_not_installed">Échec : Android Auto n\'est pas installé !</string>
     <string name="raise_projection_during_call">Rester dans Android Auto pendant les appels</string>
-    <string name="raise_projection_during_call_description">Mode Self uniquement. Ramène la projection par-dessus l\'écran d\'appel du téléphone pour répondre et raccrocher depuis l\'interface Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Mode autonome uniquement. Affiche la projection par-dessus l\'écran d\'appel du téléphone.</string>
+    <string name="raise_projection_during_call_description">En mode autonome, ramène la projection par-dessus l\'écran d\'appel du téléphone pour répondre et raccrocher depuis l\'interface Android Auto. Sur les autoradios FYT, demande à l\'unité de ne pas afficher sa propre barre ou son propre écran d\'appel quand Android Auto est au premier plan. Peut ne pas fonctionner sur toutes les unités ou versions de firmware.</string>
+    <string name="raise_projection_during_call_summary">Mode autonome et unités FYT. Masque l\'écran d\'appel. Peut ne pas marcher.</string>
     <string name="show_over_lock_screen">Afficher sur l\'écran de verrouillage</string>
     <string name="show_over_lock_screen_summary">Carte et guidage restent visibles une fois verrouillé. Toucher et touches sans effet.</string>
     <string name="show_over_lock_screen_help">Affiche l\'image d\'Android Auto par-dessus l\'écran de verrouillage, pour lire la carte et le guidage sans déverrouiller. Tant que cet appareil est verrouillé, rien n\'atteint le téléphone : les appuis, les touches, la molette et la touche vocale sont retenus, et la carte passe au premier plan. Appuyez sur Retour pour déverrouiller avec votre code PIN, schéma ou mot de passe ; ensuite tout fonctionne normalement. La musique, les appels et l\'assistant vocal du téléphone lui-même ne sont pas concernés.</string>

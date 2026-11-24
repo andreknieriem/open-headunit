@@ -1334,8 +1334,8 @@
     <string name="failed_aa_not_system">فشل: أندرويد أوتو غير مثبت كتطبيق نظام!</string>
     <string name="failed_aa_not_installed">فشل: أندرويد أوتو غير مثبت!</string>
     <string name="raise_projection_during_call">البقاء في Android Auto أثناء المكالمات</string>
-    <string name="raise_projection_during_call_description">الوضع الذاتي فقط. يُعيد العرض فوق شاشة اتصال الهاتف بحيث يتم الرد على المكالمات وإنهاؤها من واجهة Android Auto.</string>
-    <string name="raise_projection_during_call_summary">للوضع الذاتي فقط. يعرض الإسقاط فوق شاشة المكالمة في الهاتف.</string>
+    <string name="raise_projection_during_call_description">في الوضع الذاتي، يُعيد العرض فوق شاشة اتصال الهاتف بحيث يتم الرد على المكالمات وإنهاؤها من واجهة Android Auto. وفي وحدات FYT الرئيسية، يطلب من الوحدة ألا تعرض شريط المكالمات أو شاشة المكالمات الخاصة بها أثناء ظهور Android Auto في الواجهة الأمامية. قد لا يعمل هذا على كل وحدة أو إصدار برنامج ثابت.</string>
+    <string name="raise_projection_during_call_summary">الوضع الذاتي وأجهزة FYT. يخفي شاشة المكالمة. قد لا يعمل على كل جهاز.</string>
     <string name="show_over_lock_screen">عرض فوق شاشة القفل</string>
     <string name="show_over_lock_screen_summary">تبقى الخريطة والاتجاهات ظاهرة أثناء القفل. اللمس والأزرار لا تعمل.</string>
     <string name="show_over_lock_screen_help">يعرض صورة Android Auto فوق شاشة القفل، لتتمكن من قراءة الخريطة والاتجاهات دون فتح القفل. أثناء قفل هذا الجهاز لا يصل أي شيء إلى الهاتف: يتم حجب اللمس والأزرار ووحدة التحكم الدوّارة وزر الصوت، وتُعرض الخريطة في المقدمة. اضغط رجوع لفتح القفل برمز PIN أو النمط أو كلمة المرور؛ بعد ذلك يعمل كل شيء كالمعتاد. لا تتأثر الموسيقى والمكالمات والمساعد الصوتي على الهاتف نفسه.</string>

@@ -1336,8 +1336,8 @@
     <string name="failed_aa_not_system">Operazione non riuscita: Android Auto non è installato come app di sistema!</string>
     <string name="failed_aa_not_installed">Operazione non riuscita: Android Auto non è installato!</string>
     <string name="raise_projection_during_call">Resta in Android Auto durante le chiamate</string>
-    <string name="raise_projection_during_call_description">Solo Modalità Self. Riporta la proiezione sopra la schermata di chiamata del telefono, così le chiamate si rispondono e si chiudono nell\'interfaccia di Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Solo modalità autonoma. Mostra la proiezione sopra la schermata di chiamata del telefono.</string>
+    <string name="raise_projection_during_call_description">In modalità autonoma, riporta la proiezione sopra la schermata di chiamata del telefono, così le chiamate si rispondono e si chiudono nell\'interfaccia di Android Auto. Sulle unità FYT, chiede all\'unità di non mostrare la propria barra o schermata di chiamata quando Android Auto è in primo piano. Può non funzionare su tutte le unità o versioni del firmware.</string>
+    <string name="raise_projection_during_call_summary">Modalità autonoma e unità FYT. Nasconde la schermata chiamata. Può non riuscire.</string>
     <string name="show_over_lock_screen">Mostra sopra la schermata di blocco</string>
     <string name="show_over_lock_screen_summary">Mappa e indicazioni restano visibili con il blocco. Tocchi e tasti non hanno effetto.</string>
     <string name="show_over_lock_screen_help">Mostra l\'immagine di Android Auto sopra la schermata di blocco, così mappa e indicazioni si leggono senza sbloccare. Finché questa unità è bloccata, nulla arriva al telefono: tocchi, tasti, il controller rotativo e il tasto vocale vengono trattenuti e la mappa viene portata in primo piano. Premi Indietro per sbloccare con PIN, sequenza o password; dopo tutto funziona come al solito. Musica, chiamate e assistente vocale sul telefono stesso non sono interessati.</string>

@@ -55,27 +55,61 @@ class NightOverlaySizesTest {
 
     private fun roomDp(widthDp: Float) = widthDp - 2 * NightOverlaySizes.paddingDp(widthDp) - 4 * NightOverlaySizes.GAP_DP
 
+    /** About "88.8 km" in bold at font scale 1: 3.7 dp per sp, in proportion to the size. */
+    private val linear: (Float) -> Float = { sp -> sp * 3.7f }
+
+    /**
+     * Like Android 14's non-linear font scaling at a large font size: small text grows by 2, large
+     * text by less, so the width does not grow in proportion to the size.
+     */
+    private val nonLinear: (Float) -> Float = { sp -> 3.7f * sp * (2f - minOf(sp, 100f) / 100f) }
+
+    private fun used(s: NightOverlaySizes.Sizes, width: (Float) -> Float) = s.iconDp + width(s.distanceSp)
+
     @Test
     fun `in portrait the widest distance fits beside the icon`() {
-        // Portrait: the shorter side is the width. 3.7 dp per sp is about "88.8 km" in bold at font scale 1.
+        // Portrait: the shorter side is the width.
+        for (widthDp in listOf(320f, 360f, 400f, 480f, 600f)) for (scale in listOf(0.8f, 1f, 1.3f)) for (width in listOf(linear, nonLinear)) {
+            val s = NightOverlaySizes.of(widthDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthDp = width)
+            val room = roomDp(widthDp) * NightOverlaySizes.FIT_SHARE
+            assertTrue("icon and distance take ${used(s, width)} of $room dp at $widthDp dp x$scale", used(s, width) <= room + 0.01f)
+        }
+    }
+
+    @Test
+    fun `in portrait the turn stays larger than the clock`() {
         for (widthDp in listOf(320f, 360f, 400f, 480f, 600f)) for (scale in listOf(0.8f, 1f, 1.3f)) {
-            val s = NightOverlaySizes.of(widthDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthPerSp = 3.7f)
-            val used = s.iconDp + s.distanceSp * 3.7f
-            assertTrue("icon and distance take $used of ${roomDp(widthDp)} dp at $widthDp dp x$scale", used <= roomDp(widthDp) + 0.01f)
+            val s = NightOverlaySizes.of(widthDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthDp = linear)
             assertTrue("distance over clock at $widthDp dp x$scale", s.distanceSp > s.clockSp)
         }
     }
 
     @Test
-    fun `the width cap never goes below the sizes without navigation`() {
-        // A wide distance string (large system font) on a narrow screen.
-        for (widthDp in listOf(320f, 360f)) for (scale in listOf(1f, 1.3f)) {
-            val plain = NightOverlaySizes.of(widthDp, scale, navigationShown = false)
-            val s = NightOverlaySizes.of(widthDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthPerSp = 5f)
-            assertTrue(s.iconDp >= plain.iconDp)
-            assertTrue(s.distanceSp >= plain.distanceSp)
-            assertTrue(s.maneuverFallbackSp >= plain.maneuverFallbackSp)
+    fun `when it shrinks, the turn fills the room instead of shrinking more than needed`() {
+        for (widthDp in listOf(320f, 360f, 400f)) for (width in listOf(linear, nonLinear)) {
+            val s = NightOverlaySizes.of(widthDp, 1f, navigationShown = true, widthDp = widthDp, distanceWidthDp = width)
+            val room = roomDp(widthDp) * NightOverlaySizes.FIT_SHARE
+            assertTrue("only ${used(s, width)} of $room dp used at $widthDp dp", used(s, width) >= room * 0.995f)
         }
+    }
+
+    @Test
+    fun `a wide distance string still fits, below the sizes without navigation if it must`() {
+        // 5 dp per sp: a large system font or a long unit. The sizes without navigation would not fit here.
+        val wide: (Float) -> Float = { sp -> sp * 5f }
+        for (widthDp in listOf(320f, 360f)) for (scale in listOf(1f, 1.3f)) {
+            val s = NightOverlaySizes.of(widthDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthDp = wide)
+            assertTrue("${used(s, wide)} dp at $widthDp dp x$scale", used(s, wide) <= roomDp(widthDp) * NightOverlaySizes.FIT_SHARE + 0.01f)
+        }
+    }
+
+    @Test
+    fun `the width cap stops at the minimum sizes`() {
+        // An impossible string: far too wide for any size.
+        val s = NightOverlaySizes.of(320f, 1f, navigationShown = true, widthDp = 320f, distanceWidthDp = { sp -> sp * 50f })
+        assertEquals(NightOverlaySizes.MIN_ICON_DP, s.iconDp, 0.01f)
+        assertEquals(NightOverlaySizes.MIN_DISTANCE_SP, s.distanceSp, 0.01f)
+        assertEquals(NightOverlaySizes.MIN_FALLBACK_SP, s.maneuverFallbackSp, 0.01f)
     }
 
     @Test
@@ -83,7 +117,7 @@ class NightOverlaySizesTest {
         for ((shorterDp, widthDp) in listOf(360f to 640f, 400f to 800f, 600f to 1024f)) for (scale in listOf(0.8f, 1f, 1.3f)) {
             assertEquals(
                 NightOverlaySizes.of(shorterDp, scale, navigationShown = true),
-                NightOverlaySizes.of(shorterDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthPerSp = 3.7f)
+                NightOverlaySizes.of(shorterDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthDp = linear)
             )
         }
     }
@@ -92,7 +126,7 @@ class NightOverlaySizesTest {
     fun `the width does not change the sizes without navigation`() {
         assertEquals(
             NightOverlaySizes.of(360f, 1f, navigationShown = false),
-            NightOverlaySizes.of(360f, 1f, navigationShown = false, widthDp = 360f, distanceWidthPerSp = 5f)
+            NightOverlaySizes.of(360f, 1f, navigationShown = false, widthDp = 360f, distanceWidthDp = { sp -> sp * 5f })
         )
     }
 }

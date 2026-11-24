@@ -234,7 +234,7 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         val sizes = NightOverlaySizes.of(
             shorterDp, scaleClock, navigationShown,
             widthDp = width / density,
-            distanceWidthPerSp = distanceWidthPerSp(density),
+            distanceWidthDp = distanceWidthDp(density),
         )
         val iconSize = (sizes.iconDp * density).toInt()
         val padding = (NightOverlaySizes.paddingDp(shorterDp) * density).toInt()
@@ -319,16 +319,19 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Width in dp of the widest distance string at a text size of 1 sp, with the distance's own font
-     * and the system font size: the widest of each format of [NightOverlayDistance] ("888 m",
-     * "88.8 km", "888 km" in the device locale). Measured at 100 sp for precision.
+     * Width in dp of the widest distance string at a given text size in sp, with the distance's own
+     * font: the widest of each format of [NightOverlayDistance] ("888 m", "88.8 km", "888 km" in the
+     * device locale). The size goes through the same sp conversion as the distance itself, so the
+     * system font size counts, also where it scales text non-linearly (Android 14 and later).
      */
-    private fun distanceWidthPerSp(density: Float): Float {
-        val paint = TextPaint(distance.paint).apply {
-            textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 100f, resources.displayMetrics)
+    private fun distanceWidthDp(density: Float): (Float) -> Float {
+        val paint = TextPaint(distance.paint)
+        val samples = listOf(888, 88_800, 888_000).map(::formatDistance)
+        val metrics = resources.displayMetrics
+        return { sp ->
+            paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, metrics)
+            samples.maxOf { paint.measureText(it) } / density
         }
-        val widest = listOf(888, 88_800, 888_000).map(::formatDistance).maxOf { paint.measureText(it) }
-        return widest / 100f / density
     }
 
     private fun formatDistance(meters: Int): String = NightOverlayDistance.format(context, meters)

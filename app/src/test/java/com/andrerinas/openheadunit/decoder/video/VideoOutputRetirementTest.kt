@@ -4,6 +4,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.media.MediaCodec
 import android.media.MediaFormat
+import android.os.SystemClock
+import com.andrerinas.openheadunit.aap.AapMessage
+import com.andrerinas.openheadunit.aap.AapVideo
+import com.andrerinas.openheadunit.aap.galTestSessions
+import com.andrerinas.openheadunit.aap.protocol.Channel
+import com.andrerinas.openheadunit.aap.protocol.proto.Media
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.AppLog
 import org.junit.Assert.*
@@ -13,6 +19,7 @@ import org.mockito.Mockito.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /** Real output loop; only Android's codec is doubled. Native calls deliberately ignore interrupt. */
@@ -379,6 +386,83 @@ class VideoOutputRetirementTest {
             assertEquals("sync_stall", f.get("decoderRestartReason"))
             assertTrue(now.get() in 12_001L..12_100L)
         } finally { f.decoder.stop("test cleanup") }
+    }
+
+    @Test fun `GAL Start gives a replacement codec warm grace only on a projection that rendered`() {
+        mockStatic(SystemClock::class.java).use {
+            for (preStartCsd in listOf(false, true)) {
+                val now = AtomicLong(10_000L)
+                val f = Fixture { now.get() }
+                val settings = mock(Settings::class.java)
+                `when`(settings.debugVideoFaultInjection).thenReturn(VideoFaultInjector.Mode.OFF)
+                val video = AapVideo(f.decoder, settings) { fail("unexpected fragment loss") }
+                val channel = Channel.ID_VID
+                val start = Media.Start.newBuilder().setSessionId(7).setConfigurationIndex(0).build()
+                val sessions = galTestSessions()
+                video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
+                video.beginSession(sessions.start(channel, start)!!)
+
+                fun runOutput(target: MediaCodec) {
+                    f.decoder.onFirstFrameListener = { f.set("running", false) }
+                    f.start(target)
+                    f.join()
+                }
+
+                fun waitForOutputOrRestart(): Long {
+                    val target = mock(MediaCodec::class.java)
+                    val startedAt = now.get()
+                    `when`(target.dequeueOutputBuffer(any(), anyLong())).thenAnswer { call ->
+                        val waitUs = call.getArgument<Long>(1)
+                        if (waitUs == 0L) {
+                            MediaCodec.INFO_TRY_AGAIN_LATER
+                        } else {
+                            val time = now.addAndGet((waitUs + 999) / 1000)
+                            f.decoder.lastInputBytesReceivedMs = time
+                            check(time <= startedAt + 8_100L) { "output did not render or restart" }
+                            if (time - startedAt >= 8_000L) 7 else MediaCodec.INFO_TRY_AGAIN_LATER
+                        }
+                    }
+                    runOutput(target)
+                    return now.get() - startedAt
+                }
+
+                try {
+                    `when`(f.codec.dequeueOutputBuffer(any(), anyLong()))
+                        .thenReturn(7, MediaCodec.INFO_TRY_AGAIN_LATER)
+                    runOutput(f.codec)
+                    assertTrue(f.decoder.hasRenderedThisSession)
+                    // A watchdog signal may already be queued when the replacement arrives.
+                    f.set("decoderNeedsRestart", true)
+                    f.set("decoderRestartReason", "sync_stall")
+                    if (preStartCsd) {
+                        sessions.stop(channel)
+                        val inactive = sessions.current(channel)
+                        val csd = byteArrayOf(0, 1, 0, 0, 0, 1, 0x68, 0x12)
+                        assertTrue(video.process(AapMessage(channel, 11, 1, 2, csd.size, csd), inactive))
+                        val setup = byteArrayOf(0x80.toByte(), 0)
+                        assertFalse(video.process(AapMessage(channel, 11, Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE,
+                            2, setup.size, setup), inactive))
+                        assertTrue(video.process(AapMessage(channel, 11, 1, 2, csd.size, csd), inactive))
+                    }
+                    video.beginSession(sessions.start(channel, start)!!)
+                    assertFalse(f.decoder.hasRenderedThisSession)
+                    assertEquals(0L, f.decoder.lastFrameRenderedMs)
+                    assertEquals(false, f.get("decoderNeedsRestart"))
+
+                    assertTrue(waitForOutputOrRestart() in 8_000L..8_100L)
+                    assertEquals(2L, f.decoder.framesRenderedThisSession)
+                    assertEquals(false, f.get("decoderNeedsRestart"))
+
+                    video.release()
+                    f.decoder.stop("CommManager: doDisconnect")
+                    f.decoder.beginSession()
+                    video.beginSession(galTestSessions().start(channel, start)!!)
+                    assertTrue(waitForOutputOrRestart() in 2_001L..2_100L)
+                    assertEquals(0L, f.decoder.framesRenderedThisSession)
+                    assertEquals("sync_stall", f.get("decoderRestartReason"))
+                } finally { f.decoder.stop("test cleanup") }
+            }
+        }
     }
 
     @Test fun `a catch-up dequeue failure returns held output before retrying`() {

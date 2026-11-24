@@ -76,8 +76,8 @@ class VideoDecoder(
         // ~8s from a mid-session reconfigure to the first frame on a session that then ran at
         // 50fps, so the 2s window above restarted codecs that were merely warming up - and each
         // restart resets the warm-up, which is how a healthy relaunch cascaded into the restart
-        // budget. Applies only while the session has already rendered (the codec type is proven,
-        // patience is cheap); a cold start keeps the 2s window so a genuinely dead component
+        // budget. Applies only after this projection has already rendered. A cold start keeps
+        // the 2s window so a genuinely dead component
         // still fails fast.
         private const val WARM_RECONFIGURE_FIRST_FRAME_GRACE_MS = 10000L
 
@@ -341,6 +341,9 @@ class VideoDecoder(
     // the restart ladder tell them apart, and it clears only when the session itself ends.
     // Written by the output thread and the software render path, read on the transport thread.
     @Volatile private var renderedThisSession = false
+    // A GAL Start can replace the encoded stream on the same projection connection. Keep its
+    // warm-up evidence for the stall watchdog without carrying over codec configuration or repair.
+    private var renderedBeforeMediaReplacement = false
 
     // sync_stall cooldown/cap state - see SYNC_STALL_* constants.
     private var syncStallRestartCount = 0
@@ -1037,9 +1040,8 @@ class VideoDecoder(
                 syncStallRestartCount = 0
                 lastSyncStallRestartMs = 0L
             }
-            // Everything that describes the *stream* rather than this decoder instance survives
-            // anything short of the session ending, and only a real disconnect can change what the
-            // phone is sending.
+            // Keep bitstream configuration across codec and surface rebuilds, but not when the
+            // phone replaces the GAL media stream or the connection ends.
             //
             // The pinned codec type has to outlive a surface teardown because re-detecting on
             // whatever packet lands mid-teardown can misread an ordinary H.264 P-slice as HEVC and
@@ -1049,6 +1051,11 @@ class VideoDecoder(
             // all, which is what the "Fallback to negotiated dimensions" line reports - measured
             // once per relaunch, on every backend, in every capture of the video-black round 6.
             if (DecoderStopPolicy.endsSession(reason)) {
+                renderedBeforeMediaReplacement = DecoderStopPolicy.replacesGalMediaStream(reason) &&
+                    (renderedThisSession || renderedBeforeMediaReplacement)
+                // A queued restart from the retired owner must not run on the next stream's input.
+                decoderNeedsRestart = false
+                decoderRestartReason = null
                 codecTypePinned = false
                 renderedThisSession = false
                 parameterSets.clear()
@@ -2676,16 +2683,14 @@ class VideoDecoder(
                         )
                     }
 
-                    // Stall detection: if we rendered at least one frame but haven't
-                    // produced output in SYNC_STALL_THRESHOLD_MS, check if input bytes
-                    // are still arriving from the phone. If no input bytes arrived recently,
-                    // Android Auto has simply paused the stream (idle/static screen), so
-                    // we update lastOutputMs to prevent false-positive restarts and screen flickering.
+                    // If output has stalled but input is no longer arriving, Android Auto has
+                    // paused the stream (idle/static screen), not wedged the codec.
                     val now = elapsedRealtime()
                     val stallGap = now - lastOutputMs
-                    // A rebuilt codec that has not yet produced its first frame gets the longer
-                    // warm-up window when this session has already rendered - see the constant.
-                    val stallThreshold = if (lastFrameRenderedMs == 0L && renderedThisSession) {
+                    // A new codec on a connection that has already rendered gets more time for
+                    // its first frame, including after GAL replaced the stream.
+                    val projectionHasRendered = renderedThisSession || renderedBeforeMediaReplacement
+                    val stallThreshold = if (lastFrameRenderedMs == 0L && projectionHasRendered) {
                         WARM_RECONFIGURE_FIRST_FRAME_GRACE_MS
                     } else {
                         SYNC_STALL_THRESHOLD_MS
@@ -2697,7 +2702,7 @@ class VideoDecoder(
                             inputIdleGapMs = inputIdleGap,
                             inputIdleThresholdMs = SYNC_STALL_THRESHOLD_MS,
                             keyframeDecodedSinceStart = keyframeRepair.keyframeDecoded,
-                            sessionHasRendered = renderedThisSession,
+                            sessionHasRendered = projectionHasRendered,
                         )
                         if (cause == DecoderStallCausePolicy.Cause.PHONE_IDLE) {
                             // Stream is idle on the phone side (no new video frames arriving).

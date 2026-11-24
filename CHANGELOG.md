@@ -1,5 +1,6 @@
 # Changelog
 ### 4.1.0-beta1
+- Video: show late map frames immediately instead of dropping them when wireless transfer exhausts the GAL pacing window, thanks to @o-jcardenass
 - Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
 - Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
 - Allow embedding the projection activity, thanks to @codepdbh

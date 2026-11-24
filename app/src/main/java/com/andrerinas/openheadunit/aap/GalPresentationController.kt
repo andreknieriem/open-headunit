@@ -221,7 +221,7 @@ internal class GalPresentationController {
      * Final submission reservation, serialized with Start/Stop/options. Already admitted
      * native work may complete after those boundaries; no monitor is held during I/O.
      * Missing frame metadata permits immediate output, never stale-generation output.
-     * The caller alone owns the bounded, matching startup-repair proof.
+     * The caller alone owns the bounded, matching repair proof for an A/V lag drop.
      */
     @Synchronized fun admitVideo(generation: Long, outputEpoch: Long, sourceTimeUs: Long?,
                                   arrivalNs: Long, nowNs: Long, allowLateRepair: Boolean = false,
@@ -264,7 +264,9 @@ internal class GalPresentationController {
         val earliest = add(arrivalNs, timing.minDelayNs)
         val latest = add(arrivalNs, timing.maxDelayNs)
         if (earliest == NONE || latest == NONE) return 0
-        if (latenessCheckNs > latest) return DROP
+        // The window starts at the first fragment, so transfer time can exhaust it before
+        // decode. It bounds intentional pacing, not whether a decoded frame is useful.
+        if (nowNs > latest) return 0
         var target = earliest
         if (source != NONE && pacedSourceUs != NONE) {
             val delta = sourceDeltaNs(source, pacedSourceUs)

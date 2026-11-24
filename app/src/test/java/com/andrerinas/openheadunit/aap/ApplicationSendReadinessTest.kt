@@ -4,6 +4,7 @@ import android.os.Handler
 import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
+import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.CALLS_REAL_METHODS
@@ -73,9 +74,10 @@ class ApplicationSendReadinessTest {
                     }
                     else it.getArgument<Int>(1)
                 }
-                val handshake = AapTransport::class.java.getDeclaredMethod("handshake", ProjectionConnection::class.java)
+                val handshake = AapTransport::class.java.getDeclaredMethod("handshake",
+                    ProjectionConnection::class.java, UsbRecoveryDevice::class.java)
                     .apply { isAccessible = true }
-                val success = handshake.invoke(transport, connection) as Boolean
+                val success = handshake.invoke(transport, connection, null) as Boolean
                 // Failed status writes must reach the admission boundary too; an earlier
                 // version/TLS failure would otherwise satisfy their expected false result.
                 assertEquals(versionResponse.size, responsePosition)

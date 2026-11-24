@@ -32,6 +32,7 @@ import com.andrerinas.openheadunit.utils.LegacyOptimizer
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.AbstractUsbProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
+import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
 import com.andrerinas.openheadunit.contract.ProjectionActivityRequest
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
 import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
@@ -141,6 +142,10 @@ class AapTransport(
 
     // Messages refused because the backlog was already at its ceiling. See VIDEO_BACKLOG_LIMIT.
     private val videoShedTotal = java.util.concurrent.atomic.AtomicLong(0)
+    // Poll-thread only. With no intervening video work the assembler still owns the same run:
+    // one loss notice suffices, unless a repair-only notice must be upgraded to discard.
+    private var lastHoleDiscard: Boolean? = null
+    private var lastHoleGeneration: Long? = null
     private val micRecorder: MicRecorder = MicRecorder(context)
     internal val bluetoothControl = AapControlBluetooth(context, send = ::sendIfCurrent)
     internal val sensorSubscriptions = GalSensorSubscriptions<SensorEvent>()
@@ -1073,6 +1078,7 @@ class AapTransport(
             if (ackSession != null) sendMediaAck(channel, ackSession)
             return isPayload
         }
+        lastHoleDiscard = null
         val size = message.size
         val copy = obtainVideoBuffer(size)
         System.arraycopy(message.data, 0, copy, 0, size)
@@ -1120,7 +1126,13 @@ class AapTransport(
     internal fun dispatchVideoRunHoled(discardAssembledUnit: Boolean) {
         val handler = videoHandler ?: return
         val session = mediaSessions.current(Channel.ID_VID)
-        handler.post { aapVideo.onFragmentRunHoled(discardAssembledUnit, session) }
+        val saturated = videoBacklog.get() >= VIDEO_BACKLOG_LIMIT
+        if (saturated && session?.generation == lastHoleGeneration &&
+            (lastHoleDiscard == true || lastHoleDiscard == discardAssembledUnit)) return
+        if (handler.post { aapVideo.onFragmentRunHoled(discardAssembledUnit, session) }) {
+            lastHoleGeneration = session?.generation
+            lastHoleDiscard = if (saturated) discardAssembledUnit else null
+        }
     }
 
     private fun obtainVideoBuffer(size: Int): ByteArray {
@@ -1141,7 +1153,7 @@ class AapTransport(
      * Must be followed by [startReading] (called after the projection surface is ready)
      * to actually start the message loop.
      */
-    internal fun startHandshake(connection: ProjectionConnection): Boolean {
+    internal fun startHandshake(connection: ProjectionConnection, usbIdentity: UsbRecoveryDevice?): Boolean {
         AppLog.i("Start Aap transport handshake for $connection")
         synchronized(lifecycleLock) {
             if (closing || handshakeStarted) return false
@@ -1175,7 +1187,7 @@ class AapTransport(
             }
         }
         val shook = try {
-            !closing && handshake(connection)
+            !closing && handshake(connection, usbIdentity)
         } finally {
             // quit can run on another thread and must not release shared SSL while this call
             // still uses it. Signal before returning to the manager's failure cleanup.
@@ -1225,7 +1237,7 @@ class AapTransport(
         }
     }
 
-    private fun handshake(connection: ProjectionConnection): Boolean {
+    private fun handshake(connection: ProjectionConnection, usbIdentity: UsbRecoveryDevice?): Boolean {
         lastHandshakeFailure = HandshakeFailure.OTHER
         try {
             val isUsb = connection.type == ProjectionConnection.Type.USB
@@ -1234,7 +1246,10 @@ class AapTransport(
                 SystemClock.sleep(500)
             }
 
-            val opening = GalVersionPolicy.opening(galCompatibilityMode)
+            val peer = usbIdentity?.let(GalVersionPolicy::usbPeer)
+                ?: (connection as? SocketProjectionConnection)?.galVersionPeer()
+            val openingPlan = galVersionPolicy.opening(galCompatibilityMode, peer, SystemClock.elapsedRealtime())
+            val opening = openingPlan.profile
             val requested = opening.version
             val version = Messages.versionRequest(requested.major, requested.minor)
             var ret = -1
@@ -1301,8 +1316,7 @@ class AapTransport(
             // budget. Partial frames retain bytes without extending this overall deadline.
             val versionDeadline = SystemClock.elapsedRealtime() + HANDSHAKE_TIMEOUT_MS
             val versionRequests = HandshakeMessagePolicy.versionRequests(isUsb)
-            AppLog.i("Handshake: GAL request=$requested" +
-                if (opening == GalProfile.COMPATIBILITY) " (compatibility)" else "")
+            AppLog.i("Handshake: GAL request=$requested${openingPlan.logSuffix}")
             while (attempt < versionRequests && connection.isConnected) {
                 if (SystemClock.elapsedRealtime() >= versionDeadline) {
                     AppLog.e("Handshake: Version exchange timed out after $attempt attempt(s).")
@@ -1357,10 +1371,14 @@ class AapTransport(
                     }
                     if (HandshakeMessagePolicy.isLateVersionResponse(frame)) {
                         val negotiated = AapVersionNegotiation.parse(frame, frame.size)
-                        // The one known refuser closes the connection after refusing the opening
-                        // request, so a later attempt in this process asks for 1.2 instead.
-                        if (negotiated?.accepted == false && negotiated.version.wellFormed) {
-                            GalVersionPolicy.noteRefused(opening)
+                        if (negotiated != null && GalVersionPolicy.isLegacyRefusal(opening, negotiated) &&
+                            !closing && presentationSession.isActive) {
+                            if (peer != null) {
+                                galVersionPolicy.noteRefusal(peer, SystemClock.elapsedRealtime())
+                                AppLog.i("Handshake: GAL 1.2 available on the next retry of this peer")
+                            } else {
+                                AppLog.i("Handshake: GAL peer has no usable retry identity; use the compatibility setting")
+                            }
                         }
                         if (negotiated == null || !negotiated.accepted || !negotiated.version.wellFormed ||
                             (opening == GalProfile.COMPATIBILITY && negotiated.version < requested)) {
@@ -1421,8 +1439,8 @@ class AapTransport(
                 // A recovered opening write error says nothing about this exchange.
                 transportError = false
                 try {
-                    // Each opening resend can still be answered after the final request.
-                    final.request(selected, versionDeadline, openingReply, staleReplies = attempt - 1)
+                    val finalDeadline = SystemClock.elapsedRealtime() + HANDSHAKE_TIMEOUT_MS
+                    final.request(selected, finalDeadline, possibleOpeningReplies = attempt - 1)
                         .also { versionFrameSize = final.responseSize }
                 } catch (e: java.io.IOException) {
                     AppLog.e("Handshake: ${e.message}")
@@ -1682,8 +1700,8 @@ class AapTransport(
 
         private const val VIDEO_BUFFER_POOL_LIMIT = 8
         private const val MIN_VIDEO_BUFFER_BYTES = 64 * 1024
-        // Maximum wall-clock time allowed for the version-exchange phase of the AAP handshake.
-        // Prevents the retry loop from blocking for minutes on an unresponsive USB device.
+        private val galVersionPolicy = GalVersionPolicy()
+        // Each version exchange has its own wall-clock budget; retries do not extend it.
         private const val HANDSHAKE_TIMEOUT_MS = 10_000L
         private const val SENSOR_DROP_LOG_INTERVAL_MS = 30_000L
     }

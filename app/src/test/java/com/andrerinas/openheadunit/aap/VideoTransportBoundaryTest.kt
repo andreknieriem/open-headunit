@@ -359,6 +359,22 @@ class VideoTransportBoundaryTest {
         verify(boundary.transport, times(3)).sendMediaAck(eq(Channel.ID_VID), any())
     }
 
+    @Test fun `consecutive shed fragments queue one loss notice per run without losing credits`() =
+        org.mockito.Mockito.mockStatic(android.os.SystemClock::class.java).use {
+        val boundary = FragmentBoundary()
+        repeat(2) {
+            boundary.accept(9, boundary.data.copyOfRange(0, 16), boundary.data.size + 31 * 2)
+            boundary.drain()
+            repeat(32) { boundary.shedMiddle() }
+            assertEquals(1, boundary.queuedJobs)
+            boundary.accept(10, boundary.data.copyOfRange(18, boundary.data.size))
+            boundary.drain()
+        }
+        assertTrue(boundary.decoded.isEmpty())
+        verify(boundary.transport, times(2)).sendMediaAck(Channel.ID_VID, 101)
+        verify(boundary.decoder, times(2)).noteStreamCorrupted(any())
+    }
+
     @Test fun `reader audit at LAST drops only the short run and still acknowledges DATA`() =
         org.mockito.Mockito.mockStatic(android.os.SystemClock::class.java).use {
         val boundary = FragmentBoundary(auditReader = true)
@@ -416,6 +432,7 @@ class VideoTransportBoundaryTest {
         val nal = byteArrayOf(0, 0, 0, 1, 0x65, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66)
         val data = ByteArray(10) + nal
         private val jobs = mutableListOf<Runnable>()
+        val queuedJobs get() = jobs.size
         private val backlog = AtomicInteger()
         private val audit = FragmentedMessageAudit()
         private val reassembler = AapMessageReassembler(onDroppedMediaData = { channel ->

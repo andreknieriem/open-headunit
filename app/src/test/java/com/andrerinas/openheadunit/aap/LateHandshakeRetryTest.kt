@@ -50,7 +50,7 @@ class LateHandshakeRetryTest {
    var terminal: CommManager.ConnectionState? = null
    val quit = CommManager::class.java.getDeclaredMethod("transportedQuited", AapTransport::class.java, Boolean::class.javaPrimitiveType)
     .apply { isAccessible = true }
-   `when`(transport.startHandshake(connection)).thenAnswer {
+   `when`(transport.startHandshake(connection, null)).thenAnswer {
     quit.invoke(manager, transport, false)
     terminal = flow.value
     if (throwsAfterQuit) throw IllegalStateException("failure after quit")

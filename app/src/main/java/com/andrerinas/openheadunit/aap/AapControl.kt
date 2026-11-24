@@ -408,6 +408,8 @@ internal class AapControlService(
                 message.parse(Control.PingResponse.newBuilder()).build()
                 return 0
             }
+            // Phone battery status is informational and needs neither a consumer nor a reply.
+            Control.ControlMsgType.MESSAGE_BATTERY_STATUS_NOTIFICATION_VALUE -> return 0
             Control.ControlMsgType.MESSAGE_NAV_FOCUS_REQUEST_VALUE -> {
                 val navigationFocusRequest = message.parse(Control.NavFocusRequestNotification.newBuilder()).build()
                 return navigationFocusRequest(navigationFocusRequest, message.channel)

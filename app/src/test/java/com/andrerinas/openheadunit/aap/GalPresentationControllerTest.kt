@@ -87,15 +87,29 @@ class GalPresentationControllerTest {
         assertEquals(1_630_000_000L, c.videoReleaseTimeNs(20, null, 1_620_000_000, 1_620_000_000))
     }
 
-    @Test fun `arrival window pacing is idempotent bounded and drops late output`() {
+    @Test fun `arrival window bounds early pacing and releases late output immediately`() {
         val opts = GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(10_000_000, 50_000_000))
         val c = controller(opts)
         assertEquals(1_010_000_000L, c.videoReleaseTimeNs(20, 0, 1_000_000_000, 1_000_000_000))
         assertEquals(1_043_000_000L, c.videoReleaseTimeNs(20, 33_000, 1_005_000_000, 1_005_000_000))
         assertEquals(1_043_000_000L, c.videoReleaseTimeNs(20, 33_000, 1_005_000_000, 1_020_000_000))
-        assertEquals(Long.MIN_VALUE, c.videoReleaseTimeNs(20, 33_000, 1_005_000_000, 1_060_000_000))
+        assertEquals(0L, c.videoReleaseTimeNs(20, 33_000, 1_005_000_000, 1_060_000_000))
+        assertEquals(1_110_000_000L, c.videoReleaseTimeNs(20, 133_000, 1_060_000_000, 1_060_000_000))
         assertEquals(1_070_000_000L, c.videoReleaseTimeNs(20, Long.MAX_VALUE, 1_060_000_000, 1_060_000_000))
         assertEquals(0L, c.videoReleaseTimeNs(20, 0, Long.MAX_VALUE - 1, Long.MAX_VALUE - 1))
+    }
+
+    @Test fun `arrival lateness does not drop by itself but a fresh audio clock can`() {
+        val c = controller(options().copy(videoTiming = GalRuntimeOptions.VideoTiming(9_000_000, 17_000_000)))
+        val arrival = 1_000_000_000L
+        val now = arrival + 120_000_000
+        c.observeAudio(media, 10, 1_000_000, arrival)
+        // First fragment is old but the decoded frame is due on the audio timeline.
+        assertEquals(0L, c.videoReleaseTimeNs(20, 1_120_000, arrival, now))
+        // A recent arrival does not excuse being late on a measured audio timeline.
+        assertEquals(Long.MIN_VALUE, c.videoReleaseTimeNs(20, 1_000_000, now, now))
+        c.invalidateAudio(media, 10)
+        assertEquals(0L, c.videoReleaseTimeNs(20, 1_000_000, arrival, now))
     }
 
     @Test fun `older queued video callback adjusts lag without requiring latest source`() {

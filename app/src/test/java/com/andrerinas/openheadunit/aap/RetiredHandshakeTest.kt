@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.aap
 
 import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
+import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
@@ -12,9 +13,10 @@ class RetiredHandshakeTest {
         val transport = mock(AapTransport::class.java, CALLS_REAL_METHODS)
         AapTransport::class.java.getDeclaredField("displaySettings")
             .apply { isAccessible = true }.set(transport, GalDisplaySettings(false, false, false))
-        val method = AapTransport::class.java.getDeclaredMethod("handshake", ProjectionConnection::class.java)
+        val method = AapTransport::class.java.getDeclaredMethod("handshake",
+            ProjectionConnection::class.java, UsbRecoveryDevice::class.java)
             .apply { isAccessible = true }
-        assertEquals(false, method.invoke(transport, connection))
+        assertEquals(false, method.invoke(transport, connection, null))
         return transport
     }
 

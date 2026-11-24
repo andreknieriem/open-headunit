@@ -24,16 +24,18 @@ class GalVideoOutputTimingTest {
         assertEquals(1_043_333_000L, now)
     }
 
-    @Test fun `late decoded frame drops without a wait and unknown mapping releases immediately`() {
+    @Test fun `late decoded frames and unknown mappings release immediately without a wait`() {
         val controller = GalPresentationController()
         controller.start(Channel.ID_VID, 3, GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(10, 100)))
         val bridge = GalVideoOutputTiming(controller, 3, nanoTime = { 1_000L }) { fail("late output waited") }
         bridge.register(99, 0, 100)
-        assertEquals(Long.MIN_VALUE, bridge.deadline(99))
+        assertEquals(0L, bridge.await(bridge.deadline(99)))
+        assertEquals(0L, bridge.admit(platformTiming = false))
+        assertEquals(0L, bridge.admit(platformTiming = true))
         assertEquals(0L, bridge.deadline(1234))
     }
 
-    @Test fun `scheduled output survives sleep overshoot but not a newly earlier latest time`() {
+    @Test fun `scheduled output survives sleep overshoot and an earlier arrival window update`() {
         val controller = GalPresentationController()
         controller.start(Channel.ID_VID, 3, GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(30, 30)))
         var now = 1_005L
@@ -45,9 +47,27 @@ class GalVideoOutputTimingTest {
         assertEquals(0L, bridge.admit(platformTiming = false))
 
         controller.update(Channel.ID_VID, 3, GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(20, 20)))
-        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = false))
+        assertEquals(0L, bridge.admit(platformTiming = false))
         bridge.register(2, 0, 1_000)
-        assertEquals(Long.MIN_VALUE, bridge.deadline(2))
+        assertEquals(0L, bridge.deadline(2))
+    }
+
+    @Test fun `A-V lag is measured at the requested wake but still honors a new earlier sync target`() {
+        val controller = GalPresentationController()
+        val av = GalRuntimeOptions.AvSync(maxLagToleranceNs = 0)
+        val options = GalRuntimeOptions(avSync = av)
+        controller.start(Channel.ID_AUD, 2, options)
+        controller.start(Channel.ID_VID, 3, options)
+        controller.observeAudio(Channel.ID_AUD, 2, 0, 1_000)
+        var now = 1_005L
+        val bridge = GalVideoOutputTiming(controller, 3, nanoTime = { now }) { now += it + 10 }
+        bridge.register(1, 10, now)
+        assertEquals(0L, bridge.await(bridge.deadline(1)))
+        assertEquals(11_010L, now)
+        assertEquals(0L, bridge.admit(platformTiming = false))
+
+        controller.update(Channel.ID_VID, 3, GalRuntimeOptions(avSync = av.copy(syncOffsetNs = -10)))
+        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = false))
     }
 
     @Test fun `runtime disable interrupts a legacy wait within one bounded slice`() {

@@ -52,10 +52,10 @@ internal class GalVideoOutputTiming(
     private var repairGranted = false
     private var repairRescueCount = 0L
 
-    /** One decoded repair candidate may establish a picture even if codec warm-up exceeded a
-     * narrow normal window. This is not steady-state lateness tolerance or presentation proof.
-     * The caller still requires its normal keyframe/input-acceptance and successful-release proof.
-     * Missing metadata, stale sessions and frames older than one second never receive this grant.
+    /** After an A/V lag rejection, one decoded repair candidate may establish a picture.
+     * The caller still requires its normal keyframe/input-acceptance and successful-release
+     * proof. Final admission fences retired outputs. Missing metadata, stale sessions and
+     * frames older than one second never receive this grant.
      */
     @Synchronized fun repairDeadline(token: Long): Long {
         if (token == 0L || token == rescuedRepairToken || !active ||
@@ -155,7 +155,7 @@ internal class GalVideoOutputTiming(
             val slice = VideoPresentationWait.sliceNs(deadline, now)
             if (slice == 0L) return deadline
             // Scheduler overshoot after an on-time wait is not a late decode. Use the
-            // requested wake time for lateness, but reschedule using the live clock and policy.
+            // requested wake time for A/V lag, but reschedule using the live clock and policy.
             requestedWakeNs = now + slice
             synchronized(this) { waitSlices++; waitedNs += slice }
             try { sleepNs.sleep(slice) }

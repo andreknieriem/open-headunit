@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
+import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.VideoFaultReporter
@@ -51,7 +52,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         if (mediaGeneration == session.generation) return
         val adoptsPreparation = preparingSession && preparationGeneration == session.previousGeneration
         if ((mediaGeneration != null || preparingSession) && !adoptsPreparation) {
-            videoDecoder.stop("GAL media Start replaced")
+            videoDecoder.stop(DecoderStopPolicy.REASON_GAL_START_REPLACED)
         }
         mediaGeneration = session.generation
         videoDecoder.beginPresentationSession(session.generation)
@@ -76,7 +77,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         if (preparingSession && message.type == Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE &&
             session?.generation == preparationGeneration) {
             // Another Setup supersedes even already-decoded pre-Start parameter sets.
-            videoDecoder.stop("GAL Setup replaced pre-Start CSD")
+            videoDecoder.stop(DecoderStopPolicy.REASON_GAL_SETUP_REPLACED_PREPARATION)
             videoDecoder.endPresentationSession()
             preparingSession = false
             preparationGeneration = null
@@ -102,7 +103,9 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                         flags != VideoFragmentAssembler.FLAG_SINGLE) || !isPayload(message)) {
                     return isPayload(message)
                 }
-                if (mediaGeneration != null || preparingSession) videoDecoder.stop("GAL pre-Start CSD")
+                if (mediaGeneration != null || preparingSession) {
+                    videoDecoder.stop(DecoderStopPolicy.REASON_GAL_PRE_START_CSD)
+                }
                 videoDecoder.endPresentationSession()
                 assembler.reset()
                 messageBuffer.clear()

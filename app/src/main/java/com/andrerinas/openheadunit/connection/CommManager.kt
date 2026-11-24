@@ -727,7 +727,7 @@ class CommManager(
                     _disconnectJob?.join()
                     synchronized(transportLifecycleLock) { terminal = _connectionState.value }
                 },
-                create = { SocketProjectionConnection(socket, context) },
+                create = { SocketProjectionConnection(socket, context, inbound = restartEndpoint == null) },
                 open = { candidate ->
                     if (!candidate.connect()) throw java.io.IOException("Cannot open Nearby tunnel streams")
                 },
@@ -810,7 +810,7 @@ class CommManager(
         }
         try {
             previous?.disconnect()
-            conn = SocketProjectionConnection(socket, context)
+            conn = SocketProjectionConnection(socket, context, inbound = restartEndpoint == null)
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
                 if (connectionAttempt !== attempt || disconnectRequested) false
@@ -1072,7 +1072,7 @@ class CommManager(
                 }
                 val usb = conn is AbstractUsbProjectionConnection
                 // Held locally: startHandshake can retire itself and clear the published owner.
-                val shook = transport.startHandshake(conn)
+                val shook = transport.startHandshake(conn, usbIdentity)
                 if (_connection !== conn || (shook && _transport !== transport)) return@withContext
                 if (shook) {
                     val live = withLiveTransport(transport, ConnectionState.StartingTransport) {

@@ -16,7 +16,8 @@ class GalFinalVersionRequestTest {
         private val reply: ByteArray,
         private val chunkSize: Int = Int.MAX_VALUE,
         private val writeResult: Int? = null,
-        private val responseDelayMs: Long = 0
+        private val responseDelayMs: Long = 0,
+        private val replyByRequest: ((Int) -> ByteArray)? = null
     ) {
         var now = 0L
         var remaining = byteArrayOf()
@@ -44,14 +45,14 @@ class GalFinalVersionRequestTest {
             requests.add(GalVersion(((bytes[6].toInt() and 255) shl 8) or (bytes[7].toInt() and 255),
                 ((bytes[8].toInt() and 255) shl 8) or (bytes[9].toInt() and 255)))
             writeResult ?: run {
-                remaining += reply
+                remaining += replyByRequest?.invoke(requests.size) ?: reply
                 delayRemaining = responseDelayMs
                 bytes.size
             }
         }, {})
 
-        fun send(profile: GalProfile = GalProfile.GAL_1_6, deadline: Long = 1000, staleReplies: Int = 0) =
-            request.request(profile, deadline, OPENING, staleReplies)
+        fun send(profile: GalProfile = GalProfile.GAL_1_6, deadline: Long = 1000, possibleOpeningReplies: Int = 0) =
+            request.request(profile, deadline, possibleOpeningReplies)
     }
 
     @Test fun `final response owns its options and coalesced TLS data stays with the next reader`() {
@@ -101,10 +102,11 @@ class GalFinalVersionRequestTest {
         }
     }
 
-    @Test fun `final request uses the remaining negotiation deadline`() {
-        val phone = Phone(reply(GalVersion(1, 7)), responseDelayMs = 60)
-        assertThrows(IOException::class.java) { phone.send(deadline = 50) }
+    @Test fun `final confirmation retransmissions share one deadline`() {
+        val phone = Phone(reply(GalVersion(1, 7)), responseDelayMs = 30)
+        assertThrows(IOException::class.java) { phone.send(deadline = 50, possibleOpeningReplies = 1) }
         assertEquals(50L, phone.now)
+        assertEquals(listOf(GalVersion(1, 6), GalVersion(1, 6)), phone.requests)
     }
 
     @Test fun `accepted nonzero statuses retain the existing compatibility behavior`() {
@@ -113,23 +115,32 @@ class GalFinalVersionRequestTest {
         assertEquals(1, session.finalResponse.status)
     }
 
-    // A USB opening request resent after a silent window can be answered after the final request.
-    @Test fun `repeated opening replies from resends are skipped but never beyond the resend count`() {
-        val stale = reply(OPENING.version)
-        val phone = Phone(stale + stale + reply(GalVersion(1, 7)))
-        val session = phone.send(staleReplies = 2)
+    @Test fun `late opening replies require a later valid response and bound same-profile resends`() {
+        val stale = reply(GalVersion(6, 0))
+        val final = reply(GalVersion(1, 7))
+        // Only one write actually produces more data; its first two responses are late
+        // opening replies. No more writes are needed after both outstanding replies are covered.
+        val phone = Phone(byteArrayOf(), replyByRequest = { if (it == 1) stale + stale + final else byteArrayOf() })
+        val session = phone.send(possibleOpeningReplies = 2)
         assertEquals(GalVersion(1, 7), session.finalResponse.version)
-        assertEquals(listOf(GalVersion(1, 6)), phone.requests)
-
-        // Without an outstanding resend, or beyond the resend count, an equal reply is this
-        // request's own answer.
-        assertEquals(OPENING.version, Phone(stale).send().finalResponse.version)
-        val counted = Phone(stale + stale)
-        assertEquals(OPENING.version, counted.send(staleReplies = 1).finalResponse.version)
-        assertTrue(counted.remaining.isEmpty())
+        assertEquals(List(3) { GalVersion(1, 6) }, phone.requests)
+        assertTrue(phone.remaining.isEmpty())
     }
 
-    private companion object {
-        val OPENING = AapVersionNegotiation.Result(6, 0, 0, null)
+    @Test fun `identical replies confirm a lower profile even when opening retransmissions were lost`() {
+        val same = reply(GalVersion(1, 7))
+        val phone = Phone(same)
+        assertEquals(GalVersion(1, 7), phone.send(possibleOpeningReplies = 2).finalResponse.version)
+        assertEquals(List(3) { GalVersion(1, 6) }, phone.requests)
+        assertEquals(GalVersion(1, 7), Phone(same).send().finalResponse.version)
+    }
+
+    @Test fun `reply contents alone do not confirm a retried opening exchange`() {
+        val phone = Phone(byteArrayOf(), replyByRequest = {
+            if (it == 1) reply(GalVersion(1, 7), status = 1) else byteArrayOf()
+        })
+        assertThrows(IOException::class.java) { phone.send(possibleOpeningReplies = 1) }
+        assertEquals(List(2) { GalVersion(1, 6) }, phone.requests)
+        assertEquals(0, phone.request.responseSize)
     }
 }

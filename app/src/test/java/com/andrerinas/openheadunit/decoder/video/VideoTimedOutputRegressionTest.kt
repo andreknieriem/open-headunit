@@ -12,7 +12,7 @@ import org.mockito.kotlin.*
 class VideoTimedOutputRegressionTest {
     private fun field(owner: Any, name: String) = owner.javaClass.getDeclaredField(name).apply { isAccessible = true }
 
-    @Test fun `custom consumer output preserves future due decoded burst while dropping genuinely late frame`() {
+    @Test fun `custom consumer waits for early frames and renders an overdue frame in order`() {
         var now = 1_000_000_000L
         var waited = 0L
         val decoder = VideoDecoder(mock<Settings> { on { fpsLimit } doReturn 30 }, elapsedRealtime = { now / 1_000_000 })
@@ -48,22 +48,22 @@ class VideoTimedOutputRegressionTest {
         val loop = VideoDecoder::class.java.getDeclaredMethod("outputThreadLoop").apply { isAccessible = true }
         try {
             loop.invoke(decoder)
-            assertEquals(listOf(0 to true, 1 to true, 2 to true, 3 to true, 4 to false), releases)
+            assertEquals(listOf(0 to true, 1 to true, 2 to true, 3 to true, 4 to true), releases)
             assertTrue("custom consumer worker must actually exercise the intentional wait", waited >= 100_000_000)
             assertEquals(1_199_999_000L, now)
         } finally { decoder.stop("test cleanup") }
     }
 
-    @Test fun `narrow startup window admits one real repair output then resumes ordinary late dropping`() {
+    @Test fun `startup renders late keyframe and delta frame but proves repair only after release`() {
         val now = 1_000_000_000L
         val decoder = VideoDecoder(mock<Settings> { on { fpsLimit } doReturn 30 }, elapsedRealtime = { 1_000L })
         val codec = mock<MediaCodec>()
         val controller = GalPresentationController()
         controller.start(Channel.ID_VID, 1,
             GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(9_000_000, 17_000_000)))
-        val bridge = GalVideoOutputTiming(controller, 1, VideoSurfaceKind.TEXTURE_CONSUMER, { now }) { fail("late repair must not wait") }
-        bridge.register(1, 0, now - 100_000_000)
-        bridge.register(2, 33_333, now - 100_000_000)
+        val bridge = GalVideoOutputTiming(controller, 1, VideoSurfaceKind.TEXTURE_CONSUMER, { now }) { fail("late output must not wait") }
+        bridge.register(1, 0, now - 162_000_000)
+        bridge.register(2, 33_333, now - 117_000_000)
         field(decoder, "codec").set(decoder, codec)
         field(decoder, "codecBufferInfo").set(decoder, MediaCodec.BufferInfo())
         field(decoder, "surfaceKind").set(decoder, VideoSurfaceKind.TEXTURE_CONSUMER)
@@ -97,9 +97,9 @@ class VideoTimedOutputRegressionTest {
         val loop = VideoDecoder::class.java.getDeclaredMethod("outputThreadLoop").apply { isAccessible = true }
         try {
             loop.invoke(decoder)
-            assertEquals(listOf(0 to true, 1 to false), releases)
+            assertEquals(listOf(0 to true, 1 to true), releases)
             assertTrue(tracker.keyframeDecoded)
-            assertEquals(1L, decoder.framesRenderedThisSession)
+            assertEquals(2L, decoder.framesRenderedThisSession)
             assertEquals(1, firstFrames)
         } finally { decoder.stop("test cleanup") }
     }

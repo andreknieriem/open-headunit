@@ -14,7 +14,7 @@ internal data class GalRuntimeOptions(
     val invalidFields: List<String> = emptyList(),
     val avSync: AvSync? = null
 ) {
-    /** Receiver-chosen arrival-to-presentation window, not a recovered sender clock rule. */
+    /** Receiver-chosen bounds on intentional pacing from arrival, not a late-frame cutoff. */
     data class VideoTiming(val minDelayNs: Long, val maxDelayNs: Long)
 
     /** Local bounded receiver policy. Weight is the number of historical observations in

@@ -200,7 +200,7 @@ class AapTransport(
  private fun send(message:AapMessage){}
  private fun sendEncryptedMessage(data:Any,length:Int)=0
  private fun endFocusCycle(){}
- private fun handshake(conn:ProjectionConnection):Boolean {
+ private fun handshake(conn:ProjectionConnection, usbIdentity:UsbRecoveryDevice?):Boolean {
   handshakeHook?.invoke()
   forcedFailure?.let { lastHandshakeFailure=it;return false }
   // Network I/O is doubled; a closed connection fails, an open connection succeeds.

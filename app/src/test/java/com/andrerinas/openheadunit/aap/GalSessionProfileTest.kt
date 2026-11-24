@@ -1,22 +1,48 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.aap.protocol.Channel
-import org.junit.After
+import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
 import org.junit.Assert.*
-import org.junit.Before
 import org.junit.Test
 
 class GalSessionProfileTest {
-    @Before @After fun resetPolicy() = GalVersionPolicy.resetForTest()
+    @Test fun `opening fallback is distinct from the setting and only retries the same peer once`() {
+        val policy = GalVersionPolicy()
+        val accessory = UsbRecoveryDevice("/usb/1", 0x18d1, 0x2d00, "Vendor", "Model", "serial")
+        val refuser = GalVersionPolicy.usbPeer(accessory)!!
+        val other = GalVersionPolicy.usbPeer(accessory.copy(serial = "other"))
+        assertEquals(GalVersionPolicy.Opening.DEFAULT, policy.opening(false, refuser, 10))
+        assertEquals(GalVersionPolicy.Opening.SETTING, policy.opening(true, refuser, 10))
+        policy.noteRefusal(refuser, 10)
+        assertEquals(GalVersionPolicy.Opening.DEFAULT, policy.opening(false, other, 11))
+        assertEquals(GalVersionPolicy.Opening.DEFAULT, policy.opening(false, null, 12))
+        val retry = policy.opening(false, GalVersionPolicy.usbPeer(accessory.copy(path = "/usb/2")), 13)
+        assertEquals(GalVersionPolicy.Opening.PEER_REFUSAL, retry)
+        assertEquals(GalProfile.COMPATIBILITY, retry.profile)
+        assertNotEquals(GalVersionPolicy.Opening.SETTING.logSuffix, retry.logSuffix)
+        assertEquals(GalVersionPolicy.Opening.DEFAULT, policy.opening(false, refuser, 14))
+    }
 
-    @Test fun `opening request is 6 dot 1 unless compatibility mode or a refused opening`() {
-        assertEquals(GalProfile.GAL_6_1, GalVersionPolicy.opening(compatibilityMode = false))
-        assertEquals(GalProfile.COMPATIBILITY, GalVersionPolicy.opening(compatibilityMode = true))
-        // A refused 1.2 has nothing lower to fall back to and must not change the next request.
-        GalVersionPolicy.noteRefused(GalProfile.COMPATIBILITY)
-        assertEquals(GalProfile.GAL_6_1, GalVersionPolicy.opening(compatibilityMode = false))
-        GalVersionPolicy.noteRefused(GalProfile.GAL_6_1)
-        assertEquals(GalProfile.COMPATIBILITY, GalVersionPolicy.opening(compatibilityMode = false))
+    @Test fun `serialless USB only retries its attachment within the refusal window`() {
+        val policy = GalVersionPolicy()
+        val accessory = UsbRecoveryDevice("/usb/1", 0x18d1, 0x2d00, "Vendor", "Model", null)
+        val refuser = GalVersionPolicy.usbPeer(accessory)!!
+        policy.noteRefusal(refuser, 0)
+        val reattached = GalVersionPolicy.usbPeer(accessory.copy(path = "/usb/2"))
+        assertEquals(GalVersionPolicy.Opening.DEFAULT, policy.opening(false, reattached, 1))
+        assertEquals(GalVersionPolicy.Opening.PEER_REFUSAL, policy.opening(false, refuser, 2))
+        policy.noteRefusal(refuser, 5)
+        assertEquals(GalVersionPolicy.Opening.DEFAULT, policy.opening(false, refuser, 30_005))
+    }
+
+    @Test fun `only a legacy refusal from a modern opening offers a retry`() {
+        val legacy = AapVersionNegotiation.Result(1, 5, -1, null)
+        assertTrue(GalVersionPolicy.isLegacyRefusal(GalProfile.GAL_6_1, legacy))
+        assertFalse(GalVersionPolicy.isLegacyRefusal(GalProfile.COMPATIBILITY, legacy))
+        for (reply in listOf(legacy.copy(major = 0), legacy.copy(major = 6),
+            legacy.copy(minor = 1), legacy.copy(minor = 65535), legacy.copy(status = 0))) {
+            assertFalse(GalVersionPolicy.isLegacyRefusal(GalProfile.GAL_6_1, reply))
+        }
     }
 
     // Maximum reply constants of inspected senders: AA 9.7 4.2, 12.4 4.5, 14 and 15 5.0,

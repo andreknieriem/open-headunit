@@ -6,6 +6,7 @@ import android.graphics.Typeface
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.text.TextPaint
 import android.text.TextUtils
 import android.text.format.DateFormat
 import android.util.TypedValue
@@ -229,10 +230,14 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         val shorterSide = minOf(width, height)
         val shorterDp = shorterSide / density
         // One scale drives every text, so any of the knobs stands for the text size option.
-        val sizes = NightOverlaySizes.of(shorterDp, scaleClock, navigationShown)
+        val sizes = NightOverlaySizes.of(
+            shorterDp, scaleClock, navigationShown,
+            widthDp = width / density,
+            distanceWidthPerSp = distanceWidthPerSp(density),
+        )
         val iconSize = (sizes.iconDp * density).toInt()
-        val padding = (shorterDp * 0.04f * density).toInt()
-        val tinyGap = (8f * density).toInt()
+        val padding = (NightOverlaySizes.paddingDp(shorterDp) * density).toInt()
+        val tinyGap = (NightOverlaySizes.GAP_DP * density).toInt()
         val topInfoWidth = (
             width - (padding * 2) - iconSize - (tinyGap * 4)
             ).coerceAtLeast((120f * density).toInt())
@@ -277,6 +282,8 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
             LayoutParams.WRAP_CONTENT,
             LayoutParams.WRAP_CONTENT,
         )
+        // The fallback text takes the icon's place, so it gets the icon's width at most.
+        maneuverTextFallback.maxWidth = iconSize
         distance.maxWidth = topInfoWidth
         road.maxWidth = topInfoWidth
         extraInfo.maxWidth = topInfoWidth
@@ -308,6 +315,19 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         setFixedTextSize(road, sizes.roadSp)
         setFixedTextSize(extraInfo, sizes.extraInfoSp)
         setFixedTextSize(title, sizes.titleSp)
+    }
+
+    /**
+     * Width in dp of the widest distance string ("888 m" or "88.8 km" in this app's formats) at a
+     * text size of 1 sp, with the distance's own font and the system font size. Measured at 100 sp
+     * for precision.
+     */
+    private fun distanceWidthPerSp(density: Float): Float {
+        val paint = TextPaint(distance.paint).apply {
+            textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 100f, resources.displayMetrics)
+        }
+        val widest = listOf(formatDistance(888), formatDistance(88_800)).maxOf { paint.measureText(it) }
+        return widest / 100f / density
     }
 
     private fun formatDistance(meters: Int): String {

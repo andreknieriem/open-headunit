@@ -52,4 +52,47 @@ class NightOverlaySizesTest {
             assertTrue("height $total at x$scale", total <= 360f)
         }
     }
+
+    private fun roomDp(widthDp: Float) = widthDp - 2 * NightOverlaySizes.paddingDp(widthDp) - 4 * NightOverlaySizes.GAP_DP
+
+    @Test
+    fun `in portrait the widest distance fits beside the icon`() {
+        // Portrait: the shorter side is the width. 3.7 dp per sp is about "88.8 km" in bold at font scale 1.
+        for (widthDp in listOf(320f, 360f, 400f, 480f, 600f)) for (scale in listOf(0.8f, 1f, 1.3f)) {
+            val s = NightOverlaySizes.of(widthDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthPerSp = 3.7f)
+            val used = s.iconDp + s.distanceSp * 3.7f
+            assertTrue("icon and distance take $used of ${roomDp(widthDp)} dp at $widthDp dp x$scale", used <= roomDp(widthDp) + 0.01f)
+            assertTrue("distance over clock at $widthDp dp x$scale", s.distanceSp > s.clockSp)
+        }
+    }
+
+    @Test
+    fun `the width cap never goes below the sizes without navigation`() {
+        // A wide distance string (large system font) on a narrow screen.
+        for (widthDp in listOf(320f, 360f)) for (scale in listOf(1f, 1.3f)) {
+            val plain = NightOverlaySizes.of(widthDp, scale, navigationShown = false)
+            val s = NightOverlaySizes.of(widthDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthPerSp = 5f)
+            assertTrue(s.iconDp >= plain.iconDp)
+            assertTrue(s.distanceSp >= plain.distanceSp)
+            assertTrue(s.maneuverFallbackSp >= plain.maneuverFallbackSp)
+        }
+    }
+
+    @Test
+    fun `in landscape the width leaves the navigation sizes as they are`() {
+        for ((shorterDp, widthDp) in listOf(360f to 640f, 400f to 800f, 600f to 1024f)) for (scale in listOf(0.8f, 1f, 1.3f)) {
+            assertEquals(
+                NightOverlaySizes.of(shorterDp, scale, navigationShown = true),
+                NightOverlaySizes.of(shorterDp, scale, navigationShown = true, widthDp = widthDp, distanceWidthPerSp = 3.7f)
+            )
+        }
+    }
+
+    @Test
+    fun `the width does not change the sizes without navigation`() {
+        assertEquals(
+            NightOverlaySizes.of(360f, 1f, navigationShown = false),
+            NightOverlaySizes.of(360f, 1f, navigationShown = false, widthDp = 360f, distanceWidthPerSp = 5f)
+        )
+    }
 }

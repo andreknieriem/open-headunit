@@ -388,7 +388,7 @@
     <string name="attach_hw_dsp_equalizer_description">Koppelt een dummy-equalizereffect aan de audiosessie om hardware-DSP-routing te forceren op specifieke headunits. Laat dit uit als je ViPER4Android / ViperFX gebruikt of als het geluid dof klinkt op oudere Android-versies.</string>
     <string name="attach_hw_dsp_equalizer_summary">Koppelt een dummy-equalizer om op sommige apparaten hardware-DSP-routering af te dwingen.</string>
     <string name="audio_volume_offset">Volumecorrectie</string>
-    <string name="audio_volume_offset_help">Stelt het volume in van drie geluidsstromen van Android Auto op deze unit: media, navigatie-aanwijzingen en systeemgeluiden. Elke stroom loopt van 0% tot 200%. Bij 100% klinkt een stroom zoals de telefoon hem stuurt. Gebruik dit om navigatie en muziek op elkaar af te stemmen.</string>
+    <string name="audio_volume_offset_help" formatted="false">Stelt het volume in van drie geluidsstromen van Android Auto op deze unit: media, navigatie-aanwijzingen en systeemgeluiden. Elke stroom loopt van 0% tot 200%. Bij 100% klinkt een stroom zoals de telefoon hem stuurt. Gebruik dit om navigatie en muziek op elkaar af te stemmen.</string>
     <string name="mic_input_source">Invoerbron van microfoon</string>
     <string name="mic_input_source_description">Kies de audiobron voor de microfoon.</string>
     <string name="mic_input_source_help">Bepaalt de Android-audiobron waarvan de app opneemt. Standaard laat het systeem kiezen. Microfoon neemt ruw geluid op. Spraakherkenning en Spraakcommunicatie voegen de ruis- en echofilters van het systeem toe. Bluetooth-headset neemt op via een Bluetooth-headset. Wijzig dit als de telefoon je niet hoort. Is Android Auto verbonden, dan stopt het opslaan van een wijziging de sessie.</string>
@@ -1489,16 +1489,16 @@
     <string name="pref_enable_floating_button_help">Toont een zwevende knop boven de OEM-launcher en andere apps om snel terug te keren naar Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Verbindingsstatus-indicator</string>
     <string name="pref_floating_button_connection_status_summary">Dimt de knop zolang een telefoon verbonden is.</string>
-    <string name="pref_floating_button_connection_status_help">Gebruikt Dekking bij verbroken verbinding als er geen telefoon is verbonden en vervaagt naar Dekking van zwevende knop zodra er een telefoon is verbonden. Bij 0% is de knop verborgen en laat hij tikken door.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Gebruikt Dekking bij verbroken verbinding als er geen telefoon is verbonden en vervaagt naar Dekking van zwevende knop zodra er een telefoon is verbonden. Bij 0% is de knop verborgen en laat hij tikken door.</string>
     <string name="pref_floating_button_size_title">Grootte van zwevende knop</string>
     <string name="pref_floating_button_size_help">De grootte van de zwevende knop, van 32 tot 120 dp. Een grotere knop raak je makkelijker tijdens het rijden.</string>
     <string name="pref_floating_button_opacity_title">Dekking van zwevende knop</string>
     <string name="pref_floating_button_opacity_help">Hoe dekkend de zwevende knop is, van 10% tot 100%. Staat Verbindingsstatus-indicator aan, dan geldt deze waarde alleen als een telefoon verbonden is.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Dekking bij verbroken verbinding</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Hoe dekkend de zwevende knop is als er geen telefoon verbonden is. Bij 0% is de knop verborgen en gaan tikken door naar het scherm eronder.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Hoe dekkend de zwevende knop is als er geen telefoon verbonden is. Bij 0% is de knop verborgen en gaan tikken door naar het scherm eronder.</string>
     <string name="pref_floating_button_x_title">Horizontale positie (X)</string>
     <string name="pref_floating_button_y_title">Verticale positie (Y)</string>
-    <string name="pref_floating_button_position_help">Waar de zwevende knop op het scherm staat. Bij X is 0% de linkerrand en 100% de rechterrand. Bij Y is 0% de bovenrand en 100% de onderrand. De knop blijft altijd helemaal op het scherm.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Waar de zwevende knop op het scherm staat. Bij X is 0% de linkerrand en 100% de rechterrand. Bij Y is 0% de bovenrand en 100% de onderrand. De knop blijft altijd helemaal op het scherm.</string>
     <string name="pref_aa_exit_action_title">Actie bij afsluiten Android Auto</string>
     <string name="pref_aa_exit_action_summary">Actie bij tikken op Afsluiten in het app-overzicht van Android Auto.</string>
     <string name="pref_aa_exit_action_help">Bepaalt wat er gebeurt als je in Android Auto op Afsluiten tikt. Terug naar OEM-launcher toont het eigen startscherm van deze unit. Terug naar startscherm van de app toont het startscherm van deze app. Bij deze twee blijft de telefoon verbonden. Verbinding verbreken beëindigt de sessie. Is deze app de launcher van de auto, dan werkt Terug naar OEM-launcher als Terug naar startscherm van de app.</string>

@@ -389,7 +389,7 @@
     <string name="attach_hw_dsp_equalizer_description">Додає фіктивний еквалайзер до аудіосесії, щоб примусово задіяти апаратний DSP на деяких магнітолах. Залишайте вимкненим, якщо використовуєте ViPER4Android / ViperFX або якщо на старих версіях Android звук приглушений.</string>
     <string name="attach_hw_dsp_equalizer_summary">Підключає фіктивний еквалайзер, щоб на деяких пристроях примусово ввімкнути маршрутизацію через апаратний DSP.</string>
     <string name="audio_volume_offset">Зміщення гучності звуку</string>
-    <string name="audio_volume_offset_help">Визначає гучність трьох аудіопотоків Android Auto на цьому пристрої: медіа, голосових підказок навігації та системних звуків. Кожен можна налаштувати від 0% до 200%. При 100% потік звучить так, як його надсилає телефон. Використовуйте це, щоб збалансувати навігацію й музику.</string>
+    <string name="audio_volume_offset_help" formatted="false">Визначає гучність трьох аудіопотоків Android Auto на цьому пристрої: медіа, голосових підказок навігації та системних звуків. Кожен можна налаштувати від 0% до 200%. При 100% потік звучить так, як його надсилає телефон. Використовуйте це, щоб збалансувати навігацію й музику.</string>
     <string name="mic_input_source">Джерело мікрофона</string>
     <string name="mic_input_source_description">Виберіть джерело звуку для мікрофона.</string>
     <string name="mic_input_source_help">Вибирає аудіоджерело Android, з якого записує додаток. «За замовчуванням» залишає вибір системі. «Мікрофон» записує необроблений звук. «Розпізнавання мови» та «Голосовий зв’язок» додають системні фільтри шуму й відлуння. «Bluetooth-гарнітура» записує через Bluetooth-гарнітуру. Змініть джерело, якщо телефон вас не чує. Якщо Android Auto підключено, збереження зміни зупиняє сеанс.</string>
@@ -1486,16 +1486,16 @@
     <string name="pref_enable_floating_button_help">Відображає плаваючу кнопку поверх штатного лаунчера та інших програм для швидкого повернення до Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Індикатор стану підключення</string>
     <string name="pref_floating_button_connection_status_summary">Робить кнопку блідішою, поки підключено телефон.</string>
-    <string name="pref_floating_button_connection_status_help">Коли телефон не підключено, використовує прозорість при відключенні, а коли підключено, плавно переходить до прозорості плаваючої кнопки. При 0% кнопка прихована й пропускає дотики.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Коли телефон не підключено, використовує прозорість при відключенні, а коли підключено, плавно переходить до прозорості плаваючої кнопки. При 0% кнопка прихована й пропускає дотики.</string>
     <string name="pref_floating_button_size_title">Розмір плаваючої кнопки</string>
     <string name="pref_floating_button_size_help">Розмір плаваючої кнопки, від 32 до 120 dp. Більшу кнопку легше натискати за кермом.</string>
     <string name="pref_floating_button_opacity_title">Прозорість плаваючої кнопки</string>
     <string name="pref_floating_button_opacity_help">Наскільки помітна плаваюча кнопка, від 10% до 100%. Якщо ввімкнено «Індикатор стану підключення», це значення діє лише поки телефон підключено.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Прозорість при відключенні</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Наскільки помітна плаваюча кнопка, поки телефон не підключено. При 0% кнопку приховано, і дотики проходять крізь неї до екрана під нею.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Наскільки помітна плаваюча кнопка, поки телефон не підключено. При 0% кнопку приховано, і дотики проходять крізь неї до екрана під нею.</string>
     <string name="pref_floating_button_x_title">Горизонтальне положення (X)</string>
     <string name="pref_floating_button_y_title">Вертикальне положення (Y)</string>
-    <string name="pref_floating_button_position_help">Де на екрані розташована плаваюча кнопка. Для X 0% означає лівий край, 100% правий. Для Y 0% означає верхній край, 100% нижній. Кнопка завжди залишається на екрані повністю.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Де на екрані розташована плаваюча кнопка. Для X 0% означає лівий край, 100% правий. Для Y 0% означає верхній край, 100% нижній. Кнопка завжди залишається на екрані повністю.</string>
     <string name="pref_aa_exit_action_title">Дія при виході з Android Auto</string>
     <string name="pref_aa_exit_action_summary">Дія при натисканні «Вихід» у списку програм Android Auto.</string>
     <string name="pref_aa_exit_action_help">Вибирає, що відбувається, коли торкнутися «Вихід» в Android Auto. «Повернутися до штатного лаунчера» показує власний головний екран пристрою. «Повернутися на головний екран програми» показує головний екран цього додатка. У цих двох випадках телефон залишається підключеним. «Відключити сеанс» завершує сеанс. Якщо цей додаток є лаунчером автомобіля, «Повернутися до штатного лаунчера» діє як «Повернутися на головний екран програми».</string>

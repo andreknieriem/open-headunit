@@ -719,16 +719,16 @@
     <string name="pref_enable_floating_button_help">Apresenta um botão flutuante sobre o lançador de fábrica e outras aplicações para regressar rapidamente ao Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indicador de estado da ligação</string>
     <string name="pref_floating_button_connection_status_summary">Esbate o botão enquanto um telemóvel está ligado.</string>
-    <string name="pref_floating_button_connection_status_help">Usa a Opacidade sem ligação quando nenhum telemóvel está ligado e desvanece para a Opacidade do botão flutuante enquanto um telemóvel está ligado. A 0%, o botão fica oculto e deixa passar os toques.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Usa a Opacidade sem ligação quando nenhum telemóvel está ligado e desvanece para a Opacidade do botão flutuante enquanto um telemóvel está ligado. A 0%, o botão fica oculto e deixa passar os toques.</string>
     <string name="pref_floating_button_size_title">Tamanho do botão flutuante</string>
     <string name="pref_floating_button_size_help">O tamanho do botão flutuante, de 32 a 120 dp. Um botão maior é mais fácil de tocar enquanto conduz.</string>
     <string name="pref_floating_button_opacity_title">Opacidade do botão flutuante</string>
     <string name="pref_floating_button_opacity_help">Quão opaco o botão flutuante fica, de 10% a 100%. Com Indicador de estado da ligação ativado, este valor aplica-se só enquanto um telemóvel está ligado.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Opacidade sem ligação</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Quão opaco o botão flutuante fica enquanto nenhum telemóvel está ligado. Com 0%, o botão fica oculto e os toques passam para o ecrã por baixo dele.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Quão opaco o botão flutuante fica enquanto nenhum telemóvel está ligado. Com 0%, o botão fica oculto e os toques passam para o ecrã por baixo dele.</string>
     <string name="pref_floating_button_x_title">Posição horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posição vertical (Y)</string>
-    <string name="pref_floating_button_position_help">Onde o botão flutuante fica no ecrã. Em X, 0% é a margem esquerda e 100% é a margem direita. Em Y, 0% é a margem superior e 100% é a margem inferior. O botão fica sempre inteiro no ecrã.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Onde o botão flutuante fica no ecrã. Em X, 0% é a margem esquerda e 100% é a margem direita. Em Y, 0% é a margem superior e 100% é a margem inferior. O botão fica sempre inteiro no ecrã.</string>
     <string name="pref_aa_exit_action_title">Ação ao sair do Android Auto</string>
     <string name="pref_aa_exit_action_summary">Ação ao tocar em Sair dentro da gaveta de aplicações do Android Auto.</string>
     <string name="pref_aa_exit_action_help">Escolhe o que acontece ao tocar em Sair no Android Auto. Regressar ao lançador de fábrica mostra o ecrã inicial da própria unidade. Regressar ao ecrã inicial da aplicação mostra o ecrã inicial desta aplicação. Com estas duas, o telemóvel continua ligado. Desligar sessão termina a sessão. Quando esta aplicação é o lançador do carro, Regressar ao lançador de fábrica funciona como Regressar ao ecrã inicial da aplicação.</string>
@@ -834,7 +834,7 @@
     <string name="attach_hw_dsp_equalizer_description">Anexa um efeito de equalizador fictício à sessão de áudio para forçar o encaminhamento DSP por hardware em unidades específicas. Mantenha desativado se utilizar ViPER4Android / ViperFX ou se o som ficar abafado em versões mais antigas do Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Anexa um equalizador fictício para forçar o encaminhamento pelo DSP de hardware em algumas unidades.</string>
     <string name="audio_volume_offset">Compensação de volume de áudio</string>
-    <string name="audio_volume_offset_help">Define o volume de três fluxos de áudio do Android Auto nesta unidade: multimédia, indicações de navegação e sons do sistema. Cada um vai de 0% a 200%. Com 100%, o fluxo toca como o telemóvel o envia. Use para equilibrar a navegação e a música.</string>
+    <string name="audio_volume_offset_help" formatted="false">Define o volume de três fluxos de áudio do Android Auto nesta unidade: multimédia, indicações de navegação e sons do sistema. Cada um vai de 0% a 200%. Com 100%, o fluxo toca como o telemóvel o envia. Use para equilibrar a navegação e a música.</string>
     <string name="microphone_settings">Definições do microfone</string>
     <string name="use_head_unit_microphone">Microfone da unidade</string>
     <string name="use_head_unit_microphone_description">Ativado: o Android Auto ouve o microfone deste dispositivo. Desativado: este dispositivo nunca grava e o telemóvel utiliza o seu próprio microfone, ou um auricular ou intercomunicador emparelhado com o telemóvel, pelo que o assistente de voz continua a funcionar. Requer Android 11 ou posterior no telemóvel.</string>

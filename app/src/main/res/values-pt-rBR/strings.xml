@@ -389,7 +389,7 @@
     <string name="attach_hw_dsp_equalizer_description">Anexa um efeito de equalizador fictício à sessão de áudio para forçar o roteamento por DSP via hardware em algumas centrais multimídia. Mantenha desativado se usar ViPER4Android / ViperFX ou se o som ficar abafado em versões antigas do Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Anexa um equalizador fictício para forçar o roteamento pelo DSP de hardware em algumas unidades.</string>
     <string name="audio_volume_offset">Ajuste do volume de áudio</string>
-    <string name="audio_volume_offset_help">Define o volume de três fluxos de áudio do Android Auto nesta unidade: mídia, orientações de navegação e sons do sistema. Cada um vai de 0% a 200%. Com 100%, o fluxo toca como o smartphone o envia. Use para equilibrar a navegação e a música.</string>
+    <string name="audio_volume_offset_help" formatted="false">Define o volume de três fluxos de áudio do Android Auto nesta unidade: mídia, orientações de navegação e sons do sistema. Cada um vai de 0% a 200%. Com 100%, o fluxo toca como o smartphone o envia. Use para equilibrar a navegação e a música.</string>
     <string name="mic_input_source">Fonte de entrada do microfone</string>
     <string name="mic_input_source_description">Escolha a fonte de áudio para o microfone.</string>
     <string name="mic_input_source_help">Escolhe a fonte de áudio do Android da qual o app grava. Padrão deixa o sistema decidir. Microfone embutido grava o som bruto. Reconhecimento de voz e Comunicação de voz adicionam os filtros de ruído e eco do sistema. Fone Bluetooth grava por um fone Bluetooth. Mude se o smartphone não ouvir você. Se o Android Auto estiver conectado, salvar uma mudança encerra a sessão.</string>
@@ -1485,16 +1485,16 @@
     <string name="pref_enable_floating_button_help">Mostra um botão flutuante sobre a tela inicial original e outros apps para voltar rapidamente ao Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indicador de status da conexão</string>
     <string name="pref_floating_button_connection_status_summary">Esmaece o botão enquanto um celular está conectado.</string>
-    <string name="pref_floating_button_connection_status_help">Usa a Opacidade sem conexão quando nenhum telefone está conectado e esmaece até a Opacidade do botão flutuante enquanto um telefone está conectado. Em 0%, o botão fica oculto e deixa os toques passarem.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Usa a Opacidade sem conexão quando nenhum telefone está conectado e esmaece até a Opacidade do botão flutuante enquanto um telefone está conectado. Em 0%, o botão fica oculto e deixa os toques passarem.</string>
     <string name="pref_floating_button_size_title">Tamanho do botão flutuante</string>
     <string name="pref_floating_button_size_help">O tamanho do botão flutuante, de 32 a 120 dp. Um botão maior é mais fácil de tocar enquanto você dirige.</string>
     <string name="pref_floating_button_opacity_title">Opacidade do botão flutuante</string>
     <string name="pref_floating_button_opacity_help">Quão opaco o botão flutuante fica, de 10% a 100%. Com Indicador de status da conexão ativado, esse valor vale só enquanto um smartphone está conectado.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Opacidade sem conexão</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Quão opaco o botão flutuante fica enquanto nenhum smartphone está conectado. Com 0%, o botão fica oculto e os toques passam para a tela embaixo dele.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Quão opaco o botão flutuante fica enquanto nenhum smartphone está conectado. Com 0%, o botão fica oculto e os toques passam para a tela embaixo dele.</string>
     <string name="pref_floating_button_x_title">Posição horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posição vertical (Y)</string>
-    <string name="pref_floating_button_position_help">Onde o botão flutuante fica na tela. Em X, 0% é a borda esquerda e 100% é a borda direita. Em Y, 0% é a borda superior e 100% é a borda inferior. O botão sempre fica inteiro na tela.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Onde o botão flutuante fica na tela. Em X, 0% é a borda esquerda e 100% é a borda direita. Em Y, 0% é a borda superior e 100% é a borda inferior. O botão sempre fica inteiro na tela.</string>
     <string name="pref_aa_exit_action_title">Ação ao sair do Android Auto</string>
     <string name="pref_aa_exit_action_summary">Ação ao tocar em Sair na gaveta de apps do Android Auto.</string>
     <string name="pref_aa_exit_action_help">Escolhe o que acontece ao tocar em Sair no Android Auto. Voltar à tela inicial original mostra a tela inicial da própria unidade. Voltar ao início do app mostra a tela inicial deste app. Com essas duas, o smartphone continua conectado. Desconectar sessão encerra a sessão. Quando este app é o launcher do carro, Voltar à tela inicial original age como Voltar ao início do app.</string>

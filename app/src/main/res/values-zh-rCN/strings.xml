@@ -388,7 +388,7 @@
     <string name="attach_hw_dsp_equalizer_description">在音频会话中附加一个虚拟均衡器效果，以在特定车机上强制使用硬件 DSP 路由。如果使用 ViPER4Android / ViperFX，或在旧版 Android 上声音发闷，请保持关闭。</string>
     <string name="attach_hw_dsp_equalizer_summary">挂接一个虚拟均衡器，在部分设备上强制使用硬件 DSP 路由。</string>
     <string name="audio_volume_offset">音频音量偏移</string>
-    <string name="audio_volume_offset_help">设置本机上三种 Android Auto 音频流的音量：媒体、导航语音和系统提示音。每种范围为 0% 到 200%。100% 按手机发送的原样播放。可用来平衡导航和音乐的音量。</string>
+    <string name="audio_volume_offset_help" formatted="false">设置本机上三种 Android Auto 音频流的音量：媒体、导航语音和系统提示音。每种范围为 0% 到 200%。100% 按手机发送的原样播放。可用来平衡导航和音乐的音量。</string>
     <string name="mic_input_source">麦克风输入源</string>
     <string name="mic_input_source_description">选择麦克风的音频源。</string>
     <string name="mic_input_source_help">选择应用录音所用的 Android 音频来源。“默认”由系统决定。“麦克风”录制原始声音。“语音辨识”和“语音通讯”会加入系统自带的降噪和回声过滤。“蓝牙耳机”通过蓝牙耳机录音。如果手机听不到您的声音，请更改。如果 Android Auto 已连接，保存更改会停止会话。</string>
@@ -1481,16 +1481,16 @@
     <string name="pref_enable_floating_button_help">在原厂启动器及其他应用上方显示悬浮按钮，以便快速返回 Open Headunit。</string>
     <string name="pref_floating_button_connection_status_title">连接状态指示</string>
     <string name="pref_floating_button_connection_status_summary">手机连接期间让按钮变淡。</string>
-    <string name="pref_floating_button_connection_status_help">未连接手机时使用“未连接时不透明度”，手机连接后渐变为“悬浮按钮不透明度”。为0%时，按钮会隐藏并让触摸穿透。</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">未连接手机时使用“未连接时不透明度”，手机连接后渐变为“悬浮按钮不透明度”。为0%时，按钮会隐藏并让触摸穿透。</string>
     <string name="pref_floating_button_size_title">悬浮按钮大小</string>
     <string name="pref_floating_button_size_help">悬浮按钮的大小，范围为 32 到 120 dp。按钮越大，驾驶时越容易点按。</string>
     <string name="pref_floating_button_opacity_title">悬浮按钮不透明度</string>
     <string name="pref_floating_button_opacity_help">悬浮按钮的清晰程度，范围为 10% 到 100%。开启“连接状态指示”后，此值仅在手机已连接时生效。</string>
     <string name="pref_floating_button_disconnected_opacity_title">未连接时不透明度</string>
-    <string name="pref_floating_button_disconnected_opacity_help">未连接手机时悬浮按钮的清晰程度。设为 0% 时按钮隐藏，点按会穿过按钮作用于下方的屏幕。</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">未连接手机时悬浮按钮的清晰程度。设为 0% 时按钮隐藏，点按会穿过按钮作用于下方的屏幕。</string>
     <string name="pref_floating_button_x_title">水平位置 (X)</string>
     <string name="pref_floating_button_y_title">垂直位置 (Y)</string>
-    <string name="pref_floating_button_position_help">悬浮按钮在屏幕上的位置。对于 X，0% 为左边缘，100% 为右边缘。对于 Y，0% 为上边缘，100% 为下边缘。按钮始终完整显示在屏幕内。</string>
+    <string name="pref_floating_button_position_help" formatted="false">悬浮按钮在屏幕上的位置。对于 X，0% 为左边缘，100% 为右边缘。对于 Y，0% 为上边缘，100% 为下边缘。按钮始终完整显示在屏幕内。</string>
     <string name="pref_aa_exit_action_title">Android Auto 退出操作</string>
     <string name="pref_aa_exit_action_summary">在 Android Auto 应用抽屉中点按“退出”时执行的操作。</string>
     <string name="pref_aa_exit_action_help">选择在 Android Auto 中点按“退出”时的行为。“返回原厂主屏幕”显示本机自己的主屏幕。“返回应用主页”显示本应用的主屏幕。这两项都会保持手机连接。“断开连接”会结束会话。当本应用是车辆启动器时，“返回原厂主屏幕”的效果与“返回应用主页”相同。</string>

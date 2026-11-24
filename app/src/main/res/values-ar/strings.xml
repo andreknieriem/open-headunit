@@ -389,7 +389,7 @@
     <string name="attach_hw_dsp_equalizer_description">يربط تأثير معادل صوت وهمي بجلسة الصوت لفرض التوجيه عبر DSP للأجهزة في وحدات معينة. اتركه معطلاً إذا كنت تستخدم ViPER4Android / ViperFX أو إذا كان الصوت مكتوماً على إصدارات Android القديمة.</string>
     <string name="attach_hw_dsp_equalizer_summary">يرفق معادلًا صوتيًا وهميًا لفرض التوجيه عبر DSP العتاد على بعض الوحدات.</string>
     <string name="audio_volume_offset">تعويض مستوى الصوت</string>
-    <string name="audio_volume_offset_help">يحدد مستوى صوت ثلاثة مسارات صوتية من Android Auto على هذه الوحدة: الوسائط وإرشادات الملاحة وأصوات النظام. يتراوح كل منها من 0% إلى 200%. عند 100% يُشغَّل المسار كما يرسله الهاتف. استخدمه لموازنة صوت الملاحة مع الموسيقى.</string>
+    <string name="audio_volume_offset_help" formatted="false">يحدد مستوى صوت ثلاثة مسارات صوتية من Android Auto على هذه الوحدة: الوسائط وإرشادات الملاحة وأصوات النظام. يتراوح كل منها من 0% إلى 200%. عند 100% يُشغَّل المسار كما يرسله الهاتف. استخدمه لموازنة صوت الملاحة مع الموسيقى.</string>
     <string name="mic_input_source">مصدر إدخال الميكروفون</string>
     <string name="mic_input_source_description">اختر مصدر الصوت للميكروفون.</string>
     <string name="mic_input_source_help">يختار مصدر الصوت في Android الذي يسجل منه التطبيق. «افتراضي» يترك القرار للنظام. «ميكروفون» يسجل الصوت الخام. «التعرف على الصوت» و«الاتصال الصوتي» يضيفان مرشحات الضوضاء والصدى في النظام. «سماعة بلوتوث» تسجل عبر سماعة Bluetooth. غيّره إذا كان الهاتف لا يسمعك. إذا كان Android Auto متصلًا، فإن حفظ التغيير يوقف الجلسة.</string>
@@ -1484,16 +1484,16 @@
     <string name="pref_enable_floating_button_help">عرض زر عائم فوق المشغل الأصلي والتطبيقات الأخرى للعودة سريعًا إلى Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">مؤشر حالة الاتصال</string>
     <string name="pref_floating_button_connection_status_summary">يُخفِت الزر أثناء اتصال هاتف.</string>
-    <string name="pref_floating_button_connection_status_help">يستخدم الشفافية عند عدم الاتصال حين لا يكون هاتف متصلاً، ويتلاشى إلى شفافية الزر العائم أثناء اتصال هاتف. عند 0% يكون الزر مخفيًا ويمرر اللمسات.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">يستخدم الشفافية عند عدم الاتصال حين لا يكون هاتف متصلاً، ويتلاشى إلى شفافية الزر العائم أثناء اتصال هاتف. عند 0% يكون الزر مخفيًا ويمرر اللمسات.</string>
     <string name="pref_floating_button_size_title">حجم الزر العائم</string>
     <string name="pref_floating_button_size_help">حجم الزر العائم، من 32 إلى 120 dp. الزر الأكبر أسهل في الضغط أثناء القيادة.</string>
     <string name="pref_floating_button_opacity_title">شفافية الزر العائم</string>
     <string name="pref_floating_button_opacity_help">مدى وضوح الزر العائم، من 10% إلى 100%. عند تشغيل مؤشر حالة الاتصال، تسري هذه القيمة فقط أثناء اتصال هاتف.</string>
     <string name="pref_floating_button_disconnected_opacity_title">الشفافية عند عدم الاتصال</string>
-    <string name="pref_floating_button_disconnected_opacity_help">مدى وضوح الزر العائم عندما لا يكون هناك هاتف متصل. عند 0% يكون الزر مخفيًا وتمر اللمسات إلى الشاشة تحته.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">مدى وضوح الزر العائم عندما لا يكون هناك هاتف متصل. عند 0% يكون الزر مخفيًا وتمر اللمسات إلى الشاشة تحته.</string>
     <string name="pref_floating_button_x_title">الموضع الأفقي (X)</string>
     <string name="pref_floating_button_y_title">الموضع الرأسي (Y)</string>
-    <string name="pref_floating_button_position_help">مكان الزر العائم على الشاشة. بالنسبة إلى X، 0% هو الحافة اليسرى و100% هو الحافة اليمنى. بالنسبة إلى Y، 0% هو الحافة العلوية و100% هو الحافة السفلية. يبقى الزر دائمًا كاملًا على الشاشة.</string>
+    <string name="pref_floating_button_position_help" formatted="false">مكان الزر العائم على الشاشة. بالنسبة إلى X، 0% هو الحافة اليسرى و100% هو الحافة اليمنى. بالنسبة إلى Y، 0% هو الحافة العلوية و100% هو الحافة السفلية. يبقى الزر دائمًا كاملًا على الشاشة.</string>
     <string name="pref_aa_exit_action_title">إجراء الخروج من Android Auto</string>
     <string name="pref_aa_exit_action_summary">الإجراء عند النقر على خروج داخل قائمة تطبيقات Android Auto.</string>
     <string name="pref_aa_exit_action_help">يحدد ما يحدث عند لمس «خروج» في Android Auto. «العودة إلى المشغل الأصلي» يعرض الشاشة الرئيسية للوحدة نفسها. «العودة إلى الصفحة الرئيسية للتطبيق» يعرض الشاشة الرئيسية لهذا التطبيق. مع هذين الخيارين يبقى الهاتف متصلًا. «قطع الاتصال» ينهي الجلسة. عندما يكون هذا التطبيق مشغّل السيارة، يعمل «العودة إلى المشغل الأصلي» مثل «العودة إلى الصفحة الرئيسية للتطبيق».</string>

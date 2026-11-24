@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # Keeps the action tags in .github/workflows current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

@@ -226,11 +226,30 @@ android {
         disable += "FragmentLiveDataObserve"
         disable += "FragmentBackPressedCallback"
         disable += "FragmentAddMenuProvider"
+
+        // CI passes -PlintGate: only the checks that crash old units or break a locale's format
+        // string, failing on any finding the baseline does not already list.
+        if (providers.gradleProperty("lintGate").isPresent) {
+            val gate = setOf(
+                "NewApi", "InlinedApi", "StringFormatMatches", "StringFormatInvalid",
+                // Crashes on Android 12 to 14 with targetSdk 36: Bluetooth permissions, receiver and
+                // PendingIntent flags, implicit intents, foreground service and exact alarm permissions.
+                "MissingPermission", "UnspecifiedRegisterReceiverFlag", "UnspecifiedImmutableFlag",
+                "MutableImplicitPendingIntent", "UnsafeImplicitIntentLaunch", "ForegroundServicePermission",
+                "ScheduleExactAlarm",
+            )
+            checkOnly += gate
+            error += gate
+            baseline = file("lint-baseline-gate.xml")
+            abortOnError = true
+        }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        // minSdk 16: D8 rewrites Java 8 library calls (removeIf, Map.forEach, java.time) to a bundled copy.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     applicationVariants.all {
@@ -280,6 +299,7 @@ dependencies {
 
     // Multidex
     implementation("androidx.multidex:multidex:2.0.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     // Navigation Component
     implementation("androidx.navigation:navigation-fragment-ktx:2.3.5")
@@ -313,4 +333,9 @@ kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_1_8)
     }
+}
+
+// Two test JVMs cut the local suite from about 2.5 to 1.7 minutes; both orders pass.
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 2
 }

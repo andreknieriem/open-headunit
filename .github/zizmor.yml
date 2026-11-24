@@ -1,0 +1,6 @@
+# Actions stay pinned to version tags, as the CI README describes, so zizmor accepts a tag.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin

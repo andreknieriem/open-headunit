@@ -439,7 +439,7 @@
     <string name="attach_hw_dsp_equalizer_description">오디오 세션에 더미 Equalizer 효과를 연결하여 특정 헤드유닛에서 하드웨어 DSP 라우팅을 강제합니다. ViPER4Android / ViperFX를 사용 중이거나 이전 Android 버전에서 소리가 먹먹하게 들리면 사용 중지 상태로 유지하세요.</string>
     <string name="attach_hw_dsp_equalizer_summary">일부 기기에서 하드웨어 DSP 라우팅을 강제하려고 가짜 이퀄라이저를 연결합니다.</string>
     <string name="audio_volume_offset">오디오 음량 보정</string>
-    <string name="audio_volume_offset_help">이 기기에서 Android Auto의 오디오 스트림 3가지(미디어, 내비게이션 안내, 시스템 소리)의 음량을 정합니다. 각각 0%에서 200%까지 설정할 수 있습니다. 100%는 휴대전화가 보낸 음량 그대로 재생합니다. 내비게이션과 음악의 음량 균형을 맞출 때 사용하세요.</string>
+    <string name="audio_volume_offset_help" formatted="false">이 기기에서 Android Auto의 오디오 스트림 3가지(미디어, 내비게이션 안내, 시스템 소리)의 음량을 정합니다. 각각 0%에서 200%까지 설정할 수 있습니다. 100%는 휴대전화가 보낸 음량 그대로 재생합니다. 내비게이션과 음악의 음량 균형을 맞출 때 사용하세요.</string>
     <string name="microphone_settings">마이크 설정</string>
     <string name="use_head_unit_microphone">헤드유닛 마이크</string>
     <string name="use_head_unit_microphone_description">켜짐: Android Auto가 이 기기의 마이크를 사용합니다. 꺼짐: 이 기기는 녹음하지 않으며 휴대전화가 자체 마이크나 휴대전화에 페어링된 헤드셋 또는 인터콤을 사용하므로 음성 어시스턴트는 계속 작동합니다. 휴대전화에 Android 11 이상이 필요합니다.</string>
@@ -1478,16 +1478,16 @@
     <string name="pref_enable_floating_button_help">순정 런처와 다른 앱 위에 플로팅 버튼을 표시합니다. 버튼을 누르면 Open Headunit으로 빠르게 돌아갈 수 있습니다.</string>
     <string name="pref_floating_button_connection_status_title">연결 상태 표시</string>
     <string name="pref_floating_button_connection_status_summary">휴대전화가 연결되어 있는 동안 버튼을 흐리게 합니다.</string>
-    <string name="pref_floating_button_connection_status_help">휴대전화가 연결되지 않으면 \"연결되지 않았을 때 불투명도\"를 적용하고, 연결되어 있으면 \"플로팅 버튼 불투명도\"로 서서히 전환합니다. 불투명도가 0%이면 버튼이 숨겨지고 아래 화면을 탭할 수 있습니다.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">휴대전화가 연결되지 않으면 \"연결되지 않았을 때 불투명도\"를 적용하고, 연결되어 있으면 \"플로팅 버튼 불투명도\"로 서서히 전환합니다. 불투명도가 0%이면 버튼이 숨겨지고 아래 화면을 탭할 수 있습니다.</string>
     <string name="pref_floating_button_size_title">플로팅 버튼 크기</string>
     <string name="pref_floating_button_size_help">플로팅 버튼의 크기를 32dp에서 120dp 사이로 정합니다. 버튼이 클수록 운전 중에 누르기 쉽습니다.</string>
     <string name="pref_floating_button_opacity_title">플로팅 버튼 불투명도</string>
     <string name="pref_floating_button_opacity_help">플로팅 버튼이 얼마나 진하게 보일지 10%에서 100% 사이로 정합니다. 연결 상태 표시를 사용 설정하면 이 값은 휴대전화가 연결된 동안에만 적용됩니다.</string>
     <string name="pref_floating_button_disconnected_opacity_title">연결되지 않았을 때 불투명도</string>
-    <string name="pref_floating_button_disconnected_opacity_help">휴대전화가 연결되지 않았을 때 플로팅 버튼이 얼마나 진하게 보일지 정합니다. 0%이면 버튼이 숨겨지고 탭은 아래 화면에 전달됩니다.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">휴대전화가 연결되지 않았을 때 플로팅 버튼이 얼마나 진하게 보일지 정합니다. 0%이면 버튼이 숨겨지고 탭은 아래 화면에 전달됩니다.</string>
     <string name="pref_floating_button_x_title">수평 위치(X)</string>
     <string name="pref_floating_button_y_title">수직 위치(Y)</string>
-    <string name="pref_floating_button_position_help">화면에서 플로팅 버튼이 놓이는 위치입니다. X에서 0%는 왼쪽 가장자리, 100%는 오른쪽 가장자리입니다. Y에서 0%는 위쪽 가장자리, 100%는 아래쪽 가장자리입니다. 버튼은 항상 화면 안에 완전히 표시됩니다.</string>
+    <string name="pref_floating_button_position_help" formatted="false">화면에서 플로팅 버튼이 놓이는 위치입니다. X에서 0%는 왼쪽 가장자리, 100%는 오른쪽 가장자리입니다. Y에서 0%는 위쪽 가장자리, 100%는 아래쪽 가장자리입니다. 버튼은 항상 화면 안에 완전히 표시됩니다.</string>
     <string name="pref_aa_exit_action_title">Android Auto 종료 시 동작</string>
     <string name="pref_aa_exit_action_summary">Android Auto 앱 서랍에서 종료를 탭했을 때의 동작을 설정합니다.</string>
     <string name="pref_aa_exit_action_help">Android Auto에서 종료를 탭했을 때의 동작을 선택합니다. 순정 런처로 돌아가기는 이 기기의 기본 홈 화면을 표시합니다. 앱 홈 화면으로 돌아가기는 이 앱의 홈 화면을 표시합니다. 이 두 가지는 휴대전화가 계속 연결된 상태로 유지됩니다. Android Auto 연결 종료는 세션을 끝냅니다. 이 앱이 차량 런처이면 순정 런처로 돌아가기가 앱 홈 화면으로 돌아가기처럼 동작합니다.</string>

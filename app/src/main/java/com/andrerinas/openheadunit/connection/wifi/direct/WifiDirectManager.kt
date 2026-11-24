@@ -55,6 +55,7 @@ import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 
@@ -983,13 +984,16 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         checkStuckRetryBurst()
                         // [FIX] Pre-fetch localDeviceAddress here so it's ready before
                         // onGroupInfoAvailable fires — reduces race condition window.
-                        WifiDirectCompat.requestDeviceInfo(manager, channel) { address ->
-                            if (localDeviceAddress == null || localDeviceAddress == "00:00:00:00:00:00" || localDeviceAddress == "02:00:00:00:00:00") {
-                                AppLog.d("WifiDirectManager: Pre-fetched localDeviceAddress on connect: $address")
-                                localDeviceAddress = address
+                        // Null after stop(): the framework refuses a null channel.
+                        channel?.let { ch ->
+                            WifiDirectCompat.requestDeviceInfo(manager, ch) { address ->
+                                if (localDeviceAddress == null || localDeviceAddress == "00:00:00:00:00:00" || localDeviceAddress == "02:00:00:00:00:00") {
+                                    AppLog.d("WifiDirectManager: Pre-fetched localDeviceAddress on connect: $address")
+                                    localDeviceAddress = address
+                                }
                             }
+                            manager?.requestConnectionInfo(ch, this@WifiDirectManager)
                         }
-                        manager?.requestConnectionInfo(channel, this@WifiDirectManager)
                         AapService.scanningState.value = false
                     } else {
                         val isNative = App.provide(context).settings.wifiConnectionMode == WifiLauncherMode.NATIVE
@@ -1113,14 +1117,17 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 // [FIX] requestDeviceInfo is async — call requestGroupInfo only AFTER the callback
                 // fires so that localDeviceAddress is guaranteed to be set before onGroupInfoAvailable
                 // runs. This eliminates the race condition that caused empty BSSIDs on Android 12+.
+                val gen = generation
                 WifiDirectCompat.requestDeviceInfo(manager, channel) { address ->
                     AppLog.i("WifiDirectManager: Updated localDeviceAddress via requestDeviceInfo: $address")
                     localDeviceAddress = address
-                    manager?.requestGroupInfo(channel, this@WifiDirectManager)
+                    if (supersededByStop(gen, "the group info request")) return@requestDeviceInfo
+                    val ch = channel ?: return@requestDeviceInfo
+                    manager?.requestGroupInfo(ch, this@WifiDirectManager)
                 }
                 // Fallback: if requestDeviceInfo is not supported (< API 29), call directly
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                    manager?.requestGroupInfo(channel, this)
+                    channel?.let { ch -> manager?.requestGroupInfo(ch, this) }
                 }
             } else if (info.groupOwnerAddress != null) {
                 Thread {
@@ -1869,6 +1876,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
     @SuppressLint("MissingPermission")
     fun refreshHelperGroup() {
+        if (ensureChannel() != null) return
         val mgr = manager ?: return
         val ch = channel ?: return
         val gen = generation
@@ -1884,6 +1892,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
     fun makeVisible() {
         registerReceiverIfNeeded()
+        if (ensureChannel() != null) return
         val mgr = manager ?: return
         val ch = channel ?: return
 
@@ -1916,6 +1925,8 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
     @SuppressLint("MissingPermission")
     private fun checkGroupAndCreate() {
+        // A stopPeerDiscovery answer can land after stop(), with no channel to ask on.
+        val ch = channel ?: return
         if (checkGroupAndCreateInFlight) {
             AppLog.d("WifiDirectManager: checkGroupAndCreate already in flight, skipping duplicate call")
             return
@@ -1934,7 +1945,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         isGroupOwner = false
         isConnected = false
 
-        manager?.requestGroupInfo(channel) { group ->
+        manager?.requestGroupInfo(ch) { group ->
             if (group == null) {
                 AppLog.i("No existing P2P group, creating new one")
                 checkGroupAndCreateInFlight = false
@@ -1956,7 +1967,9 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
             // be delivered for the new one.
             lastKnownBssid = null
             lastKnownBssidIface = null
-            manager?.removeGroup(channel, object : WifiP2pManager.ActionListener {
+            if (supersededByStop(gen, "group recreate")) return@requestGroupInfo
+            val groupCh = channel ?: return@requestGroupInfo
+            manager?.removeGroup(groupCh, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
                     checkGroupAndCreateInFlight = false
                     if (supersededByStop(gen, "group recreate")) return
@@ -2091,6 +2104,31 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         startNativeAaQuietHost()
     }
 
+    /**
+     * Opens the P2P channel again after [stop] closed it, or when the manager never had one.
+     * Returns null when a channel is ready, else why it is not.
+     */
+    private fun ensureChannel(): String? {
+        if (manager != null && channel != null) return null
+        AppLog.w("WifiDirectManager: manager ($manager) or channel ($channel) is null. Attempting re-init...")
+        try {
+            val newManager = context.getSystemService(Context.WIFI_P2P_SERVICE) as? WifiP2pManager
+            val newChannel = newManager?.initialize(context, context.mainLooper, null)
+            if (newManager != null && newChannel != null) {
+                manager = newManager
+                channel = newChannel
+                AppLog.i("WifiDirectManager: Re-init successful and fields updated.")
+                registerReceiverIfNeeded()
+                return null
+            }
+            AppLog.e("WifiDirectManager: Re-init failed. Cannot start Quiet Host.")
+            return "the P2P manager could not be re-initialised"
+        } catch (e: Exception) {
+            AppLog.e("WifiDirectManager: Exception during re-init", e)
+            return "the P2P re-init threw"
+        }
+    }
+
     @SuppressLint("MissingPermission")
     fun startNativeAaQuietHost() {
         // Two bring-ups fight over BUSY and the loser removes the winner's group; see
@@ -2108,34 +2146,13 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         registerReceiverIfNeeded()
         isGroupCreatingOrCreated = true
         markP2pRequest()
-        var mgr = manager
-        var ch = channel
-
-        if (mgr == null || ch == null) {
-            AppLog.w("WifiDirectManager: manager ($mgr) or channel ($ch) is null. Attempting re-init...")
-            try {
-                val newManager = context.getSystemService(Context.WIFI_P2P_SERVICE) as? WifiP2pManager
-                val newChannel = newManager?.initialize(context, context.mainLooper, null)
-                if (newManager != null && newChannel != null) {
-                    manager = newManager
-                    channel = newChannel
-                    mgr = newManager
-                    ch = newChannel
-                    AppLog.i("WifiDirectManager: Re-init successful and fields updated.")
-                    registerReceiverIfNeeded()
-                } else {
-                    AppLog.e("WifiDirectManager: Re-init failed. Cannot start Quiet Host.")
-                    isGroupCreatingOrCreated = false
-                    releaseNativeCreateWindow("the P2P manager could not be re-initialised")
-                    return
-                }
-            } catch (e: Exception) {
-                AppLog.e("WifiDirectManager: Exception during re-init", e)
-                isGroupCreatingOrCreated = false
-                releaseNativeCreateWindow("the P2P re-init threw")
-                return
-            }
+        ensureChannel()?.let { why ->
+            isGroupCreatingOrCreated = false
+            releaseNativeCreateWindow(why)
+            return
         }
+        val mgr = manager ?: return
+        val ch = channel ?: return
 
         // Ensure WiFi is enabled (Required for P2P). Nothing is claimed above this point on purpose:
         // a create window taken before the radio is known to be on stayed standing through every
@@ -3361,8 +3378,97 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         return null
     }
 
+    /** Removes the kept group on [ch], then closes the channel. Runs once, when the next mode has no Wi-Fi Direct. */
+    private fun releaseKeptGroup(mgr: WifiP2pManager?, ch: WifiP2pManager.Channel) {
+        AppLog.i("WifiDirectManager: releasing the kept group, the next mode does not use WiFi Direct")
+        val stamp = SystemClock.elapsedRealtime()
+        P2pTeardownTracker.update {
+            P2pTeardown(stopped = true, groupRemoved = false, channelClosed = false, keptGroup = false, stoppedAtMs = stamp)
+        }
+        removeGroupThenClose(mgr, ch, stamp, closable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1)
+    }
+
+    /** Closes the channel a kept group was held on. The next manager opened its own first, so P2P stays on. */
+    private fun closeKeptChannel(ch: WifiP2pManager.Channel) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) return
+        try {
+            ch.close()
+            AppLog.i("WifiDirectManager: kept P2P channel closed, the next manager holds the group")
+        } catch (e: Exception) {
+            AppLog.w("WifiDirectManager: closing the kept P2P channel threw: ${e.message}")
+        }
+    }
+
+    /**
+     * Removes the group on [ch], then closes the channel when [closable]. The close waits for the
+     * answer, with a bound of [P2pChannelClosePolicy.CLOSE_FALLBACK_MS] on a handler of its own: the manager's
+     * handler is cleared by [stop].
+     */
+    private fun removeGroupThenClose(
+        mgr: WifiP2pManager?,
+        ch: WifiP2pManager.Channel?,
+        stamp: Long,
+        closable: Boolean,
+    ) {
+        if (mgr == null || ch == null) {
+            finishTeardown(ch, stamp, "now", closable)
+            return
+        }
+        val done = AtomicBoolean(false)
+        val timer = Handler(Looper.getMainLooper())
+        val finish = { how: String ->
+            if (done.compareAndSet(false, true)) {
+                finishTeardown(ch, stamp, how, closable)
+            }
+        }
+        val fallback = Runnable { finish("fallback") }
+        timer.postDelayed(fallback, P2pChannelClosePolicy.CLOSE_FALLBACK_MS)
+        try {
+            mgr.removeGroup(ch, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    AppLog.d("WifiDirectManager: Final group removal success")
+                    timer.removeCallbacks(fallback)
+                    finish("after group removal")
+                }
+                override fun onFailure(reason: Int) {
+                    AppLog.d("WifiDirectManager: Final group removal failed: $reason")
+                    timer.removeCallbacks(fallback)
+                    finish("after group removal")
+                }
+            })
+        } catch (e: Exception) {
+            AppLog.w("WifiDirectManager: Final group removal threw: ${e.message}")
+            timer.removeCallbacks(fallback)
+            finish("now")
+        }
+    }
+
+    /** Closes [ch] when [closable] and the platform allows it, and records what this stop finished. */
+    private fun finishTeardown(ch: WifiP2pManager.Channel?, stamp: Long, how: String, closable: Boolean = true) {
+        var closed = ch == null
+        if (ch != null && closable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            try {
+                ch.close()
+                closed = true
+                AppLog.i("WifiDirectManager: P2P channel closed ($how)")
+            } catch (e: Exception) {
+                AppLog.w("WifiDirectManager: closing the P2P channel threw: ${e.message}")
+            }
+        }
+        P2pTeardownTracker.update {
+            if (it?.stoppedAtMs == stamp) it.copy(groupRemoved = true, channelClosed = closed) else it
+        }
+    }
+
     fun stop(keepGroup: Boolean = false) {
         AppLog.i("WifiDirectManager: Stopping and cleaning up...")
+        // Closed below, so nothing that lands after this stop can ask the framework on it.
+        val ch = channel
+        channel = null
+        val stamp = SystemClock.elapsedRealtime()
+        P2pTeardownTracker.update {
+            P2pTeardown(stopped = true, groupRemoved = false, channelClosed = false, keptGroup = false, stoppedAtMs = stamp)
+        }
         WifiBandCapability.reportSessionFrequency(0)
         generation++
         credentialsEpoch++
@@ -3405,7 +3511,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         lastPersistentPurgeVerdict = null
         // Before legacyChannelRequestUnanswered is reset, because that flag is what tells the
         // release a timed-out request may have left a restriction behind.
-        manager?.let { mgr -> channel?.let { ch -> releaseLegacyChannelRestriction(mgr, ch, force = true) } }
+        manager?.let { mgr -> ch?.let { releaseLegacyChannelRestriction(mgr, it, force = true) } }
         legacyChannelRequestUnanswered = false
         AapService.scanningState.value = false
         try { context.unregisterReceiver(receiver) } catch (e: Exception) {}
@@ -3419,13 +3525,26 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         // Removing a group that is not there only fails.
         val mayOwnGroup = isGroupOwner || adoptQueryInFlight
         adoptQueryInFlight = false
-        if (isGroupOwner && keepGroup) {
-            AppLog.i("WifiDirectManager: keeping the group up through this stop, for the next start to read.")
-        } else if (mayOwnGroup) {
-            manager?.removeGroup(channel, object : WifiP2pManager.ActionListener {
-                override fun onSuccess() { AppLog.d("WifiDirectManager: Final group removal success") }
-                override fun onFailure(reason: Int) { AppLog.d("WifiDirectManager: Final group removal failed: $reason") }
-            })
+        val groupKept = isGroupOwner && keepGroup
+        val removalOwed = !groupKept && mayOwnGroup && ch != null
+        val mgr = manager
+        when (P2pChannelClosePolicy.decide(groupKept, removalOwed, Build.VERSION.SDK_INT)) {
+            P2pChannelClosePolicy.Decision.KEEP_OPEN -> {
+                AppLog.i("WifiDirectManager: keeping the group up through this stop, for the next start to read.")
+                AppLog.i("WifiDirectManager: P2P channel kept open with the group")
+                P2pTeardownTracker.update { it?.copy(keptGroup = true) }
+                if (ch != null) {
+                    P2pTeardownTracker.registerKeptGroup(
+                        release = { releaseKeptGroup(mgr, ch) },
+                        closeChannel = { closeKeptChannel(ch) },
+                    )
+                }
+            }
+            P2pChannelClosePolicy.Decision.CLOSE_AFTER_REMOVAL ->
+                removeGroupThenClose(mgr, ch, stamp, closable = true)
+            P2pChannelClosePolicy.Decision.CLOSE_NOW -> finishTeardown(ch, stamp, "now")
+            P2pChannelClosePolicy.Decision.NOT_CLOSABLE ->
+                if (removalOwed) removeGroupThenClose(mgr, ch, stamp, closable = false) else finishTeardown(ch, stamp, "now")
         }
 
         isGroupOwner = false

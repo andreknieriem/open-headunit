@@ -19,6 +19,8 @@ enum MsgType
     MEDIA_MESSAGE_UPDATE_UI_CONFIG_REQUEST = 0x8009;
     MEDIA_MESSAGE_UPDATE_UI_CONFIG_REPLY = 0x800A;
     MEDIA_MESSAGE_AUDIO_UNDERFLOW_NOTIFICATION = 0x800B;
+    MEDIA_MESSAGE_STATS = 0x8013; // HU -> phone; independent of DATA acknowledgements.
+    MEDIA_MESSAGE_OPTIONS = 0x8014;
 }
 
 enum MediaCodecType
@@ -55,6 +57,62 @@ message Start
 {
     required int32 session_id = 1;
     required uint32 configuration_index = 2;
+    // Value 2 bypasses the DATA credit controller; names of 0/1 are not recovered.
+    enum FlowControl { MODE_0 = 0; MODE_1 = 1; ACKLESS = 2; }
+    optional FlowControl flow_control = 3;
+    optional MediaOptions options = 4;
+}
+
+// Wire-compatible with google.protobuf.Duration (ordinary signed varints, not ZigZag).
+message MediaDuration {
+    optional int64 seconds = 1;
+    optional int32 nanos = 2;
+}
+
+// Field layout used by AA18 Start field 4 and message 0x8014. Their application semantics
+// may differ: optional presence is retained, not evidence of full-snapshot updates.
+// Values are requests, not measured timing or a defined receiver clock relationship.
+message MediaOptions {
+    optional MediaDuration audio_buffer_limit = 1;
+    optional bool enable_av_sync = 2;
+    optional MediaDuration max_lag_tolerance = 3;
+    optional MediaDuration sync_interval = 4;
+    optional MediaDuration max_audio_delay_allowed = 5;
+    optional MediaDuration max_video_delay_allowed = 6;
+    optional uint32 average_lag_weight = 7;
+    optional MediaDuration sync_offset_override = 8;
+    optional bool enable_media_stats = 9;
+    optional MediaDuration media_stats_report_interval = 10;
+    optional bool enable_video_timing_controller = 11;
+    optional MediaDuration video_timing_controller_min_delay = 12;
+    optional MediaDuration video_timing_controller_max_delay = 13;
+}
+
+// Ordinary signed int64 values in microseconds; count is observations, not audio frames.
+message MediaDistribution {
+    optional int64 average = 1;
+    optional int64 minimum = 2;
+    optional int64 maximum = 3;
+    optional int64 count = 4;
+}
+
+// Omit an unmeasured metric instead of reporting a synthetic zero.
+message MediaStats {
+    optional MediaDuration observation_window = 1;
+    optional int64 frames = 2;
+    optional int64 audio_overflow_count = 3;
+    optional int64 audio_underrun_count = 4;
+    optional MediaDistribution estimated_audio_buffer_us = 5;
+    optional MediaDistribution av_lag_us = 6;
+    optional MediaDistribution audio_delay_us = 7;
+    optional MediaDistribution video_delay_us = 8;
+    optional int64 audio_output_latency_offset_us = 9;
+    optional int64 video_overflow_count = 10;
+    optional MediaDistribution video_overflow_duration_us = 11;
+    optional MediaDistribution video_frame_jitter_us = 12;
+    optional MediaDistribution video_pacing_delay_us = 13;
+    optional int64 too_fast_frames = 14;
+    optional int64 too_slow_frames = 15;
 }
 
 message Ack
@@ -146,6 +204,16 @@ message UiConfig
     optional Insets content_insets = 2;
     optional Insets stable_content_insets = 3;
     optional int32 ui_theme = 4;
+    // UI elements supplied by the head unit; the phone hides its corresponding widgets.
+    enum UiElement {
+        UNKNOWN = 0;
+        CLOCK = 1;
+        BATTERY_LEVEL = 2;
+        PHONE_SIGNAL = 3;
+        NATIVE_UI_AFFORDANCE = 4;
+        NAVIGATION_TURN_DATA_AVAILABLE = 5;
+    }
+    repeated UiElement ui_elements = 5;
 }
 
 message UpdateUiConfigRequest

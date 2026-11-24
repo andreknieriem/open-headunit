@@ -496,7 +496,7 @@ object BluetoothHelper {
     )
 
     @SuppressLint("MissingPermission", "HardwareIds")
-    private fun adapterAddress(adapter: BluetoothAdapter?): String? = try {
+    internal fun adapterAddress(adapter: BluetoothAdapter?): String? = try {
         adapter?.address?.takeIf { isValidMacAddress(it) }
     } catch (e: SecurityException) {
         AppLog.w("BluetoothHelper: SecurityException reading adapter address")

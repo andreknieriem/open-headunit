@@ -37,7 +37,8 @@ class AudioTrackWrapper(
     }
 
     private data class AudioChunk(val data: ByteArray, val size: Int,
-                                  val codecConfig: AacCodecConfig,
+                                  val codecConfig: AacCodecConfig, val sourceUs: Long,
+                                  val generation: Long, val sourceSequence: Long,
                                   val enqueuedMs: Long = SystemClock.elapsedRealtime())
     private data class CodecInput(val codec: MediaCodec, val index: Int)
     companion object {
@@ -68,6 +69,15 @@ class AudioTrackWrapper(
     @Volatile private var lastOutputCopiedMs = -1L
     @Volatile private var lastOutputPtsUs = -1L
     private var aacFramesQueued = 0L
+    private val aacSources = AacSourceTimeline()
+    private val pcmSourceCursor = AudioSourceCursor()
+    // Assigned at ingress, not at submission: pending B must remain before a shed C.
+    private var nextSourceSequence = 0L
+    @Volatile private var presentationGeneration = Long.MIN_VALUE
+    @Volatile private var presentationController: com.andrerinas.openheadunit.aap.GalPresentationController? = null
+    @Volatile private var inputMappingEnabled = false
+    private fun sourceMappingEnabled() =
+        presentationController?.isAudioSyncEnabled(channelId, presentationGeneration) == true
     private val syncBufferInfo = MediaCodec.BufferInfo()
     private var syncInputBuffers: Array<java.nio.ByteBuffer>? = null
     private var syncOutputBuffers: Array<java.nio.ByteBuffer>? = null
@@ -108,6 +118,28 @@ class AudioTrackWrapper(
     fun isOutputOwnerAlive(): Boolean = isRunning && mixer.isRunning()
     fun canAcceptAudioInput(): Boolean = isRunning && mixerChannel.timeStretch?.failure == null
     fun setGain(gain: Float) { mixerChannel.gain = gain }
+
+    internal fun setGalBufferLimit(ms: Long?) = mixerChannel.buffer.setRequestedLimit(ms)
+
+    internal fun setPresentation(controller: com.andrerinas.openheadunit.aap.GalPresentationController?,
+                                 generation: Long) {
+        synchronized(codecOutputLock) {
+            presentationGeneration = generation
+            nextSourceSequence = 0
+            presentationController = controller
+            inputMappingEnabled = false
+            pcmSourceCursor.reset()
+            mixer.setPresentation(mixerChannel, controller, channelId, generation)
+        }
+    }
+
+    internal fun galPlaybackSample(): com.andrerinas.openheadunit.aap.GalPlaybackSample {
+        val (queueUs, overflows, underruns) = mixerChannel.buffer.telemetry()
+        // Neither AAC input nor device output is part of this PCM-bank-only measurement.
+        return com.andrerinas.openheadunit.aap.GalPlaybackSample(
+            playbackOwner, audioQueueUs = queueUs, audioOverflows = overflows,
+            audioUnderruns = underruns)
+    }
 
     private fun initDecoder(sampleRate: Int, channels: Int): Boolean {
         try {
@@ -182,7 +214,7 @@ class AudioTrackWrapper(
                         try {
                             synchronized(codecOutputLock) {
                                 if (isRunning && decoder === codec && formatState.acceptsOutput) {
-                                    writeToMixer(chunk, size, capturedFormat)
+                                    writeToMixer(chunk, size, capturedFormat, ptsUs)
                                     noteHealthyOutput(size, capturedFormat)
                                 }
                             }
@@ -278,6 +310,7 @@ class AudioTrackWrapper(
                 decoder = null
                 aacRecovery.codecRetired()
                 progressWatchdog.reset()
+                aacSources.clear()
                 mixer.resetConverter(mixerChannel)
             }
         }
@@ -320,18 +353,25 @@ class AudioTrackWrapper(
     private fun channelName(): String =
         if (channelId < 0) "AUDIO" else com.andrerinas.openheadunit.aap.protocol.Channel.name(channelId)
 
-    private fun writeToMixer(buffer: ByteArray, size: Int, format: PcmInputFormat? = null) {
-        feedPcm(buffer, 0, size, format ?: mixerChannel.format)
+    private fun writeToMixer(buffer: ByteArray, size: Int, format: PcmInputFormat, codecPtsUs: Long) {
+        if (!sourceMappingEnabled()) {
+            aacSources.outputBypassed()
+            feedPcm(buffer, 0, size, format)
+            return
+        }
+        val source = aacSources.decoded(codecPtsUs, size / format.bytesPerFrame, format.sampleRate)
+        feedPcm(buffer, 0, size, format, source, aacSources.generation)
     }
 
-    private fun feedPcm(buffer: ByteArray, offset: Int, size: Int, format: PcmInputFormat) {
+    private fun feedPcm(buffer: ByteArray, offset: Int, size: Int, format: PcmInputFormat,
+                        sourceUs: Long = Long.MIN_VALUE, generation: Long = Long.MIN_VALUE) {
         handoffInFlight = true
         try {
             if (canAcceptAudioInput()) {
                 lastPcmActivityMs = SystemClock.elapsedRealtime()
                 onPcmActivity()
             }
-            mixer.feed(mixerChannel, buffer, offset, size, format)
+            mixer.feed(mixerChannel, buffer, offset, size, format, sourceUs, generation)
         } finally { handoffInFlight = false }
     }
 
@@ -403,8 +443,8 @@ class AudioTrackWrapper(
                     Thread.sleep(50)
                     continue
                 }
-                val submitted = if (synchronous) decodeSync(chunk.data, chunk.size)
-                    else queueInput(chunk.data, chunk.size)
+                val submitted = if (synchronous) decodeSync(chunk)
+                    else queueInput(chunk)
                 if (submitted) {
                     recycleAudioBuffer(chunk.data)
                     pending = null
@@ -450,7 +490,7 @@ class AudioTrackWrapper(
     }
 
     @Suppress("DEPRECATION")
-    private fun decodeSync(inputData: ByteArray, size: Int): Boolean {
+    private fun decodeSync(chunk: AudioChunk): Boolean {
         try {
             val dec = decoder ?: return false
             progressWatchdog.inputWaiting(SystemClock.elapsedRealtime())
@@ -460,9 +500,12 @@ class AudioTrackWrapper(
             if (inputIndex < 0) return false
             val inputBuffer = (syncInputBuffers ?: dec.inputBuffers.also { syncInputBuffers = it })[inputIndex]
             inputBuffer.clear()
-            inputBuffer.put(inputData, 0, size)
+            inputBuffer.put(chunk.data, 0, chunk.size)
             progressWatchdog.inputAccepted(SystemClock.elapsedRealtime())
-            dec.queueInputBuffer(inputIndex, 0, size, nextAacPtsUs(), 0)
+            val ptsUs = nextAacPtsUs()
+            if (chunk.generation != Long.MIN_VALUE && sourceMappingEnabled())
+                aacSources.append(ptsUs, chunk.sourceUs, chunk.generation, chunk.sourceSequence)
+            dec.queueInputBuffer(inputIndex, 0, chunk.size, ptsUs, 0)
             drainSyncOutput(dec)
             return true
         } catch (e: Exception) {
@@ -506,7 +549,7 @@ class AudioTrackWrapper(
                             pcm?.let {
                                 synchronized(codecOutputLock) {
                                     if (isRunning && decoder === dec && outputFormatState.acceptsOutput && format != null) {
-                                        writeToMixer(it, size, format)
+                                        writeToMixer(it, size, format, ptsUs)
                                         noteHealthyOutput(size, format)
                                     }
                                 }
@@ -526,7 +569,7 @@ class AudioTrackWrapper(
 
     @Throws(InterruptedException::class)
     @androidx.annotation.RequiresApi(Build.VERSION_CODES.M)
-    private fun queueInput(inputData: ByteArray, size: Int): Boolean {
+    private fun queueInput(chunk: AudioChunk): Boolean {
         try {
             val dec = decoder ?: return false
             progressWatchdog.inputWaiting(SystemClock.elapsedRealtime())
@@ -538,9 +581,12 @@ class AudioTrackWrapper(
             val index = input?.index ?: return false
             val buffer = checkNotNull(dec.getInputBuffer(index))
             buffer.clear()
-            buffer.put(inputData, 0, size)
+            buffer.put(chunk.data, 0, chunk.size)
             progressWatchdog.inputAccepted(SystemClock.elapsedRealtime())
-            dec.queueInputBuffer(index, 0, size, nextAacPtsUs(), 0)
+            val ptsUs = nextAacPtsUs()
+            if (chunk.generation != Long.MIN_VALUE && sourceMappingEnabled())
+                aacSources.append(ptsUs, chunk.sourceUs, chunk.generation, chunk.sourceSequence)
+            dec.queueInputBuffer(index, 0, chunk.size, ptsUs, 0)
             return true
         } catch (e: InterruptedException) { throw e }
         catch (e: Exception) {
@@ -560,18 +606,30 @@ class AudioTrackWrapper(
         if (!config.sameAs(checkNotNull(incomingAacConfig))) incomingAacConfig = config
     }
 
-    fun write(buffer: ByteArray, offset: Int, size: Int) {
+    fun write(buffer: ByteArray, offset: Int, size: Int, sourceTimeUs: Long = Long.MIN_VALUE) {
         if (!isRunning) return
+        val mapping = sourceMappingEnabled()
+        if (!mapping && inputMappingEnabled) synchronized(codecOutputLock) {
+            pcmSourceCursor.invalidate()
+            aacSources.clear()
+        }
+        inputMappingEnabled = mapping
         mixer.noteArrival(mixerChannel, if (isAac) 1024 else size / bytesPerFrame, SystemClock.elapsedRealtime())
         if (!isAac) {
             // The transport can reuse its decrypted array immediately after this bounded copy.
-            feedPcm(buffer, offset, size, mixerChannel.format)
+            if (!mapping) feedPcm(buffer, offset, size, mixerChannel.format) else synchronized(codecOutputLock) {
+                val generation = presentationGeneration
+                val source = pcmSourceCursor.advance(sourceTimeUs, size / bytesPerFrame, sampleRate, generation)
+                feedPcm(buffer, offset, size, mixerChannel.format, source, generation)
+            }
             return
         }
         val data = obtainAudioBuffer(size)
         System.arraycopy(buffer, offset, data, 0, size)
         shedStaleChunks()
-        dataQueue.offer(AudioChunk(data, size, checkNotNull(incomingAacConfig)))
+        dataQueue.offer(AudioChunk(data, size, checkNotNull(incomingAacConfig),
+            if (mapping) sourceTimeUs else Long.MIN_VALUE,
+            if (mapping) presentationGeneration else Long.MIN_VALUE, nextSourceSequence++))
         if (inputSignal.availablePermits() == 0) inputSignal.release()
     }
 
@@ -610,14 +668,25 @@ class AudioTrackWrapper(
      * final decoded samples have reached the speaker, so let the worker and mixer drain the tail.
      * Session teardown still retires the owner and releases resources through [stopPlayback].
      */
-    fun pauseForIdle() {
+    fun pauseForIdle(retainPresentation: Boolean = false) {
         stopReceivedMs = SystemClock.elapsedRealtime()
+        if (retainPresentation) invalidatePresentation() else setPresentation(null, Long.MIN_VALUE)
         inputClosed = true
         mixer.finishChannel(mixerChannel)
     }
 
+    internal fun invalidatePresentation() {
+        synchronized(codecOutputLock) {
+            pcmSourceCursor.invalidate()
+            aacSources.clear()
+            aacSources.outputBypassed()
+            mixer.invalidatePresentation(mixerChannel)
+        }
+    }
+
     @Synchronized fun stopPlayback() {
         retirePlaybackOwner()
+        setPresentation(null, Long.MIN_VALUE)
         if (!isRunning) return
         isRunning = false
         if (decodeThread != null) decodeThread.interrupt() else cleanup()

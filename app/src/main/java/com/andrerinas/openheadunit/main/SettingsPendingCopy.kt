@@ -31,6 +31,7 @@ class SettingsPendingCopy {
     var forceSoftware: Boolean? = null
     var softwareVideoDecoder: Settings.SoftwareVideoDecoder? = null
     var videoCodec: String? = null
+    var galCompatibilityMode: Boolean? = null
     var fpsLimit: Int? = null
     var bluetoothAddress: String? = null
     var bluetoothAnnounceSkip: Boolean? = null
@@ -130,6 +131,7 @@ class SettingsPendingCopy {
         forceSoftware = settings.forceSoftwareDecoding
         softwareVideoDecoder = settings.softwareVideoDecoder
         videoCodec = settings.videoCodec
+        galCompatibilityMode = settings.galCompatibilityMode
         fpsLimit = settings.fpsLimit
         bluetoothAddress = settings.bluetoothAddress
         bluetoothAnnounceSkip = BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode)
@@ -230,6 +232,7 @@ class SettingsPendingCopy {
         forceSoftware != settings.forceSoftwareDecoding ||
         softwareVideoDecoder != settings.softwareVideoDecoder ||
         videoCodec != settings.videoCodec ||
+        galCompatibilityMode != settings.galCompatibilityMode ||
         fpsLimit != settings.fpsLimit ||
         bluetoothAddress != settings.bluetoothAddress ||
         bluetoothAnnounceSkip != BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode) ||

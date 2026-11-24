@@ -353,6 +353,9 @@
     <string name="auto_connecting_single_usb">正在自動連線至 USB 裝置…</string>
     <string name="video_codec">視訊編碼</string>
     <string name="video_codec_help">選擇手機傳送的影片格式。「自動」由應用程式從本車機可解碼的格式中選擇。H.265 在相同位元率下畫面較清晰。H.264 適用於所有解碼器。畫面卡頓或一直是黑的時候再變更。所選格式會從下次連線起生效。</string>
+    <string name="gal_compatibility_mode">相容模式 (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">只要求使用最初的通訊協定版本。下次連線時生效。</string>
+    <string name="gal_compatibility_mode_help">應用程式會向手機要求使用 GAL 6.1。如果手機上的 Android Auto 回覆的版本較舊，應用程式就會要求使用 1.6。這兩個版本支援較新的音訊、影片和顯示功能。只有在手機可以連線、但連線後運作不正常時，才開啟此模式。開啟後，應用程式會和先前版本一樣要求使用 GAL 1.2，並且無法使用上述功能。GAL 是投影通訊協定，不是 Android 系統或 Android Auto 應用程式的版本。下次連線時生效。</string>
     <string name="fps_limit">FPS 限制</string>
     <string name="fps_limit_help">本裝置向 Android Auto 要求的最高影格速率。60 的動態更流暢，但需要更多頻寬和解碼能力。如果畫面延遲或卡頓，請選擇 30。下次連線時生效。</string>
     <string name="save">儲存</string>

@@ -4,6 +4,7 @@ import android.os.Handler
 import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
+import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.CALLS_REAL_METHODS
@@ -27,6 +28,10 @@ class ApplicationSendReadinessTest {
                 field(transport, "ssl", ssl)
                 field(transport, "tlsWriter", writer)
                 field(transport, "sendHandler", handler)
+                field(transport, "galCompatibilityMode", true)
+                field(transport, "displaySettings", GalDisplaySettings(false, false, false))
+                field(transport, "presentationSession", AaPresentationSession())
+                field(transport, "aapVideo", mock<AapVideo>())
                 whenever(connection.isSingleMessage).thenReturn(true)
                 whenever(connection.isConnected).thenReturn(true)
                 // A complete VersionResponse carries major, minor and status after its type.
@@ -69,9 +74,10 @@ class ApplicationSendReadinessTest {
                     }
                     else it.getArgument<Int>(1)
                 }
-                val handshake = AapTransport::class.java.getDeclaredMethod("handshake", ProjectionConnection::class.java)
+                val handshake = AapTransport::class.java.getDeclaredMethod("handshake",
+                    ProjectionConnection::class.java, UsbRecoveryDevice::class.java)
                     .apply { isAccessible = true }
-                val success = handshake.invoke(transport, connection) as Boolean
+                val success = handshake.invoke(transport, connection, null) as Boolean
                 // Failed status writes must reach the admission boundary too; an earlier
                 // version/TLS failure would otherwise satisfy their expected false result.
                 assertEquals(versionResponse.size, responsePosition)

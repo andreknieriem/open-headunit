@@ -355,6 +355,9 @@
     <string name="auto_connecting_single_usb">Conectando automáticamente con el dispositivo USB…</string>
     <string name="video_codec">Códec de vídeo</string>
     <string name="video_codec_help">Elige el formato de vídeo que envía el móvil. Auto deja que la aplicación elija entre lo que esta unidad puede decodificar. H.265 da una imagen más nítida con la misma tasa de datos. H.264 funciona en todos los decodificadores. Cámbialo si la imagen se entrecorta o se queda negra. La elección se aplica desde la próxima conexión.</string>
+    <string name="gal_compatibility_mode">Modo de compatibilidad (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Solicita solo la versión original del protocolo. Se aplica en la próxima conexión.</string>
+    <string name="gal_compatibility_mode_help">La aplicación solicita al móvil GAL 6.1 y, si Android Auto en el móvil responde con una versión anterior, solicita 1.6. Esas versiones habilitan funciones más recientes de audio, vídeo y visualización. Activa este modo solo si el móvil se conecta, pero luego no funciona bien. En ese caso, la aplicación solicita GAL 1.2 como en las versiones anteriores, sin esas funciones. GAL es el protocolo de proyección, no la versión de Android ni la de la aplicación Android Auto. Se aplica en la próxima conexión.</string>
     <string name="fps_limit">Límite de FPS</string>
     <string name="fps_limit_help">La mayor velocidad de fotogramas que esta unidad pide a Android Auto. 60 da un movimiento más fluido, pero necesita más ancho de banda y potencia del decodificador. Elige 30 si la imagen se retrasa o se entrecorta. Se aplica en la próxima conexión.</string>
     <string name="save">Guardar</string>

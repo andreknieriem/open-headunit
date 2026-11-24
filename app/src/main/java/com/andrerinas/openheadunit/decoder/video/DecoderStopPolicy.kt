@@ -1,8 +1,7 @@
 package com.andrerinas.openheadunit.decoder.video
 
 /**
- * Decides whether a [VideoDecoder.stop] call ends the projection session or only tears the decoder
- * down while the phone keeps streaming.
+ * Decides which stream state a [VideoDecoder.stop] call retires.
  *
  * Some state describes the stream rather than the decoder instance. Surface teardown cannot
  * renegotiate the codec, so the pinned codec and parameter sets must survive it. Only a new
@@ -31,6 +30,11 @@ object DecoderStopPolicy {
     /** The projection activity was stopped (backgrounded); the AAP session is untouched. */
     const val REASON_ACTIVITY_STOPPED = "activity_stopped"
 
+    // These replace the bitstream (and its configuration), but not the projection connection.
+    internal const val REASON_GAL_START_REPLACED = "GAL media Start replaced"
+    internal const val REASON_GAL_SETUP_REPLACED_PREPARATION = "GAL Setup replaced pre-Start CSD"
+    internal const val REASON_GAL_PRE_START_CSD = "GAL pre-Start CSD"
+
     /** Prefix used by the decoder's own recovery restarts, which have never ended the session. */
     private const val RESTART_PREFIX = "restart"
 
@@ -47,10 +51,13 @@ object DecoderStopPolicy {
     fun isDecoderRestart(reason: String): Boolean = reason.startsWith(RESTART_PREFIX)
 
     /**
-     * True when [reason] means the phone has gone away and every piece of session state should be
-     * reset. False for the decoder's own restarts and for the surface lifecycle, where the stream
-     * outlives the decoder.
+     * True when the bitstream ends and its configuration must be reset, including a GAL media
+     * replacement on a live connection. Decoder restarts and surface changes keep the bitstream.
      */
     fun endsSession(reason: String): Boolean =
         !isDecoderRestart(reason) && reason !in SURFACE_LIFECYCLE_REASONS
+
+    internal fun replacesGalMediaStream(reason: String): Boolean =
+        reason == REASON_GAL_START_REPLACED || reason == REASON_GAL_SETUP_REPLACED_PREPARATION ||
+            reason == REASON_GAL_PRE_START_CSD
 }

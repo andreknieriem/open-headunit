@@ -680,6 +680,9 @@
     <string name="auto_connecting_single_usb">Menghubungkan otomatis ke perangkat USB…</string>
     <string name="video_codec">Kodek Video</string>
     <string name="video_codec_help">Memilih format video yang dikirim ponsel. Auto membiarkan aplikasi memilih dari yang bisa didekode unit ini. H.265 memberi gambar lebih tajam pada laju data yang sama. H.264 berfungsi di semua dekoder. Ubah jika gambar tersendat atau tetap hitam. Pilihan berlaku mulai koneksi berikutnya.</string>
+    <string name="gal_compatibility_mode">Mode kompatibilitas (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Hanya meminta versi awal protokol. Berlaku pada koneksi berikutnya.</string>
+    <string name="gal_compatibility_mode_help">Aplikasi meminta GAL 6.1 dari ponsel. Jika Android Auto di ponsel merespons dengan versi yang lebih lama, aplikasi meminta 1.6. Versi-versi tersebut mendukung fitur audio, video, dan tampilan yang lebih baru. Aktifkan mode ini hanya jika ponsel tersambung tetapi kemudian tidak berfungsi dengan semestinya. Aplikasi akan meminta GAL 1.2 seperti pada rilis sebelumnya, tanpa fitur-fitur tersebut. GAL adalah protokol proyeksi, bukan versi Android atau versi aplikasi Android Auto. Berlaku pada koneksi berikutnya.</string>
     <string name="fps_limit">Batas FPS</string>
     <string name="fps_limit_help">Frame rate tertinggi yang diminta unit ini dari Android Auto. Dengan 60, gerakan lebih mulus, tetapi butuh lebih banyak bandwidth dan daya decoder. Pilih 30 jika gambar tertinggal atau tersendat. Berlaku pada koneksi berikutnya.</string>
     <string name="save">Simpan</string>

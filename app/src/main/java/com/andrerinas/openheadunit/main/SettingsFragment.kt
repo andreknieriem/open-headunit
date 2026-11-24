@@ -197,6 +197,7 @@ class SettingsFragment : Fragment() {
     private var pendingForceSoftware by pending::forceSoftware
     private var pendingSoftwareVideoDecoder by pending::softwareVideoDecoder
     private var pendingVideoCodec by pending::videoCodec
+    private var pendingGalCompatibilityMode by pending::galCompatibilityMode
     private var pendingFpsLimit by pending::fpsLimit
     private var pendingBluetoothAddress by pending::bluetoothAddress
     private var pendingBluetoothAnnounceSkip by pending::bluetoothAnnounceSkip
@@ -650,6 +651,7 @@ class SettingsFragment : Fragment() {
         pendingForceSoftware?.let { if (it != settings.forceSoftwareDecoding) settings.forceSoftwareDecoding = it }
         pendingSoftwareVideoDecoder?.let { if (it != settings.softwareVideoDecoder) settings.softwareVideoDecoder = it }
         pendingVideoCodec?.let { if (it != settings.videoCodec) settings.videoCodec = it }
+        pendingGalCompatibilityMode?.let { if (it != settings.galCompatibilityMode) settings.galCompatibilityMode = it }
         pendingFpsLimit?.let { if (it != settings.fpsLimit) settings.fpsLimit = it }
         pendingBluetoothAddress?.let { if (it != settings.bluetoothAddress) settings.bluetoothAddress = it }
         pendingBluetoothAnnounceSkip?.let {
@@ -830,6 +832,7 @@ class SettingsFragment : Fragment() {
         requiresRestart = pendingResolution != settings.resolutionId ||
                           pendingVideoFitMode != settings.videoFitMode ||
                           pendingVideoCodec != settings.videoCodec ||
+                          pendingGalCompatibilityMode != settings.galCompatibilityMode ||
                           pendingFpsLimit != settings.fpsLimit ||
                           pendingDpi != settings.dpiPixelDensity ||
                           pendingPixelAspectRatioE4 != settings.pixelAspectRatioE4 ||
@@ -859,6 +862,7 @@ class SettingsFragment : Fragment() {
         requiresServiceRestart = pendingResolution != settings.resolutionId ||
                           pendingVideoFitMode != settings.videoFitMode ||
                           pendingVideoCodec != settings.videoCodec ||
+                          pendingGalCompatibilityMode != settings.galCompatibilityMode ||
                           pendingFpsLimit != settings.fpsLimit ||
                           pendingDpi != settings.dpiPixelDensity ||
                           pendingPixelAspectRatioE4 != settings.pixelAspectRatioE4 ||
@@ -1775,6 +1779,21 @@ class SettingsFragment : Fragment() {
             searchKeywords = "2.4 GHz band resolution fps limit hotspot wifi direct video",
             onCheckedChanged = { isChecked ->
                 pendingNarrowBandProfileCap = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // The protocol version the next connection requests; it restarts the service like the codec.
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "galCompatibilityMode",
+            nameResId = R.string.gal_compatibility_mode,
+            descriptionResId = R.string.gal_compatibility_mode_summary,
+            helpResId = R.string.gal_compatibility_mode_help,
+            isChecked = pendingGalCompatibilityMode ?: settings.galCompatibilityMode,
+            searchKeywords = "GAL protocol version 1.2 1.6 6.1 compatibility Android Auto",
+            onCheckedChanged = { isChecked ->
+                pendingGalCompatibilityMode = isChecked
                 checkChanges()
                 updateSettingsList()
             }

@@ -354,6 +354,9 @@
     <string name="auto_connecting_single_usb">Automatické připojování k USB zařízení…</string>
     <string name="video_codec">Video kodek</string>
     <string name="video_codec_help">Vybírá formát videa, který telefon posílá. Auto nechá aplikaci vybrat z toho, co toto autorádio umí dekódovat. H.265 dává ostřejší obraz při stejné datové rychlosti. H.264 funguje na každém dekodéru. Změňte ho, když obraz sekává nebo zůstává černý. Volba platí od dalšího připojení.</string>
+    <string name="gal_compatibility_mode">Režim kompatibility (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Vyžádá pouze původní verzi protokolu. Platí od dalšího připojení.</string>
+    <string name="gal_compatibility_mode_help">Aplikace od telefonu žádá GAL 6.1. Pokud Android Auto v telefonu odpoví starší verzí, aplikace požádá o 1.6. Tyto verze umožňují novější funkce zvuku, videa a zobrazení. Tento režim zapněte, jen když se telefon připojí, ale pak nefunguje správně. Aplikace pak stejně jako v dřívějších vydáních požádá o GAL 1.2, bez těchto funkcí. GAL je protokol projekce, nikoli verze systému Android nebo aplikace Android Auto. Platí od dalšího připojení.</string>
     <string name="fps_limit">Limit FPS</string>
     <string name="fps_limit_help">Nejvyšší snímková frekvence, kterou tato jednotka od Android Auto žádá. 60 dává plynulejší pohyb, ale potřebuje větší šířku pásma a výkon dekodéru. Pokud obraz zaostává nebo sekává, zvolte 30. Platí od dalšího připojení.</string>
     <string name="save">Uložit</string>

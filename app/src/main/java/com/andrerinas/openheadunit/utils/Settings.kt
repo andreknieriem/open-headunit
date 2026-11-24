@@ -1266,6 +1266,11 @@ class Settings(private val context: Context) {
         get() = prefs.getString("video-codec", "Auto")!!
         set(value) { prefs.edit().putString("video-codec", value).apply() }
 
+    /** Requests only GAL 1.2, as releases before negotiation did. Applies at the next connection. */
+    var galCompatibilityMode: Boolean
+        get() = prefs.getBoolean("gal-compatibility-mode", false)
+        set(value) { prefs.edit().putBoolean("gal-compatibility-mode", value).apply() }
+
     var fpsLimit: Int
         get() = prefs.getInt("fps-limit", 60)
         set(value) { prefs.edit().putInt("fps-limit", value).apply() }

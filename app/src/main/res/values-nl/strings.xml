@@ -353,6 +353,9 @@
     <string name="auto_connecting_single_usb">Automatisch verbinden met USB-apparaat…</string>
     <string name="video_codec">Videocodec</string>
     <string name="video_codec_help">Bepaalt het videoformaat dat de telefoon verstuurt. Auto laat de app kiezen uit wat dit apparaat kan decoderen. H.265 geeft een scherper beeld bij dezelfde datasnelheid. H.264 werkt op elke decoder. Wijzig dit als het beeld hapert of zwart blijft. De keuze geldt vanaf de volgende verbinding.</string>
+    <string name="gal_compatibility_mode">Compatibiliteitsmodus (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Vraagt alleen de oorspronkelijke protocolversie aan. Geldt bij de volgende verbinding.</string>
+    <string name="gal_compatibility_mode_help">De app vraagt GAL 6.1 aan bij de telefoon. Als Android Auto op de telefoon met een oudere versie antwoordt, vraagt de app 1.6 aan. Deze versies maken nieuwere functies voor audio, video en weergave mogelijk. Schakel deze modus alleen in als de telefoon wel verbinding maakt, maar daarna niet goed werkt. De app vraagt dan net als in eerdere releases GAL 1.2 aan, zonder die functies. GAL is het projectieprotocol, niet de versie van Android of van de Android Auto-app. Geldt bij de volgende verbinding.</string>
     <string name="fps_limit">FPS-limiet</string>
     <string name="fps_limit_help">De hoogste framerate die deze unit bij Android Auto aanvraagt. Met 60 is de beweging vloeiender, maar je hebt meer bandbreedte en decoderkracht nodig. Kies 30 als het beeld achterloopt of hapert. Geldt bij de volgende verbinding.</string>
     <string name="save">Opslaan</string>

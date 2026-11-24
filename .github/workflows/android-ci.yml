@@ -21,12 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -51,7 +51,7 @@ jobs:
           exit 1
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # github flavor only: the playstore flavor cannot compile because
       # VpnControl.kt lives solely in app/src/github. When that source-set
@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload debug APK
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-github-debug-apk
           path: app/build/outputs/apk/github/debug/*.apk
@@ -72,12 +72,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -88,13 +88,13 @@ jobs:
           packages: ''
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Robolectric fetches its Android jars (about 560 MB for SDK 28, 30, 34 and 35) from
       # Maven Central at test time, into ~/.m2, which setup-gradle does not cache. A failed
       # fetch fails whole test classes, so keep them between runs.
       - name: Cache Robolectric Android jars
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-${{ hashFiles('app/build.gradle.kts', 'app/src/test/resources/robolectric.properties') }}
@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload connection lifecycle diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: host-connection-diagnostics
           path: |
@@ -136,7 +136,7 @@ jobs:
 
       - name: Upload unit test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-report
           path: |
@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -198,12 +198,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -214,7 +214,7 @@ jobs:
           packages: ''
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # -PlintGate runs NewApi, InlinedApi, StringFormatMatches and StringFormatInvalid only,
       # and fails on any finding not in app/lint-baseline-gate.xml (see app/build.gradle.kts).
@@ -234,7 +234,7 @@ jobs:
 
       - name: Upload lint report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lint-gate-report
           path: app/build/reports/lint-results-githubDebug.*
@@ -246,12 +246,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Download debug APK
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: app-github-debug-apk
           path: apk
@@ -277,12 +277,12 @@ jobs:
         api-level: [16, 19, 21, 23]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Download debug APK
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: app-github-debug-apk
           path: apk
@@ -308,7 +308,7 @@ jobs:
 
       - name: Upload smoke logs
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-api-${{ matrix.api-level }}
           path: smoke/

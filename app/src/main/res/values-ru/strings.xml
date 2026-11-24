@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">Нажмите, чтобы вернуться к проекции</string>
     <string name="night_overlay_meters">%1$d м</string>
     <string name="night_overlay_kilometers">%1$.1f км</string>
+    <string name="night_overlay_kilometers_whole">%1$d км</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">налево</string>
     <string name="night_overlay_right">направо</string>

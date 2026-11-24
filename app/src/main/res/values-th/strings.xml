@@ -291,6 +291,7 @@
     <string name="night_overlay_dismiss">แตะเพื่อกลับไปยังการฉาย</string>
     <string name="night_overlay_meters">%1$d ม.</string>
     <string name="night_overlay_kilometers">%1$.1f กม.</string>
+    <string name="night_overlay_kilometers_whole">%1$d กม.</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">ซ้าย</string>
     <string name="night_overlay_right">ขวา</string>

@@ -21,6 +21,7 @@ import androidx.core.graphics.toColorInt
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.aap.NightOverlayDistance
 import com.andrerinas.openheadunit.aap.NightOverlayOptions
 import com.andrerinas.openheadunit.aap.NightOverlayRows
 import com.andrerinas.openheadunit.aap.NightOverlaySizes
@@ -318,22 +319,19 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Width in dp of the widest distance string ("888 m" or "88.8 km" in this app's formats) at a
-     * text size of 1 sp, with the distance's own font and the system font size. Measured at 100 sp
-     * for precision.
+     * Width in dp of the widest distance string at a text size of 1 sp, with the distance's own font
+     * and the system font size: the widest of each format of [NightOverlayDistance] ("888 m",
+     * "88.8 km", "888 km" in the device locale). Measured at 100 sp for precision.
      */
     private fun distanceWidthPerSp(density: Float): Float {
         val paint = TextPaint(distance.paint).apply {
             textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 100f, resources.displayMetrics)
         }
-        val widest = listOf(formatDistance(888), formatDistance(88_800)).maxOf { paint.measureText(it) }
+        val widest = listOf(888, 88_800, 888_000).map(::formatDistance).maxOf { paint.measureText(it) }
         return widest / 100f / density
     }
 
-    private fun formatDistance(meters: Int): String {
-        return if (meters < 1000) context.getString(R.string.night_overlay_meters, meters)
-        else context.getString(R.string.night_overlay_kilometers, meters / 1000.0)
-    }
+    private fun formatDistance(meters: Int): String = NightOverlayDistance.format(context, meters)
 
     private fun formatManeuverTime(seconds: Int): String {
         return if (seconds < 60) "$seconds s" else {

@@ -74,6 +74,7 @@
     <string name="night_overlay_dismiss">點一下返回投影</string>
     <string name="night_overlay_meters">%1$d 公尺</string>
     <string name="night_overlay_kilometers">%1$.1f 公里</string>
+    <string name="night_overlay_kilometers_whole">%1$d 公里</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">左</string>
     <string name="night_overlay_right">右</string>

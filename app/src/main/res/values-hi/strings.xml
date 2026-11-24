@@ -291,6 +291,7 @@
     <string name="night_overlay_dismiss">प्रोजेक्शन पर लौटने के लिए टैप करें</string>
     <string name="night_overlay_meters">%1$d मी</string>
     <string name="night_overlay_kilometers">%1$.1f किमी</string>
+    <string name="night_overlay_kilometers_whole">%1$d किमी</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">बाएँ</string>
     <string name="night_overlay_right">दाएँ</string>

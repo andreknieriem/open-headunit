@@ -1012,10 +1012,14 @@ class Settings(private val context: Context) {
             val ip = prefs.getString("soft-ap-last-ip", null) ?: return null
             val digest = prefs.getString("soft-ap-last-psk-digest", null) ?: return null
             val boot = prefs.getInt("soft-ap-ip-boot", -1).takeIf { it >= 0 }
-            return SoftApAddressRecord(ip, digest, boot, prefs.getBoolean("soft-ap-ip-spanned-boot", false))
+            return SoftApAddressRecord(
+                ip, digest, boot, prefs.getBoolean("soft-ap-ip-spanned-boot", false),
+                bssid = prefs.getString("soft-ap-ip-bssid", null),
+            )
         }
         set(value) {
             prefs.edit()
+                .putString("soft-ap-ip-bssid", value?.bssid)
                 .putString("soft-ap-last-ip", value?.ip)
                 .putString("soft-ap-last-psk-digest", value?.passphraseDigest)
                 .putInt("soft-ap-ip-boot", value?.bootCount ?: -1)

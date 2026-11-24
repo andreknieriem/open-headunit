@@ -67,7 +67,8 @@ class GalVideoOutputTimingTest {
         assertEquals(0L, bridge.admit(platformTiming = false))
 
         controller.update(Channel.ID_VID, 3, GalRuntimeOptions(avSync = av.copy(syncOffsetNs = -10)))
-        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = false))
+        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = false, hasReplacement = true))
+        assertEquals(0L, bridge.admit(platformTiming = false, hasReplacement = false))
     }
 
     @Test fun `runtime disable interrupts a legacy wait within one bounded slice`() {
@@ -84,6 +85,23 @@ class GalVideoOutputTimingTest {
         bridge.register(99, 0, now)
         assertEquals(0L, bridge.await(bridge.deadline(99)))
         assertEquals(1, slices)
+    }
+
+    @Test fun `full compressed queue interrupts software pacing without admitting retired output`() {
+        val controller = GalPresentationController()
+        controller.start(Channel.ID_VID, 3, GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(100_000_000, 200_000_000)))
+        var now = 1_000_000_000L
+        var full = false
+        val bridge = GalVideoOutputTiming(controller, 3, nanoTime = { now }, expediteWhenBacklogged = { full }) {
+            now += it
+            full = true
+        }
+        bridge.register(1, 0, now)
+        assertEquals(0L, bridge.await(bridge.deadline(1)))
+        assertEquals(1_000_000_000L + VideoPresentationWait.SLICE_NS, now)
+        assertEquals(0L, bridge.admit(platformTiming = false))
+        controller.stop(Channel.ID_VID, 3)
+        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = false))
     }
 
     @Test fun `retirement cancels wait and never leaks metadata to replacement`() {

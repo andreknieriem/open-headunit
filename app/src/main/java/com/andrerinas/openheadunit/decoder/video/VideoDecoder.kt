@@ -259,11 +259,15 @@ class VideoDecoder(
         presentationGeneration = 0L
     }
 
-    private fun newOutputTiming(allowRenderedFeedback: Boolean = surfaceKind.supportsRenderedFeedback(Build.VERSION.SDK_INT)): GalVideoOutputTiming {
+    private fun newOutputTiming(
+        allowRenderedFeedback: Boolean = surfaceKind.supportsRenderedFeedback(Build.VERSION.SDK_INT),
+        expediteWhenBacklogged: (() -> Boolean)? = null,
+    ): GalVideoOutputTiming {
         outputTiming?.retire()
         // Preflight/non-GAL decoding has no transport-owned presentation generation.
         return GalVideoOutputTiming(if (presentationGeneration == 0L) null else presentationController,
-            presentationGeneration, surfaceKind, feedbackAllowed = allowRenderedFeedback).also { outputTiming = it }
+            presentationGeneration, surfaceKind, feedbackAllowed = allowRenderedFeedback,
+            expediteWhenBacklogged = expediteWhenBacklogged).also { outputTiming = it }
     }
 
     // Visible dimensions (actual output once available, otherwise the configuration fallback).
@@ -1118,12 +1122,10 @@ class VideoDecoder(
     /**
      * Main entry point for decoding a video/control packet.
      *
-     * Reports nothing back to the caller, but may pace it: with the feed queue full this blocks
-     * the calling thread for up to [VideoFeedThrottlePolicy.WAIT_BUDGET_MS], which is what
-     * throttles the phone through its ack window - see [offerWithBackpressure]. A frame that
-     * outlasts even that wait is lost here, and once the picture is live the loss asks the phone
-     * for a keyframe - see [recordFrameDropped] for the shape of that ask and why it stays silent
-     * before the first rendered frame.
+     * Most backends pace video dispatch with its ACK held when the queue is full, for up to
+     * [VideoFeedThrottlePolicy.WAIT_BUDGET_MS]. Timed software output may be deliberately
+     * waiting for a deadline, so its enqueue never waits for a slot or retains wire credit.
+     * See [recordFrameDropped] for recovery after a real loss.
      */
     fun decode(buffer: ByteArray, offset: Int, size: Int, forceSoftware: Boolean, announcedCodec: CodecType,
                sourceTimeUs: Long? = null, receiverArrivalNs: Long = System.nanoTime()) {
@@ -1260,7 +1262,28 @@ class VideoDecoder(
         val generation = frame.generation
         val events = synchronized(outputPublicationLock) {
             if (!running || generation != decoderGeneration) return
-            if (frameQueue.offer(frame)) return
+            val queue = frameQueue
+            if (queue.offer(frame)) return
+            val isHevc = currentCodecType == CodecType.H265
+            if (VideoKeyframeScanner.isIdrAccessUnit(frame.data, frame.size, isHevc)) {
+                // Preserve the queued prefix, including configuration and any earlier keyframe.
+                // An IDR can cut the prediction chain at the tail; no surviving picture then
+                // depends on the evicted access unit. Don't infer the same for a HEVC CRA.
+                val tail = queue.lastOrNull()
+                if (tail != null && VideoKeyframeScanner.containsOnlyNonIdrSlices(tail.data, tail.size, isHevc)) {
+                    if (queue.offer(frame)) return
+                    if (queue.remove(tail)) {
+                        // Producers are serialized on the video dispatcher; the worker can only
+                        // remove entries. Recycle only after remove() transfers queue ownership.
+                        check(queue.offer(frame))
+                        recycleFrame(tail)
+                        framesDropped++
+                        return
+                    }
+                }
+                // The consumer may have polled the tail during inspection.
+                if (queue.offer(frame)) return
+            }
             recycleFrame(frame)
             OutputEvents("VideoDecoder.offerSoftwareFrame").also { recordFrameDropped(it) }
         }
@@ -1533,16 +1556,22 @@ class VideoDecoder(
             refreshPipelineSizing()
             AppLog.i("Configuring bundled FFmpeg ${type.displayName} decoder for ${width}x$height")
             val yuvFrameSink = softwareYuvFrameSink
-            val timing = newOutputTiming(allowRenderedFeedback = false)
+            val generation = decoderGeneration
+            val queue = frameQueue
+            // Stop intentionally waiting before the last slot fills, not after input is lost.
+            // This owner shares one worker between native decode and presentation.
+            val timing = newOutputTiming(allowRenderedFeedback = false, expediteWhenBacklogged = {
+                running && decoderGeneration == generation && frameQueue === queue &&
+                    queue.remainingCapacity() <= 1
+            })
             val decoder = FfmpegVideoDecoder(
                 codecType = type,
                 surface = if (yuvFrameSink == null) surface else null,
                 yuvFrameSink = yuvFrameSink,
                 width = width,
                 height = height,
-                beforeRender = FfmpegVideoDecoder.PresentationGate { pts, cleanKeyframe ->
-                    val planned = timing.await(timing.deadline(pts))
-                    if (planned == Long.MIN_VALUE && cleanKeyframe) timing.repairDeadline(pts)
+                beforeRender = FfmpegVideoDecoder.PresentationGate { pts ->
+                    timing.await(timing.deadline(pts))
                     val deadline = timing.admit(platformTiming = false)
                     val render = deadline != Long.MIN_VALUE
                     timing.releasing(pts, deadline, render)
@@ -1565,8 +1594,6 @@ class VideoDecoder(
             running = true
             startTime = System.nanoTime()
             codecTypePinned = true
-            val generation = decoderGeneration
-            val queue = frameQueue
             val worker = Thread { softwareFeedThreadLoop(decoder, timing, generation, queue) }
                 .apply { name = "VideoDecoder-Software" }
             feedThread = worker
@@ -2023,7 +2050,7 @@ class VideoDecoder(
             running = true
             clearFrameQueue()
             val timing = newOutputTiming()
-            if (surfaceKind.supportsRenderedFeedback(Build.VERSION.SDK_INT) && presentationController != null)
+            if (Build.VERSION.SDK_INT >= 23 && surfaceKind == VideoSurfaceKind.DIRECT_DISPLAY && presentationController != null)
                 VideoRenderedFeedbackApi23.install(codec!!, timing)
             val newOutputThread = Thread {
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY)
@@ -2547,17 +2574,19 @@ class VideoDecoder(
                         var render = outcome.renders &&
                             (timing?.controlsPresentation() == true || readyCount <= 2 || i == readyCount - 1)
                         var deadline = timing?.deadline(outputPts) ?: 0L
+                        val hasReplacement = i + 1 < readyCount && readyTimestamps[i + 1] > outputPts
                         // Texture/ImageReader targets do not promise to honor buffer timestamps.
                         // Pace availability on this cancellable output worker on every API level.
                         if (render && !platformTiming) deadline = timing?.await(deadline) ?: deadline
-                        if (render && deadline == Long.MIN_VALUE && repairEligible) {
+                        if (render && hasReplacement && deadline == Long.MIN_VALUE && repairEligible) {
                             deadline = timing?.repairDeadline(repairToken) ?: deadline
                         }
                         if (!running || outputThread !== self) break@outputLoop
-                        if (render) deadline = timing?.admit(platformTiming) ?: deadline
+                        if (render) deadline = timing?.admit(platformTiming, hasReplacement) ?: deadline
                         render = render && deadline != Long.MIN_VALUE
                         timing?.releasing(outputPts, deadline, render)
-                        if (render && deadline != 0L && platformTiming) {
+                        // Only direct-display admission returns a future deadline.
+                        if (render && deadline != 0L && Build.VERSION.SDK_INT >= 21) {
                             VideoTimedReleaseApi21.release(currentCodec, readyIndices[i], deadline)
                         } else currentCodec.releaseOutputBuffer(readyIndices[i], render)
                         releasedCount++

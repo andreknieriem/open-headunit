@@ -8,6 +8,7 @@ import com.andrerinas.openheadunit.connection.projection.LibusbProjectionConnect
 import com.andrerinas.openheadunit.connection.projection.AbstractUsbProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.Socket
 import org.junit.Assert.*
@@ -84,6 +85,38 @@ class VersionHandshakeFramingTest {
         }
     }
 
+    @Test fun `USB cannot negotiate from a response that started before the request`(): Unit =
+        mockStatic(SystemClock::class.java).use {
+            val current = reply(GalVersion(6, 1))
+            for (stale in listOf(reply(GalVersion(6, 2)), reply(GalVersion(1, 5), status = -1))) {
+                for (split in 1 until stale.size) {
+                    val stream = stale + current + tlsFrame
+                    val connection = mock(ProjectionConnection::class.java)
+                    `when`(connection.type).thenReturn(ProjectionConnection.Type.USB)
+                    `when`(connection.isConnected).thenReturn(true)
+                    var sent = false
+                    var position = 0
+                    `when`(connection.sendBlocking(any(), anyInt(), anyInt())).thenAnswer {
+                        sent = true
+                        it.getArgument<Int>(1)
+                    }
+                    `when`(connection.recvBlocking(any(), anyInt(), anyInt(), anyBoolean())).thenAnswer {
+                        val count = minOf(it.getArgument<Int>(1), (if (sent) stream.size else split) - position)
+                        stream.copyInto(it.getArgument<ByteArray>(0), 0, position, position + count)
+                        position += count
+                        count
+                    }
+                    val ssl = mock(AapSsl::class.java)
+                    val transport = transport(ssl, compatibility = false)
+                    run(transport, connection)
+                    verify(connection, times(1)).sendBlocking(any(), anyInt(), anyInt())
+                    verify(ssl).performHandshake(connection)
+                    assertEquals(GalVersion(6, 1), transport.negotiatedVersion!!.version)
+                    assertEquals(stale.size + current.size, position)
+                }
+            }
+        }
+
     @Test fun `continuous stale traffic cannot hold the pre-request drain indefinitely`() = mockStatic(SystemClock::class.java).use { clock ->
         var now = 0L
         clock.`when`<Long> { SystemClock.elapsedRealtime() }.thenAnswer { now }
@@ -117,14 +150,16 @@ class VersionHandshakeFramingTest {
     }
 
     /** Compatibility mode by default: these framing cases answer one 1.2 request with 1.7. */
-    private fun transport(ssl: AapSsl, compatibility: Boolean = true): AapTransport {
+    private fun transport(ssl: AapSsl, compatibility: Boolean = true,
+                          owner: AaPresentationSession = AaPresentationSession()): AapTransport {
         val transport = mock(AapTransport::class.java, CALLS_REAL_METHODS)
         fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(transport, value)
         field("ssl", ssl)
         field("galCompatibilityMode", compatibility)
+        field("lifecycleLock", Any())
         field("displaySettings", GalDisplaySettings(false, false, false))
-        field("presentationSession", AaPresentationSession())
+        field("presentationSession", owner)
         field("aapVideo", mock(AapVideo::class.java))
         field("presentationController", GalPresentationController())
         return transport
@@ -249,6 +284,69 @@ class VersionHandshakeFramingTest {
             verify(followingSsl).performHandshake(following)
         }
 
+    @Test fun `TCP silence consumes one opening and does not authorize a legacy retry`(): Unit =
+        mockStatic(SystemClock::class.java).use { clock ->
+            var now = 0L
+            clock.`when`<Long> { SystemClock.elapsedRealtime() }.thenAnswer { now }
+            val peer = tcpPeer("192.0.2.20", 53000)!!
+            val modern = request(GalVersion(6, 1))
+            val silent = versionConnection(byteArrayOf(), peer) { assertArrayEquals(modern, it) }
+            `when`(silent.recvBlocking(any(), anyInt(), anyInt(), anyBoolean())).thenAnswer {
+                now += it.getArgument<Int>(2)
+                0
+            }
+            val ssl = mock(AapSsl::class.java)
+            val failed = transport(ssl, compatibility = false)
+            run(failed, silent)
+            verify(silent, times(1)).sendBlocking(any(), anyInt(), anyInt())
+            verifyNoInteractions(ssl)
+            assertEquals(AapTransport.HandshakeFailure.PEER_SILENT, failed.lastHandshakeFailure)
+            assertEquals(10_000L, now)
+
+            val slowWrite = versionConnection(byteArrayOf(), peer) {
+                assertArrayEquals(modern, it)
+                now += 10_001L
+            }
+            val writeOverrun = transport(ssl, compatibility = false)
+            run(writeOverrun, slowWrite)
+            verify(slowWrite, never()).recvBlocking(any(), anyInt(), anyInt(), anyBoolean())
+            assertEquals(AapTransport.HandshakeFailure.OTHER, writeOverrun.lastHandshakeFailure)
+            verifyNoInteractions(ssl)
+
+            val resumed = versionConnection(reply(GalVersion(6, 2)), peer) { assertArrayEquals(modern, it) }
+            run(transport(ssl, compatibility = false), resumed)
+            verify(ssl).performHandshake(resumed)
+        }
+
+    @Test fun `TCP response completed after the opening deadline cannot start TLS or authorize a retry`(): Unit =
+        mockStatic(SystemClock::class.java).use { clock ->
+            var now = 0L
+            clock.`when`<Long> { SystemClock.elapsedRealtime() }.thenAnswer { now }
+            val peer = tcpPeer("192.0.2.21", 53000)!!
+            val modern = request(GalVersion(6, 1))
+            val ssl = mock(AapSsl::class.java)
+            for (response in listOf(reply(GalVersion(6, 2)), reply(GalVersion(1, 5), status = -1))) {
+                val connection = versionConnection(response, peer) { assertArrayEquals(modern, it) }
+                var position = 0
+                `when`(connection.recvBlocking(any(), anyInt(), anyInt(), anyBoolean())).thenAnswer {
+                    val count = it.getArgument<Int>(1)
+                    response.copyInto(it.getArgument<ByteArray>(0), 0, position, position + count)
+                    position += count
+                    if (position == response.size) now += it.getArgument<Int>(2) + 1L
+                    count
+                }
+                val failed = transport(ssl, compatibility = false)
+                run(failed, connection)
+                verifyNoInteractions(ssl)
+                assertNull(failed.galContract)
+                assertEquals(AapTransport.HandshakeFailure.OTHER, failed.lastHandshakeFailure)
+                verify(connection, times(1)).sendBlocking(any(), anyInt(), anyInt())
+            }
+            val next = versionConnection(reply(GalVersion(6, 2)), peer) { assertArrayEquals(modern, it) }
+            run(transport(ssl, compatibility = false), next)
+            verify(ssl).performHandshake(next)
+        }
+
     @Test fun `final exchange has a full deadline even after a slow opening reply`() =
         mockStatic(SystemClock::class.java).use { clock ->
             var now = 0L
@@ -355,9 +453,43 @@ class VersionHandshakeFramingTest {
             assertEquals(1, writes)
         }
 
-    private fun tcpPeer(remote: String, port: Int): GalVersionPolicy.Peer.Tcp? {
+    @Test fun `TLS completing on a retired owner cannot send AuthComplete`() = mockStatic(SystemClock::class.java).use {
+        val owner = AaPresentationSession()
+        val ssl = mock(AapSsl::class.java)
+        val connection = versionConnection(response) {}
+        `when`(ssl.performHandshake(connection)).thenAnswer { owner.retire(); true }
+        run(transport(ssl, owner = owner), connection)
+        verify(ssl).performHandshake(connection)
+        verify(connection, times(1)).sendBlocking(any(), anyInt(), anyInt())
+        Unit
+    }
+
+    @Test fun `identical link local addresses on different interfaces do not share refusal hints`() {
+        val bytes = InetAddress.getByName("fe80::42").address
+        val first = tcpPeer(Inet6Address.getByAddress(null, bytes, 3), 53000)!!
+        val other = tcpPeer(Inet6Address.getByAddress(null, bytes, 4), 53001)!!
+        val policy = GalVersionPolicy()
+        policy.noteRefusal(first, 0)
+        assertEquals(GalVersionPolicy.Opening.DEFAULT, policy.opening(false, other, 1))
+        assertEquals(GalVersionPolicy.Opening.PEER_REFUSAL, policy.opening(false, first, 2))
+    }
+
+    @Test fun `closed TCP socket is not a live handshake connection`() {
         val socket = mock(Socket::class.java)
-        `when`(socket.inetAddress).thenReturn(InetAddress.getByName(remote))
+        `when`(socket.inetAddress).thenReturn(InetAddress.getByName("192.0.2.22"))
+        val connection = SocketProjectionConnection(socket, mock(Context::class.java))
+        // Socket keeps isConnected=true after close if it was ever connected.
+        `when`(socket.isConnected).thenReturn(true)
+        assertTrue(connection.isConnected)
+        `when`(socket.isClosed).thenReturn(true)
+        assertFalse(connection.isConnected)
+    }
+
+    private fun tcpPeer(remote: String, port: Int) = tcpPeer(InetAddress.getByName(remote), port)
+
+    private fun tcpPeer(remote: InetAddress, port: Int): GalVersionPolicy.Peer.Tcp? {
+        val socket = mock(Socket::class.java)
+        `when`(socket.inetAddress).thenReturn(remote)
         `when`(socket.localAddress).thenReturn(InetAddress.getByName("192.0.2.1"))
         `when`(socket.port).thenReturn(port)
         `when`(socket.localPort).thenReturn(5277)

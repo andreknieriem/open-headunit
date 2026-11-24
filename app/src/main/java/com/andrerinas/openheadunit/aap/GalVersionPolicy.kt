@@ -1,7 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
-import java.net.InetAddress
 
 /**
  * Which version to request first and which profile a reply selects.
@@ -25,7 +24,7 @@ internal class GalVersionPolicy {
         // Socket routes are not durable phone identities. Only remember a live, direct endpoint
         // briefly, and distinguish an accepted socket's listener from an outgoing service.
         data class Tcp(
-            val local: InetAddress, val remote: InetAddress, val servicePort: Int, val inbound: Boolean
+            val local: String, val remote: String, val servicePort: Int, val inbound: Boolean
         ) : Peer
     }
 

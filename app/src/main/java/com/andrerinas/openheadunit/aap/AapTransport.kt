@@ -166,10 +166,8 @@ class AapTransport(
         NONE,
 
         /**
-         * The version exchange timed out on every attempt without the peer sending a single
-         * byte, and without any transport error of our own. The link is fine and the peer is
-         * simply not answering — on the WiFi head unit server path that means it is bound to
-         * an earlier connection and will stay that way until it is restarted.
+         * An opening VersionRequest was sent on a live link, but no response bytes or read
+         * error arrived within the version budget. This does not identify why the peer is quiet.
          */
         PEER_SILENT,
 
@@ -1156,7 +1154,7 @@ class AapTransport(
     internal fun startHandshake(connection: ProjectionConnection, usbIdentity: UsbRecoveryDevice?): Boolean {
         AppLog.i("Start Aap transport handshake for $connection")
         synchronized(lifecycleLock) {
-            if (closing || handshakeStarted) return false
+            if (closing || !presentationSession.isActive || handshakeStarted) return false
             handshakeStarted = true
             try {
                 this.connection = connection
@@ -1239,27 +1237,27 @@ class AapTransport(
 
     private fun handshake(connection: ProjectionConnection, usbIdentity: UsbRecoveryDevice?): Boolean {
         lastHandshakeFailure = HandshakeFailure.OTHER
+        // Logical retirement precedes physical disconnect. Do not start another handshake
+        // operation merely because the old socket or USB endpoint is still open.
+        fun ownerRetired() = closing || !presentationSession.isActive
+        fun retired() = ownerRetired() || !connection.isConnected
         try {
+            if (retired()) return false
             val isUsb = connection.type == ProjectionConnection.Type.USB
             // Increased delay for AA 16.4+ stability on USB - skip for Sockets
             if (isUsb) {
                 SystemClock.sleep(500)
             }
 
-            val peer = usbIdentity?.let(GalVersionPolicy::usbPeer)
-                ?: (connection as? SocketProjectionConnection)?.galVersionPeer()
-            val openingPlan = galVersionPolicy.opening(galCompatibilityMode, peer, SystemClock.elapsedRealtime())
-            val opening = openingPlan.profile
-            val requested = opening.version
-            val version = Messages.versionRequest(requested.major, requested.minor)
             var ret = -1
             var attempt = 0
             var received = false
             var versionFrameSize = 0
             var openingResponse: AapVersionNegotiation.Result? = null
-            // Separates "the peer is not answering" from "our own link broke". Only the first
-            // is worth reporting upwards: it is the one the user can do something about.
+            // Silence means an unanswered read on a live link, not a failed write, broken
+            // framing, or a version budget already exhausted before we could read.
             var peerSentBytes = false
+            var waitedForPeer = false
             var transportError = false
             var draining = isUsb
             var drained = 0
@@ -1267,11 +1265,13 @@ class AapTransport(
             // initial idle gap can split a stale packet; discarding its prefix loses alignment.
             val frames = HandshakeFrameReader(SystemClock::elapsedRealtime, if (isUsb) 100 else 1,
                 skipEncryptedFrames = true) { bytes, length, timeout ->
+                if (retired()) return@HandshakeFrameReader -1
                 val started = SystemClock.elapsedRealtime()
                 val count = connection.recvBlocking(bytes, length, timeout, false)
                 if (draining) {
                     if (count > 0) drained += count
                 } else {
+                    waitedForPeer = true
                     if (count > 0) peerSentBytes = true
                     if (HandshakeMessagePolicy.isReadError(count, SystemClock.elapsedRealtime() - started,
                             timeout, timeoutLooksLikeError = isUsb)) {
@@ -1282,12 +1282,12 @@ class AapTransport(
                 count
             }
             if (isUsb) {
-                // Discard complete old frames until the first idle read, at most 500 ms.
-                // The parser retains a partial header/body for the response window. Never
-                // drain TCP: its initial bytes may already belong to the new connection.
+                // Drain old frames until the first idle read, at most 500 ms. Finish any
+                // partial stale envelope later only for alignment, not as a reply to our
+                // request. Never drain TCP: its bytes belong to the new connection.
                 val drainDeadline = SystemClock.elapsedRealtime() + 500
                 try {
-                    while (connection.isConnected && frames.readFrame(drainDeadline, stopOnIdle = true) != null) {
+                    while (!retired() && frames.readFrame(drainDeadline, stopOnIdle = true) != null) {
                         // Complete cleartext frames predate our request; encrypted frames are
                         // skipped inside the reader using the same bounded wire lengths.
                     }
@@ -1299,32 +1299,37 @@ class AapTransport(
                     AppLog.i("Handshake: Discarding unframed USB data before version request")
                     frames.discardPendingFrame()
                     val discard = ByteArray(Messages.DEF_BUFFER_LENGTH)
-                    while (connection.isConnected && drainDeadline - SystemClock.elapsedRealtime() >= 100) {
+                    while (!retired() && drainDeadline - SystemClock.elapsedRealtime() >= 100) {
                         val n = try { connection.recvBlocking(discard, discard.size, 100, false) }
                             catch (_: Exception) { -1 }
                         if (n <= 0) break
                         drained += n
                     }
                 }
+                frames.skipPendingFrame()
                 if (drained > 0) {
                     AppLog.i("Handshake: Read $drained stale USB bytes before version request")
                 }
             }
             draining = false
+            if (retired()) return false
+            val peer = usbIdentity?.let(GalVersionPolicy::usbPeer)
+                ?: (connection as? SocketProjectionConnection)?.galVersionPeer()
+            val openingPlan = galVersionPolicy.opening(galCompatibilityMode, peer, SystemClock.elapsedRealtime())
+            val opening = openingPlan.profile
+            val requested = opening.version
+            val version = Messages.versionRequest(requested.major, requested.minor)
             AppLog.d("Handshake: Starting version request. TS: ${SystemClock.elapsedRealtime()}")
             // The first two receive windows allow 2 s each; the last uses the remaining
             // budget. Partial frames retain bytes without extending this overall deadline.
             val versionDeadline = SystemClock.elapsedRealtime() + HANDSHAKE_TIMEOUT_MS
             val versionRequests = HandshakeMessagePolicy.versionRequests(isUsb)
             AppLog.i("Handshake: GAL request=$requested${openingPlan.logSuffix}")
-            while (attempt < versionRequests && connection.isConnected) {
-                if (SystemClock.elapsedRealtime() >= versionDeadline) {
-                    AppLog.e("Handshake: Version exchange timed out after $attempt attempt(s).")
-                    return false
-                }
+            while (attempt < versionRequests && !retired()) {
+                val remaining = versionDeadline - SystemClock.elapsedRealtime()
+                if (remaining <= 0) break
                 attempt++
-                ret = connection.sendBlocking(version, version.size,
-                    minOf(2000L, versionDeadline - SystemClock.elapsedRealtime()).coerceAtLeast(1).toInt())
+                ret = connection.sendBlocking(version, version.size, minOf(2000L, remaining).toInt())
                 AppLog.d("Handshake: Version request sent. ret: $ret. attempt: $attempt. TS: ${SystemClock.elapsedRealtime()}")
                 if (ret != version.size) {
                     AppLog.w("Handshake: Version request send failed (ret=$ret), attempt $attempt")
@@ -1337,7 +1342,7 @@ class AapTransport(
                     // Never extend this to TLS records, short positive writes, or unknown/small
                     // endpoints (full-speed bulk endpoints can have an 8-byte packet size).
                     val packetSize = (connection as? AbstractUsbProjectionConnection)?.outMaxPacketSize ?: 0
-                    if (ret < 0 && isUsb && connection.isConnected && version.size <= packetSize &&
+                    if (ret < 0 && isUsb && !retired() && version.size <= packetSize &&
                         attempt < versionRequests && versionDeadline - SystemClock.elapsedRealtime() > 200) {
                         SystemClock.sleep(200)
                         continue
@@ -1365,16 +1370,22 @@ class AapTransport(
                         lastHandshakeFailure = HandshakeFailure.TRANSPORT_ERROR
                         throw e
                     } ?: break
+                    if (retired()) return false
+                    // A blocking read can return its last bytes after its allowance. The
+                    // short USB retry windows are soft; the opening stage budget is not.
+                    if (SystemClock.elapsedRealtime() >= versionDeadline) break
                     if (HandshakeMessagePolicy.isTerminalResponse(frame)) {
                         AppLog.e("Handshake: peer terminated version negotiation")
                         return false
                     }
                     if (HandshakeMessagePolicy.isLateVersionResponse(frame)) {
                         val negotiated = AapVersionNegotiation.parse(frame, frame.size)
-                        if (negotiated != null && GalVersionPolicy.isLegacyRefusal(opening, negotiated) &&
-                            !closing && presentationSession.isActive) {
+                        if (negotiated != null && GalVersionPolicy.isLegacyRefusal(opening, negotiated)) {
                             if (peer != null) {
-                                galVersionPolicy.noteRefusal(peer, SystemClock.elapsedRealtime())
+                                synchronized(lifecycleLock) {
+                                    if (retired()) return false
+                                    galVersionPolicy.noteRefusal(peer, SystemClock.elapsedRealtime())
+                                }
                                 AppLog.i("Handshake: GAL 1.2 available on the next retry of this peer")
                             } else {
                                 AppLog.i("Handshake: GAL peer has no usable retry identity; use the compatibility setting")
@@ -1398,36 +1409,24 @@ class AapTransport(
                              "(ch=$ch, type=0x${type.toString(16)}, len=${frame.size}). " +
                              "Waiting for VERSION_RESPONSE.")
                 }
-                if (received) break
+                if (received || retired() || SystemClock.elapsedRealtime() >= versionDeadline) break
                 AppLog.w("Handshake: No VERSION_RESPONSE within ${if (attempt < versionRequests) "2s" else "the handshake budget"} (attempt $attempt), ret=$ret")
-                SystemClock.sleep(200)
+                if (attempt < versionRequests) SystemClock.sleep(200)
             }
 
             if (!received) {
                 AppLog.e("Handshake: Version request/response failed after $attempt attempt(s). last ret: $ret")
                 lastHandshakeFailure = HandshakeMessagePolicy.versionFailure(peerSentBytes, transportError)
-                // A tunnel can retire before the first send, or between timed-out reads.
-                // Silence describes a live link on which a request was actually attempted.
-                if (lastHandshakeFailure == HandshakeFailure.PEER_SILENT && !(attempt > 0 && connection.isConnected)) {
+                if (lastHandshakeFailure == HandshakeFailure.PEER_SILENT && (!waitedForPeer || retired())) {
                     lastHandshakeFailure = HandshakeFailure.OTHER
                 }
                 if (lastHandshakeFailure == HandshakeFailure.PEER_SILENT) {
-                    AppLog.e(
-                        "Handshake: the peer accepted the connection and then sent nothing at all. " +
-                            "Our link is fine: every read timed out rather than failing. On the head " +
-                            "unit server path this is Android Auto's own side. It hands each accepted " +
-                            "connection to its car service and waits there with no timeout, so " +
-                            "restarting the server does not clear it. Force stop Android Auto on the " +
-                            "phone, and reboot it if that does not help."
-                    )
+                    AppLog.e("Handshake: no peer bytes arrived before the opening version deadline")
                 }
                 return false
             }
             val openingReply = checkNotNull(openingResponse)
             val selected = GalVersionPolicy.select(opening, openingReply.version)
-            // A reply can race retirement, which precedes the transport's own close: neither the
-            // final request nor TLS may follow on a connection that was already cancelled.
-            fun retired() = closing || !presentationSession.isActive || !connection.isConnected
             if (retired()) return false
             val session = if (selected == opening) GalSessionProfile(opening, openingReply) else {
                 // The phone keeps the last request before TLS, so a lower profile is requested
@@ -1443,6 +1442,7 @@ class AapTransport(
                     final.request(selected, finalDeadline, possibleOpeningReplies = attempt - 1)
                         .also { versionFrameSize = final.responseSize }
                 } catch (e: java.io.IOException) {
+                    if (ownerRetired()) return false
                     AppLog.e("Handshake: ${e.message}")
                     lastHandshakeFailure = HandshakeMessagePolicy.versionFailure(peerSentBytes,
                         transportError || final.transportFailed)
@@ -1460,9 +1460,10 @@ class AapTransport(
                 "active profile=${session.requestedVersion}, final peer=${session.finalResponse.version}, " +
                 "status=${session.finalResponse.statusName}")
             AppLog.i("Handshake: Version response recv ret: %d", versionFrameSize)
-            lastHandshakeFailure = HandshakeFailure.SSL
 
             AppLog.d("Handshake: Starting SSL handshake via performHandshake(). TS: ${SystemClock.elapsedRealtime()}")
+            if (retired()) return false
+            lastHandshakeFailure = HandshakeFailure.SSL
             if (!ssl.performHandshake(connection)) {
                 AppLog.e("Handshake: SSL performHandshake failed.")
                 return false
@@ -1481,6 +1482,7 @@ class AapTransport(
             AppLog.d("Handshake: SSL handshake complete. TS: ${SystemClock.elapsedRealtime()}")
             // Status = OK
             val status = Messages.statusOk
+            if (retired()) return false
             ret = connection.sendBlocking(status, status.size, 2000)
             AppLog.d("Handshake: Status OK sent. ret: $ret. TS: ${SystemClock.elapsedRealtime()}")
             if (ret != status.size || !tlsWriter.activate()) {

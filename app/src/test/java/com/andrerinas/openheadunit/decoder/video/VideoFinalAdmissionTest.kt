@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.decoder.video
 
+import android.app.Application
 import android.media.MediaCodec
 import com.andrerinas.openheadunit.aap.GalPresentationController
 import com.andrerinas.openheadunit.aap.GalRuntimeOptions
@@ -8,7 +9,12 @@ import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.kotlin.*
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class, sdk = [23])
 class VideoFinalAdmissionTest {
     private fun field(owner: Any, name: String) = owner.javaClass.getDeclaredField(name).apply { isAccessible = true }
     private val initial = GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(100_000_000, 250_000_000))
@@ -30,9 +36,7 @@ class VideoFinalAdmissionTest {
         }.whenever(timing).deadline(1)
         field(decoder, "codec").set(decoder, codec)
         field(decoder, "codecBufferInfo").set(decoder, MediaCodec.BufferInfo())
-        field(decoder, "surfaceKind").set(decoder, mock<VideoSurfaceKind> {
-            on { usesPlatformTiming(any()) } doReturn true
-        })
+        field(decoder, "surfaceKind").set(decoder, VideoSurfaceKind.DIRECT_DISPLAY)
         field(decoder, "outputTiming").set(decoder, timing)
         field(decoder, "running").set(decoder, true)
         field(decoder, "outputThread").set(decoder, Thread.currentThread())

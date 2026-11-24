@@ -14,6 +14,7 @@ internal class GalVideoOutputTiming(
     private val surfaceKind: VideoSurfaceKind = VideoSurfaceKind.UNKNOWN,
     private val nanoTime: Clock = Clock { System.nanoTime() },
     private val feedbackAllowed: Boolean = surfaceKind == VideoSurfaceKind.DIRECT_DISPLAY,
+    private val expediteWhenBacklogged: (() -> Boolean)? = null,
     private val sleepNs: Sleeper = Sleeper { Thread.sleep(it / 1_000_000L, (it % 1_000_000L).toInt()) },
 ) {
     fun interface Clock { fun read(): Long }
@@ -154,6 +155,7 @@ internal class GalVideoOutputTiming(
             val now = nanoTime.read()
             val slice = VideoPresentationWait.sliceNs(deadline, now)
             if (slice == 0L) return deadline
+            if (expediteWhenBacklogged?.invoke() == true) return 0L
             // Scheduler overshoot after an on-time wait is not a late decode. Use the
             // requested wake time for A/V lag, but reschedule using the live clock and policy.
             requestedWakeNs = now + slice
@@ -170,7 +172,7 @@ internal class GalVideoOutputTiming(
      * are outside both. Already admitted native work may finish after a control boundary.
      * A custom consumer retries a newly future deadline instead of attaching an inert stamp.
      */
-    fun admit(platformTiming: Boolean): Long {
+    fun admit(platformTiming: Boolean, hasReplacement: Boolean = false): Long {
         while (true) {
             val deadline = synchronized(this) {
                 if (!active || Thread.currentThread().isInterrupted) return Long.MIN_VALUE
@@ -183,12 +185,15 @@ internal class GalVideoOutputTiming(
                     if (matched) output!!.sourceTimeUs.takeUnless { it == Long.MIN_VALUE } else null,
                     if (matched) output!!.arrivalNs else Long.MIN_VALUE,
                     now,
-                    allowLateRepair = repairGranted && matched && now >= output!!.arrivalNs &&
-                        now - output.arrivalNs <= 1_000_000_000L,
+                    // Dropping the only decoded picture cannot bring the display closer to
+                    // audio: it just leaves an even older picture on screen.
+                    keepLateFrame = !hasReplacement || (repairGranted && matched && now >= output!!.arrivalNs &&
+                        now - output.arrivalNs <= 1_000_000_000L),
                     latenessCheckNs = minOf(now, requestedWakeNs),
                 )
             }
             if (platformTiming || deadline <= 0L) return deadline
+            if (expediteWhenBacklogged?.invoke() == true) return 0L
             await(deadline)
         }
     }

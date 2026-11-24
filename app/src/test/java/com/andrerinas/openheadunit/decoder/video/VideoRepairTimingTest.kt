@@ -47,16 +47,16 @@ class VideoRepairTimingTest {
         bridge.register(1, 0, now - 100_000_000)
         assertEquals(Long.MIN_VALUE, bridge.deadline(1))
         assertEquals(0L, bridge.repairDeadline(5))
-        assertEquals(0L, bridge.admit(platformTiming = true))
+        assertEquals(0L, bridge.admit(platformTiming = true, hasReplacement = true))
         bridge.register(2, 33_333, now - 100_000_000)
         assertEquals(Long.MIN_VALUE, bridge.deadline(2))
         assertEquals(Long.MIN_VALUE, bridge.repairDeadline(5))
-        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = true))
+        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = true, hasReplacement = true))
         bridge.register(3, 66_666, now - 999_999_999)
         assertEquals(Long.MIN_VALUE, bridge.deadline(3))
         assertEquals(0L, bridge.repairDeadline(6))
         now += 2
-        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = true))
+        assertEquals(Long.MIN_VALUE, bridge.admit(platformTiming = true, hasReplacement = true))
     }
 
     @Test fun `granted repair cannot cross an output replacement within the same Start`() {
@@ -71,7 +71,7 @@ class VideoRepairTimingTest {
         assertEquals(Long.MIN_VALUE, old.admit(platformTiming = true))
         replacement.register(1, 0, now - 100_000_000)
         assertEquals(Long.MIN_VALUE, replacement.deadline(1))
-        assertEquals(Long.MIN_VALUE, replacement.admit(platformTiming = true))
+        assertEquals(Long.MIN_VALUE, replacement.admit(platformTiming = true, hasReplacement = true))
     }
 
 }

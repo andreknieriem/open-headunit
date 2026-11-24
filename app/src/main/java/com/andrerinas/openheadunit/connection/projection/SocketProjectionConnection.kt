@@ -65,7 +65,7 @@ class SocketProjectionConnection(
     override val type = ProjectionConnection.Type.WIFI
 
     override val isConnected: Boolean
-        get() = transport.isConnected && !transportBroken
+        get() = transport.isConnected && !transport.isClosed && !transportBroken
 
     // Nearby exposes a synthetic loopback address for a remote phone. Retain the route on
     // this connection object so a later attempted endpoint cannot change session ownership.
@@ -81,7 +81,9 @@ class SocketProjectionConnection(
             local.isLoopbackAddress || remote.isLoopbackAddress) return null
         val servicePort = if (inbound) transport.localPort else transport.port
         if (servicePort <= 0) return null
-        return GalVersionPolicy.Peer.Tcp(local, remote, servicePort, inbound)
+        // Inet6Address.equals ignores the zone; identical link-local addresses on two
+        // interfaces must not share a refusal hint. The numeric address retains the scope.
+        return GalVersionPolicy.Peer.Tcp(local.hostAddress, remote.hostAddress, servicePort, inbound)
     }
 
     override val isSingleMessage: Boolean

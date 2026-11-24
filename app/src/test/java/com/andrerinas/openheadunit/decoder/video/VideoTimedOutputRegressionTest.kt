@@ -54,16 +54,28 @@ class VideoTimedOutputRegressionTest {
         } finally { decoder.stop("test cleanup") }
     }
 
-    @Test fun `startup renders late keyframe and delta frame but proves repair only after release`() {
+    @Test fun `late arrival does not discard startup repair or delta frames`() =
+        releaseLateBatch(syncToAudio = false)
+
+    @Test fun `late A-V batch skips superseded delta but presents repair and newest picture`() =
+        releaseLateBatch(syncToAudio = true)
+
+    private fun releaseLateBatch(syncToAudio: Boolean) {
         val now = 1_000_000_000L
         val decoder = VideoDecoder(mock<Settings> { on { fpsLimit } doReturn 30 }, elapsedRealtime = { 1_000L })
         val codec = mock<MediaCodec>()
         val controller = GalPresentationController()
-        controller.start(Channel.ID_VID, 1,
-            GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(9_000_000, 17_000_000)))
+        val options = GalRuntimeOptions(videoTiming = GalRuntimeOptions.VideoTiming(9_000_000, 17_000_000),
+            avSync = if (syncToAudio) GalRuntimeOptions.AvSync() else null)
+        controller.start(Channel.ID_VID, 1, options)
+        if (syncToAudio) {
+            controller.start(Channel.ID_AUD, 1, options)
+            controller.observeAudio(Channel.ID_AUD, 1, 300_000, now)
+        }
         val bridge = GalVideoOutputTiming(controller, 1, VideoSurfaceKind.TEXTURE_CONSUMER, { now }) { fail("late output must not wait") }
         bridge.register(1, 0, now - 162_000_000)
         bridge.register(2, 33_333, now - 117_000_000)
+        bridge.register(3, 66_666, now - 90_000_000)
         field(decoder, "codec").set(decoder, codec)
         field(decoder, "codecBufferInfo").set(decoder, MediaCodec.BufferInfo())
         field(decoder, "surfaceKind").set(decoder, VideoSurfaceKind.TEXTURE_CONSUMER)
@@ -78,12 +90,12 @@ class VideoTimedOutputRegressionTest {
         var next = 0
         whenever(codec.dequeueOutputBuffer(any(), any())).thenAnswer {
             val index = next++
-            if (index < 2) {
+            if (index < 3) {
                 (it.arguments[0] as MediaCodec.BufferInfo).presentationTimeUs = index + 1L
                 index
             } else {
                 // The first empty dequeue ends batching; the next occurs after guarded dispatch.
-                if (index >= 3) field(decoder, "running").set(decoder, false)
+                if (index >= 4) field(decoder, "running").set(decoder, false)
                 MediaCodec.INFO_TRY_AGAIN_LATER
             }
         }
@@ -97,9 +109,9 @@ class VideoTimedOutputRegressionTest {
         val loop = VideoDecoder::class.java.getDeclaredMethod("outputThreadLoop").apply { isAccessible = true }
         try {
             loop.invoke(decoder)
-            assertEquals(listOf(0 to true, 1 to true), releases)
+            assertEquals(listOf(0 to true, 1 to !syncToAudio, 2 to true), releases)
             assertTrue(tracker.keyframeDecoded)
-            assertEquals(2L, decoder.framesRenderedThisSession)
+            assertEquals(if (syncToAudio) 2L else 3L, decoder.framesRenderedThisSession)
             assertEquals(1, firstFrames)
         } finally { decoder.stop("test cleanup") }
     }

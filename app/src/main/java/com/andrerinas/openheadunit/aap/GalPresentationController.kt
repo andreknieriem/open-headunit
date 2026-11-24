@@ -221,16 +221,17 @@ internal class GalPresentationController {
      * Final submission reservation, serialized with Start/Stop/options. Already admitted
      * native work may complete after those boundaries; no monitor is held during I/O.
      * Missing frame metadata permits immediate output, never stale-generation output.
-     * The caller alone owns the bounded, matching repair proof for an A/V lag drop.
+     * The output worker knows whether a newer decoded picture is ready and whether this
+     * one is a repair candidate. Neither can override a retired generation or output.
      */
     @Synchronized fun admitVideo(generation: Long, outputEpoch: Long, sourceTimeUs: Long?,
-                                  arrivalNs: Long, nowNs: Long, allowLateRepair: Boolean = false,
+                                  arrivalNs: Long, nowNs: Long, keepLateFrame: Boolean = false,
                                   latenessCheckNs: Long = nowNs): Long {
         matching(Channel.ID_VID, generation) ?: return DROP
         if (outputEpoch == 0L || outputEpoch != videoOutputEpoch) return DROP
         if (arrivalNs == NONE) return 0
         val deadline = videoReleaseTimeNs(generation, sourceTimeUs, arrivalNs, nowNs, latenessCheckNs)
-        return if (deadline == DROP && allowLateRepair) 0 else deadline
+        return if (deadline == DROP && keepLateFrame) 0 else deadline
     }
 
     /** Absolute deadline, 0 immediate, or DROP. Never holds the transport reader/ACK. */

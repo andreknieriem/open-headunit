@@ -15,7 +15,7 @@ class FfmpegVideoDecoder(
     private val height: Int,
     private val beforeRender: PresentationGate? = null
 ) {
-    fun interface PresentationGate { fun beforeRender(presentationTimeUs: Long, cleanKeyframe: Boolean): Boolean }
+    fun interface PresentationGate { fun beforeRender(presentationTimeUs: Long): Boolean }
     private var nativeHandle: Long = 0
     // Both callbacks run synchronously on the same decoder worker, for one AVFrame at a time.
     private var submissionSequence = 0L
@@ -96,11 +96,11 @@ class FfmpegVideoDecoder(
      */
     @Keep
     @Suppress("unused")
-    private fun onNativeBeforeRender(presentationTimeUs: Long, cleanKeyframe: Boolean): Boolean {
+    private fun onNativeBeforeRender(presentationTimeUs: Long): Boolean {
         // Reserve before checking ownership: an admitted old worker may be delayed in native
         // conversion, but it must never acquire a sequence newer than its replacement.
         submissionSequence = yuvFrameSink?.reserveFrameSequence() ?: 0L
-        return beforeRender?.beforeRender(presentationTimeUs, cleanKeyframe) ?: true
+        return beforeRender?.beforeRender(presentationTimeUs) ?: true
     }
 
     @Keep

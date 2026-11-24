@@ -49,7 +49,7 @@ public:
         jclass callbackClass = env->GetObjectClass(decoderCallback);
         onOutputSizeMethod = env->GetMethodID(callbackClass, "onNativeOutputSize", "(II)V");
         if (!env->ExceptionCheck()) {
-            onBeforeRenderMethod = env->GetMethodID(callbackClass, "onNativeBeforeRender", "(JZ)Z");
+            onBeforeRenderMethod = env->GetMethodID(callbackClass, "onNativeBeforeRender", "(J)Z");
         }
         if (useYuvCallback && !env->ExceptionCheck()) {
             onYuvFrameMethod = env->GetMethodID(
@@ -201,16 +201,12 @@ private:
             }
             const int width = frame->width > 0 ? frame->width : codecContext->width;
             const int height = frame->height > 0 ? frame->height : codecContext->height;
-            const bool cleanKeyframe = (frame->flags & AV_FRAME_FLAG_KEY) != 0 &&
-                (frame->flags & AV_FRAME_FLAG_CORRUPT) == 0 && frame->decode_error_flags == 0;
-            // Decode references even for late pictures. A clean keyframe may establish recovery
-            // under the receiver's bounded startup/repair grant; other late pictures are withheld.
-            // This callback runs on the dedicated software worker, not the socket/ACK owner.
+            // Presentation admission never changes FFmpeg's decoded reference state. This
+            // callback runs on the dedicated software worker, not the socket/ACK owner.
             // A true result is a final output-epoch reservation. Retirement does not revoke
             // this in-flight native operation; no presentation-policy lock crosses JNI.
             const jboolean present = env->CallBooleanMethod(callback, onBeforeRenderMethod,
-                                                            static_cast<jlong>(frame->pts),
-                                                            cleanKeyframe ? JNI_TRUE : JNI_FALSE);
+                                                            static_cast<jlong>(frame->pts));
             if (env->ExceptionCheck()) {
                 av_frame_unref(frame);
                 return -6;
@@ -232,7 +228,8 @@ private:
                 reportedWidth = width;
                 reportedHeight = height;
             }
-            renderedKeyframe |= cleanKeyframe;
+            renderedKeyframe |= (frame->flags & AV_FRAME_FLAG_KEY) != 0 &&
+                (frame->flags & AV_FRAME_FLAG_CORRUPT) == 0 && frame->decode_error_flags == 0;
             rendered++;
             av_frame_unref(frame);
         }

@@ -1,6 +1,8 @@
 # Changelog
 ### 4.1.0-beta1
 - Video: show late map frames immediately instead of dropping them when wireless transfer exhausts the GAL pacing window, thanks to @o-jcardenass
+- Video: show the newest decoded picture even when video falls behind audio. Under load, the bundled FFmpeg decoder stops pacing before its input queue fills and makes room for recovery frames without discarding queued codec configuration.
+- Connection: ignore USB version replies that started before the opening request and reject replies completed after the negotiation deadline.
 - Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
 - Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
 - Allow embedding the projection activity, thanks to @codepdbh

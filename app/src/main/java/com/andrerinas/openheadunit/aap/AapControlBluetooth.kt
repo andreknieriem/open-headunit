@@ -16,19 +16,24 @@ internal class AapControlBluetooth(
     private val send: (AapMessage, () -> Boolean) -> Unit,
     private val worker: ExecutorService = Executors.newSingleThreadExecutor { task -> Thread(task, "GalBluetooth") },
     private val handsFree: GalHandsFreeLink = GalHandsFreeLink(),
-    private val lookup: (Bluetooth.BluetoothPairingRequest, String?) -> GalBluetoothPairing.Result = { request, address ->
+    private val lookup: (Bluetooth.BluetoothPairingRequest, String?) -> GalBluetoothPairing.Result = lookup@{ request, address ->
+        if (!BluetoothHelper.canReadPairedDevices(context))
+            return@lookup GalBluetoothPairing.Result(Common.MessageStatus.STATUS_BLUETOOTH_UNAVAILABLE)
         val adapter = BluetoothHelper.getBluetoothAdapter(context)
-        // Only this adapter's address ties its bond database to the advertised radio.
-        // Global vendor properties may describe a separate module.
-        val local = adapter?.address
-        val enabled = adapter?.isEnabled == true
-        val bonded = adapter?.bondedDevices?.map { it.address }?.toSet() ?: emptySet()
-        val matchingRadio = enabled && GalBluetoothPairing.validAddress(local) &&
-            local.equals(address, ignoreCase = true)
-        val peers = if (matchingRadio && bonded.any { it.equals(request.phoneAddress, true) })
-            handsFree.connectedPhones(context, checkNotNull(adapter)) else null
-        GalBluetoothPairing.response(request.phoneAddress, request.pairingMethod, address,
-            local, enabled, bonded, peers)
+        // Do not consult another radio's bonds when our address is hidden or mismatched.
+        val local = BluetoothHelper.adapterAddress(adapter)
+        try {
+            val enabled = adapter?.isEnabled == true
+            val matching = enabled && GalBluetoothPairing.validAddress(local) && local.equals(address, true)
+            val bonded = if (matching) adapter!!.bondedDevices.map { it.address }.toSet() else emptySet()
+            val peers = if (bonded.any { it.equals(request.phoneAddress, true) })
+                handsFree.connectedPhones(context, checkNotNull(adapter)) else null
+            GalBluetoothPairing.response(request.phoneAddress, request.pairingMethod, address,
+                local, enabled, bonded, peers)
+        } catch (_: SecurityException) {
+            // A permission can be revoked between the check and a Bluetooth Binder call.
+            GalBluetoothPairing.Result(Common.MessageStatus.STATUS_BLUETOOTH_UNAVAILABLE)
+        }
     }
 ) : AapControl {
     @Volatile private var advertisedAddress: String? = null

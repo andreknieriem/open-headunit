@@ -1392,7 +1392,7 @@
     <string name="native_driver_selection_mode_off">غير مفعَّل</string>
     <string name="native_driver_selection_mode_auto">تلقائي</string>
     <string name="native_driver_selection_mode_always">السؤال دائمًا</string>
-    <string name="native_driver_selection_help">يحدد متى يسأل التطبيق عن الهاتف المراد استخدامه. غير مفعَّل: لا يسأل أبدًا، ويتصل زر WiFi بالهاتف الأرجح. تلقائي: يسأل فقط عند اقتران أكثر من هاتف. إذا كان هناك هاتف واحد متصل عبر Bluetooth، أو هاتف واحد معروف، يستخدمه. السؤال دائمًا: يسأل عند كل تشغيل مع اقتران أكثر من هاتف. الهاتف الأرجح هو المتصل، ثم أول هاتف في «هواتف Android Auto اللاسلكي»، ثم آخر هاتف استُخدم.</string>
+    <string name="native_driver_selection_help">يحدد متى يسأل التطبيق عن الهاتف المراد استخدامه. غير مفعَّل: لا يسأل أبدًا، ويتصل زر WiFi بالهاتف الأرجح. تلقائي: يسأل فقط عند اقتران أكثر من هاتف. إذا كان هناك هاتف واحد متصل عبر Bluetooth، أو هاتف واحد معروف، يستخدمه. السؤال دائمًا: يسأل عند كل تشغيل مع اقتران أكثر من هاتف. وما دامت القائمة مفتوحة، لا يتصل أي هاتف حتى تختار هاتفًا أو ينتهي العد التنازلي. إذا كان هاتفان متصلين، فالهاتف الأرجح هو الأعلى في قائمة الهواتف.</string>
     <string name="native_driver_selection_timeout">العد التنازلي للاتصال التلقائي</string>
     <string name="native_driver_selection_timeout_help">عندما تُفتح قائمة السائقين، تعد تنازليًا ثم تتصل بالهاتف الأرجح. هذا يحدد العد التنازلي، من 3 إلى 30 ثانية. المس هاتفًا قبل النهاية لتختاره بنفسك.</string>
     <string name="switch_driver">تبديل الهاتف</string>
@@ -1409,7 +1409,7 @@
     <string name="auto_disconnect_bt_label">قطع الاتصال التلقائي عبر البلوتوث</string>
     <string name="select_bt_disconnect_device">حدد جهاز البلوتوث لمراقبته</string>
     <string name="native_phones_label">هواتف Android Auto اللاسلكي</string>
-    <string name="native_phones_help">في وضع Native Android Auto، تُوقظ هذه الوحدة Android Auto على الهاتف. تتصل لحظة بملف Bluetooth للاتصال بدون استخدام اليدين في الهاتف، ثم يبدأ الهاتف إعداده اللاسلكي. رتّب هواتفك بالترتيب الذي تريد تجربته. الهاتف الأول هو الهاتف المفضل. يليه الهاتف الذي اتصل سابقًا، ثم كل هاتف مقترن آخر.</string>
+    <string name="native_phones_help">في وضع Native Android Auto، تُوقظ هذه الوحدة Android Auto على الهاتف عبر ملف Bluetooth للاتصال بدون استخدام اليدين في الهاتف. رتّب هواتفك بالترتيب الذي تريد تجربته. الهاتف الأول هو الهاتف المفضل. يليه الهاتف الذي اتصل سابقًا، ثم كل هاتف مقترن آخر. تحدد القائمة أيضًا أي هاتف يتصل أولًا. ما دام هاتف أعلى في القائمة متصلًا عبر Bluetooth، ينتظر الهاتف الأدنى أو غير المدرج حتى 20 ثانية.</string>
     <string name="native_phones_all">يتم إيقاظ كل هاتف مقترن، بدءًا بالأحدث</string>
     <string name="native_phones_edit">تعديل الهواتف</string>
     <string name="native_phones_empty_message">لا يوجد أي هاتف في القائمة. يتم إيقاظ كل هاتف مقترن، بدءًا بالأحدث.</string>

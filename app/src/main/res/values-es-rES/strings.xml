@@ -1403,7 +1403,7 @@
     <string name="native_driver_selection_mode_off">Desactivado</string>
     <string name="native_driver_selection_mode_auto">Automático</string>
     <string name="native_driver_selection_mode_always">Preguntar siempre</string>
-    <string name="native_driver_selection_help">Elige cuándo la app pregunta qué móvil usar. Desactivado: nunca pregunta, y el botón WiFi conecta el móvil más probable. Automático: pregunta solo cuando hay más de un móvil emparejado. Si hay un móvil conectado por Bluetooth, o solo uno conocido, usa ese. Preguntar siempre: pregunta en cada inicio con más de un móvil emparejado. El más probable es el conectado, luego el primero de «Móviles para Android Auto inalámbrico» y luego el último usado.</string>
+    <string name="native_driver_selection_help">Elige cuándo la app pregunta qué móvil usar. Desactivado: nunca pregunta, y el botón WiFi conecta el móvil más probable. Automático: pregunta solo cuando hay más de un móvil emparejado. Si hay un móvil conectado por Bluetooth, o solo uno conocido, usa ese. Preguntar siempre: pregunta en cada inicio con más de un móvil emparejado. Mientras la lista está abierta, ningún móvil se conecta hasta que elijas uno o termine la cuenta atrás. Si hay dos móviles conectados, el más probable es el que está más arriba en la lista de móviles.</string>
     <string name="native_driver_selection_timeout">Cuenta atrás de conexión automática</string>
     <string name="native_driver_selection_timeout_help">Cuando se abre la lista de conductores, hace una cuenta regresiva y luego se conecta al móvil más probable. Esto define la cuenta regresiva, de 3 a 30 segundos. Pulsa un móvil antes del final para elegirlo tú.</string>
     <string name="switch_driver">Cambiar de teléfono</string>
@@ -1420,7 +1420,7 @@
     <string name="auto_disconnect_bt_label">Desconexión automática con Bluetooth</string>
     <string name="select_bt_disconnect_device">Selecciona el dispositivo Bluetooth que supervisar</string>
     <string name="native_phones_label">Móviles para Android Auto inalámbrico</string>
-    <string name="native_phones_help">En el modo Native Android Auto, esta unidad activa Android Auto en el móvil. Se conecta un momento al perfil de manos libres Bluetooth del móvil, y después el móvil inicia su configuración inalámbrica. Ordena tus móviles en el orden en que quieres que se prueben. El primero es el móvil preferido. Después se prueba un móvil que ya se haya conectado antes y, por último, cada uno de los demás móviles emparejados.</string>
+    <string name="native_phones_help">En el modo Native Android Auto, esta unidad activa Android Auto en el móvil mediante el perfil de manos libres Bluetooth del móvil. Ordena tus móviles en el orden en que quieres que se prueben. El primero es el móvil preferido. Después se prueba un móvil que ya se haya conectado antes y, por último, cada uno de los demás móviles emparejados. La lista también decide qué móvil se conecta primero. Mientras un móvil más arriba en la lista está conectado por Bluetooth, un móvil más abajo o que no está en la lista espera hasta 20 segundos.</string>
     <string name="native_phones_all">Se activa cada móvil emparejado, el más reciente primero</string>
     <string name="native_phones_edit">Editar móviles</string>
     <string name="native_phones_empty_message">No hay ningún móvil en la lista. Se activa cada móvil emparejado, el más reciente primero.</string>

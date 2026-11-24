@@ -1385,7 +1385,7 @@
     <string name="native_driver_selection_mode_off">사용 중지</string>
     <string name="native_driver_selection_mode_auto">자동</string>
     <string name="native_driver_selection_mode_always">항상 묻기</string>
-    <string name="native_driver_selection_help">앱이 어떤 휴대전화를 사용할지 묻는 시점을 선택합니다. 사용 중지: 묻지 않으며 WiFi 버튼이 가장 가능성이 높은 휴대전화에 연결합니다. 자동: 페어링된 휴대전화가 여러 대일 때만 묻습니다. 블루투스로 연결된 휴대전화가 한 대이거나 알려진 휴대전화가 한 대뿐이면 그 휴대전화를 사용합니다. 항상 묻기: 페어링된 휴대전화가 여러 대이면 시작할 때마다 묻습니다. 연결된 휴대전화, “무선 Android Auto용 휴대전화”의 첫 번째 휴대전화, 마지막으로 사용한 휴대전화 순으로 가능성이 높습니다.</string>
+    <string name="native_driver_selection_help">앱이 어떤 휴대전화를 사용할지 묻는 시점을 선택합니다. 사용 중지: 묻지 않으며, WiFi 버튼이 가장 가능성이 높은 휴대전화에 연결합니다. 자동: 페어링된 휴대전화가 여러 대일 때만 묻습니다. 블루투스로 연결된 휴대전화가 한 대이거나 알려진 휴대전화가 한 대뿐이면 그 휴대전화를 사용합니다. 항상 묻기: 페어링된 휴대전화가 여러 대이면 시작할 때마다 묻습니다. 목록이 열려 있는 동안에는 휴대전화를 선택하거나 카운트다운이 끝날 때까지 어떤 휴대전화도 연결되지 않습니다. 두 대가 연결되어 있으면 휴대전화 목록에서 더 위에 있는 휴대전화가 가장 가능성이 높습니다.</string>
     <string name="native_driver_selection_timeout">자동 연결 카운트다운</string>
     <string name="native_driver_selection_timeout_help">운전자 목록이 열리면 카운트다운이 시작되고, 끝나면 가장 가능성이 높은 휴대전화에 연결합니다. 이 카운트다운을 3초에서 30초 사이로 설정합니다. 끝나기 전에 휴대전화를 탭하면 직접 선택할 수 있습니다.</string>
     <string name="switch_driver">휴대전화 전환</string>
@@ -1402,7 +1402,7 @@
     <string name="auto_disconnect_bt_label">블루투스 연결 해제 시 Android Auto 종료</string>
     <string name="select_bt_disconnect_device">연결 상태를 확인할 블루투스 기기 선택</string>
     <string name="native_phones_label">무선 Android Auto용 휴대전화</string>
-    <string name="native_phones_help">Native Android Auto 모드에서는 이 기기가 휴대전화의 Android Auto를 깨웁니다. 휴대전화의 블루투스 핸즈프리 프로필에 잠시 연결하면, 휴대전화가 무선 설정을 시작합니다. 시도할 순서대로 휴대전화를 나열하세요. 첫 번째 휴대전화가 우선 연결할 휴대전화입니다. 그다음 이전에 연결된 적 있는 휴대전화, 이어서 페어링된 나머지 휴대전화를 차례로 시도합니다.</string>
+    <string name="native_phones_help">Native Android Auto 모드에서는 이 기기가 휴대전화의 블루투스 핸즈프리 프로필을 통해 휴대전화의 Android Auto를 깨웁니다. 시도할 순서대로 휴대전화를 나열하세요. 첫 번째 휴대전화가 우선 연결할 휴대전화입니다. 그다음 이전에 연결된 적 있는 휴대전화, 이어서 페어링된 나머지 휴대전화를 차례로 시도합니다. 이 목록은 어떤 휴대전화가 먼저 연결될지도 정합니다. 목록에서 더 위에 있는 휴대전화가 블루투스로 연결되어 있는 동안, 더 아래에 있거나 목록에 없는 휴대전화는 최대 20초 기다립니다.</string>
     <string name="native_phones_all">페어링된 모든 휴대전화를 최근 순으로 깨웁니다</string>
     <string name="native_phones_edit">휴대전화 편집</string>
     <string name="native_phones_empty_message">목록에 휴대전화가 없습니다. 페어링된 모든 휴대전화를 최근 순으로 깨웁니다.</string>

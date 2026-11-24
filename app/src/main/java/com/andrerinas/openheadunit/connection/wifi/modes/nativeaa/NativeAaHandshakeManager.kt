@@ -70,6 +70,7 @@ import java.io.DataInputStream
 import java.io.OutputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.atomic.AtomicStampedReference
 
 /**
@@ -508,6 +509,10 @@ class NativeAaHandshakeManager(
     @Volatile private var gateRefusalCount = 0
     @Volatile private var lastRefusedMac: String? = null
     @Volatile private var refusalSpokenAt = 0L
+    /** Last dial of each listed phone, so a lower phone can tell a higher one is still trying. */
+    private val listDialSeenAt = ConcurrentHashMap<String, Long>()
+    /** The Phones list hold. Written only by compareAndSet, so a dial that read it before a clear cannot write it back. */
+    private val listHold = AtomicReference(NativeDriverSelectionPolicy.ListHoldState())
     /** Phones of the plan that refused the hands-free link, so the loop asks them at the slow gap too. */
     private val planRefusals = ConcurrentHashMap<String, HandsFreeRefusalPolicy.RefusingPick>()
 
@@ -626,6 +631,7 @@ class NativeAaHandshakeManager(
         driverSwitchStartedAt = SystemClock.elapsedRealtime()
         clearChosenDriver()
         clearGateRefusals()
+        clearListHold()
     }
 
     /**
@@ -674,7 +680,14 @@ class NativeAaHandshakeManager(
         clearChosenDriver()
         clearDriverSwitch()
         clearGateRefusals()
+        clearListHold()
         planRefusals.clear()
+    }
+
+    /** Forgets the dials and the hold of the Phones list, so the next arming starts clean. */
+    private fun clearListHold() {
+        listDialSeenAt.clear()
+        listHold.set(NativeDriverSelectionPolicy.ListHoldState())
     }
 
     /** The switch is over, however it ended. */
@@ -744,6 +757,10 @@ class NativeAaHandshakeManager(
      */
     fun shouldAcceptHandshake(remoteAddress: String): Boolean {
         val now = SystemClock.elapsedRealtime()
+        // Recorded before any refusal, so a higher phone the prompt turns away still counts as here.
+        if (remoteAddress.isNotEmpty() && settings.nativePhonesList.any { it.equals(remoteAddress, ignoreCase = true) }) {
+            listDialSeenAt[remoteAddress.uppercase()] = now
+        }
         if (isSelectionCanceled) {
             if (now - selectionCanceledAt < NativeDriverSelectionPolicy.CANCEL_REFUSAL_MS) {
                 return refuseAtGate(
@@ -796,9 +813,115 @@ class NativeAaHandshakeManager(
                 remoteAddress,
                 "NativeAA: $remoteAddress is the phone this switch moved away from, so it is not let back in yet."
             )
-            NativeDriverSelectionPolicy.SwitchGate.ACCEPT -> clearGateRefusals(logSummary = true)
+            NativeDriverSelectionPolicy.SwitchGate.ACCEPT -> {
+                if (holdForHigherPhone(remoteAddress, now)) return false
+                clearGateRefusals(logSummary = true)
+            }
         }
         return true
+    }
+
+    /**
+     * A lower or unlisted phone waits while a higher phone of the Phones list is linked, dialling
+     * or connecting. Refused here, not held on a socket; the phone redials and gets in after the
+     * ceiling. Returns true when it refuses, and says so once at the start and once at the end.
+     */
+    private fun holdForHigherPhone(remoteAddress: String, now: Long): Boolean {
+        val list = settings.nativePhonesList
+        // An external module's phones are bonded to the module, so their links are unreadable here.
+        if (moduleCarrier != null || list.isEmpty() || remoteAddress.isEmpty()) return false
+        val adapter = BluetoothHelper.getBluetoothAdapter(context)
+        val linked = HashSet<String>()
+        // An unpaired phone can neither dial nor be woken, so nobody waits for it; an unreadable bond rules nothing out.
+        val unpaired = HashSet<String>()
+        for (mac in NativeDriverSelectionPolicy.phonesAbove(remoteAddress, list)) {
+            val bond = adapter?.let { bondReadingFor(it, mac) }
+            if (bond == BluetoothWakePolicy.BondReading.NOT_BONDED || bond == BluetoothWakePolicy.BondReading.MALFORMED) unpaired.add(mac)
+            val device = try { adapter?.getRemoteDevice(mac) } catch (_: Exception) { null } ?: continue
+            if (BluetoothHelper.deviceConnectionState(device) == true) linked.add(mac)
+        }
+        val dialAge = HashMap<String, Long>()
+        for ((mac, at) in listDialSeenAt) dialAge[mac] = now - at
+        val switchedAway = switchedAwayFromMac?.takeIf {
+            now - driverSwitchStartedAt < NativeDriverSelectionPolicy.SWITCH_AWAY_REFUSAL_MS
+        }
+        val prior = listHold.get()
+        val pick = if (chosenExplicit) pendingSelectionTargetMac else null
+        val hold = NativeDriverSelectionPolicy.listHoldFor(
+            remoteMac = remoteAddress,
+            phonesList = list,
+            explicitPickMac = pick,
+            switchedAwayFrom = switchedAway,
+            linked = linked,
+            dialAgeMs = dialAge,
+            handshakePeerMac = handoffPeerAddress(),
+            holdAgeMs = prior.holdAgeMs(remoteAddress, now),
+            ruledOut = unpaired
+        )
+        // A phone the wake plan poked and that stayed silent is ruled out: nobody waits for it.
+        val backedOff = WakeBackoffs.snapshot()
+        val graceAbove = NativeDriverSelectionPolicy.graceFor(
+            remoteMac = remoteAddress,
+            phonesList = list,
+            explicitPickMac = pick,
+            switchedAwayFrom = switchedAway,
+            ruledOut = list.filterTo(HashSet(unpaired)) { WakePlanPolicy.isBackedOff(it, backedOff, now) }
+        )
+        val turn = NativeDriverSelectionPolicy.listHoldStep(
+            prior, remoteAddress, hold, now, graceAbove, picked = pick.equals(remoteAddress, ignoreCase = true)
+        )
+        // An unchanged step returns prior itself. A lost race says nothing: the phone redials and reads the fresh state.
+        if (turn.state !== prior && !listHold.compareAndSet(prior, turn.state)) {
+            gateRefusalCount++
+            return true
+        }
+        val ceilingMs = NativeDriverSelectionPolicy.LIST_HOLD_MS
+        val graceMs = NativeDriverSelectionPolicy.LIST_GRACE_MS
+        val higher = turn.above.orEmpty()
+        when (turn.step) {
+            NativeDriverSelectionPolicy.HoldStep.NONE -> return false
+            NativeDriverSelectionPolicy.HoldStep.END_CEILING -> {
+                AppLog.i("NativeAA: ${deviceLabel(higher)} did not connect within ${ceilingMs / 1000}s, so ${deviceLabel(remoteAddress)} is let in.")
+                return false
+            }
+            // The driver picked this phone: no "no longer here" line, the higher phone may still be linked.
+            NativeDriverSelectionPolicy.HoldStep.END_PICKED -> return false
+            NativeDriverSelectionPolicy.HoldStep.END_EARLY -> {
+                AppLog.i("NativeAA: ${deviceLabel(higher)} is no longer here, so ${deviceLabel(remoteAddress)} is let in.")
+                return false
+            }
+            NativeDriverSelectionPolicy.HoldStep.GRACE_START -> {
+                AppLog.i("NativeAA: ${deviceLabel(remoteAddress)} waits up to ${graceMs / 1000}s, in case ${deviceLabel(higher)} is here: it is higher in the Phones list.")
+                gateRefusalCount++
+                return true
+            }
+            NativeDriverSelectionPolicy.HoldStep.GRACE_KEEP -> {
+                gateRefusalCount++
+                return true
+            }
+            NativeDriverSelectionPolicy.HoldStep.GRACE_END -> {
+                AppLog.i("NativeAA: no higher phone dialled within ${graceMs / 1000}s, so ${deviceLabel(remoteAddress)} is let in.")
+                return false
+            }
+            NativeDriverSelectionPolicy.HoldStep.START, NativeDriverSelectionPolicy.HoldStep.KEEP -> Unit
+        }
+        if (hold == null) return false
+        // A held or told phone's line comes once per phone and leaves lastRefusedMac alone, so two phones do not flood.
+        gateRefusalCount++
+        val told = turn.state.told.size > prior.told.size
+        if (turn.step == NativeDriverSelectionPolicy.HoldStep.START || told) AppLog.i(holdLine(remoteAddress, hold))
+        return true
+    }
+
+    private fun holdLine(remoteAddress: String, hold: NativeDriverSelectionPolicy.ListHold): String {
+        val reason = when (hold.by) {
+            NativeDriverSelectionPolicy.HereBy.LINKED -> "is connected over Bluetooth"
+            NativeDriverSelectionPolicy.HereBy.DIALLED ->
+                "dialled in the last ${NativeDriverSelectionPolicy.LIST_DIAL_PRESENT_MS / 1000}s"
+            NativeDriverSelectionPolicy.HereBy.CONNECTING -> "is connecting"
+        }
+        return "NativeAA: ${deviceLabel(remoteAddress)} waits up to ${NativeDriverSelectionPolicy.LIST_HOLD_MS / 1000}s, because " +
+            "${deviceLabel(hold.above)} is higher in the Phones list and $reason."
     }
 
     /** Polls until the AAP TCP port is bound, or [timeoutMs] passes. */
@@ -1257,7 +1380,7 @@ class NativeAaHandshakeManager(
                         val remoteAddress = try { socket.remoteDevice.address } catch (_: Exception) { "" }
                         // A phone the gate is already turning away retries every 150 ms or so. Its
                         // first attempt is announced; refuseAtGate counts and restates the repeats.
-                        if (!remoteAddress.equals(lastRefusedMac, ignoreCase = true)) {
+                        if (!remoteAddress.equals(lastRefusedMac, ignoreCase = true) && !listHold.get().waits(remoteAddress)) {
                             if (serviceName == null) {
                                 AppLog.i("NativeAA: Connection accepted from ${socket.remoteDevice.name} ($remoteAddress) on local radio [$radioName]")
                             } else {
@@ -4760,6 +4883,7 @@ class NativeAaHandshakeManager(
         clearChosenDriver()
         clearDriverSwitch()
         clearGateRefusals(logSummary = true)
+        clearListHold()
         planRefusals.clear()
         // The phone is on the network, which is the only thing that retires the stale-group count.
         pokesSinceLastAccept = 0

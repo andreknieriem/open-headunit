@@ -1388,7 +1388,7 @@
     <string name="native_driver_selection_mode_off">Dezactivat</string>
     <string name="native_driver_selection_mode_auto">Automat</string>
     <string name="native_driver_selection_mode_always">Întreabă mereu</string>
-    <string name="native_driver_selection_help">Alege când întreabă aplicația ce telefon să folosească. Dezactivat: nu întreabă niciodată, iar butonul WiFi conectează telefonul cel mai probabil. Automat: întreabă doar dacă sunt asociate mai multe telefoane. Cu un singur telefon conectat prin Bluetooth sau un singur telefon cunoscut, îl folosește pe acela. Întreabă mereu: întreabă la fiecare pornire dacă sunt asociate mai multe telefoane. Cel mai probabil este telefonul conectat, apoi primul din „Telefoane pentru Android Auto wireless”, apoi ultimul folosit.</string>
+    <string name="native_driver_selection_help">Alege când întreabă aplicația ce telefon să folosească. Dezactivat: nu întreabă niciodată, iar butonul WiFi conectează telefonul cel mai probabil. Automat: întreabă doar dacă sunt asociate mai multe telefoane. Cu un singur telefon conectat prin Bluetooth sau un singur telefon cunoscut, îl folosește pe acela. Întreabă mereu: întreabă la fiecare pornire dacă sunt asociate mai multe telefoane. Cât timp lista este deschisă, niciun telefon nu se conectează până alegeți unul sau se termină numărătoarea inversă. Dacă două telefoane sunt conectate, cel mai probabil este cel mai sus în lista de telefoane.</string>
     <string name="native_driver_selection_timeout">Numărătoare inversă conectare automată</string>
     <string name="native_driver_selection_timeout_help">Când se deschide lista de telefoane, ea numără invers și apoi se conectează la cel mai probabil telefon. Aici stabilești numărătoarea inversă, de la 3 la 30 de secunde. Atinge un telefon înainte de final ca să-l alegi singur.</string>
     <string name="switch_driver">Schimbă telefonul</string>
@@ -1405,7 +1405,7 @@
     <string name="auto_disconnect_bt_label">Deconectare automată prin Bluetooth</string>
     <string name="select_bt_disconnect_device">Selectează dispozitivul Bluetooth de monitorizat</string>
     <string name="native_phones_label">Telefoane pentru Android Auto wireless</string>
-    <string name="native_phones_help">În modul Native Android Auto, această unitate trezește Android Auto pe telefon. Se conectează pentru scurt timp la profilul Bluetooth hands-free al telefonului, apoi telefonul începe configurarea wireless. Aranjați telefoanele în ordinea în care vreți să fie încercate. Primul telefon este cel preferat. Urmează un telefon conectat anterior, apoi fiecare alt telefon asociat.</string>
+    <string name="native_phones_help">În modul Native Android Auto, această unitate trezește Android Auto pe telefon prin profilul Bluetooth hands-free al telefonului. Aranjați telefoanele în ordinea în care vreți să fie încercate. Primul telefon este cel preferat. Urmează un telefon conectat anterior, apoi fiecare alt telefon asociat. Lista decide și ce telefon se conectează primul. Cât timp un telefon mai sus în listă este conectat prin Bluetooth, un telefon mai jos sau nelistat așteaptă până la 20 de secunde.</string>
     <string name="native_phones_all">Se trezește fiecare telefon asociat, cel mai recent primul</string>
     <string name="native_phones_edit">Editează telefoanele</string>
     <string name="native_phones_empty_message">Niciun telefon în listă. Se trezește fiecare telefon asociat, cel mai recent primul.</string>

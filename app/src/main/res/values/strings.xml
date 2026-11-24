@@ -603,7 +603,7 @@
     <string name="auto_disconnect_bt_label">Auto-disconnect on Bluetooth</string>
     <string name="select_bt_disconnect_device">Select the Bluetooth device to watch</string>
     <string name="native_phones_label">Phones for wireless Android Auto</string>
-    <string name="native_phones_help">In Native Android Auto mode, this unit wakes Android Auto on the phone. It connects for a moment to the phone\'s Bluetooth hands-free profile, and the phone then starts its wireless setup. List your phones in the order you want them tried. The first phone is the preferred phone. A phone that connected before is tried next, then every other paired phone.</string>
+    <string name="native_phones_help">In Native Android Auto mode, this unit wakes Android Auto on the phone through the phone\'s Bluetooth hands-free profile. List your phones in the order you want them tried. The first phone is the preferred phone. A phone that connected before is tried next, then every other paired phone. The list also decides which phone connects first. While a higher phone is connected over Bluetooth, a lower or unlisted phone waits up to 20 seconds.</string>
     <string name="native_phones_all">Every paired phone is woken, the most recent first</string>
     <string name="native_phones_edit">Edit phones</string>
     <string name="native_phones_empty_message">No phone is listed. Every paired phone is woken, the most recent first.</string>
@@ -1721,7 +1721,7 @@
     <string name="native_driver_selection_mode_off">Disabled</string>
     <string name="native_driver_selection_mode_auto">Auto</string>
     <string name="native_driver_selection_mode_always">Always Ask</string>
-    <string name="native_driver_selection_help">Chooses when the app asks which phone to use. Disabled: never asks, and the WiFi button connects to the most likely phone. Auto: asks only when more than one phone is paired. With one phone connected over Bluetooth, or one known phone, it uses that phone. Always Ask: asks at every start with more than one phone paired. The most likely phone is the connected one, then the first in Phones for wireless Android Auto, then the last used.</string>
+    <string name="native_driver_selection_help">Chooses when the app asks which phone to use. Disabled: never asks, and the WiFi button connects to the most likely phone. Auto: asks only when more than one phone is paired. With one phone connected over Bluetooth, or one known phone, it uses that phone. Always Ask: asks at every start with more than one phone paired. While the list is open, no phone connects until you pick one or the countdown ends. With two phones connected, the most likely phone is the higher one in the Phones list.</string>
     <string name="native_driver_selection_timeout">Auto-Connect Countdown</string>
     <string name="native_driver_selection_timeout_help">When the driver list opens, it counts down and then connects to the most likely phone. This sets the countdown, from 3 to 30 seconds. Tap a phone before the end to choose it yourself.</string>
     <string name="switch_driver">Switch Phone</string>

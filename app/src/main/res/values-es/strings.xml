@@ -1451,7 +1451,7 @@
     <string name="native_driver_selection_mode_off">Desactivado</string>
     <string name="native_driver_selection_mode_auto">Auto</string>
     <string name="native_driver_selection_mode_always">Preguntar siempre</string>
-    <string name="native_driver_selection_help">Elige cuándo la app pregunta qué celular usar. Desactivado: nunca pregunta, y el botón WiFi conecta el celular más probable. Auto: pregunta solo cuando hay más de un celular vinculado. Si hay un celular conectado por Bluetooth, o solo uno conocido, usa ese. Preguntar siempre: pregunta en cada inicio con más de un celular vinculado. El más probable es el conectado, luego el primero de «Celulares para Android Auto inalámbrico» y luego el último usado.</string>
+    <string name="native_driver_selection_help">Elige cuándo la app pregunta qué celular usar. Desactivado: nunca pregunta, y el botón WiFi conecta el celular más probable. Auto: pregunta solo cuando hay más de un celular vinculado. Si hay un celular conectado por Bluetooth, o solo uno conocido, usa ese. Preguntar siempre: pregunta en cada inicio con más de un celular vinculado. Mientras la lista está abierta, ningún celular se conecta hasta que elijas uno o termine la cuenta regresiva. Si hay dos celulares conectados, el más probable es el que está más arriba en la lista de celulares.</string>
     <string name="native_driver_selection_timeout">Cuenta atrás de conexión automática</string>
     <string name="native_driver_selection_timeout_help">Cuando se abre la lista de conductores, hace una cuenta regresiva y luego se conecta al celular más probable. Esto define la cuenta regresiva, de 3 a 30 segundos. Toca un celular antes del final para elegirlo tú.</string>
     <string name="switch_driver">Cambiar de teléfono</string>
@@ -1468,7 +1468,7 @@
     <string name="auto_disconnect_bt_label">Desconexión automática por Bluetooth</string>
     <string name="select_bt_disconnect_device">Seleccionar el dispositivo Bluetooth que se supervisará</string>
     <string name="native_phones_label">Celulares para Android Auto inalámbrico</string>
-    <string name="native_phones_help">En el modo Native Android Auto, esta unidad activa Android Auto en el celular. Se conecta un momento al perfil de manos libres Bluetooth del celular, y luego el celular inicia su configuración inalámbrica. Ordena tus celulares según el orden en que quieres que se prueben. El primero es el celular preferido. Después se prueba un celular que ya se haya conectado antes y, por último, cada uno de los demás celulares vinculados.</string>
+    <string name="native_phones_help">En el modo Native Android Auto, esta unidad activa Android Auto en el celular mediante el perfil de manos libres Bluetooth del celular. Ordena tus celulares según el orden en que quieres que se prueben. El primero es el celular preferido. Después se prueba un celular que ya se haya conectado antes y, por último, cada uno de los demás celulares vinculados. La lista también decide qué celular se conecta primero. Mientras un celular más arriba en la lista está conectado por Bluetooth, un celular más abajo o que no está en la lista espera hasta 20 segundos.</string>
     <string name="native_phones_all">Se activa cada celular vinculado, el más reciente primero</string>
     <string name="native_phones_edit">Editar celulares</string>
     <string name="native_phones_empty_message">No hay ningún celular en la lista. Se activa cada celular vinculado, el más reciente primero.</string>

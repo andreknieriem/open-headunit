@@ -1,6 +1,11 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.DriverPresence
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.HereBy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.HoldStep
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.HoldTurn
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.ListHold
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.ListHoldState
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.Mode
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.PokeHold
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy.SwitchGate
@@ -889,5 +894,396 @@ class NativeDriverSelectionPolicyTest {
         assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(null, explicit = true, fromPlan = true))
         assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(null, explicit = false, fromPlan = true))
         assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(null, explicit = false, fromPlan = false))
+    }
+
+    private fun hold(
+        remote: String,
+        list: List<String> = listOf("a", "b"),
+        explicitPick: String? = null,
+        switchedAway: String? = null,
+        linked: Set<String> = emptySet(),
+        dialAge: Map<String, Long> = emptyMap(),
+        peer: String? = null,
+        holdAge: Long? = null,
+        ruledOut: Set<String> = emptySet(),
+    ): ListHold? = NativeDriverSelectionPolicy.listHoldFor(
+        remote, list, explicitPick, switchedAway, linked, dialAge, peer, holdAge, ruledOut
+    )
+
+    @Test
+    fun `one phone dialling with nobody above it here is let in at once`() {
+        assertNull(hold("b"))
+    }
+
+    @Test
+    fun `a lower phone waits while a higher listed phone is linked`() {
+        assertEquals(ListHold("a", HereBy.LINKED), hold("b", linked = setOf("a")))
+    }
+
+    @Test
+    fun `a lower phone waits while a higher phone dialled in the last 10s`() {
+        assertEquals(ListHold("a", HereBy.DIALLED), hold("b", dialAge = mapOf("a" to 9_999L)))
+        assertNull(hold("b", dialAge = mapOf("a" to 10_000L)))
+    }
+
+    @Test
+    fun `the hold ends at its ceiling`() {
+        assertEquals(ListHold("a", HereBy.LINKED), hold("b", linked = setOf("a"), holdAge = 19_999L))
+        assertNull(hold("b", linked = setOf("a"), holdAge = 20_000L))
+    }
+
+    @Test
+    fun `a higher phone's handshake keeps a lower phone out past the ceiling`() {
+        assertEquals(ListHold("a", HereBy.CONNECTING), hold("b", peer = "a", holdAge = 60_000L))
+    }
+
+    @Test
+    fun `an unlisted phone waits for any listed phone that is here`() {
+        assertEquals(ListHold("a", HereBy.LINKED), hold("c", list = listOf("a"), linked = setOf("a")))
+    }
+
+    @Test
+    fun `the first phone in the list never waits`() {
+        assertNull(hold("a", linked = setOf("b"), peer = "b"))
+    }
+
+    @Test
+    fun `an explicit pick is let in whatever the list says`() {
+        assertNull(hold("b", explicitPick = "b", linked = setOf("a")))
+    }
+
+    @Test
+    fun `the phone a switch moved away from is not a higher phone`() {
+        assertNull(hold("b", switchedAway = "a", linked = setOf("a")))
+    }
+
+    @Test
+    fun `an empty Phones list holds nobody`() {
+        assertNull(hold("b", list = emptyList(), linked = setOf("a")))
+    }
+
+    @Test
+    fun `addresses match whatever their case`() {
+        assertEquals(
+            ListHold("aa:bb", HereBy.LINKED),
+            hold("CC:DD", list = listOf("aa:bb", "cc:dd"), linked = setOf("AA:BB"))
+        )
+    }
+
+    @Test
+    fun `phonesAbove lists every listed phone for an unlisted one and none for the first`() {
+        assertEquals(listOf("a", "b"), NativeDriverSelectionPolicy.phonesAbove("c", listOf("a", "b")))
+        assertEquals(emptyList<String>(), NativeDriverSelectionPolicy.phonesAbove("a", listOf("a", "b")))
+        assertEquals(listOf("a"), NativeDriverSelectionPolicy.phonesAbove("b", listOf("a", "b")))
+    }
+
+    @Test
+    fun `the highest phone that is here is named`() {
+        assertEquals(
+            ListHold("a", HereBy.DIALLED),
+            hold("c", list = listOf("a", "b", "c"), linked = setOf("b"), dialAge = mapOf("a" to 1_000L))
+        )
+    }
+
+    /** Runs dials through listHoldFor and listHoldStep as the manager does. List [a, b], a is linked unless told. */
+    private class Gate(
+        var linked: Set<String> = setOf("a"),
+        val list: List<String> = listOf("a", "b"),
+        val grace: Boolean = false,
+        var explicit: String? = null,
+        val ruledOut: Set<String> = emptySet(),
+        val unpaired: Set<String> = emptySet(),
+    ) {
+        var state = ListHoldState()
+        val dials = HashMap<String, Long>()
+
+        fun dial(remote: String, now: Long, peer: String? = null): HoldTurn {
+            if (remote in list) dials[remote] = now
+            val hold = NativeDriverSelectionPolicy.listHoldFor(
+                remote, list, explicit, null, linked,
+                dials.mapValues { now - it.value }, peer,
+                state.holdAgeMs(remote, now), unpaired
+            )
+            val above = if (grace) NativeDriverSelectionPolicy.graceFor(remote, list, explicit, null, ruledOut + unpaired) else null
+            val picked = explicit.equals(remote, ignoreCase = true)
+            return NativeDriverSelectionPolicy.listHoldStep(state, remote, hold, now, above, picked).also { state = it.state }
+        }
+    }
+
+    @Test
+    fun `the higher phone's own dial neither ends nor restarts the hold`() {
+        val gate = Gate()
+        assertEquals(HoldStep.START, gate.dial("b", 1_000L).step)
+        assertEquals(HoldStep.NONE, gate.dial("a", 6_000L).step)
+        assertEquals(ListHoldState(1_000L, mapOf("B" to "a"), heldSince = mapOf("B" to 1_000L)), gate.state)
+        assertEquals(HoldStep.KEEP, gate.dial("b", 6_100L).step)
+    }
+
+    @Test
+    fun `a higher phone that dials and fails twice still lets the lower phone in 20s after the first held dial`() {
+        val gate = Gate()
+        gate.dial("b", 1_000L)
+        gate.dial("a", 5_000L)
+        assertEquals(HoldStep.KEEP, gate.dial("b", 5_100L).step)
+        gate.dial("a", 12_000L)
+        assertEquals(HoldStep.KEEP, gate.dial("b", 20_999L).step)
+        assertEquals(HoldStep.END_CEILING, gate.dial("b", 21_000L).step)
+    }
+
+    @Test
+    fun `the end line names the held pair whichever phone dials`() {
+        val gate = Gate()
+        gate.dial("b", 1_000L)
+        assertEquals(HoldStep.NONE, gate.dial("a", 21_500L).step)
+        val end = gate.dial("b", 21_600L)
+        assertEquals(HoldStep.END_CEILING, end.step)
+        assertEquals("a", end.above)
+        assertEquals(HoldStep.NONE, gate.dial("b", 21_700L).step)
+    }
+
+    @Test
+    fun `after an early end a return of the higher phone starts no new hold`() {
+        val gate = Gate()
+        gate.dial("b", 1_000L)
+        gate.linked = emptySet()
+        assertEquals(HoldStep.END_EARLY, gate.dial("b", 12_000L).step)
+        gate.linked = setOf("a")
+        assertEquals(HoldStep.NONE, gate.dial("b", 13_000L).step)
+        assertEquals(HoldStep.NONE, gate.dial("b", 40_000L).step)
+    }
+
+    @Test
+    fun `a spent hold still keeps a lower phone off the higher phone's handshake`() {
+        val gate = Gate()
+        gate.dial("b", 1_000L)
+        gate.dial("b", 21_000L)
+        assertEquals(HoldStep.KEEP, gate.dial("b", 22_000L, peer = "a").step)
+    }
+
+    @Test
+    fun `one phone alone starts no hold and says nothing`() {
+        val top = Gate(linked = emptySet())
+        assertEquals(HoldStep.NONE, top.dial("a", 1_000L).step)
+        assertEquals(ListHoldState(), top.state)
+        val lower = Gate(linked = emptySet())
+        assertEquals(HoldStep.NONE, lower.dial("b", 1_000L).step)
+        assertEquals(ListHoldState(), lower.state)
+        val unlisted = Gate(linked = emptySet())
+        assertEquals(HoldStep.NONE, unlisted.dial("c", 1_000L).step)
+        assertEquals(ListHoldState(), unlisted.state)
+    }
+
+    /** Counts the steps that log a line, per phone, the way the manager logs them. */
+    private fun lines(turns: List<Pair<String, HoldTurn>>, step: (HoldStep) -> Boolean) =
+        turns.filter { step(it.second.step) }.map { it.first }
+
+    @Test
+    fun `two phones held under one higher phone each get one start and one end, and alternate dials log nothing`() {
+        val gate = Gate()
+        val turns = ArrayList<Pair<String, HoldTurn>>()
+        var now = 1_000L
+        while (now < 22_000L) {
+            for (remote in listOf("b", "c")) turns.add(remote to gate.dial(remote, now).also { now += 150L })
+        }
+        assertEquals(listOf("b", "c"), lines(turns) { it == HoldStep.START })
+        assertEquals(listOf("b", "c"), lines(turns) { it == HoldStep.END_CEILING || it == HoldStep.END_EARLY })
+        assertTrue(turns.all { it.second.step != HoldStep.KEEP || it.second.state.waits(it.first) })
+        assertEquals(listOf("a", "a"), turns.filter { it.second.step == HoldStep.END_CEILING }.map { it.second.above })
+    }
+
+    @Test
+    fun `a phone let in early is not held again while another phone still waits`() {
+        val gate = Gate()
+        assertEquals(HoldStep.START, gate.dial("b", 1_000L).step)
+        assertEquals(HoldStep.START, gate.dial("c", 1_100L).step)
+        gate.linked = emptySet()
+        gate.dials.remove("a")
+        val end = gate.dial("b", 5_000L)
+        assertEquals(HoldStep.END_EARLY, end.step)
+        assertEquals("a", end.above)
+        assertEquals(HoldStep.KEEP, gate.dial("c", 5_100L).step)
+        gate.linked = setOf("a")
+        assertEquals(HoldStep.NONE, gate.dial("b", 6_000L).step)
+        assertEquals(HoldStep.END_CEILING, gate.dial("c", 21_100L).step)
+    }
+
+    private fun graceGate(list: List<String> = listOf("a", "b"), explicit: String? = null, ruledOut: Set<String> = emptySet()) =
+        Gate(linked = emptySet(), list = list, grace = true, explicit = explicit, ruledOut = ruledOut)
+
+    @Test
+    fun `a lower phone that dials first is held for the grace and let in at 5s when nobody higher comes`() {
+        val gate = graceGate()
+        val first = gate.dial("b", 1_000L)
+        assertEquals(HoldStep.GRACE_START, first.step)
+        assertEquals("a", first.above)
+        assertEquals(HoldStep.GRACE_KEEP, gate.dial("b", 3_000L).step)
+        assertEquals(HoldStep.GRACE_KEEP, gate.dial("b", 5_999L).step)
+        val end = gate.dial("b", 6_000L)
+        assertEquals(HoldStep.GRACE_END, end.step)
+        assertEquals("a", end.above)
+        assertEquals(HoldStep.NONE, gate.dial("b", 6_100L).step)
+        assertFalse(gate.state.waits("b"))
+    }
+
+    @Test
+    fun `a higher phone that dials in the grace wins and the lower phone then waits under the hold`() {
+        val gate = graceGate()
+        assertEquals(HoldStep.GRACE_START, gate.dial("b", 1_000L).step)
+        assertEquals(HoldStep.NONE, gate.dial("a", 2_000L).step)
+        val held = gate.dial("b", 6_000L)
+        assertEquals(HoldStep.START, held.step)
+        assertEquals("a", held.above)
+        assertEquals(1_000L, gate.state.startedAt)
+        gate.dial("a", 12_000L)
+        gate.dial("a", 18_000L)
+        assertEquals(HoldStep.KEEP, gate.dial("b", 20_999L).step)
+        assertEquals(HoldStep.END_CEILING, gate.dial("b", 21_000L).step)
+        assertEquals(HoldStep.NONE, gate.dial("b", 21_100L).step)
+    }
+
+    @Test
+    fun `the grace is not given twice before a clear`() {
+        val gate = graceGate()
+        gate.dial("b", 1_000L)
+        gate.dial("b", 6_000L)
+        assertEquals(HoldStep.NONE, gate.dial("b", 6_100L).step)
+        assertEquals(HoldStep.NONE, gate.dial("b", 60_000L).step)
+        gate.state = ListHoldState()
+        assertEquals(HoldStep.GRACE_START, gate.dial("b", 70_000L).step)
+    }
+
+    @Test
+    fun `a grace that turned into a hold is not given again`() {
+        val gate = graceGate()
+        gate.dial("b", 1_000L)
+        gate.dial("a", 2_000L)
+        gate.dial("b", 3_000L)
+        gate.dial("b", 30_000L)
+        assertEquals(HoldStep.NONE, gate.dial("b", 31_000L).step)
+    }
+
+    @Test
+    fun `the top phone, the explicit pick, an empty list and a ruled out higher phone get no grace`() {
+        assertEquals(HoldStep.NONE, graceGate().dial("a", 1_000L).step)
+        assertEquals(HoldStep.NONE, graceGate(explicit = "b").dial("b", 1_000L).step)
+        assertEquals(HoldStep.NONE, graceGate(list = emptyList()).dial("b", 1_000L).step)
+        assertEquals(HoldStep.NONE, graceGate(ruledOut = setOf("a")).dial("b", 1_000L).step)
+        assertEquals(HoldStep.NONE, graceGate(list = listOf("b")).dial("b", 1_000L).step)
+    }
+
+    @Test
+    fun `the grace names the first higher phone that is not ruled out`() {
+        val gate = graceGate(list = listOf("a", "b", "c"), ruledOut = setOf("a"))
+        val first = gate.dial("c", 1_000L)
+        assertEquals(HoldStep.GRACE_START, first.step)
+        assertEquals("b", first.above)
+    }
+
+    @Test
+    fun `an unlisted phone counts as below every listed phone`() {
+        assertEquals(HoldStep.GRACE_START, graceGate().dial("z", 1_000L).step)
+    }
+
+    @Test
+    fun `two lower phones in grace each get one start and one end`() {
+        var state = ListHoldState()
+        val turns = ArrayList<Pair<String, HoldTurn>>()
+        var now = 1_000L
+        while (now < 9_000L) {
+            for (remote in listOf("b", "c")) {
+                val turn = NativeDriverSelectionPolicy.listHoldStep(state, remote, null, now, graceAbove = "a")
+                state = turn.state
+                turns.add(remote to turn)
+                now += 150L
+            }
+        }
+        assertEquals(listOf("b", "c"), lines(turns) { it == HoldStep.GRACE_START })
+        assertEquals(listOf("b", "c"), lines(turns) { it == HoldStep.GRACE_END })
+    }
+
+    @Test
+    fun `graceFor skips a phone the switch left`() {
+        assertNull(NativeDriverSelectionPolicy.graceFor("b", listOf("a", "b"), null, "A", emptySet()))
+    }
+
+    @Test
+    fun `a joining phone with an older grace does not move the first held phone's ceiling`() {
+        val gate = graceGate(list = listOf("a", "b", "c"))
+        assertEquals(HoldStep.GRACE_START, gate.dial("b", 1_000L).step)
+        gate.linked = setOf("a")
+        assertEquals(HoldStep.START, gate.dial("c", 4_500L).step)
+        assertEquals(HoldStep.START, gate.dial("b", 6_000L).step)
+        assertEquals(HoldStep.END_CEILING, gate.dial("b", 21_000L).step)
+        assertEquals(HoldStep.KEEP, gate.dial("c", 21_000L).step)
+        assertEquals(HoldStep.KEEP, gate.dial("c", 24_499L).step)
+        assertEquals(HoldStep.END_CEILING, gate.dial("c", 24_500L).step)
+    }
+
+    @Test
+    fun `a grace two graces old is not read as a ceiling already past`() {
+        val gate = graceGate(list = listOf("a", "b", "c"))
+        assertEquals(HoldStep.GRACE_START, gate.dial("b", 1_000L).step)
+        gate.linked = setOf("a")
+        assertEquals(HoldStep.START, gate.dial("c", 30_000L).step)
+        assertEquals(HoldStep.START, gate.dial("b", 61_000L).step)
+        assertEquals(HoldStep.KEEP, gate.dial("b", 80_999L).step)
+        assertEquals(HoldStep.END_CEILING, gate.dial("b", 81_000L).step)
+    }
+
+    @Test
+    fun `an unpaired higher phone gives no grace and no hold`() {
+        assertNull(hold("b", linked = setOf("a"), ruledOut = setOf("A")))
+        assertEquals(
+            ListHold("b", HereBy.LINKED),
+            hold("c", list = listOf("a", "b", "c"), linked = setOf("a", "b"), ruledOut = setOf("a"))
+        )
+        val gate = Gate(linked = emptySet(), grace = true, unpaired = setOf("a"))
+        assertEquals(HoldStep.NONE, gate.dial("b", 1_000L).step)
+        assertEquals(ListHoldState(), gate.state)
+        assertEquals("b", NativeDriverSelectionPolicy.graceFor("c", listOf("a", "b", "c"), null, null, setOf("A")))
+    }
+
+    @Test
+    fun `a held phone that becomes the explicit pick is let in with no early end line`() {
+        val gate = Gate(list = listOf("a", "c"))
+        assertEquals(HoldStep.START, gate.dial("c", 1_000L).step)
+        gate.explicit = "c"
+        val end = gate.dial("c", 9_000L)
+        assertEquals(HoldStep.END_PICKED, end.step)
+        assertFalse(end.state.waits("c"))
+        assertEquals(HoldStep.NONE, gate.dial("c", 9_100L).step)
+    }
+
+    @Test
+    fun `a phone in its grace that becomes the explicit pick is let in at once`() {
+        val gate = graceGate()
+        assertEquals(HoldStep.GRACE_START, gate.dial("b", 1_000L).step)
+        gate.explicit = "b"
+        assertEquals(HoldStep.END_PICKED, gate.dial("b", 2_000L).step)
+        assertFalse(gate.state.waits("b"))
+    }
+
+    @Test
+    fun `two phones kept off a spent hold's handshake are each told once`() {
+        val gate = Gate(list = listOf("a", "b", "c"))
+        gate.dial("b", 1_000L)
+        gate.dial("c", 1_100L)
+        gate.dial("b", 21_000L)
+        gate.dial("c", 21_100L)
+        val told = ArrayList<String>()
+        var now = 22_000L
+        while (now < 60_000L) {
+            for (remote in listOf("b", "c")) {
+                val before = gate.state.told
+                val turn = gate.dial(remote, now, peer = "a")
+                assertEquals(HoldStep.KEEP, turn.step)
+                assertTrue(turn.state.waits(remote))
+                if (turn.state.told.size > before.size) told.add(remote)
+                now += 150L
+            }
+        }
+        assertEquals(listOf("b", "c"), told)
+        assertEquals(HoldStep.NONE, gate.dial("b", now).step)
+        assertFalse(gate.state.waits("b"))
     }
 }

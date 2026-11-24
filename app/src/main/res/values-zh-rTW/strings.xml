@@ -1388,7 +1388,7 @@
     <string name="native_driver_selection_mode_off">已停用</string>
     <string name="native_driver_selection_mode_auto">自動</string>
     <string name="native_driver_selection_mode_always">每次詢問</string>
-    <string name="native_driver_selection_help">選擇應用程式何時詢問要使用哪支手機。已停用：不會詢問，WiFi 按鈕會連線最可能的手機。自動：只有在已配對多支手機時才詢問。如果只有一支手機透過藍牙連線，或只知道一支手機，應用程式會使用該手機。每次詢問：已配對多支手機時，應用程式每次啟動都會詢問。最可能的手機依序為：已連線的手機、「無線 Android Auto 手機」中的第一支、上次使用的手機。</string>
+    <string name="native_driver_selection_help">選擇應用程式何時詢問要使用哪支手機。已停用：不會詢問，WiFi 按鈕會連線最可能的手機。自動：只有在已配對多支手機時才詢問。如果只有一支手機透過藍牙連線，或只知道一支手機，應用程式會使用該手機。每次詢問：已配對多支手機時，應用程式每次啟動都會詢問。清單開啟期間，在你選擇手機或倒數結束前，不會有手機連線。如果有兩支手機已連線，最可能的是手機清單中較上方的一支。</string>
     <string name="native_driver_selection_timeout">自動連線倒數</string>
     <string name="native_driver_selection_timeout_help">主控手機清單開啟後會倒數，然後連線到最可能的手機。此項設定倒數時間，範圍為 3 到 30 秒。在結束前輕觸某支手機即可自行選擇。</string>
     <string name="switch_driver">切換手機</string>
@@ -1405,7 +1405,7 @@
     <string name="auto_disconnect_bt_label">藍牙中斷連線時自動結束</string>
     <string name="select_bt_disconnect_device">選取要監控的藍牙裝置</string>
     <string name="native_phones_label">無線 Android Auto 手機</string>
-    <string name="native_phones_help">在 Native Android Auto 模式下，本裝置會喚醒手機上的 Android Auto。裝置會短暫連線至手機的藍牙免持設定檔，隨後手機開始無線設定。請依希望嘗試的順序排列手機。第一支手機為偏好手機。接著嘗試先前連線過的手機，然後是其他所有已配對的手機。</string>
+    <string name="native_phones_help">在 Native Android Auto 模式下，本裝置會透過手機的藍牙免持設定檔喚醒手機上的 Android Auto。請依希望嘗試的順序排列手機。第一支手機為偏好手機。接著嘗試先前連線過的手機，然後是其他所有已配對的手機。該清單也會決定哪支手機先連線。當清單中較上方的手機已透過藍牙連線時，較下方或不在清單中的手機最多等待 20 秒。</string>
     <string name="native_phones_all">喚醒所有已配對的手機，最近使用的優先</string>
     <string name="native_phones_edit">編輯手機</string>
     <string name="native_phones_empty_message">清單中沒有手機。會喚醒所有已配對的手機，最近使用的優先。</string>

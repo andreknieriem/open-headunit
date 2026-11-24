@@ -1392,7 +1392,7 @@
     <string name="native_driver_selection_mode_off">Vypnuto</string>
     <string name="native_driver_selection_mode_auto">Automaticky</string>
     <string name="native_driver_selection_mode_always">Vždy se ptát</string>
-    <string name="native_driver_selection_help">Určuje, kdy se aplikace zeptá, který telefon použít. Vypnuto: nikdy se nezeptá a tlačítko WiFi připojí nejpravděpodobnější telefon. Automaticky: zeptá se, jen když je spárováno více telefonů. Pokud je přes Bluetooth připojen jeden telefon nebo je znám jediný telefon, použije ten. Vždy se ptát: zeptá se při každém spuštění, když je spárováno více telefonů. Nejpravděpodobnější je připojený telefon, pak první v seznamu „Telefony pro bezdrátový Android Auto“, pak naposledy použitý.</string>
+    <string name="native_driver_selection_help">Určuje, kdy se aplikace zeptá, který telefon použít. Vypnuto: nikdy se nezeptá a tlačítko WiFi připojí nejpravděpodobnější telefon. Automaticky: zeptá se, jen když je spárováno více telefonů. Pokud je přes Bluetooth připojen jeden telefon nebo je znám jediný telefon, použije ten. Vždy se ptát: zeptá se při každém spuštění, když je spárováno více telefonů. Dokud je seznam otevřený, žádný telefon se nepřipojí, dokud nějaký nevyberete nebo neskončí odpočet. Jsou-li připojeny dva telefony, nejpravděpodobnější je ten výše v seznamu telefonů.</string>
     <string name="native_driver_selection_timeout">Odpočet automatického připojení</string>
     <string name="native_driver_selection_timeout_help">Když se otevře seznam řidičů, odpočítává a poté se připojí k nejpravděpodobnějšímu telefonu. Zde nastavíte odpočet, od 3 do 30 sekund. Klepnutím na telefon před koncem ho vyberete sami.</string>
     <string name="switch_driver">Přepnout telefon</string>
@@ -1409,7 +1409,7 @@
     <string name="auto_disconnect_bt_label">Automatické odpojení při ztrátě Bluetooth</string>
     <string name="select_bt_disconnect_device">Vyberte zařízení Bluetooth ke sledování</string>
     <string name="native_phones_label">Telefony pro bezdrátový Android Auto</string>
-    <string name="native_phones_help">V režimu Native Android Auto autorádio probouzí Android Auto v telefonu. Na chvíli se připojí k profilu handsfree v telefonu přes Bluetooth a telefon pak zahájí bezdrátové nastavení. Seřaďte telefony v pořadí, v jakém se mají zkoušet. První telefon je preferovaný. Potom se zkouší telefon, který se už dříve připojil, a nakonec každý další spárovaný telefon.</string>
+    <string name="native_phones_help">V režimu Native Android Auto autorádio probouzí Android Auto v telefonu přes profil handsfree telefonu v Bluetooth. Seřaďte telefony v pořadí, v jakém se mají zkoušet. První telefon je preferovaný. Potom se zkouší telefon, který se už dříve připojil, a nakonec každý další spárovaný telefon. Seznam také určuje, který telefon se připojí první. Dokud je přes Bluetooth připojen telefon výše v seznamu, telefon níže nebo mimo seznam čeká až 20 sekund.</string>
     <string name="native_phones_all">Probudí se každý spárovaný telefon, nejnovější první</string>
     <string name="native_phones_edit">Upravit telefony</string>
     <string name="native_phones_empty_message">Žádný telefon není v seznamu. Probudí se každý spárovaný telefon, nejnovější první.</string>

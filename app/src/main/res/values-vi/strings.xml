@@ -1392,7 +1392,7 @@
     <string name="native_driver_selection_mode_off">Đã tắt</string>
     <string name="native_driver_selection_mode_auto">Tự động</string>
     <string name="native_driver_selection_mode_always">Luôn hỏi</string>
-    <string name="native_driver_selection_help">Chọn lúc ứng dụng hỏi dùng điện thoại nào. Đã tắt: không bao giờ hỏi, và nút WiFi kết nối điện thoại có khả năng nhất. Tự động: chỉ hỏi khi có nhiều hơn một điện thoại đã ghép nối. Nếu một điện thoại kết nối qua Bluetooth, hoặc chỉ biết một điện thoại, thì dùng điện thoại đó. Luôn hỏi: hỏi mỗi lần khởi động khi có nhiều điện thoại đã ghép nối. Điện thoại có khả năng nhất là điện thoại đang kết nối, rồi điện thoại đầu tiên trong “Điện thoại cho Android Auto không dây”, rồi điện thoại dùng gần nhất.</string>
+    <string name="native_driver_selection_help">Chọn lúc ứng dụng hỏi dùng điện thoại nào. Đã tắt: không bao giờ hỏi, và nút WiFi kết nối điện thoại có khả năng nhất. Tự động: chỉ hỏi khi có nhiều hơn một điện thoại đã ghép nối. Nếu một điện thoại kết nối qua Bluetooth, hoặc chỉ biết một điện thoại, thì dùng điện thoại đó. Luôn hỏi: hỏi mỗi lần khởi động khi có nhiều điện thoại đã ghép nối. Khi danh sách đang mở, không điện thoại nào kết nối cho đến khi bạn chọn một điện thoại hoặc đếm ngược kết thúc. Nếu có hai điện thoại đang kết nối, điện thoại có khả năng nhất là điện thoại cao hơn trong danh sách điện thoại.</string>
     <string name="native_driver_selection_timeout">Đếm ngược tự động kết nối</string>
     <string name="native_driver_selection_timeout_help">Khi danh sách điện thoại điều khiển mở ra, nó đếm ngược rồi kết nối với điện thoại có khả năng nhất. Mục này đặt thời gian đếm ngược, từ 3 đến 30 giây. Chạm vào một điện thoại trước khi hết giờ để tự chọn.</string>
     <string name="switch_driver">Chuyển điện thoại</string>
@@ -1409,7 +1409,7 @@
     <string name="auto_disconnect_bt_label">Tự động ngắt kết nối khi mất Bluetooth</string>
     <string name="select_bt_disconnect_device">Chọn thiết bị Bluetooth cần theo dõi</string>
     <string name="native_phones_label">Điện thoại cho Android Auto không dây</string>
-    <string name="native_phones_help">Ở chế độ Native Android Auto, thiết bị này đánh thức Android Auto trên điện thoại. Thiết bị kết nối trong giây lát với hồ sơ rảnh tay Bluetooth của điện thoại, rồi điện thoại bắt đầu thiết lập không dây. Hãy xếp các điện thoại theo thứ tự bạn muốn thử. Điện thoại đầu tiên là điện thoại ưu tiên. Tiếp theo là điện thoại từng kết nối trước đó, rồi đến mọi điện thoại đã ghép nối còn lại.</string>
+    <string name="native_phones_help">Ở chế độ Native Android Auto, thiết bị này đánh thức Android Auto trên điện thoại qua hồ sơ rảnh tay Bluetooth của điện thoại. Hãy xếp các điện thoại theo thứ tự bạn muốn thử. Điện thoại đầu tiên là điện thoại ưu tiên. Tiếp theo là điện thoại từng kết nối trước đó, rồi đến mọi điện thoại đã ghép nối còn lại. Danh sách này cũng quyết định điện thoại nào kết nối trước. Khi một điện thoại cao hơn trong danh sách đang kết nối qua Bluetooth, điện thoại thấp hơn hoặc không có trong danh sách chờ tối đa 20 giây.</string>
     <string name="native_phones_all">Đánh thức mọi điện thoại đã ghép nối, gần nhất trước</string>
     <string name="native_phones_edit">Sửa danh sách điện thoại</string>
     <string name="native_phones_empty_message">Chưa có điện thoại nào trong danh sách. Mọi điện thoại đã ghép nối đều được đánh thức, gần nhất trước.</string>

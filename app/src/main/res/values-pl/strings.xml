@@ -1393,7 +1393,7 @@
     <string name="native_driver_selection_mode_off">Wyłączone</string>
     <string name="native_driver_selection_mode_auto">Automatycznie</string>
     <string name="native_driver_selection_mode_always">Zawsze pytaj</string>
-    <string name="native_driver_selection_help">Wybiera, kiedy aplikacja pyta, którego telefonu użyć. Wyłączone: nigdy nie pyta, a przycisk WiFi łączy z najbardziej prawdopodobnym telefonem. Automatycznie: pyta tylko wtedy, gdy sparowano więcej niż jeden telefon. Jeśli przez Bluetooth jest połączony jeden telefon albo znany jest tylko jeden, używa go. Zawsze pytaj: pyta przy każdym uruchomieniu, gdy sparowano więcej telefonów. Najbardziej prawdopodobny jest połączony telefon, potem pierwszy z listy „Telefony do bezprzewodowego Android Auto”, potem ostatnio używany.</string>
+    <string name="native_driver_selection_help">Wybiera, kiedy aplikacja pyta, którego telefonu użyć. Wyłączone: nigdy nie pyta, a przycisk WiFi łączy z najbardziej prawdopodobnym telefonem. Automatycznie: pyta tylko wtedy, gdy sparowano więcej niż jeden telefon. Jeśli przez Bluetooth jest połączony jeden telefon albo znany jest tylko jeden, używa go. Zawsze pytaj: pyta przy każdym uruchomieniu, gdy sparowano więcej telefonów. Dopóki lista jest otwarta, żaden telefon się nie łączy, aż wybierzesz telefon lub skończy się odliczanie. Gdy połączone są dwa telefony, najbardziej prawdopodobny jest ten wyżej na liście telefonów.</string>
     <string name="native_driver_selection_timeout">Odliczanie do automatycznego połączenia</string>
     <string name="native_driver_selection_timeout_help">Gdy otwiera się lista kierowcy, odlicza czas, a potem łączy się z najbardziej prawdopodobnym telefonem. Tu ustawiasz odliczanie, od 3 do 30 sekund. Dotknij telefonu przed końcem, aby wybrać go samodzielnie.</string>
     <string name="switch_driver">Przełącz telefon</string>
@@ -1410,7 +1410,7 @@
     <string name="auto_disconnect_bt_label">Automatyczne rozłączanie po utracie Bluetooth</string>
     <string name="select_bt_disconnect_device">Wybierz urządzenie Bluetooth do monitorowania</string>
     <string name="native_phones_label">Telefony do bezprzewodowego Android Auto</string>
-    <string name="native_phones_help">W trybie Native Android Auto ta stacja wybudza Android Auto na telefonie. Łączy się na chwilę z profilem zestawu głośnomówiącego Bluetooth w telefonie, a telefon rozpoczyna konfigurację bezprzewodową. Ułóż telefony w kolejności, w jakiej mają być próbowane. Pierwszy telefon jest preferowany. Następnie próbowany jest telefon, który łączył się wcześniej, a potem każdy inny sparowany telefon.</string>
+    <string name="native_phones_help">W trybie Native Android Auto ta stacja wybudza Android Auto na telefonie przez profil zestawu głośnomówiącego Bluetooth w telefonie. Ułóż telefony w kolejności, w jakiej mają być próbowane. Pierwszy telefon jest preferowany. Następnie próbowany jest telefon, który łączył się wcześniej, a potem każdy inny sparowany telefon. Lista decyduje też, który telefon połączy się pierwszy. Dopóki telefon wyżej na liście jest połączony przez Bluetooth, telefon niżej lub spoza listy czeka do 20 sekund.</string>
     <string name="native_phones_all">Wybudzany jest każdy sparowany telefon, od ostatnio używanego</string>
     <string name="native_phones_edit">Edytuj telefony</string>
     <string name="native_phones_empty_message">Brak telefonów na liście. Wybudzany jest każdy sparowany telefon, od ostatnio używanego.</string>

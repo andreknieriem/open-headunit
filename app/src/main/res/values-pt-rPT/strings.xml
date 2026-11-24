@@ -570,7 +570,7 @@
     <string name="auto_disconnect_bt_label">Desligar automaticamente com Bluetooth</string>
     <string name="select_bt_disconnect_device">Selecionar o dispositivo Bluetooth a monitorizar</string>
     <string name="native_phones_label">Telemóveis para Android Auto sem fios</string>
-    <string name="native_phones_help">No modo Native Android Auto, esta unidade ativa o Android Auto no telemóvel. Liga-se por instantes ao perfil Bluetooth de mãos livres do telemóvel, e depois o telemóvel inicia a configuração sem fios. Ordene os seus telemóveis pela ordem em que quer que sejam tentados. O primeiro é o telemóvel preferido. Depois é tentado um telemóvel que já tenha estado ligado e, por fim, cada um dos outros telemóveis emparelhados.</string>
+    <string name="native_phones_help">No modo Native Android Auto, esta unidade ativa o Android Auto no telemóvel através do perfil Bluetooth de mãos livres do telemóvel. Ordene os seus telemóveis pela ordem em que quer que sejam tentados. O primeiro é o telemóvel preferido. Depois é tentado um telemóvel que já tenha estado ligado e, por fim, cada um dos outros telemóveis emparelhados. A lista também decide qual telemóvel se liga primeiro. Enquanto um telemóvel mais acima na lista está ligado por Bluetooth, um telemóvel mais abaixo ou fora da lista espera até 20 segundos.</string>
     <string name="native_phones_all">Todos os telemóveis emparelhados são ativados, o mais recente primeiro</string>
     <string name="native_phones_edit">Editar telemóveis</string>
     <string name="native_phones_empty_message">Nenhum telemóvel na lista. Todos os telemóveis emparelhados são ativados, o mais recente primeiro.</string>
@@ -1596,7 +1596,7 @@
     <string name="native_driver_selection_mode_off">Desativado</string>
     <string name="native_driver_selection_mode_auto">Automático</string>
     <string name="native_driver_selection_mode_always">Perguntar sempre</string>
-    <string name="native_driver_selection_help">Define quando a aplicação pergunta que telemóvel usar. Desativado: nunca pergunta, e o botão WiFi liga ao telemóvel mais provável. Automático: só pergunta quando há mais de um telemóvel emparelhado. Com um telemóvel ligado por Bluetooth, ou só um telemóvel conhecido, usa esse. Perguntar sempre: pergunta em cada arranque com mais de um telemóvel emparelhado. O mais provável é o telemóvel ligado, depois o primeiro de “Telemóveis para Android Auto sem fios”, depois o último usado.</string>
+    <string name="native_driver_selection_help">Define quando a aplicação pergunta que telemóvel usar. Desativado: nunca pergunta, e o botão WiFi liga ao telemóvel mais provável. Automático: só pergunta quando há mais de um telemóvel emparelhado. Com um telemóvel ligado por Bluetooth, ou só um telemóvel conhecido, usa esse. Perguntar sempre: pergunta em cada arranque com mais de um telemóvel emparelhado. Enquanto a lista está aberta, nenhum telemóvel se liga até escolher um ou a contagem decrescente terminar. Se houver dois telemóveis ligados, o mais provável é o que está mais acima na lista de telemóveis.</string>
     <string name="native_driver_selection_timeout">Contagem decrescente</string>
     <string name="native_driver_selection_timeout_help">Quando a lista de condutores abre, faz uma contagem decrescente e depois liga ao telemóvel mais provável. Aqui define a contagem, de 3 a 30 segundos. Toque num telemóvel antes do fim para escolher você mesmo.</string>
     <string name="switch_driver">Mudar de telemóvel</string>

@@ -1394,7 +1394,7 @@
     <string name="native_driver_selection_mode_off">Disattivato</string>
     <string name="native_driver_selection_mode_auto">Auto</string>
     <string name="native_driver_selection_mode_always">Chiedi sempre</string>
-    <string name="native_driver_selection_help">Sceglie quando l\'app chiede quale telefono usare. Disattivato: non chiede mai e il pulsante WiFi collega il telefono più probabile. Auto: chiede solo se ci sono più telefoni associati. Con un solo telefono connesso via Bluetooth, o un solo telefono noto, usa quello. Chiedi sempre: chiede a ogni avvio se ci sono più telefoni associati. Il più probabile è il telefono connesso, poi il primo di «Telefoni per Android Auto wireless», poi l\'ultimo usato.</string>
+    <string name="native_driver_selection_help">Sceglie quando l\'app chiede quale telefono usare. Disattivato: non chiede mai, e il pulsante WiFi collega il telefono più probabile. Auto: chiede solo se ci sono più telefoni associati. Con un solo telefono connesso via Bluetooth, o un solo telefono noto, usa quello. Chiedi sempre: chiede a ogni avvio se ci sono più telefoni associati. Finché l\'elenco è aperto, nessun telefono si collega fino a quando non ne scegli uno o finisce il conto alla rovescia. Se due telefoni sono connessi, il più probabile è quello più in alto nell\'elenco dei telefoni.</string>
     <string name="native_driver_selection_timeout">Conto alla rovescia per la connessione automatica</string>
     <string name="native_driver_selection_timeout_help">Quando si apre l\'elenco dei telefoni, parte un conto alla rovescia e poi l\'app si connette al telefono più probabile. Qui imposti il conto alla rovescia, da 3 a 30 secondi. Tocca un telefono prima della fine per sceglierlo tu.</string>
     <string name="switch_driver">Cambia telefono</string>
@@ -1411,7 +1411,7 @@
     <string name="auto_disconnect_bt_label">Disconnessione automatica con Bluetooth</string>
     <string name="select_bt_disconnect_device">Seleziona il dispositivo Bluetooth da monitorare</string>
     <string name="native_phones_label">Telefoni per Android Auto wireless</string>
-    <string name="native_phones_help">In modalità Native Android Auto, questa unità attiva Android Auto sul telefono. Si collega per un attimo al profilo vivavoce Bluetooth del telefono, poi il telefono avvia la configurazione wireless. Elenca i telefoni nell\'ordine in cui vuoi che vengano provati. Il primo è il telefono preferito. Poi si prova un telefono già connesso in precedenza, quindi ogni altro telefono associato.</string>
+    <string name="native_phones_help">In modalità Native Android Auto, questa unità attiva Android Auto sul telefono tramite il profilo vivavoce Bluetooth del telefono. Elenca i telefoni nell\'ordine in cui vuoi che vengano provati. Il primo è il telefono preferito. Poi si prova un telefono già connesso in precedenza, quindi ogni altro telefono associato. L\'elenco decide anche quale telefono si collega per primo. Finché un telefono più in alto nell\'elenco è connesso via Bluetooth, un telefono più in basso o non in elenco attende fino a 20 secondi.</string>
     <string name="native_phones_all">Viene attivato ogni telefono associato, il più recente per primo</string>
     <string name="native_phones_edit">Modifica telefoni</string>
     <string name="native_phones_empty_message">Nessun telefono in elenco. Viene attivato ogni telefono associato, il più recente per primo.</string>

@@ -400,6 +400,9 @@
     <string name="auto_connecting_single_usb">USB 기기에 자동으로 연결 중…</string>
     <string name="video_codec">영상 코덱</string>
     <string name="video_codec_help">휴대전화가 보내는 영상 형식을 선택합니다. 자동은 이 기기가 디코딩할 수 있는 형식 중에서 앱이 고릅니다. H.265는 같은 데이터 전송률에서 더 선명합니다. H.264는 모든 디코더에서 작동합니다. 화면이 끊기거나 검게 유지되면 변경하세요. 선택은 다음 연결부터 적용됩니다.</string>
+    <string name="gal_compatibility_mode">호환 모드 (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">프로토콜의 최초 버전만 요청합니다. 다음 연결부터 적용됩니다.</string>
+    <string name="gal_compatibility_mode_help">앱은 휴대전화에 GAL 6.1을 요청합니다. 휴대전화의 Android Auto가 이전 버전으로 응답하면 1.6을 요청합니다. 이 버전에서는 더 새로운 오디오, 영상, 디스플레이 기능을 사용할 수 있습니다. 휴대전화가 연결되지만 연결 후 제대로 작동하지 않을 때만 이 모드를 켜세요. 이 모드를 켜면 앱은 예전 릴리스와 마찬가지로 GAL 1.2를 요청하며, 이러한 기능은 사용할 수 없습니다. GAL은 프로젝션 프로토콜이며 Android나 Android Auto 앱의 버전과는 다릅니다. 다음 연결부터 적용됩니다.</string>
     <string name="fps_limit">FPS 제한</string>
     <string name="fps_limit_help">이 기기가 Android Auto에 요청하는 최대 프레임 속도입니다. 60은 움직임이 더 부드럽지만 대역폭과 디코더 성능이 더 필요합니다. 화면이 지연되거나 끊기면 30을 선택하세요. 다음 연결부터 적용됩니다.</string>
     <string name="save">저장</string>

@@ -352,6 +352,9 @@
     <string name="move_down">Lefelé</string>
     <string name="video_codec">Videókódek</string>
     <string name="video_codec_help">Kiválasztja a telefon által küldött videóformátumot. Az Auto az alkalmazásra bízza a választást abból, amit a fejegység dekódolni tud. A H.265 azonos adatsebességnél élesebb képet ad. A H.264 minden dekóderen működik. Váltson, ha a kép akadozik vagy fekete marad. A választás a következő csatlakozástól érvényes.</string>
+    <string name="gal_compatibility_mode">Kompatibilitási mód (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Csak az eredeti protokollverziót kéri. A következő csatlakozáskor lép érvénybe.</string>
+    <string name="gal_compatibility_mode_help">Az alkalmazás a GAL 6.1 verziót kéri a telefontól. Ha a telefonon futó Android Auto régebbi verzióval válaszol, az alkalmazás az 1.6 verziót kéri. Ezek a verziók újabb hang-, videó- és megjelenítési funkciókat tesznek elérhetővé. Csak akkor kapcsolja be ezt a módot, ha a telefon csatlakozik, de utána nem működik megfelelően. Az alkalmazás ekkor a korábbi kiadásokhoz hasonlóan a GAL 1.2 verziót kéri, e funkciók nélkül. A GAL a kivetítési protokoll, nem az Android rendszer vagy az Android Auto alkalmazás verziója. A következő csatlakozáskor lép érvénybe.</string>
     <string name="fps_limit">FPS-korlát</string>
     <string name="fps_limit_help">A legmagasabb képkockasebesség, amelyet ez az egység kér az Android Autótól. A 60 simább mozgást ad, de több sávszélességet és dekóderteljesítményt igényel. Válassza a 30-at, ha a kép késik vagy akadozik. A következő csatlakozáskor lép érvénybe.</string>
     <string name="save">Mentés</string>

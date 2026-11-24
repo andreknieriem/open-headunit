@@ -425,6 +425,9 @@
     <string name="auto_connecting_single_usb">Verbindung zum USB-Gerät wird hergestellt…</string>
     <string name="video_codec">Video-Codec</string>
     <string name="video_codec_help">Legt das Videoformat fest, das das Smartphone sendet. Auto wählt aus dem, was dieses Gerät dekodieren kann. H.265 liefert bei gleicher Datenrate ein schärferes Bild. H.264 läuft auf jedem Decoder. Ändere es, wenn das Bild ruckelt oder schwarz bleibt. Die Wahl gilt ab der nächsten Verbindung.</string>
+    <string name="gal_compatibility_mode">Kompatibilitätsmodus (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Fordert nur die ursprüngliche Protokollversion an. Gilt ab der nächsten Verbindung.</string>
+    <string name="gal_compatibility_mode_help">Die App fordert beim Smartphone GAL 6.1 an. Wenn Android Auto auf dem Smartphone mit einer älteren Version antwortet, fordert die App 1.6 an. Diese Versionen ermöglichen neuere Funktionen für Ton, Video und Anzeige. Schalte diesen Modus nur ein, wenn das Smartphone eine Verbindung herstellt, danach aber nicht richtig funktioniert. Die App fordert dann wie in früheren Versionen GAL 1.2 an, ohne diese Funktionen. GAL ist das Projektionsprotokoll, nicht die Version von Android oder der Android Auto-App. Gilt ab der nächsten Verbindung.</string>
     <string name="fps_limit">FPS-Limit</string>
     <string name="fps_limit_help">Die höchste Bildrate, die dieses Gerät bei Android Auto anfordert. 60 ergibt flüssigere Bewegung, braucht aber mehr Bandbreite und Decoder-Leistung. Wähle 30, wenn das Bild hängt oder ruckelt. Gilt ab der nächsten Verbindung.</string>
     <string name="save">Speichern</string>

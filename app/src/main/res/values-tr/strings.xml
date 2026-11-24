@@ -380,6 +380,9 @@
     <string name="auto_connecting_single_usb">USB cihazına otomatik bağlanılıyor…</string>
     <string name="video_codec">Video Kodeği</string>
     <string name="video_codec_help">Telefonun gönderdiği video biçimini seçer. Otomatik, uygulamanın bu ünitenin çözebildikleri arasından seçmesine izin verir. H.265, aynı veri hızında daha net görüntü verir. H.264 her çözücüde çalışır. Görüntü takılıyor veya siyah kalıyorsa değiştirin. Seçim bir sonraki bağlantıdan itibaren geçerlidir.</string>
+    <string name="gal_compatibility_mode">Uyumluluk modu (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Yalnızca protokolün ilk sürümünü ister. Sonraki bağlantıda uygulanır.</string>
+    <string name="gal_compatibility_mode_help">Uygulama telefondan GAL 6.1 ister. Telefondaki Android Auto daha eski bir sürümle yanıt verirse uygulama 1.6 sürümünü ister. Bu sürümler daha yeni ses, video ve görüntüleme özelliklerini etkinleştirir. Bu modu yalnızca telefon bağlandıktan sonra düzgün çalışmıyorsa açın. Bu durumda uygulama, önceki sürümlerinde olduğu gibi GAL 1.2 ister ve bu özellikler kullanılamaz. GAL, yansıtma protokolüdür; Android veya Android Auto uygulamasının sürümü değildir. Sonraki bağlantıda uygulanır.</string>
     <string name="fps_limit">FPS Sınırı</string>
     <string name="fps_limit_help">Bu ünitenin Android Auto\'dan istediği en yüksek kare hızı. 60 daha akıcı hareket sağlar ama daha fazla bant genişliği ve kod çözücü gücü gerektirir. Görüntü gecikiyor veya takılıyorsa 30\'u seçin. Sonraki bağlantıda uygulanır.</string>
     <string name="save">Kaydet</string>

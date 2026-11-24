@@ -353,6 +353,9 @@
     <string name="auto_connecting_single_usb">Automatyczne łączenie z urządzeniem USB…</string>
     <string name="video_codec">Kodek wideo</string>
     <string name="video_codec_help">Wybiera format wideo wysyłany przez telefon. Auto pozwala aplikacji wybrać spośród tego, co ta stacja potrafi zdekodować. H.265 daje ostrzejszy obraz przy tej samej przepływności. H.264 działa na każdym dekoderze. Zmień go, gdy obraz się zacina lub pozostaje czarny. Wybór obowiązuje od następnego połączenia.</string>
+    <string name="gal_compatibility_mode">Tryb zgodności (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Żąda tylko pierwotnej wersji protokołu. Działa od następnego połączenia.</string>
+    <string name="gal_compatibility_mode_help">Aplikacja żąda od telefonu wersji GAL 6.1. Jeśli Android Auto na telefonie odpowie starszą wersją, aplikacja zażąda wersji 1.6. Te wersje udostępniają nowsze funkcje dźwięku, wideo i wyświetlania. Włącz ten tryb tylko wtedy, gdy telefon nawiązuje połączenie, ale potem nie działa prawidłowo. Aplikacja żąda wtedy wersji GAL 1.2, tak jak w poprzednich wydaniach, bez tych funkcji. GAL to protokół projekcji, a nie wersja systemu Android ani aplikacji Android Auto. Działa od następnego połączenia.</string>
     <string name="fps_limit">Limit FPS</string>
     <string name="fps_limit_help">Najwyższa liczba klatek na sekundę, o którą ta stacja prosi Android Auto. Przy 60 ruch jest płynniejszy, ale potrzeba więcej przepustowości i mocy dekodera. Wybierz 30, jeśli obraz się opóźnia lub zacina. Działa od następnego połączenia.</string>
     <string name="save">Zapisz</string>

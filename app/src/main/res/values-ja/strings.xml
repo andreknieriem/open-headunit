@@ -384,6 +384,9 @@
     <string name="auto_connecting_single_usb">USBデバイスに自動接続しています…</string>
     <string name="video_codec">ビデオコーデック</string>
     <string name="video_codec_help">スマートフォンが送信する映像形式を選びます。自動では、この機器がデコードできる形式からアプリが選びます。H.265 は同じデータレートでより鮮明です。H.264 はどのデコーダーでも動作します。映像がカクつく、または黒いままのときに変更してください。選択は次回の接続から有効です。</string>
+    <string name="gal_compatibility_mode">互換モード (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">プロトコルの初期バージョンのみを要求します。次の接続から反映されます。</string>
+    <string name="gal_compatibility_mode_help">アプリはスマートフォンに GAL 6.1 を要求します。スマートフォンの Android Auto が古いバージョンで応答した場合は、1.6 を要求します。これらのバージョンでは、より新しい音声、映像、表示の機能を利用できます。スマートフォンは接続できるものの、その後の動作に問題がある場合にのみ、このモードをオンにしてください。オンにすると、以前のリリースと同じように GAL 1.2 を要求し、これらの機能は利用できません。GAL は画面投影用のプロトコルであり、Android や Android Auto アプリのバージョンとは異なります。次の接続から反映されます。</string>
     <string name="fps_limit">FPS 制限</string>
     <string name="fps_limit_help">この機器が Android Auto に要求する最大フレームレートです。60 にすると動きは滑らかになりますが、帯域とデコーダーの処理能力がより必要です。映像が遅れたりカクついたりする場合は 30 を選んでください。次の接続から反映されます。</string>
     <string name="save">保存</string>

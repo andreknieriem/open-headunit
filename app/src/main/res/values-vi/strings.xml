@@ -373,6 +373,9 @@
     <string name="auto_connecting_single_usb">Đang tự kết nối thiết bị USB…</string>
     <string name="video_codec">Codec video</string>
     <string name="video_codec_help">Chọn định dạng video mà điện thoại gửi. Tự động để ứng dụng chọn trong số những gì thiết bị này giải mã được. H.265 cho hình ảnh nét hơn ở cùng tốc độ dữ liệu. H.264 chạy trên mọi bộ giải mã. Hãy đổi khi hình ảnh bị giật hoặc vẫn đen. Lựa chọn áp dụng từ lần kết nối tiếp theo.</string>
+    <string name="gal_compatibility_mode">Chế độ tương thích (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Chỉ yêu cầu phiên bản ban đầu của giao thức. Áp dụng ở lần kết nối tiếp theo.</string>
+    <string name="gal_compatibility_mode_help">Ứng dụng yêu cầu điện thoại dùng GAL 6.1. Nếu Android Auto trên điện thoại phản hồi bằng một phiên bản cũ hơn, ứng dụng yêu cầu phiên bản 1.6. Các phiên bản này cho phép sử dụng các tính năng âm thanh, video và hiển thị mới hơn. Chỉ bật chế độ này nếu điện thoại kết nối được nhưng sau đó hoạt động không bình thường. Khi đó, ứng dụng yêu cầu GAL 1.2 như trong các bản phát hành trước và không có các tính năng đó. GAL là giao thức trình chiếu, không phải phiên bản Android hay phiên bản ứng dụng Android Auto. Áp dụng ở lần kết nối tiếp theo.</string>
     <string name="fps_limit">Giới hạn FPS</string>
     <string name="fps_limit_help">Tốc độ khung hình cao nhất mà thiết bị này yêu cầu từ Android Auto. 60 cho chuyển động mượt hơn nhưng cần nhiều băng thông và sức mạnh giải mã hơn. Chọn 30 nếu hình ảnh bị trễ hoặc giật. Áp dụng ở lần kết nối tiếp theo.</string>
     <string name="save">Lưu</string>

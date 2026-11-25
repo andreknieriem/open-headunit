@@ -1345,3 +1345,6 @@ subprocess.run(["python3", str(Path(__file__).with_name("module-retry.py"))], ch
 subprocess.run(["python3", str(Path(__file__).with_name("usb-effects.py")), str(ROOT)], check=True)
 subprocess.run(["python3", str(Path(__file__).with_name("usb-effects.py")), str(ROOT), "--libusb"], check=True)
 subprocess.run(["python3", str(Path(__file__).with_name("socket-effects.py")), str(ROOT)], check=True)
+
+# Full external-module carriers: original Native arm at reopen, init, shell and worker effects.
+subprocess.run(["python3", str(Path(__file__).with_name("native-carrier-effects.py")), str(ROOT)], check=True)

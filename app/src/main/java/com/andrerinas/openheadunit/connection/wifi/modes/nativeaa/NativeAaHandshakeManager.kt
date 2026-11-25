@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner
@@ -78,7 +80,8 @@ import java.util.concurrent.ConcurrentHashMap
 class NativeAaHandshakeManager(
     private val context: AapService,
     private val launcher: WifiLauncherNative,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val operation: ConnectionOperation,
 ) {
     companion object {
         /** Where the BLINK daemon keeps its module's Bluetooth address. BLINK only. */
@@ -248,6 +251,12 @@ class NativeAaHandshakeManager(
     private val commManager = App.provide(context).commManager
     // Lit from the phone's request for credentials until its join is over. See JoinScreenWakePolicy.
     private val joinScreenWake = JoinScreenWake(context)
+
+    private val effectAdmission = ConnectionAdmission { action ->
+        commManager.withAppConnectionLifecycleLock {
+            if (!commManager.isCurrent(operation)) false else { action(); true }
+        }
+    }
     private var aaServerSocket: BluetoothServerSocket? = null
     private var hfpServerSocket: BluetoothServerSocket? = null
 
@@ -503,7 +512,7 @@ class NativeAaHandshakeManager(
     fun selectDriver(mac: String, explicit: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             (moduleCarrier as? HctWppOwner.Client)?.let { carrier ->
-                val accepted = carrier.requestWakeFor(mac, allowReplacePending = explicit) {
+                val accepted = carrier.requestWakeFor(mac, allowReplacePending = explicit, admission = effectAdmission) {
                     commitDriverSelection(mac, explicit)
                     wakeStoodDown = false
                     sessionEndedAt = 0L
@@ -922,7 +931,7 @@ class NativeAaHandshakeManager(
 
     /** Runs inside the ZBT window, after each refusal: the measurement's own gates already passed. */
     private fun zjSocketEndsZbtWait(refusals: Int): Boolean {
-        if (ZjSocketPolicy.probesDuringZbtWait(refusals, ZjSocketProbe.answer())) ZjSocketProbe.measure()
+        if (ZjSocketPolicy.probesDuringZbtWait(refusals, ZjSocketProbe.answer())) ZjSocketProbe.measure(effectAdmission)
         return ZjSocketPolicy.endsZbtWait(refusals, ZjSocketProbe.answer())
     }
 
@@ -982,7 +991,7 @@ class NativeAaHandshakeManager(
                 if (completion != ZbtDiscovery.Measurement.Completion.CANCELLED &&
                     measuringDaemon && measureGeneration == generation && wantsZjSocketProbe()
                 ) {
-                    ZjSocketProbe.measure()
+                    ZjSocketProbe.measure(effectAdmission)
                 }
                 withContext(Dispatchers.Main.immediate) {
                     completeDaemonMeasurement(generation, discovery.decision, completion)
@@ -2516,7 +2525,7 @@ class NativeAaHandshakeManager(
         // than at the callers covers the credential path and WppAction.ResumePoke at once.
         moduleCarrier?.let {
             if (it.sendsWake) ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
-            it.requestWake()
+            it.requestWake(admission = effectAdmission)
             return
         }
         // No route yet, and the one being measured is probably the module: an HFP poke is wasted.
@@ -2872,7 +2881,7 @@ class NativeAaHandshakeManager(
         AppLog.i("NativeAA: Manual poke requested — asking the Bluetooth module to connect Android Auto.")
         resetHandshakeBackoff()
         resetJoinRefusals()
-        carrier.requestWake(userAsked = true)
+        carrier.requestWake(userAsked = true, admission = effectAdmission)
         return true
     }
 
@@ -2892,7 +2901,7 @@ class NativeAaHandshakeManager(
                 sessionEndedAt = 0L
                 resetHandshakeBackoff()
                 resetJoinRefusals()
-                it.requestWakeFor(address)
+                it.requestWakeFor(address, admission = effectAdmission)
                 return
             }
         }
@@ -3057,6 +3066,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverExternalModule() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3067,6 +3077,7 @@ class NativeAaHandshakeManager(
                 "own Bluetooth radio."
         )
         val carrier = ZbtAaCarrier(
+            admission = effectAdmission,
             // The module's arrival is this route's "phone answered", or the pill never moves past waking.
             serve = { link ->
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
@@ -3094,10 +3105,11 @@ class NativeAaHandshakeManager(
         if (wakeAwaitingModule) {
             wakeAwaitingModule = false
             ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
-            carrier.requestWake()
+            carrier.requestWake(admission = effectAdmission)
         }
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZbtCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e
@@ -3108,6 +3120,7 @@ class NativeAaHandshakeManager(
     }
     @SuppressLint("NewApi") // The route is gated by HctServiceObserver.available (API 21+).
     private fun startOverHctModule() {
+        if (!commManager.isCurrent(operation)) return
         notStartedReason = null
         aaListenersClosedForSession = false
         localRadioName = "HCT external Bluetooth module"
@@ -3129,6 +3142,7 @@ class NativeAaHandshakeManager(
         )
         lateinit var carrier: HctWppOwner.Client
         carrier = context.hctWppOwner.attach(
+            admission = effectAdmission,
             openingRequest = {
                 HctOpening.versionRequest(
                     WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context)),
@@ -3179,6 +3193,7 @@ class NativeAaHandshakeManager(
         reportHctNetworkReady()
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-HctCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e
@@ -3206,6 +3221,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverEsp32RelayModule() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3226,20 +3242,32 @@ class NativeAaHandshakeManager(
             ensureLink = {
                 // Keep-alive only — must not re-arm HFP every poll tick.
                 // offerLiveGroup is throttled; armRelay alone keeps BLE without P2P thrash.
-                Esp32RelaySession.armRelay(context)
-                Esp32RelaySession.offerLiveGroup(context, force = false)
+                effectAdmission.run {
+                    Esp32RelaySession.armRelay(context)
+                    Esp32RelaySession.offerLiveGroup(context, force = false)
+                }
             },
-            sendToPhone = { bytes -> Esp32RelaySession.sendRfcomm(bytes) },
-            grantCredit = { extra -> Esp32RelaySession.grantCredit(extra) },
+            sendToPhone = { bytes ->
+                var sent = false
+                effectAdmission.run { sent = Esp32RelaySession.sendRfcomm(bytes) }
+                sent
+            },
+            grantCredit = { extra -> effectAdmission.run { Esp32RelaySession.grantCredit(extra) }; Unit },
         )
-        Esp32RelaySession.setFrameSink { frame -> carrier.onFrame(frame) }
-        Esp32RelaySession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
-        Esp32RelaySession.onGiveUp = { endAndroidAutoIfEsp32RelaySetting("link stayed down") }
-        moduleCarrier = carrier
-        // Always HFP_ON + AA_ENABLE for a Wi-Fi AA bring-up, even if BLE is already READY
-        // after a cancel (armRelay is a no-op then and would leave HFP off).
-        Esp32RelaySession.requestAaWake(context)
-        Esp32RelaySession.offerLiveGroup(context, force = true)
+        if (!effectAdmission.run {
+                moduleCarrier = carrier
+                Esp32RelaySession.setFrameSink { frame ->
+                    if (commManager.isCurrent(operation)) carrier.onFrame(frame)
+                }
+                Esp32RelaySession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
+                Esp32RelaySession.onGiveUp = { endAndroidAutoIfEsp32RelaySetting("link stayed down") }
+                // A fresh Wi-Fi start must wake HFP even when the BLE link survived a cancel.
+                Esp32RelaySession.requestAaWake(context)
+                Esp32RelaySession.offerLiveGroup(context, force = true)
+            }) {
+            carrier.close()
+            return
+        }
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Esp32RelayCarrier")) {
             try {
                 carrier.run()
@@ -3248,9 +3276,16 @@ class NativeAaHandshakeManager(
             } catch (e: Exception) {
                 AppLog.e("NativeAA: [ESP32] carrier stopped unexpectedly: ${e.message}", e)
             } finally {
-                Esp32RelaySession.setFrameSink(null)
-                Esp32RelaySession.setTransportErrorHandler(null)
-                Esp32RelaySession.onGiveUp = null
+                carrier.close()
+                commManager.withAppConnectionLifecycleLock {
+                    // Stop clears this owner before a replacement installs its callbacks.
+                    if (moduleCarrier === carrier) {
+                        moduleCarrier = null
+                        Esp32RelaySession.setFrameSink(null)
+                        Esp32RelaySession.setTransportErrorHandler(null)
+                        Esp32RelaySession.onGiveUp = null
+                    }
+                }
             }
         }
     }
@@ -3274,6 +3309,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverBlinkModule() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3296,11 +3332,12 @@ class NativeAaHandshakeManager(
                 "module through ${BlinkAutoSerialChannel.PORT}, where the stock Car Link normally sits."
         )
         val carrier = BlinkAaCarrier(
+            admission = effectAdmission,
             serve = { link ->
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
                 handleHandshake(link)
             },
-            isRunning = { isRunning },
+            isRunning = { isRunning && commManager.isCurrent(operation) },
             isFinishedForSession = { aaListenersClosedForSession },
             mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
             onPhoneEvidence = { resetHandshakeBackoff() },
@@ -3310,6 +3347,7 @@ class NativeAaHandshakeManager(
         moduleCarrier = carrier
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-BlinkCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e
@@ -3333,6 +3371,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverZjSocket() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3354,6 +3393,7 @@ class NativeAaHandshakeManager(
                 "the handshake will connect to ${ZjSocketProbe.path()} directly."
         )
         val carrier = ZjSocketCarrier(
+            admission = effectAdmission,
             socketPath = ZjSocketProbe.path(),
             serve = { link ->
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
@@ -3372,6 +3412,7 @@ class NativeAaHandshakeManager(
         wakeAwaitingModule = false
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZjSocketCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e

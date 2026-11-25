@@ -67,15 +67,21 @@ object ZbtDiscovery {
  fun snapshot()=Snapshot();fun deferIdentityForArming(decision:ZbtDiscoveryPolicy.Decision){error("unexpected fallback")}
  object Measurement {enum class Completion {SETTLED,CARRIER_BUSY,CANCELLED}}
 }
+class ConnectionOperation(val ticket:Long)
+fun interface ConnectionAdmission { fun run(action:()->Unit):Boolean }
 class ZbtAaCarrier(
+ val admission:ConnectionAdmission,
  val serve:suspend (Any)->Unit, val isRunning:()->Boolean, val isFinishedForSession:()->Boolean,
  val isSessionConnected:()->Boolean, val isSettling:()->Boolean, val isHandshakeInFlight:()->Boolean,
  val mayServeHandshake:()->Boolean, val onPhoneEvidence:()->Unit, val onModuleAddress:(String)->Unit,
  val retryDelayMs:()->Long
 ) {
  var wakes=0;var explicitWakes=0;val sendsWake=true
- fun requestWake(userAsked:Boolean=false){wakes++;if(userAsked)explicitWakes++}
+ fun requestWake(userAsked:Boolean=false, admission:ConnectionAdmission) {
+  admission.run { wakes++; if(userAsked) explicitWakes++ }
+ }
  suspend fun run(){}
+ fun close(){}
 }
 class Manager {
  val scope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
@@ -89,7 +95,13 @@ class Manager {
  var isSelectionCanceled=false;var pendingSelectionTargetMac:String?=null
  var measurementRequired=true;var starts=0
  val commManager=Comm()
- class Comm {var isConnected=false}
+ val operation=ConnectionOperation(commManager.ticket)
+ // ARM_ADMISSION
+ class Comm {
+  var isConnected=false; var ticket=0L
+  fun isCurrent(operation:ConnectionOperation)=operation.ticket==ticket
+  fun <T> withAppConnectionLifecycleLock(action:()->T):T=synchronized(this) { action() }
+ }
  fun isMeasuringDaemon()=measuringDaemon
  // Replace only route selection/measurement; all downstream production methods are below.
  fun start(){starts++;if(measurementRequired)measuringDaemon=true else startOverExternalModule()}
@@ -152,6 +164,7 @@ body = '\n'.join(member(manager, declaration) for declaration in [
     'private fun startOverExternalModule()',
 ])
 code = code.replace('// MANAGER_METHODS', body)
+code = code.replace('// ARM_ADMISSION', member(manager, 'private val effectAdmission = ConnectionAdmission'))
 code = code.replace('// BUTTON_BRANCH', member('aap/AapService.kt',
     'ModuleRearmPolicy.Action.START_HANDSHAKE ->'))
 (OUT / 'Fixture.kt').write_text(code)

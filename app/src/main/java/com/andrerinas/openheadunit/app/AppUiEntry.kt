@@ -62,7 +62,7 @@ internal object AppUiEntry {
         reopenIfFinishing(activity)
     }
     fun foregroundStarted(activity: Activity) {
-        val entryActivity = isEntryActivity(activity)
+        val entryActivity = isEntryActivity(activity) && App.isUserUnlocked(activity)
         val revision = if (entryActivity) App.provide(activity).commManager.appOwnershipRevision() else 0L
         policy.foregroundStarted(revision, entryActivity)
     }

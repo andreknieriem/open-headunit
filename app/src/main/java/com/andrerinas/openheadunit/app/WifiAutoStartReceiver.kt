@@ -19,7 +19,6 @@ import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import android.os.Build
-import android.os.UserManager
 
 class WifiAutoStartReceiver : BroadcastReceiver() {
 
@@ -53,8 +52,7 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
             // the object graph read, so there is nothing to start yet. BootCompleteReceiver runs
             // this decision again on ACTION_USER_UNLOCKED. Asked after the settings above so a
             // user who never enabled this does not get the line on every locked boot.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                !(context.getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked) {
+            if (!App.isUserUnlocked(context)) {
                 AppLog.w("WifiAutoStartReceiver: device is locked, deferring WiFi auto-start until unlock.")
                 return
             }

@@ -99,7 +99,7 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                 // and prevents opening/locking the system notification shade on Android 6/7 head units.
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                     try {
-                        context.startActivity(launchIntent)
+                        context.startActivity(AppUiEntry.continuation(Intent(launchIntent)))
                         AppLog.i("WifiAutoStartReceiver: Direct startActivity succeeded (API ${Build.VERSION.SDK_INT} < 29).")
                         return
                     } catch (e: Exception) {
@@ -108,10 +108,11 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                 }
 
                 // Android 10+ (API 29+): FullScreenIntent notification fallback for OS background restrictions
-                val pendingIntent = PendingIntent.getActivity(
-                    context, 0, launchIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-                )
+                val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+                val pendingIntent = PendingIntent.getActivity(context, 0, launchIntent, piFlags)
+                val fullScreenIntent = PendingIntent.getActivity(context, 203,
+                    AppUiEntry.continuation(Intent(launchIntent)), piFlags)
 
                 val notification = NotificationCompat.Builder(context, App.bootStartChannel)
                     .setSmallIcon(R.drawable.ic_stat_aa)
@@ -120,7 +121,7 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setCategory(NotificationCompat.CATEGORY_EVENT)
                     .setAutoCancel(true)
-                    .setFullScreenIntent(pendingIntent, true)
+                    .setFullScreenIntent(fullScreenIntent, true)
                     .setContentIntent(pendingIntent)
                     .build()
 

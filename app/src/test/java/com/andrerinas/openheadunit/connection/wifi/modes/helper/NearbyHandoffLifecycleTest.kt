@@ -30,7 +30,7 @@ class NearbyHandoffLifecycleTest {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val client = mock<ConnectionsClient>()
         val context = mock<Context>()
-        val comm = mock<CommManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS)
+        val comm = mock<CommManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val state = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected())
         val retirement = Job()
         field(comm, "context", context); field(comm, "_connectionState", state)

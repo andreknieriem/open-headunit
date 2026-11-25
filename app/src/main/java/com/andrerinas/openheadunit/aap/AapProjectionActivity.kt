@@ -32,7 +32,9 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.protocol.messages.TouchEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
 import com.andrerinas.openheadunit.app.SurfaceActivity
+import com.andrerinas.openheadunit.app.AppUiEntry
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
 import com.andrerinas.openheadunit.input.GestureOutcomePolicy
@@ -598,9 +600,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             ProjectionColdOpenPolicy.Action.LEAVE -> {
                 AppLog.i("AapProjectionActivity: opened with no session and none on its way, going back to the home screen.")
-                startActivity(Intent(this, MainActivity::class.java).apply {
+                startActivity(AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                })
+                }))
                 finish()
             }
         }
@@ -1119,7 +1121,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private val finishReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == "com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES") {
+            if (intent.action == AppExitPolicy.ACTION_FINISH_ACTIVITIES &&
+                commManager.ownsAppExit(intent.getLongExtra(AppExitPolicy.EXTRA_EXIT_OWNER, 0L))) {
                 AppLog.i("AapProjectionActivity: Received finish request. Closing.")
                 finish()
             }
@@ -1280,7 +1283,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         }
 
-        ContextCompat.registerReceiver(this, finishReceiver, android.content.IntentFilter("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES"), ContextCompat.RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(this, finishReceiver, android.content.IntentFilter(AppExitPolicy.ACTION_FINISH_ACTIVITIES), ContextCompat.RECEIVER_NOT_EXPORTED)
         isFinishReceiverRegistered = true
 
         // Registered for the activity's whole life, not onResume/onPause: screen-off pauses it,
@@ -2169,10 +2172,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // this app is the home app, it is named, so the projection goes behind our own home screen.
         val isHome = CarLauncherManager.isDefaultLauncher(this)
         val startMain = if (isHome) {
-            Intent(this, MainActivity::class.java).apply {
+            AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                 action = Intent.ACTION_MAIN
                 addCategory(Intent.CATEGORY_HOME)
-            }
+            })
         } else {
             Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
         }
@@ -3062,9 +3065,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         fun returnToAppHome(context: Context) {
             try {
-                val mainIntent = Intent(context, MainActivity::class.java).apply {
+                val mainIntent = AppUiEntry.continuation(Intent(context, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                }
+                })
                 context.startActivity(mainIntent)
             } catch (e: Exception) {
                 AppLog.w("[AapProjectionActivity] returnToAppHome failed: ${e.message}")

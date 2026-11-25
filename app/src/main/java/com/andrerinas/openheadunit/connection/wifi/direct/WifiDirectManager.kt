@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import com.andrerinas.openheadunit.utils.WifiStackRecovery
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.app.AppUiEntry
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -2133,7 +2134,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 val intent = Intent(context, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 }
-                context.startActivity(intent)
+                context.startActivity(AppUiEntry.continuation(intent))
             } catch (e: Exception) {}
         }, 800L)
     }

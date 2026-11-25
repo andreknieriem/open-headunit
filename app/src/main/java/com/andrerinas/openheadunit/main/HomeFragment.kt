@@ -319,13 +319,13 @@ class HomeFragment : Fragment() {
         mainViewModel.homePressed.observe(viewLifecycleOwner) { showFirstPage(animate = isResumed) }
 
         val appSettings = App.provide(requireContext()).settings
+        val autoConnectTicket = commManager.currentAppRunTicket()
 
-        if (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot) {
-            ContextCompat.startForegroundService(requireContext(),
-                Intent(requireContext(), AapService::class.java))
+        if (autoConnectTicket != null && (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot)) {
+            commManager.restoreAppForEntry(commManager.appOwnershipRevision())
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        if (autoConnectTicket != null) viewLifecycleOwner.lifecycleScope.launch {
             val isAutoConnectEnabled = appSettings.autoStartSelfMode ||
                 appSettings.autoConnectLastSession ||
                 appSettings.autoConnectSingleUsbDevice
@@ -336,14 +336,14 @@ class HomeFragment : Fragment() {
                 countDownToAutoConnect(delaySec, autoConnectTarget(appSettings))
             }
 
-            if (!isAdded || commManager.isConnected) return@launch
+            if (!isAdded || commManager.isConnected || !commManager.acceptsAppRunTicket(autoConnectTicket)) return@launch
             if (autoConnectCancelled) {
                 AppLog.i("HomeFragment: auto-connect cancelled from the home screen countdown")
                 return@launch
             }
 
             for (methodId in appSettings.autoConnectPriorityOrder) {
-                if (commManager.isConnected) break
+                if (commManager.isConnected || !commManager.acceptsAppRunTicket(autoConnectTicket)) break
                 when (methodId) {
                     Settings.AUTO_CONNECT_LAST_SESSION -> {
                         if (appSettings.autoConnectLastSession && !hasAttemptedAutoConnect && !commManager.isConnected) {
@@ -1720,7 +1720,7 @@ class HomeFragment : Fragment() {
     private fun openProjection() {
         val aapIntent = Intent(requireContext(), AapProjectionActivity::class.java)
         aapIntent.putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
-        startActivity(aapIntent)
+        startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(aapIntent))
     }
 
     private fun startSelfModeInternal(needsDummyVpn: Boolean = false) {
@@ -1881,7 +1881,7 @@ class HomeFragment : Fragment() {
             true
         }
         settingsTile.setOnClickListener {
-            startActivity(Intent(requireContext(), SettingsActivity::class.java))
+            startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(Intent(requireContext(), SettingsActivity::class.java)))
         }
         primaryAction?.setOnClickListener { onPrimaryActionClicked() }
         primaryCancel?.setOnClickListener { onPrimaryCancelClicked() }
@@ -1916,9 +1916,7 @@ class HomeFragment : Fragment() {
             }
             ContextCompat.startForegroundService(requireContext(), disconnectIntent)
         } else {
-            val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
-                action = AapService.ACTION_STOP_SERVICE
-            }
+            val stopServiceIntent = AapService.stopIntent(requireContext())
             ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
         }
         requireActivity().finishAffinity()
@@ -2215,7 +2213,8 @@ class HomeFragment : Fragment() {
             if (!ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(requireContext()))) {
                 showNativeAaDeviceSelector(autoCountdown = false)
             }
-        } else if (appSettings.wifiConnectionMode == WifiLauncherMode.NATIVE && !commManager.isConnected) {
+        } else if (appSettings.wifiConnectionMode == WifiLauncherMode.NATIVE && !commManager.isConnected &&
+            commManager.currentAppRunTicket() != null) {
             if (!hasCheckedNativeDriverSelection) checkNativeDriverSelectionOnStartup()
         }
 

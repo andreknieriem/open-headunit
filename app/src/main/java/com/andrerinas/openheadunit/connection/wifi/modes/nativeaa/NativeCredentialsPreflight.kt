@@ -53,19 +53,21 @@ object NativeCredentialsPreflight {
         manualSsid: String,
         manualPassword: String,
         staticBssid: String?,
-        hotspotInterface: String
+        hotspotInterface: String,
+        localHotspot: Boolean
     ): PreflightProbe = withContext(Dispatchers.IO) {
         val app = context.applicationContext
 
         // Read only when it could matter. On the WiFi Direct route the answer is unused, and once a
         // manual name is set SoftApCredentialsPolicy.resolve never consults it either - so asking
         // would cost a reflective call whose answer is already outranked.
-        val systemConfig = if (transport == NativeTransport.HOTSPOT && manualSsid.isEmpty()) {
+        val systemConfig = if (transport == NativeTransport.HOTSPOT && !localHotspot && manualSsid.isEmpty()) {
             HotspotConfigReader.getSystemHotspotConfig(app)?.let { SoftApCredentials(it.first, it.second) }
         } else null
 
         val bssid = when (transport) {
-            NativeTransport.HOTSPOT -> probeHotspotBssid(app, hotspotInterface)
+            // The local hotspot does not exist yet, and its address is read after the start.
+            NativeTransport.HOTSPOT -> if (localHotspot) BssidProbe(null, conclusive = false) else probeHotspotBssid(app, hotspotInterface)
             NativeTransport.WIFI_DIRECT -> probeWifiDirectBssid(app)
         }
 

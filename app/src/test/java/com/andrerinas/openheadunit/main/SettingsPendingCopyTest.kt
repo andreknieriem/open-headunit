@@ -68,6 +68,33 @@ class SettingsPendingCopyTest {
         assertEquals("00:11:22:33:44:01", copy.nativePreferredDeviceMac)
     }
 
+    @Test fun `a fresh copy reads the system hotspot setting as unchanged`() {
+        val settings = newSettings()
+        val copy = SettingsPendingCopy()
+        copy.loadFrom(settings)
+        assertEquals(false, copy.useSystemHotspot)
+        assertFalse(copy.differsFrom(settings))
+    }
+
+    @Test fun `flipping only the system hotspot setting changes only that field`() {
+        val settings = newSettings()
+        settings.hotspotSsid = "MyHotspot"
+        settings.hotspotPassword = "hunter2hunter2"
+        settings.hotspotInterface = "wlan2"
+        settings.autoEnableHotspot = true
+        val copy = SettingsPendingCopy()
+        copy.loadFrom(settings)
+        copy.useSystemHotspot = true
+        assertTrue(copy.differsFrom(settings))
+        // The save line writes a field only when it differs, so these four stay as they were.
+        assertEquals(settings.hotspotSsid, copy.hotspotSsid)
+        assertEquals(settings.hotspotPassword, copy.hotspotPassword)
+        assertEquals(settings.hotspotInterface, copy.hotspotInterface)
+        assertEquals(settings.autoEnableHotspot, copy.autoEnableHotspot)
+        copy.useSystemHotspot = false
+        assertFalse(copy.differsFrom(settings))
+    }
+
     @Test fun `loading fills every field`() {
         val copy = SettingsPendingCopy()
         copy.loadFrom(newSettings())

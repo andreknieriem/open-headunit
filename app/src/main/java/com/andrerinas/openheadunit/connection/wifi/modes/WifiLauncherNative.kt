@@ -15,10 +15,12 @@ import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherStopSequence
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStabilityPolicy
+import com.andrerinas.openheadunit.connection.wifi.direct.P2pTeardownTracker
 import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDown
 import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownSettlePolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.LocalHotspotPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeCredentialsPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
@@ -43,6 +45,12 @@ class WifiLauncherNative : WifiLauncher {
 
     val strategy: NativeStrategy
 
+    /** Fixed at construction, as [strategy] is, so a Save that flips the setting restarts the mode. */
+    val hotspotSource: LocalHotspotPolicy.Source
+
+    /** Set by AapService just before a user exit stops this launcher, so the close says why. */
+    @Volatile private var userExitNoted = false
+
     var handshakeManager: NativeAaHandshakeManager? = null
         private set
     private var softApCredentialsProvider: SoftApCredentialsProvider? = null
@@ -54,15 +62,25 @@ class WifiLauncherNative : WifiLauncher {
     constructor(manager: WifiLauncherManager) : super(manager) {
         // copy settings early in construction to align with #hasSameStartConfiguration
         this.strategy = settings.nativeApStrategy
+        this.hotspotSource = LocalHotspotPolicy.source(Build.VERSION.SDK_INT, settings.useSystemHotspot)
     }
 
     constructor(manager: WifiLauncherManager, strategy: NativeStrategy) : super(manager) {
         this.strategy = strategy
+        // Reads no setting: this one builds a launcher around a manager with no service.
+        this.hotspotSource = LocalHotspotPolicy.source(Build.VERSION.SDK_INT, useSystemHotspot = false)
+    }
+
+    /** The next [stop] closes a local hotspot as a user exit. [start] clears it. */
+    override fun noteUserExit() {
+        userExitNoted = true
     }
 
     override val mode = WifiLauncherMode.NATIVE
 
-    override fun hasSameStartConfiguration(launcher: WifiLauncher) = launcher is WifiLauncherNative && launcher.strategy == strategy
+    override fun hasSameStartConfiguration(launcher: WifiLauncher) =
+        launcher is WifiLauncherNative &&
+            LocalHotspotPolicy.sameStartConfiguration(strategy, hotspotSource, launcher.strategy, launcher.hotspotSource)
 
     override fun hasWifiDirect() = strategy == NativeStrategy.WIFI_DIRECT
 
@@ -80,11 +98,14 @@ class WifiLauncherNative : WifiLauncher {
     override fun start(noInfoToasts: Boolean) {
         val wifiDirect = manager.sharedServices.wifiDirectManager
 
+        userExitNoted = false
         handshakeManager = NativeAaHandshakeManager(service, this, service.serviceScope)
         // The wake poke wakes the phone, and a phone that answers takes over the screen. Doing that
         // to somebody who is in the middle of changing settings loses whatever they were reading.
         handshakeManager?.userConfiguringProvider = { SettingsActivity.isForeground }
-        softApCredentialsProvider = SoftApCredentialsProvider(service, service.serviceScope, settings)
+        softApCredentialsProvider = SoftApCredentialsProvider(
+            service, service.serviceScope, settings, hotspotSource, { P2pTeardownTracker.latest }
+        )
         // Above the strategy branch, not inside it: the provider resolves on IO the instant it is
         // started, and on a unit whose access point is already up that is tens of milliseconds.
         setupSoftAp()
@@ -111,7 +132,7 @@ class WifiLauncherNative : WifiLauncher {
             if (this.strategy == NativeStrategy.HOTSPOT) {
                 // Read this device's own access point instead of hosting a P2P group. The AP
                 // itself is the user's to switch on; the provider only resolves and watches it.
-                AppLog.i("AapService: Native AA on the head unit hotspot — resolving access point credentials.")
+                AppLog.i("AapService: Native AA on the head unit hotspot (source=$hotspotSource) — resolving access point credentials.")
                 ConnectionStageTracker.report(ConnectionStage.PREPARING_NETWORK)
                 softApCredentialsProvider?.start()
             } else if (wifiDirect != null) {
@@ -209,9 +230,8 @@ class WifiLauncherNative : WifiLauncher {
         // WIFI_AP_STATE_CHANGED and switches an access point it started back on when it sees one
         // drop. Left registered here it would treat this very teardown as the hotspot failing and
         // bring it back up as the service dies — leaving the access point running with nothing
-        // left to serve it.
-        if (seq.handledAt(WifiLauncherStopSequence.BEFORE_HOTSPOT_DISABLE))
-            softApCredentialsProvider?.stop()
+        // left to serve it. At every sequence: a LAST-only stop must close a local hotspot too.
+        stopCredentials(seq)
 
         if (seq.handledAt(WifiLauncherStopSequence.LAST)) {
             handshakeManager?.stop()
@@ -220,6 +240,14 @@ class WifiLauncherNative : WifiLauncher {
             // restores as well, because a force-stop never reaches here at all.
             StationStandDown.restore(service)
         }
+    }
+
+    /** The provider's stop is idempotent, so the destroy path's two calls close the hotspot once. */
+    internal fun stopCredentials(seq: WifiLauncherStopSequence) {
+        // A noted user exit wins: that path stops the launcher at ANY, which reads as a replacement.
+        softApCredentialsProvider?.stop(
+            LocalHotspotPolicy.closeReason(seq == WifiLauncherStopSequence.ANY, userExitNoted)
+        )
     }
 
     /**
@@ -315,7 +343,13 @@ class WifiLauncherNative : WifiLauncher {
     private fun setupSoftAp() {
         softApIdentityAssessedKey = null
         softApCredentialsProvider?.setCredentialsListener { ssid, psk, ip, bssid ->
-            onNativeCredentials(ssid, psk, ip, bssid, softApIdentity(ssid, psk, ip, bssid))
+            // The local hotspot is new on every start: no identity is graded and no endpoint advertised.
+            val identity = if (LocalHotspotPolicy.assessesIdentity(hotspotSource)) {
+                softApIdentity(ssid, psk, ip, bssid)
+            } else {
+                GroupIdentityStability.UNPROVEN
+            }
+            onNativeCredentials(ssid, psk, ip, bssid, identity)
         }
         softApCredentialsProvider?.setInvalidatedListener { handshakeManager?.invalidateCredentials() }
     }
@@ -352,18 +386,22 @@ class WifiLauncherNative : WifiLauncher {
 
     /**
      * Whether the network the phone is told to join is up, or null where the question is not
-     * this route's to answer: the access point on the hotspot strategy is the user's own.
+     * this route's to answer: the system access point is the user's own.
      */
     fun hasLiveNetwork(): Boolean? =
-        if (strategy == NativeStrategy.HOTSPOT) null
+        if (strategy == NativeStrategy.HOTSPOT) {
+            if (hotspotSource == LocalHotspotPolicy.Source.LOCAL_ONLY) softApCredentialsProvider?.hasLiveLocalHotspot() else null
+        }
         else manager.sharedServices.wifiDirectManager?.hasLiveGroup
 
     /**
-     * Whether a network of ours has been asked for and has not answered yet. Null on the hotspot
-     * route, where the access point is the user's and nothing here creates one.
+     * Whether a network of ours has been asked for and has not answered yet. Null on the system
+     * hotspot route, where the access point is the user's and nothing here creates one.
      */
     fun networkComingUp(): Boolean? =
-        if (strategy == NativeStrategy.HOTSPOT) null
+        if (strategy == NativeStrategy.HOTSPOT) {
+            if (hotspotSource == LocalHotspotPolicy.Source.LOCAL_ONLY) softApCredentialsProvider?.isLocalStartInFlight() else null
+        }
         else manager.sharedServices.wifiDirectManager?.isCreatingGroup
 
     /**
@@ -411,17 +449,17 @@ class WifiLauncherNative : WifiLauncher {
      */
     fun refreshAfterWake() {
         manager.sharedServices.startWirelessServer(this)
-        triggerWifiDirectRefresh()
+        triggerWifiDirectRefresh(afterWake = true)
     }
 
     /**
      * Triggers a refresh of the WiFi Direct "quiet host" state.
      * Called by NativeAaHandshakeManager if it's waiting for credentials that haven't arrived yet.
      */
-    fun triggerWifiDirectRefresh() {
+    fun triggerWifiDirectRefresh(afterWake: Boolean = false) {
         if (this.strategy == NativeStrategy.HOTSPOT) {
             AppLog.i("AapService: Access point refresh requested.")
-            softApCredentialsProvider?.refresh()
+            softApCredentialsProvider?.refresh(afterWake)
 
         } else {
             // Read again, not remade: see WifiDirectManager.refreshNativeCredentials.

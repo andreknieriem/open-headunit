@@ -1264,6 +1264,10 @@
     <string name="connection_issue_banner_bt_silent">手機已透過藍牙連線，但本機的藍牙無法傳送任何資料給它。輕觸以選擇不需要藍牙的模式，例如 Wireless Helper。</string>
     <string name="connection_issue_banner_bssid">手機不知道要加入哪個網路，因為本機不願分享其 Wi-Fi 位址。請開啟位置功能，或輕觸以手動輸入位址。</string>
     <string name="connection_issue_banner_hotspot_off">本機的無線基地台已關閉，手機沒有可加入的網路。請開啟無線基地台，或輕觸讓應用程式代為開啟。</string>
+    <string name="connection_issue_banner_local_hotspot">本機無法啟動自己的無線基地台，手機沒有可加入的網路。輕觸即可開啟「使用系統無線基地台」。</string>
+    <string name="use_system_hotspot">使用系統無線基地台</string>
+    <string name="use_system_hotspot_summary">已關閉：應用程式會啟動自己的無線基地台，不需要設定。</string>
+    <string name="use_system_hotspot_help">已關閉：在 Android 8 以上版本，應用程式會啟動自己的本機無線基地台，不需要任何設定。這時名稱、密碼、介面、頻段和頻道這幾列不會作用，因此已隱藏。您輸入的值仍會保留。已開啟：應用程式會像以前一樣使用本機的無線基地台，您可以手動設定名稱、密碼和介面。</string>
     <string name="connection_issue_banner_wifi_direct_refused">本機無法為手機建立 Wi-Fi Direct 網路。請嘗試讓本機中斷其他 Wi-Fi 連線，或輕觸改用無線基地台。</string>
     <string name="connection_issue_banner_wifi_direct_cycled">另一個應用程式一直關閉 Wi-Fi Direct，通常是預先安裝的投影應用程式，例如 ZLink 或 CarLife。請停用該應用程式，或輕觸改用無線基地台。</string>
     <string name="connection_issue_banner_hotspot_config">本機不願與應用程式分享無線基地台名稱和密碼。輕觸以手動輸入。</string>

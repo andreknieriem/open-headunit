@@ -46,8 +46,10 @@ object SessionEndGroupPolicy {
 }
 enum class WifiLauncherMode { NATIVE }
 enum class WifiLauncherStopSequence { LAST, BEFORE_HOTSPOT_DISABLE }
-enum class HotspotExitAction { NONE, DISABLE, WARN_LEFT_UP }
-object UserExitHotspotPolicy { fun onUserExit(a: Any,b: Any,c: Any,d: Any,e: Any) = HotspotExitAction.NONE }
+enum class HotspotExitAction { NONE, DISABLE, WARN_LEFT_UP, RELEASE_LOCAL }
+object UserExitHotspotPolicy { fun onUserExit(a: Any,b: Any,c: Any,d: Any,e: Any,f: Boolean) = HotspotExitAction.NONE }
+object LocalHotspotPolicy { enum class Source { LOCAL_ONLY, SYSTEM }; fun source(sdkInt: Int, useSystemHotspot: Boolean) = Source.SYSTEM }
+object Build { object VERSION { const val SDK_INT = 0 } }
 enum class WiredRearm { NOW, ON_POWER_BACK, DROP }
 object ExternalPowerDisconnectPolicy {
     fun standDownHolds(powerBack: Boolean, pluggedNow: Boolean) = !powerBack || !pluggedNow
@@ -58,7 +60,7 @@ object HotspotManager { fun restart(s: Service) = true }
 object Esp32RelaySession { fun hasSavedEsp32Relay(context: Any) = false; fun notifyProjection(up: Boolean) {} }
 class Settings {
     val wifiConnectionMode=WifiLauncherMode.NATIVE; val helperConnectionStrategy=0; val nativeApStrategy=0
-    val autoEnableHotspot=false; var hotspotTeardownProvenUnsafe=false
+    val autoEnableHotspot=false; val useSystemHotspot=false; var hotspotTeardownProvenUnsafe=false
     var lastConnectionType=""
     companion object { const val CONNECTION_TYPE_USB="usb" }
 }
@@ -68,6 +70,7 @@ class WifiLauncherNative {
     fun hasWifiDirect() = true
     fun noteSessionEnded(b: Boolean) {}
     fun rearmAfterSessionEnd(wakePhone: Boolean) {}
+    fun noteUserExit() {}
 }
 class WifiManager(val service: Service) {
     private val cleanupGeneration=WirelessCleanupGeneration()

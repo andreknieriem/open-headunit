@@ -1270,6 +1270,10 @@
     <string name="connection_issue_banner_bt_silent">Il telefono si è connesso via Bluetooth, ma il Bluetooth di questa unità non è riuscito a inviargli nulla. Tocca per scegliere una modalità che non ne ha bisogno, come Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Il telefono non ha saputo a quale rete connettersi, perché questa unità non ha condiviso il suo indirizzo WiFi. Attiva la posizione, o tocca per inserire l\'indirizzo a mano.</string>
     <string name="connection_issue_banner_hotspot_off">L\'hotspot di questa unità è spento, quindi il telefono non aveva rete a cui collegarsi. Attivalo, o tocca per lasciare che l\'app lo attivi.</string>
+    <string name="connection_issue_banner_local_hotspot">Questa unità non è riuscita ad avviare un hotspot proprio, quindi il telefono non aveva rete a cui collegarsi. Tocca per attivare «Usa l’hotspot di sistema».</string>
+    <string name="use_system_hotspot">Usa l’hotspot di sistema</string>
+    <string name="use_system_hotspot_summary">Off: l’app avvia un hotspot proprio e non richiede alcuna configurazione.</string>
+    <string name="use_system_hotspot_help">Off: da Android 8 in poi l’app avvia un proprio hotspot locale e non c’è nulla da configurare. Le righe di nome, password, interfaccia, banda e canale allora non hanno effetto, quindi sono nascoste. I tuoi valori restano salvati. On: l’app usa l’hotspot di questa unità come prima, e puoi impostare a mano nome, password e interfaccia.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Questa unità non è riuscita a creare la rete WiFi Direct per il telefono. Prova a scollegarla da un\'altra rete WiFi, o tocca per usare invece il suo hotspot.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Un\'altra app continua a disattivare il WiFi Direct, di solito un\'app di proiezione preinstallata come ZLink o CarLife. Disattivala, o tocca per usare invece l\'hotspot.</string>
     <string name="connection_issue_banner_hotspot_config">Questa unità non condivide nome e password del suo hotspot con l\'app. Tocca per inserirli a mano.</string>

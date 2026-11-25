@@ -1514,6 +1514,10 @@
     <string name="connection_issue_banner_bt_silent">Your phone connected over Bluetooth, but this unit\'s Bluetooth could not send it anything. Tap to pick a mode that does not need it, such as Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Your phone was not told which network to join, because this unit would not share its WiFi address. Turn on Location, or tap to enter the address by hand.</string>
     <string name="connection_issue_banner_hotspot_off">This unit\'s hotspot is off, so your phone had no network to join. Turn it on, or tap to let the app switch it on.</string>
+    <string name="connection_issue_banner_local_hotspot">This unit could not start its own hotspot, so your phone had no network to join. Tap to turn on \'Use the system hotspot\'.</string>
+    <string name="use_system_hotspot">Use the system hotspot</string>
+    <string name="use_system_hotspot_summary">Off: the app starts its own hotspot and needs no setup.</string>
+    <string name="use_system_hotspot_help">Off: on Android 8 and later the app starts its own local hotspot, and nothing needs to be set up. The name, password, interface, band and channel rows do nothing then, so they are hidden. Your values stay saved. On: the app uses this unit\'s own hotspot as before, and you can set the name, password and interface by hand.</string>
     <string name="connection_issue_banner_hotspot_config">This unit will not share its hotspot name and password with the app. Tap to enter them by hand.</string>
     <string name="connection_issue_banner_wifi_direct_stuck">WiFi Direct on this unit is stuck and only a WiFi restart frees it. Tap to restart WiFi.</string>
     <string name="wifi_restart_running">Restarting WiFi…</string>

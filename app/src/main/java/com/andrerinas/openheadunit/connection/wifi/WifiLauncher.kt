@@ -28,6 +28,9 @@ abstract class WifiLauncher(val manager: WifiLauncherManager) {
 
     abstract fun stop(seq: WifiLauncherStopSequence)
 
+    /** The next [stop] is a user exit. Only a launcher that closes something differently says so. */
+    open fun noteUserExit() {}
+
     open fun restartDiscovery() {
         manager.startDiscovery()
     }

@@ -12,6 +12,7 @@ import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.HeldServerSocket
 import com.andrerinas.openheadunit.connection.SameEndpointConnectPolicy
 import com.andrerinas.openheadunit.connection.UnresponsivePeerPolicy
+import com.andrerinas.openheadunit.connection.wifi.direct.P2pTeardownTracker
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiRadioSwitchPolicy
 import com.andrerinas.openheadunit.connection.wifi.server.WirelessServer
@@ -50,7 +51,13 @@ class WifiLauncherSharedServices(val service: AapService) {
         private set
 
     fun update(active: WifiLauncher) {
-        if (active.hasWifiDirect()) startWifiDirect() else stopWifiDirect()
+        if (active.hasWifiDirect()) {
+            startWifiDirect()
+        } else {
+            stopWifiDirect()
+            // A group kept through the last stop is ours, and nothing after this uses it.
+            P2pTeardownTracker.releaseKeptGroup()
+        }
         if (active.hasWirelessServer()) startWirelessServer(active) else stopWirelessServer()
         if (active.hasLocalDiscovery()) startLocalDiscovery(oneShot = false) else stopLocalDiscovery()
     }
@@ -64,8 +71,12 @@ class WifiLauncherSharedServices(val service: AapService) {
     private fun startWifiDirect() {
         if (wifiDirectManager != null)
             stopWifiDirect() // reset from previous session
+        // The new manager reads the kept group, so nothing removes it.
+        val closeKeptChannel = P2pTeardownTracker.adoptKeptGroup()
 
         wifiDirectManager = WifiDirectManager(service)
+        // Closed after the new manager opened its channel: the last channel to close turns P2P off.
+        closeKeptChannel?.invoke()
 
         // This chipset potentially can't run SoftAP and WiFi Direct concurrently — make sure hotspot
         // is off before P2P starts. On IO because the wait for it to actually go is a blocking one.

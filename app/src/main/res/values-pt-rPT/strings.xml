@@ -1401,6 +1401,10 @@
     <string name="connection_issue_banner_bt_silent">O telemóvel ligou-se por Bluetooth, mas o Bluetooth desta unidade não conseguiu enviar-lhe nada. Toque para escolher um modo que não o exija, como o Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Não foi indicado ao telemóvel a que rede se ligar, porque esta unidade não partilhou o seu endereço Wi-Fi. Ative a Localização ou toque para introduzir o endereço manualmente.</string>
     <string name="connection_issue_banner_hotspot_off">A zona Wi-Fi desta unidade está desativada, por isso o telemóvel não tinha nenhuma rede a que se ligar. Ative-a ou toque para a app a ativar.</string>
+    <string name="connection_issue_banner_local_hotspot">Esta unidade não conseguiu iniciar a sua própria zona Wi-Fi, por isso o telemóvel não tinha nenhuma rede a que se ligar. Toque para ativar “Usar a zona Wi-Fi do sistema”.</string>
+    <string name="use_system_hotspot">Usar a zona Wi-Fi do sistema</string>
+    <string name="use_system_hotspot_summary">Desativado: a app inicia a sua própria zona Wi-Fi e não precisa de configuração.</string>
+    <string name="use_system_hotspot_help">Desativado: no Android 8 e posterior, a app inicia a sua própria zona Wi-Fi local e não é preciso configurar nada. As linhas de nome, palavra-passe, interface, banda e canal ficam então sem efeito, por isso estão ocultas. Os seus valores continuam guardados. Ativado: a app usa a zona Wi-Fi desta unidade, como antes, e pode definir o nome, a palavra-passe e a interface manualmente.</string>
     <string name="connection_issue_banner_hotspot_config">Esta unidade não partilha com a app o nome e a palavra-passe da zona Wi-Fi. Toque para os introduzir manualmente.</string>
     <string name="auto_restart_wifi_summary">Reinicia o Wi-Fi sozinho se o WiFi Direct bloquear. Requer root ou ADB local.</string>
     <string name="auto_restart_wifi_description">Desliga e liga o Wi-Fi sozinho se o WiFi Direct bloquear, o que pode acontecer depois de fechar a app a meio de uma sessão. Requer root ou ADB local. Nunca é executado durante uma sessão.</string>

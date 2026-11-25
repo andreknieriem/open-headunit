@@ -56,6 +56,7 @@ import android.content.res.Configuration
 import com.andrerinas.openheadunit.utils.Settings
 import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.LocalHotspotPolicy
 import com.andrerinas.openheadunit.utils.SystemUI
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.bumptech.glide.request.target.CustomTarget
@@ -1391,7 +1392,9 @@ class MainActivity : BaseActivity() {
                 relevant = ConnectionIssueBannerPolicy.relevantNow(
                     mode = settings.wifiConnectionMode.id,
                     transport = settings.nativeApStrategy,
-                    wirelessSelected = settings.showsWifi()
+                    wirelessSelected = settings.showsWifi(),
+                    localHotspot = LocalHotspotPolicy.source(Build.VERSION.SDK_INT, settings.useSystemHotspot) ==
+                        LocalHotspotPolicy.Source.LOCAL_ONLY
                 ),
                 remedyApplied = ConnectionIssueBannerPolicy.remedyApplied(
                     hotspotSsid = settings.hotspotSsid,
@@ -1417,6 +1420,7 @@ class MainActivity : BaseActivity() {
                 ConnectionIssue.BSSID_UNAVAILABLE -> R.string.connection_issue_banner_bssid
                 ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE -> R.string.connection_issue_banner_hotspot_config
                 ConnectionIssue.HOTSPOT_NOT_RUNNING -> R.string.connection_issue_banner_hotspot_off
+                ConnectionIssue.LOCAL_HOTSPOT_FAILED -> R.string.connection_issue_banner_local_hotspot
                 ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED ->
                     R.string.connection_issue_banner_wifi_direct_refused
                 ConnectionIssue.WIFI_DIRECT_STACK_CYCLED ->
@@ -1536,6 +1540,7 @@ class MainActivity : BaseActivity() {
             ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE ->
                 getString(R.string.connection_issue_remedy_hotspot_query)
             ConnectionIssue.HOTSPOT_NOT_RUNNING -> getString(R.string.auto_enable_hotspot)
+            ConnectionIssue.LOCAL_HOTSPOT_FAILED -> getString(R.string.use_system_hotspot)
             ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED -> getString(R.string.native_ap_transport)
             ConnectionIssue.WIFI_DIRECT_STACK_CYCLED -> getString(R.string.native_ap_transport)
             ConnectionIssue.WIFI_RADIO_OFF -> getString(R.string.native_ap_transport)

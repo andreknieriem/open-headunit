@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HotspotBandPreference
 import com.andrerinas.openheadunit.utils.Settings
 
 /**
@@ -59,6 +60,24 @@ object NarrowBandProfilePolicy {
         bandUnreadable: Boolean = false,
     ): Boolean =
         supports5Ghz == false || bandUnreadable || sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ
+
+    /**
+     * The radio's answer as the cap reads it. `is5GHzBandSupported` describes the station side, and a
+     * unit that hosts a 5 GHz hotspot has answered `false`: on the hotspot transport a 5 GHz sighting,
+     * or the user's own 5 GHz choice, makes that `false` unknown. [systemHotspotBand] is the user's
+     * choice for the system hotspot, null on the local one; 2.4 GHz only keeps the `false`.
+     */
+    fun radioAnswer(
+        supports5Ghz: Boolean?,
+        nativeHotspot: Boolean,
+        seenAbove24Ghz: Boolean,
+        systemHotspotBand: HotspotBandPreference?,
+    ): Boolean? = when {
+        supports5Ghz != false || !nativeHotspot -> supports5Ghz
+        systemHotspotBand == HotspotBandPreference.FORCE_2_4GHZ -> false
+        seenAbove24Ghz || systemHotspotBand == HotspotBandPreference.FORCE_5GHZ -> null
+        else -> false
+    }
 
     /**
      * Whether this session should be asked for less than the user's settings say.
@@ -146,7 +165,8 @@ object NarrowBandProfilePolicy {
         capEnabled: Boolean = true,
         sessionFrequencyMhz: Int = 0,
         bandUnreadable: Boolean = false,
-        linkProvedTooSlow: Boolean = false
+        linkProvedTooSlow: Boolean = false,
+        localHotspotNarrow: Boolean = false
     ): String? {
         if (!wirelessSession) return null
         // The earned cap answers first: it is the one reason that is a measurement of this link
@@ -166,11 +186,12 @@ object NarrowBandProfilePolicy {
         val why = when {
             supports5Ghz == false -> "This unit has no 5 GHz band, so this session runs over 2.4 GHz"
             sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ -> "This session's network is on 2.4 GHz"
+            localHotspotNarrow -> "This unit's local hotspot is on 2.4 GHz or on a band that could not be read"
             else -> "This unit's Android is too old to report which band it is on"
         }
         // The 2.4 GHz measurement belongs to the two arms it was taken on. The third arm has its
         // own unit and says so rather than borrowing theirs.
-        val evidence = if (supports5Ghz == false || sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ)
+        val evidence = if (supports5Ghz == false || sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ || localHotspotNarrow)
             "on a 2.4 GHz access point, a full-rate stream died having sent no frame at all where " +
                 "a lower one held indefinitely"
         else

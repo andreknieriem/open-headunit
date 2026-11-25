@@ -453,6 +453,9 @@ class NativeAaHandshakeManager(
     // When the last of those landed, so the widened gap can be waited by whichever wake round is
     // alive rather than only by the loop that earned it.
     @Volatile private var lastJoinRefusalAtMs = 0L
+    // Joins the phone reported on the hotspot transport that opened no session. The first
+    // NativeHandoffPolicy.MAX_FAST_REWAKES get the short wait. Cleared with the join refusals.
+    @Volatile private var joinsWithoutSession = 0
 
     /** Whether the driver selection UI prompt is currently presented to the user. */
     @Volatile var isSelectionPromptActive: Boolean = false
@@ -3414,6 +3417,7 @@ class NativeAaHandshakeManager(
     private fun resetJoinRefusals() {
         consecutiveJoinRefusals = 0
         lastJoinRefusalAtMs = 0L
+        joinsWithoutSession = 0
     }
 
     /** Set by [WppTcpServer] on a dial it turned away, read by the landing that follows. */
@@ -3531,7 +3535,15 @@ class NativeAaHandshakeManager(
         // actually hosting, and a saved transport does not reach the running launcher until it is
         // re-armed.
         val transport = launcher.strategy
-        val session = WppHandshakeSession(holdsChannel = true, versionNegotiated = link.versionNegotiated)
+        // The bound in force for this exchange; null keeps the SETTLING rules on every other transport.
+        val joinedBoundMs = if (transport == NativeStrategy.HOTSPOT) {
+            NativeHandoffPolicy.joinedWaitMs(joinsWithoutSession, null)
+        } else {
+            null
+        }
+        val session = WppHandshakeSession(
+            holdsChannel = true, versionNegotiated = link.versionNegotiated, joinedTimeoutMs = joinedBoundMs
+        )
         // Everything the phone sends, in order. Replaces the single bounded read this used to do:
         // types 6 and 7 arrive *after* the credentials go out, so a one-shot read could never see
         // them, and the phone is free to interject a ping at any point in between.
@@ -3604,6 +3616,8 @@ class NativeAaHandshakeManager(
 
             var stageEnteredAt = SystemClock.elapsedRealtime()
             var readerClosed = false
+            // How long into WppStage.JOINED the phone closed the channel, or null while it is open.
+            var joinedClosedAfterMs: Long? = null
             // Filled in once the credentials resolve, before any action can need them.
             var credSsid = ""
             var credPsk = ""
@@ -3751,6 +3765,11 @@ class NativeAaHandshakeManager(
                         // from this stamp. The session caps the total.
                         ifOwner(link) { handoffSettlingSince = SystemClock.elapsedRealtime() }
                     }
+                    WppAction.AwaitSession -> {
+                        AppLog.i("NativeAA: the phone is on our network; waiting up to ${(joinedBoundMs ?: 0L) / 1000}s for its session.")
+                        // Re-stamped so the poke stays off the radio for the whole bound, as ExtendSettle does.
+                        ifOwner(link) { handoffSettlingSince = SystemClock.elapsedRealtime() }
+                    }
                     WppAction.CompleteSuccess -> {
                         AppLog.i("NativeAA: WiFi session landed. Holding the Bluetooth channel for the session and answering the phone's pings, as a head unit does.")
                         joinScreenWake.end(link, "the session landed")
@@ -3824,6 +3843,7 @@ class NativeAaHandshakeManager(
                     // Stamped after the actions, so the 1 s pause before Type 3 is not charged to
                     // the settling window it opens.
                     stageEnteredAt = SystemClock.elapsedRealtime()
+                    joinedClosedAfterMs = null
                     AppLog.d("NativeAA: Handshake stage $before -> ${session.stage}")
                 }
             }
@@ -3898,22 +3918,38 @@ class NativeAaHandshakeManager(
                 // rejoins the kept network on its own reaches 5288 mid-exchange, and Type 3 on
                 // top of that makes it re-associate and drop the session it just made.
                 // WppTcpServer asks the same per tick; Connecting is still the handoff only.
-                val handoffLanding = session.stage == WppStage.SETTLING &&
+                if (session.stage == WppStage.JOINED && readerClosed && joinedClosedAfterMs == null &&
+                    NativeHandoffPolicy.fastWakesLeft(joinsWithoutSession)
+                ) {
+                    joinedClosedAfterMs = SystemClock.elapsedRealtime() - stageEnteredAt
+                    AppLog.i("NativeAA: the phone closed the Bluetooth channel after it reported the join; waiting ${NativeHandoffPolicy.CHANNEL_CLOSED_GRACE_MS / 1000}s for its session.")
+                }
+                val handoffLanding = session.awaitsSession &&
                     commManager.connectionState.value is CommManager.ConnectionState.Connecting
                 if (commManager.isConnected || handoffLanding) {
                     feed(WppEvent.TcpSessionUp)
                     return
                 }
-                if (session.stage == WppStage.SETTLING && sentUnderWithdrawals >= 0 &&
+                if (session.awaitsSession && sentUnderWithdrawals >= 0 &&
                     credentialStore.current.withdrawals != sentUnderWithdrawals
                 ) {
                     AppLog.w("NativeAA: the network the phone was sent was taken down while it was joining, so this handshake ends now and the phone is woken for the new one.")
                     feed(WppEvent.NetworkWithdrawn)
                     return
                 }
-                val limit = session.currentStageTimeoutMs() ?: return
+                val limit = if (session.stage == WppStage.JOINED) {
+                    NativeHandoffPolicy.joinedWaitMs(joinsWithoutSession, joinedClosedAfterMs)
+                } else {
+                    session.currentStageTimeoutMs() ?: return
+                }
                 if (SystemClock.elapsedRealtime() - stageEnteredAt < limit) return
-                if (session.stage == WppStage.SETTLING) {
+                if (session.stage == WppStage.JOINED) {
+                    // Wake the phone again at once: its own retry needs the hands-free link Type 3 closed.
+                    val joinsBefore = joinsWithoutSession
+                    ifOwner(link) { joinsWithoutSession++ }
+                    AppLog.w(NativeHandoffPolicy.joinedTimeoutLine(joinsBefore, joinsWithoutSession, joinedClosedAfterMs))
+                    feed(WppEvent.SettleTimeout)
+                } else if (session.stage == WppStage.SETTLING) {
                     // The handoff never completed, so there is no session for a reconnect to
                     // collide with — the reconnect storm closeAaListeners() guards against can't
                     // happen here. Leave the listener up so the phone's own retry can be accepted
@@ -4039,16 +4075,19 @@ class NativeAaHandshakeManager(
             if (!NativeCredentialsPolicy.isUsablePassphrase(credPsk) &&
                 NativeCredentialsPolicy.onEmptyPassphrase(transport) == UnusablePassphraseAction.ABORT
             ) {
+                val localHotspot = launcher.hotspotSource == LocalHotspotPolicy.Source.LOCAL_ONLY
                 AppLog.e(
                     "NativeAA: these credentials for '$credSsid' carry no passphrase, and the phone " +
                         "refuses an open network. Not sending them. " +
-                        if (transport == NativeTransport.HOTSPOT)
+                        if (transport == NativeTransport.HOTSPOT && localHotspot)
+                            "Turn on 'Use the system hotspot' under Wireless connection."
+                        else if (transport == NativeTransport.HOTSPOT)
                             "Set 'Hotspot password (manual)' as well as the name under Wireless connection."
                         else
                             "The group came up without one, which is a fault in this unit's WiFi Direct stack."
                 )
-                if (transport == NativeTransport.HOTSPOT) {
-                    ConnectionIssues.raise(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
+                NativeCredentialsPolicy.recordForEmptyPassphrase(transport, localHotspot)?.let {
+                    ConnectionIssues.raise(context, it)
                 }
                 abortedLocally = true
                 return@withContext

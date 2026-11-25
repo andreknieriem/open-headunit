@@ -58,6 +58,15 @@ class ConnectionIssuesTest {
     }
 
     @Test
+    fun `the local hotspot record stands and clears on its own`() {
+        ConnectionIssues.raise(store, ConnectionIssue.LOCAL_HOTSPOT_FAILED, 4_000L)
+        assertEquals(4_000L, store.read(ConnectionIssue.LOCAL_HOTSPOT_FAILED))
+        assertEquals(0L, store.read(ConnectionIssue.HOTSPOT_NOT_RUNNING))
+        ConnectionIssues.clear(store, ConnectionIssue.LOCAL_HOTSPOT_FAILED)
+        assertTrue(ConnectionIssues.standing(store).isEmpty())
+    }
+
+    @Test
     fun `nothing raised means nothing standing`() {
         assertTrue(ConnectionIssues.standing(store).isEmpty())
     }

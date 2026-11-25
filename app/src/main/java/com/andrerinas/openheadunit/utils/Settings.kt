@@ -2716,6 +2716,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("auto-enable-hotspot", false)
         set(value) { prefs.edit().putBoolean("auto-enable-hotspot", value).apply() }
 
+    /** Native Hotspot transport: true keeps the system hotspot where the local-only one would run. */
+    var useSystemHotspot: Boolean
+        get() = prefs.getBoolean("use-system-hotspot", false)
+        set(value) { prefs.edit().putBoolean("use-system-hotspot", value).apply() }
+
     /** Headunit Server (Auto) only; see [HeadunitServerNetwork]. */
     var headunitServerNetwork: HeadunitServerNetwork
         get() = HeadunitServerNetwork.byIdOrDefault(prefs.getInt("headunit-server-network", -1), autoEnableHotspot)
@@ -2876,6 +2881,10 @@ class Settings(private val context: Context) {
         get() = prefs.getLong("connection-issue-home-wifi-rejoined", 0L)
         set(value) = prefs.edit().putLong("connection-issue-home-wifi-rejoined", value).apply()
 
+    var connectionIssueLocalHotspotAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-local-hotspot-at", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-local-hotspot-at", value).apply()
+
     var connectionIssueStaleUsbAccessoryAtEpochMs: Long
         get() = prefs.getLong("connection-issue-stale-usb-accessory", 0L)
         set(value) = prefs.edit().putLong("connection-issue-stale-usb-accessory", value).apply()
@@ -2938,6 +2947,12 @@ class Settings(private val context: Context) {
     var hotspotTeardownProvenUnsafe: Boolean
         get() = prefs.getBoolean("hotspot-teardown-proven-unsafe", false)
         set(value) = prefs.edit().putBoolean("hotspot-teardown-proven-unsafe", value).apply()
+
+    // Set once the radio ran above 4 GHz on any network. Some units deny a 5 GHz band they have, and
+    // the hotspot's own band cannot be read. A property of the hardware, so it is never exported.
+    var radioSeenAbove24Ghz: Boolean
+        get() = prefs.getBoolean("radio-seen-above-24ghz", false)
+        set(value) = prefs.edit().putBoolean("radio-seen-above-24ghz", value).apply()
 
     var useLibusb: Boolean
         get() = prefs.getBoolean("use-libusb", false)

@@ -12,7 +12,13 @@ enum class HotspotExitAction {
     DISABLE,
 
     /** Leave it alone and say what that costs: it is not ours to switch off. */
-    WARN_LEFT_UP
+    WARN_LEFT_UP,
+
+    /**
+     * The local-only hotspot is ours and the launcher stop already closed it. Nothing restarts the
+     * system hotspot, which this source never used.
+     */
+    RELEASE_LOCAL
 }
 
 /**
@@ -43,15 +49,20 @@ object UserExitHotspotPolicy {
      * @param teardownProvenUnsafe whether this device has already failed to bring its access point
      *   back after the app took it down. See the note on the [HotspotExitAction.WARN_LEFT_UP]
      *   branch below.
+     * @param localHotspot whether Native mode runs on the local-only hotspot source
      */
     fun onUserExit(
         mode: WifiLauncherMode,
         helperStrategy: HelperStrategy,
         nativeStrategy: NativeStrategy,
         autoEnableHotspot: Boolean,
-        teardownProvenUnsafe: Boolean = false
+        teardownProvenUnsafe: Boolean = false,
+        localHotspot: Boolean = false
     ): HotspotExitAction = when {
         !usesHeadUnitHotspot(mode, helperStrategy, nativeStrategy) -> HotspotExitAction.NONE
+        // Before the two below: the reservation is ours whatever the settings say, and the
+        // system hotspot they describe was never started.
+        mode == WifiLauncherMode.NATIVE && localHotspot -> HotspotExitAction.RELEASE_LOCAL
         // Permission is not the only question; capability is the other one, and unlike permission
         // it can only be learned by trying. Some radios will not host an access point again once it
         // has been taken down — measured on a UNISOC unit where hostapd's channel scan raced the

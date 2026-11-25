@@ -1268,6 +1268,10 @@
     <string name="connection_issue_banner_bt_silent">Je telefoon is via Bluetooth verbonden, maar de Bluetooth van dit apparaat kon niets sturen. Tik om een modus te kiezen die dit niet nodig heeft, zoals Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Je telefoon kreeg niet te horen met welk netwerk hij verbinding moest maken, omdat dit apparaat zijn wifi-adres niet deelde. Zet Locatie aan, of tik om het adres handmatig in te voeren.</string>
     <string name="connection_issue_banner_hotspot_off">De hotspot van dit apparaat staat uit, dus je telefoon had geen netwerk om mee te verbinden. Zet hem aan, of tik om de app hem aan te laten zetten.</string>
+    <string name="connection_issue_banner_local_hotspot">Dit apparaat kon geen eigen hotspot starten, dus je telefoon had geen netwerk om mee te verbinden. Tik om \'Systeemhotspot gebruiken\' aan te zetten.</string>
+    <string name="use_system_hotspot">Systeemhotspot gebruiken</string>
+    <string name="use_system_hotspot_summary">Uit: de app start een eigen hotspot en heeft geen instelling nodig.</string>
+    <string name="use_system_hotspot_help">Uit: vanaf Android 8 start de app een eigen lokale hotspot en hoef je niets in te stellen. De rijen voor naam, wachtwoord, interface, band en kanaal doen dan niets en zijn verborgen. Je waarden blijven bewaard. Aan: de app gebruikt de hotspot van dit apparaat zoals voorheen, en je kunt naam, wachtwoord en interface handmatig instellen.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Dit apparaat kon geen Wi-Fi Direct-netwerk voor je telefoon aanmaken. Verbreek de verbinding met ander wifi, of tik om in plaats daarvan de hotspot te gebruiken.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Een andere app zet Wi-Fi Direct steeds uit, meestal een vooraf geïnstalleerde projectie-app zoals ZLink of CarLife. Schakel die uit, of tik om in plaats daarvan de hotspot te gebruiken.</string>
     <string name="connection_issue_banner_hotspot_config">Dit apparaat deelt de hotspotnaam en het wachtwoord niet met de app. Tik om ze handmatig in te voeren.</string>

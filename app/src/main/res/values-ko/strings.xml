@@ -1261,6 +1261,10 @@
     <string name="connection_issue_banner_bt_silent">휴대전화가 블루투스로 연결되었지만 이 기기의 블루투스로 휴대전화에 데이터를 전송하지 못했습니다. 블루투스가 필요 없는 모드(예: Wireless Helper)를 선택하려면 탭하세요.</string>
     <string name="connection_issue_banner_bssid">이 기기의 Wi-Fi 주소를 확인할 수 없어 휴대전화에 연결할 네트워크 정보를 보내지 못했습니다. 위치 서비스를 켜거나, 주소를 직접 입력하려면 탭하세요.</string>
     <string name="connection_issue_banner_hotspot_off">이 기기의 핫스팟이 꺼져 있어 휴대전화가 연결할 네트워크가 없었습니다. 핫스팟을 켜거나, 앱이 대신 켜게 하려면 탭하세요.</string>
+    <string name="connection_issue_banner_local_hotspot">이 기기가 자체 핫스팟을 시작하지 못해 휴대전화가 연결할 네트워크가 없었습니다. \'시스템 핫스팟 사용\'을 사용 설정하려면 탭하세요.</string>
+    <string name="use_system_hotspot">시스템 핫스팟 사용</string>
+    <string name="use_system_hotspot_summary">사용 중지: 앱이 자체 핫스팟을 시작하며 별도 설정이 필요 없습니다.</string>
+    <string name="use_system_hotspot_help">사용 중지: Android 8 이상에서는 앱이 자체 로컬 핫스팟을 시작하므로 설정할 것이 없습니다. 이때 이름, 비밀번호, 인터페이스, 주파수 대역, 채널 행은 작동하지 않아 숨겨집니다. 입력한 값은 계속 저장됩니다. 사용 설정: 앱이 이전처럼 이 기기의 핫스팟을 사용하며, 이름, 비밀번호, 인터페이스를 직접 설정할 수 있습니다.</string>
     <string name="connection_issue_banner_wifi_direct_refused">이 기기가 휴대전화용 Wi-Fi Direct 네트워크를 만들지 못했습니다. 다른 Wi-Fi 연결을 해제해 보거나, 대신 핫스팟을 사용하려면 탭하세요.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">다른 앱이 Wi-Fi Direct를 계속 끄고 있습니다. 대개 ZLink나 CarLife 같은 사전 설치된 화면 미러링 앱이 원인입니다. 해당 앱을 사용 중지하거나, 대신 핫스팟을 사용하려면 탭하세요.</string>
     <string name="connection_issue_banner_hotspot_config">이 기기의 핫스팟 연결 정보를 확인할 수 없습니다. 이름과 비밀번호를 직접 입력하려면 탭하세요.</string>

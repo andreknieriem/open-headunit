@@ -1,12 +1,19 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.PowerManager
+import android.os.SystemClock
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat
 import com.andrerinas.openheadunit.app.AccPowerState
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -21,14 +28,20 @@ import com.andrerinas.openheadunit.utils.NetworkAddresses
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SoftApStateReader
 import com.andrerinas.openheadunit.utils.ToastUtils
+import com.andrerinas.openheadunit.connection.wifi.direct.P2pTeardown
+import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.LocalHotspotPolicy.RestartCause
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
@@ -44,11 +57,16 @@ import java.net.NetworkInterface
  * It does not copy ZLink's way of *starting* the AP; that needs TETHER_PRIVILEGED and root
  * daemons. Reading a hotspot the user configured is the load-bearing path, switching one on is
  * best effort. Same contract as [WifiDirectManager] so a launcher can treat both transports alike.
+ *
+ * On [LocalHotspotPolicy.Source.LOCAL_ONLY] it starts a hotspot of its own through
+ * [LocalOnlyHotspotHost] and never reads the manual values or the system hotspot.
  */
 class SoftApCredentialsProvider(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val settings: Settings
+    private val settings: Settings,
+    private val source: LocalHotspotPolicy.Source,
+    private val p2pTeardown: () -> P2pTeardown?,
 ) {
 
     companion object {
@@ -71,6 +89,9 @@ class SoftApCredentialsProvider(
         private const val WIFI_AP_STATE_CHANGED = "android.net.wifi.WIFI_AP_STATE_CHANGED"
         private const val EXTRA_WIFI_AP_STATE = "wifi_state"
         private const val WIFI_AP_STATE_DISABLED = 11
+
+        /** How often the P2P teardown record is read while the local start waits on it. */
+        private const val TEARDOWN_POLL_MS = 100L
     }
 
     /**
@@ -169,6 +190,12 @@ class SoftApCredentialsProvider(
         seenWokeAtMs = AccPowerState.wokeAtMs
         reportedConfigUnreadable = false
         lastNoApReportAtMs = 0L
+        // Before the access point comes up: on one radio it can take the station down.
+        WifiBandCapability.noteStationFrequency(context, settings)
+        if (isLocal && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            launchLocal(causeOverride = null)
+            return
+        }
         if (!isReceiverRegistered) {
             try {
                 // A system broadcast, so EXPORTED: NOT_EXPORTED silently never fires on API 34+.
@@ -184,16 +211,25 @@ class SoftApCredentialsProvider(
         beginResolve()
     }
 
-    /** Look again, from the top. Called when the handshake has been waiting too long. */
-    fun refresh() {
+    /**
+     * Look again, from the top. Called when the handshake has been waiting too long.
+     * [afterWake] names a sleep as the reason a local hotspot is started again.
+     */
+    fun refresh(afterWake: Boolean = false) {
         if (!isRunning) return
+        if (isLocal && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            refreshLocal(afterWake)
+            return
+        }
         beginResolve()
     }
 
-    fun stop() {
+    /** [reason] says why the local reservation closes. The system source ignores it. */
+    fun stop(reason: LocalHotspotPolicy.CloseReason) {
         isRunning = false
         resolveJob?.cancel()
         resolveJob = null
+        if (isLocal && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) stopLocal(reason)
         // The network these describe is going away with this run; the next one resolves its own.
         credentialsHandoff.clear()
         autoEnabled = false
@@ -356,22 +392,7 @@ class SoftApCredentialsProvider(
      * and the heuristic is the fallback.
      */
     private fun pickApInterface(): ChosenInterface? {
-        val candidates = try {
-            NetworkInterface.getNetworkInterfaces().toList().map { nif ->
-                ApInterfaceCandidate(
-                    name = nif.name,
-                    isLoopback = try { nif.isLoopback } catch (e: Exception) { false },
-                    isUp = try { nif.isUp } catch (e: Exception) { false },
-                    siteLocalIpv4 = nif.inetAddresses.toList()
-                        .filterIsInstance<Inet4Address>()
-                        .firstOrNull { it.isSiteLocalAddress }
-                        ?.hostAddress
-                )
-            }
-        } catch (e: Exception) {
-            AppLog.w("SoftApCredentials: Could not enumerate network interfaces: ${e.message}")
-            return null
-        }
+        val candidates = interfaceCandidates() ?: return null
 
         val named = settings.hotspotInterface.trim()
         if (named.isNotEmpty()) {
@@ -414,6 +435,24 @@ class SoftApCredentialsProvider(
             )
         }
         return ChosenInterface(picked, namedByUser = false)
+    }
+
+    /** Every network interface this unit has now, or null when they cannot be listed. */
+    private fun interfaceCandidates(): List<ApInterfaceCandidate>? = try {
+        NetworkInterface.getNetworkInterfaces().toList().map { nif ->
+            ApInterfaceCandidate(
+                name = nif.name,
+                isLoopback = try { nif.isLoopback } catch (e: Exception) { false },
+                isUp = try { nif.isUp } catch (e: Exception) { false },
+                siteLocalIpv4 = nif.inetAddresses.toList()
+                    .filterIsInstance<Inet4Address>()
+                    .firstOrNull { it.isSiteLocalAddress }
+                    ?.hostAddress
+            )
+        }
+    } catch (e: Exception) {
+        AppLog.w("SoftApCredentials: Could not enumerate network interfaces: ${e.message}")
+        null
     }
 
     /** Resolves the rest of the credentials for [iface] and hands them over. */
@@ -532,6 +571,405 @@ class SoftApCredentialsProvider(
             )
         }
         return SoftApCredentialsAttempt.PUBLISHED
+    }
+
+    // The local-only hotspot source. Nothing below runs on the system source.
+
+    private val isLocal: Boolean get() = source == LocalHotspotPolicy.Source.LOCAL_ONLY
+
+    private val run = LocalHotspotRun()
+    /** The handshake IO loop and the main thread both refresh: one of them decides and launches at a time. */
+    private val localLock = Any()
+    private var localJob: Job? = null
+    @Volatile private var heldCredentials: NativeNetworkCredentials? = null
+    private val ledger
+        @RequiresApi(Build.VERSION_CODES.O) get() = LocalOnlyHotspotHost.processLedger
+
+    /** A reservation is held and its credentials are out. */
+    fun hasLiveLocalHotspot(): Boolean = run.reservation != null && heldCredentials != null
+
+    /** A start has been asked for and has not published or failed yet. */
+    fun isLocalStartInFlight(): Boolean = run.startInFlight
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun launchLocal(causeOverride: RestartCause?): Unit = synchronized(localLock) {
+        localJob?.cancel()
+        releaseLocalHost()
+        val gen = ++run.generation
+        run.startInFlight = true
+        run.bandMask = 0
+        run.liveFrequencyMhz = 0
+        localJob = scope.launch(Dispatchers.IO + CoroutineName("LocalHotspot-Run")) {
+            runLocal(gen, causeOverride)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun refreshLocal(afterWake: Boolean) {
+        // Decide and launch under the lock, so two refreshes cannot both see no start and both launch.
+        var gen = 0
+        val action = synchronized(localLock) {
+            gen = run.generation
+            val now = SystemClock.elapsedRealtime()
+            LocalHotspotPolicy.onRefresh(
+                hasLiveLocalHotspot(), run.startInFlight, ledger.recentStarts(now), now, ledger.lastRefusedAtMs
+            ).also { if (it == LocalHotspotPolicy.RefreshAction.RESTART) launchLocal(if (afterWake) RestartCause.WAKE else null) }
+        }
+        when (action) {
+            LocalHotspotPolicy.RefreshAction.REREAD -> heldCredentials?.let { credentialsHandoff.publish(it) }
+            LocalHotspotPolicy.RefreshAction.WAIT, LocalHotspotPolicy.RefreshAction.RESTART -> {}
+            LocalHotspotPolicy.RefreshAction.GIVE_UP ->
+                failLocal(gen, LocalHotspotFailure.RESTART_BUDGET, 0, null)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun stopLocal(reason: LocalHotspotPolicy.CloseReason): Unit = synchronized(localLock) {
+        localJob?.cancel()
+        localJob = null
+        val host = run.reservation as? LocalOnlyHotspotHost
+        if (host != null) {
+            host.close()
+            AppLog.i(LocalHotspotPolicy.closedLine(reason))
+        }
+        WifiBandCapability.reportLocalHotspotNarrow(false)
+        heldCredentials = null
+        run.reset()
+    }
+
+    /** Closes a reservation that is still held before another one is asked for. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun releaseLocalHost() {
+        (run.reservation as? LocalOnlyHotspotHost)?.close()
+        run.reservation = null
+        heldCredentials = null
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun runLocal(gen: Int, causeOverride: RestartCause?) {
+        val sdk = Build.VERSION.SDK_INT
+        if (!run.notAppliedLogged) {
+            run.notAppliedLogged = true
+            AppLog.i(LocalHotspotPolicy.notAppliedLine())
+        }
+        if (!awaitP2pTeardown(sdk)) {
+            failLocal(gen, LocalHotspotFailure.P2P_TEARDOWN_TIMEOUT, 0, null)
+            return
+        }
+        val missing = LocalHotspotPolicy.missingGrants(
+            sdk, context.applicationInfo.targetSdkVersion, nearbyGranted(), fineGranted(), locationOn()
+        )
+        if (missing.isNotEmpty()) {
+            AppLog.w("LocalHotspot: the call needs ${missing.joinToString()}, which this unit has not granted.")
+            failLocal(gen, LocalHotspotFailure.MISSING_GRANT, 0, null)
+            return
+        }
+        val stationBefore = NetworkAddresses.stationIpv4(context) != null
+        val now = SystemClock.elapsedRealtime()
+        val coroutine = currentCoroutineContext()
+        // A newer launch or a stop owns the run now: a superseded run must not close its hotspot or spend a stamp.
+        val decision = synchronized(localLock) {
+            if (gen != run.generation || !coroutine.isActive) return
+            ledger.begin(now) { stray ->
+                AppLog.i(LocalHotspotPolicy.strayClosedLine())
+                stray.close()
+            }
+        }
+        if (decision !is LocalHotspotPolicy.StartDecision.Go) {
+            failLocal(gen, LocalHotspotFailure.RESTART_BUDGET, 0, null)
+            return
+        }
+        (causeOverride ?: decision.cause)?.let { AppLog.i(LocalHotspotPolicy.restartLine(it, decision.attempt)) }
+
+        awaitAnswerOfEarlierStart()
+        awaitOldInterfaceGone()
+        // The pairs that were up before the start, so only a new interface is picked. Local: a stop must not empty it.
+        val before = LocalHotspotPolicy.beforeSet(interfaceCandidates().orEmpty(), ledger.lastPair)
+        val events = Channel<LocalOnlyHotspotHost.Event>(Channel.UNLIMITED)
+        val host = LocalOnlyHotspotHost(context)
+        synchronized(localLock) {
+            if (gen != run.generation || !coroutine.isActive) return
+            run.reservation = host
+            host.start({ newPair(before) }, { onLiveFrequencies(gen, it) }) { events.trySend(it) }
+        }
+
+        when (val first = withTimeoutOrNull(LocalHotspotPolicy.START_TIMEOUT_MS) { events.receive() }) {
+            null -> failLocal(gen, LocalHotspotFailure.TIMEOUT, 0, host)
+            is LocalOnlyHotspotHost.Event.Threw -> {
+                AppLog.w("LocalHotspot: the platform refused the call: ${first.error.message}")
+                failLocal(gen, LocalHotspotFailure.fromThrown(first.error), 0, host)
+            }
+            is LocalOnlyHotspotHost.Event.Failed -> failLocal(
+                gen,
+                LocalHotspotPolicy.afterStart(
+                    LocalHotspotPolicy.HostEvent.Failed(first.reason), started = false, wifiOn = wifiIsOn()
+                ).failure,
+                first.reason, host
+            )
+            LocalOnlyHotspotHost.Event.Stopped -> failLocal(gen, LocalHotspotFailure.PLATFORM_STOPPED, 0, host)
+            is LocalOnlyHotspotHost.Event.Started -> {
+                if (!publishLocal(gen, host, first, before, stationBefore)) return
+                // The reservation now lives until the platform ends it or this run is stopped.
+                endedLocal(gen, events.receive())
+            }
+        }
+    }
+
+    /**
+     * A closed host whose request had no answer still holds it on the platform, and a new call throws.
+     * Waits for that answer up to [LocalHotspotPolicy.START_TIMEOUT_MS]; after that the call goes
+     * ahead, and a throw names [LocalHotspotFailure.REQUEST_PENDING].
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun awaitAnswerOfEarlierStart() {
+        if (!ledger.hasUnansweredStart()) return
+        val deadline = SystemClock.elapsedRealtime() + LocalHotspotPolicy.START_TIMEOUT_MS
+        AppLog.i("LocalHotspot: waiting for the answer to the earlier request before a new start")
+        while (ledger.hasUnansweredStart() && SystemClock.elapsedRealtime() < deadline) {
+            delay(TEARDOWN_POLL_MS)
+        }
+    }
+
+    /**
+     * The platform reuses one interface and address. A pair of the last hotspot that is still up would
+     * hide the new one, so wait for it to go, up to [LocalHotspotPolicy.OLD_INTERFACE_WAIT_MS].
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun awaitOldInterfaceGone() {
+        val own = ledger.lastPair ?: return
+        val deadline = SystemClock.elapsedRealtime() + LocalHotspotPolicy.OLD_INTERFACE_WAIT_MS
+        while (!LocalHotspotPolicy.oldPairGone(interfaceCandidates().orEmpty(), own)) {
+            if (SystemClock.elapsedRealtime() >= deadline) {
+                AppLog.w(LocalHotspotPolicy.oldInterfaceLine())
+                return
+            }
+            delay(LocalHotspotPolicy.OLD_INTERFACE_POLL_MS)
+        }
+    }
+
+    /** The (name, address) of the interface that is up and not in [before], or null. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun newPair(before: Set<Pair<String, String>>): Pair<String, String>? {
+        val found = interfaceCandidates()?.let {
+            LocalHotspotPolicy.newInterface(before, it, NetworkAddresses.stationIpv4(context))
+        }
+        return found?.siteLocalIpv4?.let { found.name to it }
+    }
+
+    /** Waits for the Wi-Fi Direct stop to finish. False when the bound passed first. */
+    private suspend fun awaitP2pTeardown(sdk: Int): Boolean {
+        var waited = false
+        while (true) {
+            when (LocalHotspotPolicy.teardownGate(p2pTeardown(), sdk, SystemClock.elapsedRealtime())) {
+                LocalHotspotPolicy.Gate.GO -> {
+                    if (waited) AppLog.i(LocalHotspotPolicy.teardownLine(done = true))
+                    return true
+                }
+                LocalHotspotPolicy.Gate.WAIT -> {
+                    waited = true
+                    delay(TEARDOWN_POLL_MS)
+                }
+                LocalHotspotPolicy.Gate.TIMED_OUT -> {
+                    AppLog.w(LocalHotspotPolicy.teardownLine(done = false))
+                    return false
+                }
+            }
+        }
+    }
+
+    /** Finds the new interface and the address, then hands the credentials over. False when it failed. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun publishLocal(
+        gen: Int,
+        host: LocalOnlyHotspotHost,
+        started: LocalOnlyHotspotHost.Event.Started,
+        before: Set<Pair<String, String>>,
+        stationBefore: Boolean,
+    ): Boolean {
+        val verdict = LocalHotspotPolicy.judgeReservation(started.ssid, started.passphrase, started.securityType)
+        if (verdict is LocalHotspotPolicy.ReservationVerdict.NotJoinable) {
+            failLocal(gen, LocalHotspotFailure.NOT_JOINABLE, 0, host)
+            return false
+        }
+        if (verdict is LocalHotspotPolicy.ReservationVerdict.UnsupportedSecurity) {
+            failLocal(gen, LocalHotspotFailure.UNSUPPORTED_SECURITY, 0, host)
+            return false
+        }
+        val ssid = started.ssid ?: return false
+        val psk = started.passphrase ?: return false
+
+        val deadline = SystemClock.elapsedRealtime() + LocalHotspotPolicy.INTERFACE_WAIT_MS
+        var pair: Pair<String, String>?
+        var bssid: String?
+        while (true) {
+            pair = newPair(before)
+            ledger.recordPair(pair)
+            bssid = pair?.let { localBssid(it.first, started.bssid) }
+            when (LocalHotspotPolicy.interfaceStep(pair != null, bssid != null, SystemClock.elapsedRealtime(), deadline)) {
+                LocalHotspotPolicy.InterfaceStep.PUBLISH -> break
+                LocalHotspotPolicy.InterfaceStep.POLL -> delay(LocalHotspotPolicy.INTERFACE_POLL_MS)
+                LocalHotspotPolicy.InterfaceStep.NO_INTERFACE -> {
+                    failLocal(gen, LocalHotspotFailure.NO_INTERFACE, 0, host)
+                    return false
+                }
+                LocalHotspotPolicy.InterfaceStep.NO_ADDRESS -> {
+                    failLocal(gen, LocalHotspotFailure.NO_ADDRESS, 0, host)
+                    return false
+                }
+            }
+        }
+        val (iface, ip) = pair ?: return false
+        if (bssid == null) return false
+
+        val stationAfter = NetworkAddresses.stationIpv4(context) != null
+        val band = LocalHotspotPolicy.bandFromMask(started.bandMask)
+        val credentials = NativeNetworkCredentials(ssid, psk, ip, bssid)
+        // A stop can land while the address is read: that run must not cap the video or publish.
+        var live = 0
+        val current = synchronized(localLock) {
+            (gen == run.generation).also {
+                if (it) {
+                    run.bandMask = started.bandMask
+                    live = run.liveFrequencyMhz
+                    WifiBandCapability.reportLocalHotspotNarrow(LocalHotspotPolicy.capsVideo(band, live))
+                    heldCredentials = credentials
+                    run.startInFlight = false
+                    ConnectionStageTracker.report(ConnectionStage.CREATING_NETWORK)
+                }
+            }
+        }
+        if (!current) {
+            host.close()
+            AppLog.i("LocalHotspot: an earlier run started after its stop; nothing is published")
+            return false
+        }
+        AppLog.i(LocalHotspotPolicy.startedLine(ssid, started.securityType, bssid, iface, ip))
+        AppLog.i(LocalHotspotPolicy.bandLine(band, started.bandMask, live))
+        AppLog.i(LocalHotspotPolicy.stationLine(stationBefore, stationAfter))
+
+        ConnectionIssues.clear(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
+        ConnectionIssues.clear(context, ConnectionIssue.HOTSPOT_NOT_RUNNING)
+        ConnectionIssues.clear(context, ConnectionIssue.LOCAL_HOTSPOT_FAILED)
+        if (settings.softApAdvertisedEndpoint != null) {
+            settings.softApAdvertisedEndpoint = null
+            ConnectionIssues.raiseOnce(context, ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT)
+            AppLog.w(
+                "LocalHotspot: the WPP endpoint advertised on the earlier access point is dropped. A phone " +
+                    "that holds it needs Android Auto restarted, or this head unit forgotten in it."
+            )
+        }
+
+        // The delivery runs outside the lock, so ask once more just before it.
+        if (synchronized(localLock) { gen != run.generation }) return false
+        if (!credentialsHandoff.publish(credentials)) {
+            AppLog.w(
+                "SoftApCredentials: the access point resolved before anything was listening for it; " +
+                    "holding the credentials until it is."
+            )
+        }
+        return true
+    }
+
+    /**
+     * The BSSID of [iface], or null while no rung answers. Only its own IPv6 link-local counts: the
+     * address of another P2P or access point interface would end the wait with a wrong BSSID.
+     */
+    private fun localBssid(iface: String, reservationBssid: String?): String? = LocalHotspotPolicy.chooseBssid(
+        reservationBssid,
+        listOf(
+            InterfaceMacReader.read(iface),
+            hardwareAddressOf(iface),
+            InterfaceMacReader.fromIpv6LinkLocal(iface) { false }
+        )
+    )
+
+    /** The hotspot moved, or came up. The cap is set only while its credentials are out, so an end stays an end. */
+    private fun onLiveFrequencies(gen: Int, frequencies: List<Int>) {
+        val mhz = LocalHotspotPolicy.liveFrequency(frequencies)
+        val band = synchronized(localLock) {
+            if (!run.noteLive(gen, mhz)) return
+            LocalHotspotPolicy.bandFromMask(run.bandMask).also {
+                if (heldCredentials != null) {
+                    WifiBandCapability.reportLocalHotspotNarrow(LocalHotspotPolicy.capsVideo(it, mhz))
+                }
+            }
+        }
+        if (mhz == 0) return
+        AppLog.i(LocalHotspotPolicy.liveBandLine(band, mhz))
+        WifiBandCapability.noteFrequency(settings, mhz)
+    }
+
+    /** The platform ended a reservation that was live. It invalidates the credentials, so the next refresh restarts. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun endedLocal(gen: Int, event: LocalOnlyHotspotHost.Event) {
+        // Under the lock, so a newer launch does not lose its reservation to this end.
+        val current = synchronized(localLock) {
+            (gen == run.generation).also {
+                if (it) {
+                    heldCredentials = null
+                    run.reservation = null
+                    WifiBandCapability.reportLocalHotspotNarrow(false)
+                }
+            }
+        }
+        if (!current) return
+        val sdk = Build.VERSION.SDK_INT
+        val hostEvent = when (event) {
+            is LocalOnlyHotspotHost.Event.Failed -> LocalHotspotPolicy.HostEvent.Failed(event.reason)
+            else -> LocalHotspotPolicy.HostEvent.Stopped
+        }
+        val after = LocalHotspotPolicy.afterStart(hostEvent, started = true, wifiOn = wifiIsOn())
+        AppLog.w(
+            if (event is LocalOnlyHotspotHost.Event.Failed) {
+                LocalHotspotPolicy.failedLine(event.reason, after.failure, sdk)
+            } else {
+                LocalHotspotPolicy.platformStoppedLine()
+            }
+        )
+        if (after.invalidates) onInvalidated?.invoke()
+    }
+
+    /**
+     * A start failed. Names it, raises the banner record and closes the host. The source stays
+     * local: the stored manual values are never applied behind the user's back.
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun failLocal(gen: Int, failure: LocalHotspotFailure, reason: Int, host: LocalOnlyHotspotHost?) {
+        // Closed while the start still reads in flight: a refresh between the two would call this host a stray.
+        host?.close()
+        // Only the current run owns the banner, the state and the listener. An older run closes its own host.
+        val current = synchronized(localLock) { run.finish(gen) }
+        if (!current) {
+            AppLog.i("LocalHotspot: an earlier run ended with ${failure.name}; nothing else is changed")
+            return
+        }
+        AppLog.e(LocalHotspotPolicy.failedLine(reason, failure, Build.VERSION.SDK_INT))
+        if (LocalHotspotPolicy.onStartFailure().raisesBanner) {
+            ConnectionIssues.raiseOnce(context, ConnectionIssue.LOCAL_HOTSPOT_FAILED)
+        }
+        heldCredentials = null
+        WifiBandCapability.reportLocalHotspotNarrow(false)
+        onInvalidated?.invoke()
+    }
+
+    private fun wifiIsOn(): Boolean = try {
+        (context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).isWifiEnabled
+    } catch (e: Exception) {
+        true
+    }
+
+    private fun nearbyGranted(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.NEARBY_WIFI_DEVICES) ==
+        PackageManager.PERMISSION_GRANTED
+
+    private fun fineGranted(): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+
+    private fun locationOn(): Boolean = try {
+        LocationManagerCompat.isLocationEnabled(context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
+    } catch (e: Exception) {
+        true
     }
 
     private fun hardwareAddressOf(name: String): String? = try {

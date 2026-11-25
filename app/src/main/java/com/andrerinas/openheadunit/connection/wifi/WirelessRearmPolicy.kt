@@ -22,6 +22,8 @@ object WirelessRearmPolicy {
         val wifiConnectionMode: WifiLauncherMode,
         val helperConnectionStrategy: HelperStrategy,
         val nativeApStrategy: NativeStrategy,
+        /** Which hotspot the Native Hotspot transport runs on, fixed when its launcher is built. */
+        val useSystemHotspot: Boolean,
         val bluetoothManagerServiceName: String,
         /** Whether WiFi is one of the chosen connection modes; unchecking it stops the stack. */
         val wirelessSelected: Boolean,
@@ -48,6 +50,7 @@ object WirelessRearmPolicy {
         wifiConnectionMode = settings.wifiConnectionMode,
         helperConnectionStrategy = settings.helperConnectionStrategy,
         nativeApStrategy = settings.nativeApStrategy,
+        useSystemHotspot = settings.useSystemHotspot,
         bluetoothManagerServiceName = settings.bluetoothManagerServiceName,
         wirelessSelected = settings.showsWifi(),
         wifiDirectBand = settings.wifiDirectBand,

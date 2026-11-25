@@ -77,7 +77,7 @@ class SettingsRestartWakeTest {
         val shared = mock(com.andrerinas.openheadunit.connection.wifi.WifiLauncherSharedServices::class.java)
         doReturn(manager).`when`(launcher).manager
         `when`(manager.sharedServices).thenReturn(shared)
-        doNothing().`when`(launcher).triggerWifiDirectRefresh()
+        doNothing().`when`(launcher).triggerWifiDirectRefresh(anyBoolean())
         val native = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
         val handshake = kotlinx.coroutines.Job()
         NativeAaHandshakeManager::class.java.getDeclaredField("activeHandshakeJob")
@@ -87,7 +87,7 @@ class SettingsRestartWakeTest {
         launcher.refreshAfterWake()
         assertTrue(handshake.isActive)
         verify(native, never()).rearmForNextSession()
-        verify(launcher).triggerWifiDirectRefresh()
+        verify(launcher).triggerWifiDirectRefresh(true)
         handshake.cancel()
     }
 

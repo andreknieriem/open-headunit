@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.utils.ConnectionIssue
+
 /** What the framework says about this device's own access point. */
 enum class SoftApState {
     /** An access point is running. */
@@ -82,6 +84,16 @@ object NativeCredentialsPolicy {
      */
     fun onEmptyPassphrase(strategy: NativeStrategy): UnusablePassphraseAction = when (strategy) {
         NativeStrategy.WIFI_DIRECT, NativeStrategy.HOTSPOT -> UnusablePassphraseAction.ABORT
+    }
+
+    /**
+     * The banner record an unusable passphrase raises, or null where none applies. On the local
+     * hotspot the remedy is the "Use the system hotspot" setting, not the manual rows.
+     */
+    fun recordForEmptyPassphrase(strategy: NativeStrategy, localHotspot: Boolean): ConnectionIssue? = when {
+        strategy != NativeStrategy.HOTSPOT -> null
+        localHotspot -> ConnectionIssue.LOCAL_HOTSPOT_FAILED
+        else -> ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE
     }
 
     /**

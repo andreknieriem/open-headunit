@@ -12,6 +12,7 @@ class WirelessRearmPolicyTest {
         mode: WifiLauncherMode = WifiLauncherMode.NATIVE,
         helper: HelperStrategy = HelperStrategy.NEARBY_DEVICES,
         native: NativeStrategy = NativeStrategy.WIFI_DIRECT,
+        systemHotspot: Boolean = false,
         bluetoothService: String = "bluetooth_manager",
         wirelessSelected: Boolean = true,
         band: Int = 0,
@@ -27,6 +28,7 @@ class WirelessRearmPolicyTest {
         wifiConnectionMode = mode,
         helperConnectionStrategy = helper,
         nativeApStrategy = native,
+        useSystemHotspot = systemHotspot,
         bluetoothManagerServiceName = bluetoothService,
         wirelessSelected = wirelessSelected,
         wifiDirectBand = band,
@@ -71,6 +73,16 @@ class WirelessRearmPolicyTest {
         assertTrue(
             WirelessRearmPolicy.requiresRearm(config(), config(native = NativeStrategy.HOTSPOT))
         )
+    }
+
+    /** The remedy the local hotspot's failure banner names has to reach the launcher by itself. */
+    @Test
+    fun `the system hotspot choice re-arms in both directions`() {
+        val local = config(native = NativeStrategy.HOTSPOT)
+        val system = config(native = NativeStrategy.HOTSPOT, systemHotspot = true)
+        assertTrue(WirelessRearmPolicy.requiresRearm(local, system))
+        assertTrue(WirelessRearmPolicy.requiresRearm(system, local))
+        assertFalse(WirelessRearmPolicy.requiresRearm(system, config(native = NativeStrategy.HOTSPOT, systemHotspot = true)))
     }
 
     @Test

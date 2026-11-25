@@ -1269,6 +1269,10 @@
     <string name="connection_issue_banner_bt_silent">Telefon połączył się przez Bluetooth, ale Bluetooth tego urządzenia nie mógł nic wysłać. Dotknij, aby wybrać tryb, który tego nie wymaga, na przykład Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Telefon nie dowiedział się, z jaką siecią się połączyć, ponieważ to urządzenie nie udostępniło swojego adresu WiFi. Włącz lokalizację lub dotknij, aby wpisać adres ręcznie.</string>
     <string name="connection_issue_banner_hotspot_off">Hotspot tego urządzenia jest wyłączony, więc telefon nie miał sieci do połączenia. Włącz go lub dotknij, aby zrobiła to aplikacja.</string>
+    <string name="connection_issue_banner_local_hotspot">Ta stacja nie mogła uruchomić własnego hotspotu, więc telefon nie miał sieci do połączenia. Dotknij, aby włączyć opcję „Użyj hotspotu systemowego”.</string>
+    <string name="use_system_hotspot">Użyj hotspotu systemowego</string>
+    <string name="use_system_hotspot_summary">Wył.: aplikacja uruchamia własny hotspot i nie wymaga konfiguracji.</string>
+    <string name="use_system_hotspot_help">Wył.: w Androidzie 8 i nowszym aplikacja uruchamia własny lokalny hotspot i nie trzeba nic konfigurować. Wiersze nazwy, hasła, interfejsu, pasma i kanału nic wtedy nie robią, więc są ukryte. Twoje wartości pozostają zapisane. Wł.: aplikacja używa hotspotu tej stacji jak dawniej, a nazwę, hasło i interfejs możesz ustawić ręcznie.</string>
     <string name="connection_issue_banner_wifi_direct_refused">To urządzenie nie mogło utworzyć sieci WiFi Direct dla telefonu. Spróbuj odłączyć je od innej sieci WiFi lub dotknij, aby użyć jego hotspotu.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Inna aplikacja wciąż wyłącza WiFi Direct, zwykle jest to fabrycznie zainstalowana aplikacja do projekcji, taka jak ZLink lub CarLife. Wyłącz ją lub dotknij, aby użyć hotspotu.</string>
     <string name="connection_issue_banner_hotspot_config">To urządzenie nie udostępnia aplikacji nazwy i hasła hotspotu. Dotknij, aby wprowadzić je ręcznie.</string>

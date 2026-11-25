@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HotspotBandPreference
 import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,6 +34,45 @@ class NarrowBandProfilePolicyTest {
     @Test
     fun `the user can say no`() {
         assertFalse(NarrowBandProfilePolicy.caps(supports5Ghz = false, wirelessSession = true, capEnabled = false))
+    }
+
+    // --- the radio's answer on the hotspot transport ---------------------------------------------
+
+    private val only5 = HotspotBandPreference.FORCE_5GHZ
+
+    private fun answer(radio: Boolean?, hotspot: Boolean = true, seen: Boolean = false, band: HotspotBandPreference? = null) =
+        NarrowBandProfilePolicy.radioAnswer(radio, hotspot, seen, band)
+
+    @Test
+    fun `a 5 GHz sighting or the user's 5 GHz choice makes a no unknown on the hotspot`() {
+        assertNull(answer(false, seen = true))
+        assertNull(answer(false, band = only5))
+        assertEquals(false, answer(false))
+        assertEquals(false, answer(false, band = HotspotBandPreference.AUTO))
+    }
+
+    @Test
+    fun `the user's 2_4 GHz choice keeps the no, whatever was seen`() {
+        assertEquals(false, answer(false, seen = true, band = HotspotBandPreference.FORCE_2_4GHZ))
+    }
+
+    @Test
+    fun `a no stands on every other transport`() {
+        assertEquals(false, answer(false, hotspot = false, seen = true, band = only5))
+    }
+
+    @Test
+    fun `a yes and an unknown are never changed`() {
+        assertEquals(true, answer(true, seen = true, band = only5))
+        assertNull(answer(null, seen = true, band = only5))
+    }
+
+    @Test
+    fun `a disproved no caps nothing, and a 2_4 GHz reading still does`() {
+        val radio = answer(false, seen = true)
+        assertFalse(NarrowBandProfilePolicy.runsNarrow(radio, 0))
+        assertTrue(NarrowBandProfilePolicy.runsNarrow(radio, 0, bandUnreadable = true))
+        assertTrue(NarrowBandProfilePolicy.runsNarrow(radio, 2437))
     }
 
     // --- what it does to the profile -----------------------------------------------------------
@@ -399,5 +439,40 @@ class NarrowBandProfilePolicyTest {
         assertFalse(NarrowBandProfilePolicy.runsNarrow(supports5Ghz = true, sessionFrequencyMhz = 0))
         assertTrue(NarrowBandProfilePolicy.runsNarrow(supports5Ghz = false, sessionFrequencyMhz = 0))
         assertTrue(NarrowBandProfilePolicy.runsNarrow(supports5Ghz = true, sessionFrequencyMhz = 2437))
+    }
+
+    @Test
+    fun `the local hotspot flag names the local hotspot and the 2_4 GHz evidence, not an old Android`() {
+        val advice = NarrowBandProfilePolicy.advice(
+            supports5Ghz = null, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 0, bandUnreadable = true, localHotspotNarrow = true
+        )
+        assertNotNull(advice)
+        assertTrue(advice!!, advice.startsWith("This unit's local hotspot"))
+        assertFalse(advice, advice.contains("too old"))
+        assertTrue(advice, advice.contains("2.4 GHz access point"))
+    }
+
+    @Test
+    fun `without the flag an unreadable band keeps the old Android text`() {
+        val advice = NarrowBandProfilePolicy.advice(
+            supports5Ghz = null, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 0, bandUnreadable = true
+        )
+        assertTrue(advice!!.startsWith("This unit's Android is too old to report which band it is on"))
+    }
+
+    @Test
+    fun `a real 2_4 GHz reading still wins over the local hotspot flag`() {
+        val advice = NarrowBandProfilePolicy.advice(
+            supports5Ghz = null, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 2437, bandUnreadable = true, localHotspotNarrow = true
+        )
+        assertTrue(advice!!.startsWith("This session's network is on 2.4 GHz"))
+        val noBand = NarrowBandProfilePolicy.advice(
+            supports5Ghz = false, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 0, bandUnreadable = true, localHotspotNarrow = true
+        )
+        assertTrue(noBand!!.startsWith("This unit has no 5 GHz band"))
     }
 }

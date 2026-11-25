@@ -1261,6 +1261,10 @@
     <string name="connection_issue_banner_bt_silent">Telefonunuz Bluetooth ile bağlandı ancak bu ünitenin Bluetooth\'u ona hiçbir şey gönderemedi. Buna ihtiyaç duymayan, Kablosuz Yardımcı gibi bir mod seçmek için dokunun.</string>
     <string name="connection_issue_banner_bssid">Bu ünite Wi-Fi adresini paylaşmadığından telefonunuz hangi ağa katılacağını öğrenemedi. Konumu açın veya adresi elle girmek için dokunun.</string>
     <string name="connection_issue_banner_hotspot_off">Bu ünitenin erişim noktası kapalı olduğundan telefonunuzun katılacağı bir ağ yoktu. Erişim noktasını açın veya uygulamanın açması için dokunun.</string>
+    <string name="connection_issue_banner_local_hotspot">Bu ünite kendi erişim noktasını başlatamadığından telefonunuzun katılacağı bir ağ yoktu. ‘Sistem erişim noktasını kullan’ seçeneğini açmak için dokunun.</string>
+    <string name="use_system_hotspot">Sistem erişim noktasını kullan</string>
+    <string name="use_system_hotspot_summary">Kapalı: uygulama kendi erişim noktasını başlatır ve kurulum gerektirmez.</string>
+    <string name="use_system_hotspot_help">Kapalı: Android 8 ve sonrasında uygulama kendi yerel erişim noktasını başlatır ve hiçbir şeyi kurmanız gerekmez. Ad, şifre, arayüz, bant ve kanal satırları bu durumda işe yaramaz, bu yüzden gizlenir. Değerleriniz kayıtlı kalır. Açık: uygulama bu ünitenin erişim noktasını eskisi gibi kullanır ve adı, şifreyi ve arayüzü elle ayarlayabilirsiniz.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Bu ünite telefonunuz için Wi-Fi Direct ağını oluşturamadı. Ünitenin diğer Wi-Fi ağlarıyla bağlantısını kesmeyi deneyin veya bunun yerine erişim noktasını kullanmak için dokunun.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Başka bir uygulama Wi-Fi Direct\'i sürekli kapatıyor. Bu genellikle ZLink veya CarLife gibi önceden yüklü bir yansıtma uygulamasıdır. Uygulamayı devre dışı bırakın veya bunun yerine erişim noktasını kullanmak için dokunun.</string>
     <string name="connection_issue_banner_hotspot_config">Bu ünite erişim noktasının adını ve şifresini uygulamayla paylaşmıyor. Elle girmek için dokunun.</string>

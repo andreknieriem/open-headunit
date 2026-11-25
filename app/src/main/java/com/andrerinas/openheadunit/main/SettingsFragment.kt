@@ -45,6 +45,7 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.LocalHotspotPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
@@ -145,7 +146,7 @@ class SettingsFragment : Fragment() {
         // Headunit Server (Auto) only. Which network the two share is the one thing a user on the
         // phone's hotspot has to say for the unit to wait for it, and it decides nothing else.
         "headunitServerNetwork", "headunitServerAutoWifiScan",
-        "nativeApTransport", "hotspotBand",
+        "nativeApTransport", "useSystemHotspot", "hotspotBand",
         // The WiFi Direct band, for the same reason as the hotspot one beside it: it is the first
         // thing to try when a wireless session connects and shows no picture, and a user sent to
         // Advanced to find it is a user who never finds it.
@@ -232,6 +233,7 @@ class SettingsFragment : Fragment() {
     private var pendingWifiConnectionMode by pending::wifiConnectionMode
     private var pendingHelperConnectionStrategy by pending::helperConnectionStrategy
     private var pendingAutoEnableHotspot by pending::autoEnableHotspot
+    private var pendingUseSystemHotspot by pending::useSystemHotspot
     private var pendingHeadunitServerNetwork by pending::headunitServerNetwork
     private var pendingHeadunitServerAutoWifiScan by pending::headunitServerAutoWifiScan
     private var pendingWaitForWifi by pending::waitForWifi
@@ -747,6 +749,7 @@ class SettingsFragment : Fragment() {
         pendingExternalBtZjSocketTransport?.let { if (it != settings.externalBtZjSocketTransport) settings.externalBtZjSocketTransport = it }
         applyPendingEsp32Relay()
         pendingNativeApTransport?.let { if (it != settings.nativeApStrategy) settings.nativeApStrategy = it }
+        pendingUseSystemHotspot?.let { if (it != settings.useSystemHotspot) settings.useSystemHotspot = it }
         pendingNativeDriverSelectionMode?.let { if (it != settings.nativeDriverSelectionMode) settings.nativeDriverSelectionMode = it }
         pendingNativeDriverSelectionTimeout?.let { if (it != settings.nativeDriverSelectionTimeoutSec) settings.nativeDriverSelectionTimeoutSec = it }
         pendingNativePreferredDeviceMac?.let { if (it != settings.nativePreferredDeviceMac) settings.nativePreferredDeviceMac = it }
@@ -1150,15 +1153,39 @@ class SettingsFragment : Fragment() {
                 }
             ))
 
+            // Right under the transport it belongs to. Hidden below API 26, where no local hotspot exists.
+            if (LocalHotspotPolicy.showsUseSystemRow(
+                    Build.VERSION.SDK_INT, pendingWifiConnectionMode ?: settings.wifiConnectionMode, pendingNativeTransport()
+                )
+            ) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "useSystemHotspot",
+                    nameResId = R.string.use_system_hotspot,
+                    descriptionResId = R.string.use_system_hotspot_summary,
+                    helpResId = R.string.use_system_hotspot_help,
+                    isChecked = pendingUseSystemHotspot ?: false,
+                    onCheckedChanged = { isChecked ->
+                        pendingUseSystemHotspot = isChecked
+                        checkChanges()
+                        updateSettingsList()
+                        // The system hotspot needs the manual rows on most units, the local one needs none.
+                        runCredentialsPreflight()
+                    }
+                ))
+            }
+
             if (pendingNativeTransport() == NativeTransport.HOTSPOT) {
+                // Rows that do nothing on the local hotspot. Hidden, never cleared: the stored
+                // values stay for the day the system hotspot is used again.
+                val hiddenRows = LocalHotspotPolicy.hiddenNativeRows(pendingHotspotSource())
                 // This route reads autoEnableHotspot in two places - SoftApCredentialsProvider
                 // switches the access point on when none is found, and UserExitHotspotPolicy
                 // decides from it whether a user exit takes the network down - so the toggle
                 // belongs here. It used to render only on mode 1 and mode 2 strategy 4, which left
                 // the setting governing this route unreachable from the screen that selects it.
-                addHotspotToggle(items)
-                addHotspotBandSetting(items)
-                if (pendingHotspotBandPreference() != HotspotBandPreference.FORCE_2_4GHZ) {
+                if ("autoEnableHotspot" !in hiddenRows) addHotspotToggle(items)
+                if ("hotspotBand" !in hiddenRows) addHotspotBandSetting(items)
+                if ("fiveGhzChannel" !in hiddenRows && pendingHotspotBandPreference() != HotspotBandPreference.FORCE_2_4GHZ) {
                     addFiveGhzChannelSetting(items)
                 }
 
@@ -1170,7 +1197,7 @@ class SettingsFragment : Fragment() {
                 // seeds the same string: the condition needs the pair, and a search on either
                 // title alone reaches one of them.
                 val manualSsid = pendingHotspotSsid.orEmpty()
-                items.add(SettingItem.SettingEntry(
+                if ("hotspotSsidOverride" !in hiddenRows) items.add(SettingItem.SettingEntry(
                     stableId = "hotspotSsidOverride",
                     nameResId = R.string.hotspot_ssid_override,
                     helpResId = R.string.hotspot_ssid_override_help,
@@ -1192,7 +1219,7 @@ class SettingsFragment : Fragment() {
                 ))
 
                 val manualPassword = pendingHotspotPassword.orEmpty()
-                items.add(SettingItem.SettingEntry(
+                if ("hotspotPasswordOverride" !in hiddenRows) items.add(SettingItem.SettingEntry(
                     stableId = "hotspotPasswordOverride",
                     nameResId = R.string.hotspot_password_override,
                     helpResId = R.string.hotspot_password_override_help,
@@ -1214,7 +1241,7 @@ class SettingsFragment : Fragment() {
                 ))
 
                 val manualInterface = pendingHotspotInterface.orEmpty()
-                items.add(SettingItem.SettingEntry(
+                if ("hotspotInterfaceOverride" !in hiddenRows) items.add(SettingItem.SettingEntry(
                     stableId = "hotspotInterfaceOverride",
                     nameResId = R.string.hotspot_interface_override,
                     helpResId = R.string.hotspot_interface_override_help,
@@ -1238,7 +1265,7 @@ class SettingsFragment : Fragment() {
                 // reads the network and our TCP endpoint straight off the screen. Only on this
                 // transport, and only from here, because the QR is worth showing exactly where the
                 // network it names is configured.
-                items.add(SettingItem.SettingEntry(
+                if ("projectionSetupQr" !in hiddenRows) items.add(SettingItem.SettingEntry(
                     stableId = "projectionSetupQr",
                     nameResId = R.string.native_aa_setup_qr_title,
                     helpResId = R.string.native_aa_setup_qr_help,
@@ -4166,6 +4193,9 @@ class SettingsFragment : Fragment() {
     }
 
     /** The transport the Native AA block is currently showing settings for. */
+    private fun pendingHotspotSource(): LocalHotspotPolicy.Source =
+        LocalHotspotPolicy.source(Build.VERSION.SDK_INT, pendingUseSystemHotspot ?: settings.useSystemHotspot)
+
     private fun pendingNativeTransport(): NativeTransport =
         pendingNativeApTransport ?: NativeStrategy.DEFAULT
 
@@ -5194,6 +5224,7 @@ class SettingsFragment : Fragment() {
         // than returning null, before any isAdded check inside could help.
         val owner = view?.let { viewLifecycleOwner } ?: return
         val transport = pendingNativeTransport()
+        val localHotspot = pendingHotspotSource() == LocalHotspotPolicy.Source.LOCAL_ONLY
         // One probe at a time. The transport control fires this on every change, and each run costs
         // up to ~1.5 s waiting on requestDeviceInfo plus an `ip link` subprocess — so toggling back
         // and forth would otherwise stack coroutines and show a dialog on top of a dialog.
@@ -5211,9 +5242,10 @@ class SettingsFragment : Fragment() {
                     // interfaces and one is never an answer for the other.
                     staticBssid = if (transport == NativeTransport.WIFI_DIRECT) pendingStaticP2pBSSID
                     else pendingStaticBSSID,
-                    hotspotInterface = pendingHotspotInterface.orEmpty()
+                    hotspotInterface = pendingHotspotInterface.orEmpty(),
+                    localHotspot = localHotspot
                 )
-                NativeCredentialsPreflightPolicy.evaluate(transport, probe)
+                NativeCredentialsPreflightPolicy.evaluate(transport, probe, localHotspot)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

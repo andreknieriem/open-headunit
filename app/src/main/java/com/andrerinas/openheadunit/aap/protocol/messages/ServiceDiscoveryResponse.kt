@@ -424,7 +424,7 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
         ): Int = try {
             NarrowBandProfilePolicy.cappedFrameRate(
                 fpsLimit = settings.fpsLimit,
-                supports5Ghz = WifiBandCapability.supports5Ghz(context),
+                supports5Ghz = WifiBandCapability.radioAnswerForCap(context, settings),
                 wirelessSession = App.provide(context).commManager.isWirelessSession,
                 capEnabled = settings.narrowBandProfileCap,
                 sessionFrequencyMhz = WifiBandCapability.sessionFrequencyMhz(),
@@ -448,7 +448,7 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
         ): Boolean = try {
             val aac = NarrowBandProfilePolicy.useAac(
                 userChoice = userChoice,
-                supports5Ghz = WifiBandCapability.supports5Ghz(context),
+                supports5Ghz = WifiBandCapability.radioAnswerForCap(context, settings),
                 wirelessSession = App.provide(context).commManager.isWirelessSession,
                 capEnabled = settings.narrowBandProfileCap,
                 sessionFrequencyMhz = WifiBandCapability.sessionFrequencyMhz(),
@@ -473,14 +473,24 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
          */
         private fun logNarrowBandProfile(context: Context, settings: com.andrerinas.openheadunit.utils.Settings) {
             val advice = try {
+                if (settings.narrowBandProfileCap && App.provide(context).commManager.isWirelessSession &&
+                    WifiBandCapability.supports5Ghz(context) == false &&
+                    WifiBandCapability.radioAnswerForCap(context, settings) == null
+                ) {
+                    AppLog.i(
+                        "[ServiceDiscovery] the radio's \"no 5 GHz band\" is not used: " +
+                            if (settings.radioSeenAbove24Ghz) "it ran on 5 GHz before" else "Hotspot band is 5 GHz only"
+                    )
+                }
                 NarrowBandProfilePolicy.advice(
-                    supports5Ghz = WifiBandCapability.supports5Ghz(context),
+                    supports5Ghz = WifiBandCapability.radioAnswerForCap(context, settings),
                     fpsLimit = settings.fpsLimit,
                     wirelessSession = App.provide(context).commManager.isWirelessSession,
                     capEnabled = settings.narrowBandProfileCap,
                     sessionFrequencyMhz = WifiBandCapability.sessionFrequencyMhz(),
                     bandUnreadable = WifiBandCapability.bandUnreadable(),
                     linkProvedTooSlow = settings.videoProfileStarvationCap,
+                    localHotspotNarrow = WifiBandCapability.isLocalHotspotNarrow(),
                 )
             } catch (e: Exception) {
                 // Service discovery must not fail over a diagnostic. A missing line is a missing

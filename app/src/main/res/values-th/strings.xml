@@ -1401,6 +1401,10 @@
     <string name="connection_issue_banner_bt_silent">โทรศัพท์ของคุณเชื่อมต่อผ่านบลูทูธแล้ว แต่บลูทูธของยูนิตนี้ส่งข้อมูลไปให้ไม่ได้ แตะเพื่อเลือกโหมดที่ไม่ต้องใช้บลูทูธ เช่น Wireless Helper</string>
     <string name="connection_issue_banner_bssid">โทรศัพท์ของคุณไม่ทราบว่าต้องเข้าร่วมเครือข่ายใด เพราะยูนิตนี้ไม่เปิดเผยที่อยู่ Wi-Fi ของตัวเอง เปิดตำแหน่งที่ตั้ง หรือแตะเพื่อป้อนที่อยู่ด้วยตนเอง</string>
     <string name="connection_issue_banner_hotspot_off">ฮอตสปอตของยูนิตนี้ปิดอยู่ โทรศัพท์จึงไม่มีเครือข่ายให้เข้าร่วม เปิดฮอตสปอต หรือแตะเพื่อให้แอปเปิดให้</string>
+    <string name="connection_issue_banner_local_hotspot">ยูนิตนี้เริ่มฮอตสปอตของตัวเองไม่ได้ โทรศัพท์จึงไม่มีเครือข่ายให้เข้าร่วม แตะเพื่อเปิด “ใช้ฮอตสปอตของระบบ”</string>
+    <string name="use_system_hotspot">ใช้ฮอตสปอตของระบบ</string>
+    <string name="use_system_hotspot_summary">ปิด: แอปเริ่มฮอตสปอตของตัวเองและไม่ต้องตั้งค่า</string>
+    <string name="use_system_hotspot_help">ปิด: ใน Android 8 ขึ้นไป แอปจะเริ่มฮอตสปอตภายในของตัวเองและไม่ต้องตั้งค่าอะไร แถวชื่อ รหัสผ่าน อินเทอร์เฟซ ย่านความถี่ และช่องสัญญาณจึงไม่มีผลและถูกซ่อนไว้ ค่าที่ตั้งไว้ยังคงถูกบันทึกอยู่ เปิด: แอปใช้ฮอตสปอตของยูนิตนี้เหมือนเดิม และคุณตั้งชื่อ รหัสผ่าน และอินเทอร์เฟซเองได้</string>
     <string name="connection_issue_banner_hotspot_config">ยูนิตนี้ไม่แจ้งชื่อและรหัสผ่านฮอตสปอตแก่แอป แตะเพื่อป้อนด้วยตนเอง</string>
     <string name="auto_restart_wifi_summary">รีสตาร์ท Wi-Fi เองเมื่อ WiFi Direct ค้าง ต้องใช้รูทหรือ ADB ในเครื่อง</string>
     <string name="auto_restart_wifi_description">ปิดแล้วเปิด Wi-Fi เองเมื่อ WiFi Direct ค้าง ซึ่งอาจเกิดขึ้นหลังจากปิดแอปกลางเซสชัน ต้องใช้รูทหรือ ADB ในเครื่อง ไม่ทำงานระหว่างเซสชัน</string>

@@ -590,4 +590,97 @@ class WppHandshakeSessionTest {
             assertEquals(before, s.stage)
         }
     }
+
+    // --- the short bound after a join report (hotspot transport) --------------------------
+
+    private fun joinedSession(): WppHandshakeSession {
+        val s = WppHandshakeSession(joinedTimeoutMs = 8_000L)
+        s.on(WppEvent.SocketReady); s.on(WppEvent.StageTimeout); s.on(WppEvent.CredentialsReady)
+        s.on(msg(WppMessageType.INFO_REQUEST))
+        assertEquals(WppStage.SETTLING, s.stage)
+        return s
+    }
+
+    private fun afterSuccess(): WppHandshakeSession =
+        joinedSession().also { assertEquals(listOf(WppAction.AwaitSession), it.on(msg(WppMessageType.CONNECT_STATUS, 0))) }
+
+    @Test
+    fun `a success in settling gives joined with the short bound`() {
+        val s = afterSuccess()
+        assertEquals(WppStage.JOINED, s.stage)
+        assertEquals(8_000L, s.currentStageTimeoutMs())
+        assertTrue(s.awaitsSession)
+    }
+
+    @Test
+    fun `a success before Type 3 goes to settling and never joined`() {
+        val s = WppHandshakeSession(joinedTimeoutMs = 8_000L)
+        s.on(WppEvent.SocketReady); s.on(WppEvent.StageTimeout); s.on(WppEvent.CredentialsReady)
+        assertEquals(WppStage.AWAIT_INFO_REQUEST, s.stage)
+        assertEquals(emptyList<WppAction>(), s.on(msg(WppMessageType.CONNECT_STATUS, 0)))
+        assertEquals(WppStage.SETTLING, s.stage)
+        assertEquals(listOf(WppAction.ExtendSettle), s.on(msg(WppMessageType.CONNECT_STATUS, 0)))
+        assertEquals(WppStage.SETTLING, s.stage)
+    }
+
+    @Test
+    fun `a settle timeout in joined resumes the poke and fails`() {
+        val s = afterSuccess()
+        assertEquals(listOf(WppAction.ResumePoke), s.on(WppEvent.SettleTimeout))
+        assertEquals(WppStage.FAILED, s.stage)
+    }
+
+    @Test
+    fun `a landing in joined completes and holds`() {
+        val s = WppHandshakeSession(holdsChannel = true, joinedTimeoutMs = 8_000L)
+        s.on(WppEvent.SocketReady); s.on(WppEvent.StageTimeout); s.on(WppEvent.CredentialsReady)
+        s.on(msg(WppMessageType.INFO_REQUEST)); s.on(msg(WppMessageType.CONNECT_STATUS, 0))
+        assertEquals(listOf(WppAction.CompleteSuccess), s.on(WppEvent.TcpSessionUp))
+        assertEquals(WppStage.HOLDING, s.stage)
+    }
+
+    @Test
+    fun `a second success in joined gives nothing and keeps the bound`() {
+        val s = afterSuccess()
+        assertEquals(emptyList<WppAction>(), s.on(msg(WppMessageType.CONNECT_STATUS, 0)))
+        assertEquals(WppStage.JOINED, s.stage)
+        assertEquals(8_000L, s.currentStageTimeoutMs())
+    }
+
+    @Test
+    fun `a failed Type 6 in joined is a refused join and a failed Type 7 is not`() {
+        val six = afterSuccess().on(msg(WppMessageType.CONNECT_STATUS, -1))
+        assertEquals(true, (six[0] as WppAction.Fail).joinRefused)
+        assertEquals(WppAction.ResumePoke, six[1])
+        val seven = afterSuccess().on(msg(WppMessageType.START_RESPONSE, -1))
+        assertEquals(false, (seven[0] as WppAction.Fail).joinRefused)
+        assertEquals(WppAction.ResumePoke, seven[1])
+    }
+
+    @Test
+    fun `a Type 2 in joined sends the credentials again and settles with the 45 s bound`() {
+        val s = afterSuccess()
+        assertEquals(listOf(WppAction.SendInfoResponse), s.on(msg(WppMessageType.INFO_REQUEST)))
+        assertEquals(WppStage.SETTLING, s.stage)
+        assertEquals(NativeHandoffPolicy.SETTLE_TIMEOUT_MS, s.currentStageTimeoutMs())
+    }
+
+    @Test
+    fun `a withdrawn network fails joined and a ping is echoed without a stage change`() {
+        val s = afterSuccess()
+        assertEquals(listOf(WppAction.SendPingResponse), s.on(msg(WppMessageType.PING_REQUEST)))
+        assertEquals(WppStage.JOINED, s.stage)
+        val out = s.on(WppEvent.NetworkWithdrawn)
+        assertTrue(out[0] is WppAction.Fail)
+        assertEquals(WppAction.ResumePoke, out[1])
+        assertEquals(WppStage.FAILED, s.stage)
+    }
+
+    @Test
+    fun `with no value a success extends settling as before`() {
+        val s = settledSession()
+        assertEquals(listOf(WppAction.ExtendSettle), s.on(msg(WppMessageType.CONNECT_STATUS, 0)))
+        assertEquals(WppStage.SETTLING, s.stage)
+        assertTrue(s.awaitsSession)
+    }
 }

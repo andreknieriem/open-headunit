@@ -63,6 +63,14 @@ class SettingsRestoreHandlerTest {
         assertTrue(context.services.single().getBooleanExtra(AapService.EXTRA_SETTINGS_REARM, false))
     }
 
+    @Test fun `restoring the system hotspot choice rearms the wireless launcher`() {
+        settings.connectionModes = setOf(Settings.ConnectionMode.WIFI)
+        val before = SettingsRestoreHandler.capture(context, settings)
+        settings.useSystemHotspot = true
+        assertFalse(SettingsRestoreHandler.apply(context, settings, before, setOf("use-system-hotspot")))
+        assertEquals(listOf(AapService.ACTION_START_WIRELESS), context.services.map { it.action })
+    }
+
     @Test fun `removing wireless connection mode stops instead of starting the launcher`() {
         settings.connectionModes = setOf(Settings.ConnectionMode.WIFI)
         val before = SettingsRestoreHandler.capture(context, settings)

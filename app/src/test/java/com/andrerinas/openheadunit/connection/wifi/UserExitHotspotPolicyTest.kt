@@ -14,10 +14,45 @@ class UserExitHotspotPolicyTest {
         helperStrategy: HelperStrategy = HelperStrategy.NEARBY_DEVICES,
         nativeStrategy: NativeStrategy = NativeStrategy.WIFI_DIRECT,
         autoEnableHotspot: Boolean = true,
-        teardownProvenUnsafe: Boolean = false
+        teardownProvenUnsafe: Boolean = false,
+        localHotspot: Boolean = false
     ) = UserExitHotspotPolicy.onUserExit(
-        mode, helperStrategy, nativeStrategy, autoEnableHotspot, teardownProvenUnsafe
+        mode, helperStrategy, nativeStrategy, autoEnableHotspot, teardownProvenUnsafe, localHotspot
     )
+
+    @Test
+    fun `the local hotspot is released whatever Auto-Enable or an earlier failure says`() {
+        for (auto in listOf(true, false)) for (unsafe in listOf(true, false)) {
+            assertEquals(
+                "auto=$auto unsafe=$unsafe",
+                HotspotExitAction.RELEASE_LOCAL,
+                exit(
+                    mode = WifiLauncherMode.NATIVE, nativeStrategy = NativeStrategy.HOTSPOT,
+                    autoEnableHotspot = auto, teardownProvenUnsafe = unsafe, localHotspot = true
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `the helper's head-unit hotspot keeps its answers with the local flag set`() {
+        assertEquals(
+            HotspotExitAction.DISABLE,
+            exit(mode = WifiLauncherMode.HELPER, helperStrategy = HelperStrategy.HEADUNIT_HOTSPOT, autoEnableHotspot = true, localHotspot = true)
+        )
+        assertEquals(
+            HotspotExitAction.WARN_LEFT_UP,
+            exit(mode = WifiLauncherMode.HELPER, helperStrategy = HelperStrategy.HEADUNIT_HOTSPOT, autoEnableHotspot = false, localHotspot = true)
+        )
+    }
+
+    @Test
+    fun `WiFi Direct is not released as a local hotspot`() {
+        assertEquals(
+            HotspotExitAction.NONE,
+            exit(mode = WifiLauncherMode.NATIVE, nativeStrategy = NativeStrategy.WIFI_DIRECT, localHotspot = true)
+        )
+    }
 
     @Test
     fun `native AA on this unit's own access point takes it down when the app may drive it`() {

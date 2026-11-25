@@ -1419,6 +1419,7 @@
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth unit ini menolak penyiapan hands-free yang dibutuhkan Android Auto, sehingga mode nirkabel mungkin tidak dapat dimulai. Kabel atau mode nirkabel lain tidak memerlukannya.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Unit ini terus tersambung kembali ke Wi-Fi rumah Anda saat Android Auto berjalan, yang dapat membuat gambar tersendat, terutama pada unit 2,4 GHz. Ketuk untuk mematikan sambung ulang otomatis untuk jaringan itu, atau tunggu sampai Anda berada di luar jangkauannya.</string>
     <string name="connection_issue_banner_stale_usb_accessory">Android Auto di ponsel berhenti merespons lewat USB, dan aplikasi tidak dapat memulai ulang. Cabut ponsel, tunggu lima detik, lalu colokkan kembali.</string>
+    <string name="connection_issue_banner_usb_bluetooth">Adaptor Bluetooth USB terpasang, tetapi unit ini tidak punya radio Bluetooth yang dapat dipakai Android Auto untuk koneksi nirkabel. Gunakan kabel, atau unit dengan Bluetooth sendiri.</string>
     <string name="connection_issue_banner_dismiss">Tutup</string>
     <string name="auto_connect_pill_cancel">Batalkan koneksi</string>
     <string name="connection_issue_remedy_hotspot_query">Nama dan kata sandi hotspot</string>

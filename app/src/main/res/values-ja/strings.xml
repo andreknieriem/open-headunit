@@ -1282,6 +1282,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">この機器は選択した5GHzチャンネルを使用せず、一部のスマートフォンから見えないチャンネルを選びました。タップしてWi-Fi Directを2.4GHzに切り替えてください。2.4GHzならどのスマートフォンでも使えます。</string>
     <string name="connection_issue_banner_headunit_server_deaf">スマートフォンのAndroid Autoヘッドユニットサーバーが応答しなくなりました。スマートフォンでAndroid Autoの開発者設定からこれを停止し、再度開始してください。</string>
     <string name="connection_issue_banner_hands_free_held">別のデバイスがこの機器のハンズフリー接続を使用しており、Android Autoにはこれが必要です。そのデバイスを切断すると、この機器は再試行します。</string>
+    <string name="connection_issue_banner_usb_bluetooth">USB Bluetoothアダプターが接続されていますが、このユニットにはAndroid Autoがワイヤレス接続に使えるBluetoothラジオがありません。ケーブルを使うか、Bluetooth内蔵のユニットを使ってください。</string>
     <string name="connection_issue_banner_dismiss">閉じる</string>
     <string name="auto_connect_pill_cancel">接続を中止</string>
     <string name="connection_issue_remedy_hotspot_query">ホットスポット名とパスワード</string>

@@ -1281,6 +1281,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Цей пристрій не став використовувати вибраний вами канал 5 ГГц і вибрав такий, який деякі телефони не бачать. Торкніться, щоб перемкнути Wi-Fi Direct на 2,4 ГГц, який працює всюди.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Сервер головного пристрою Android Auto на вашому телефоні перестав відповідати. На телефоні зупиніть його й запустіть знову в налаштуваннях розробника Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">Інший пристрій займає з\'єднання hands-free цього пристрою, потрібне для Android Auto. Відключіть той пристрій, і цей повторить спробу.</string>
+    <string name="connection_issue_banner_usb_bluetooth">USB-адаптер Bluetooth підключено, але в цього пристрою немає Bluetooth-радіо, яке Android Auto може використати для бездротового підключення. Скористайтеся кабелем або пристроєм із власним Bluetooth.</string>
     <string name="connection_issue_banner_dismiss">Закрити</string>
     <string name="auto_connect_pill_cancel">Зупинити підключення</string>
     <string name="connection_issue_remedy_hotspot_query">Назва та пароль точки доступу</string>

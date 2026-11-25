@@ -1276,6 +1276,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Az egység nem használta a kiválasztott 5 GHz-es csatornát, és olyat választott, amelyet egyes telefonok nem látnak. Érintse meg, hogy a Wi-Fi Direct 2,4 GHz-re álljon át, amely mindenhol működik.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Az Android Auto fejegység-kiszolgálója a telefonon nem válaszol többé. A telefonon állítsa le, majd indítsa el újra az Android Auto fejlesztői beállításaiban.</string>
     <string name="connection_issue_banner_hands_free_held">Egy másik eszköz használja az egység kihangosító kapcsolatát, amelyre az Android Autónak szüksége van. Válassza le azt az eszközt, és az egység újra megpróbálja.</string>
+    <string name="connection_issue_banner_usb_bluetooth">USB Bluetooth adapter van csatlakoztatva, de ennek az egységnek nincs olyan Bluetooth rádiója, amelyet az Android Auto vezeték nélküli kapcsolathoz használhatna. Használj kábelt, vagy saját Bluetooth-szal rendelkező egységet.</string>
     <string name="connection_issue_banner_dismiss">Elvetés</string>
     <string name="auto_connect_pill_cancel">Csatlakozás leállítása</string>
     <string name="connection_issue_remedy_hotspot_query">Hotspot neve és jelszava</string>

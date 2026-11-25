@@ -14,6 +14,8 @@ object ZjSocketProbe {
 
     @Volatile private var verdict: ZjSocketPolicy.Verdict? = null
     @Volatile private var connectedPath: String? = null
+    // Kept apart from verdict: every arming forgets a negative verdict before it asks again.
+    @Volatile private var lastConnects: Boolean? = null
 
     private fun exists(path: String): Boolean = try { File(path).exists() } catch (e: Exception) { false }
 
@@ -21,6 +23,12 @@ object ZjSocketProbe {
     fun answer(): Boolean? {
         if (ExternalBtPolicy.ZJ_SOCKET_PATHS.none { exists(it) }) return false
         return ZjSocketPolicy.cachedAnswer(verdict, SystemClock.elapsedRealtime())
+    }
+
+    /** As [answer], but an old or forgotten answer still counts. Never route on it. */
+    fun lastAnswer(): Boolean? {
+        if (ExternalBtPolicy.ZJ_SOCKET_PATHS.none { exists(it) }) return false
+        return lastConnects
     }
 
     /** The socket the carrier dials: the one that connected, else the first present, else the first. */
@@ -38,6 +46,7 @@ object ZjSocketProbe {
             attempt.outcome
         }
         verdict = ZjSocketPolicy.Verdict(ZjSocketPolicy.connects(result.outcome), SystemClock.elapsedRealtime())
+        lastConnects = ZjSocketPolicy.connects(result.outcome)
         connectedPath = result.path.takeIf { ZjSocketPolicy.connects(result.outcome) }
         val shown = result.path ?: ExternalBtPolicy.ZJ_SOCKET_PATHS.first()
         AppLog.i("NativeAA: [ZJ] probe $shown: ${result.outcome}" + (detail?.let { " ($it)" } ?: ""))

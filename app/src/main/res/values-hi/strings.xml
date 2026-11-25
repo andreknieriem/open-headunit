@@ -1418,6 +1418,7 @@
     <string name="connection_issue_banner_hands_free_record_refused">इस यूनिट के ब्लूटूथ ने वह हैंड्स-फ़्री सेटअप नहीं माना जो Android Auto को चाहिए, इसलिए वायरलेस शुरू नहीं हो सकता। केबल या दूसरे वायरलेस मोड में इसकी ज़रूरत नहीं पड़ती।</string>
     <string name="connection_issue_banner_home_wifi_rejoined">यह यूनिट Android Auto के दौरान आपके घर के वाई-फ़ाई से बार-बार दोबारा जुड़ती है, जिससे तस्वीर अटक सकती है, खासकर 2.4 GHz वाली यूनिट पर। उस नेटवर्क के लिए ऑटो-रीकनेक्ट बंद करने के लिए टैप करें, या उसकी रेंज से बाहर होने तक प्रतीक्षा करें।</string>
     <string name="connection_issue_banner_stale_usb_accessory">फ़ोन पर Android Auto ने USB पर जवाब देना बंद कर दिया, और ऐप उसे फिर से शुरू नहीं कर सका। फ़ोन को निकालें, पाँच सेकंड रुकें और उसे दोबारा लगाएँ।</string>
+    <string name="connection_issue_banner_usb_bluetooth">एक USB ब्लूटूथ एडाप्टर लगा है, लेकिन इस यूनिट में ऐसा ब्लूटूथ रेडियो नहीं है जिसे Android Auto वायरलेस के लिए उपयोग कर सके। केबल का उपयोग करें, या अपने ब्लूटूथ वाली यूनिट का।</string>
     <string name="connection_issue_banner_dismiss">बंद करें</string>
     <string name="auto_connect_pill_cancel">कनेक्ट होना रोकें</string>
     <string name="connection_issue_remedy_hotspot_query">हॉटस्पॉट नाम और पासवर्ड</string>

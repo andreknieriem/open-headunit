@@ -1261,6 +1261,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">ამ მოწყობილობამ თქვენ მიერ არჩეული 5 გჰც არხი ვერ გამოიყენა და აირჩია ისეთი, რომელსაც ზოგი ტელეფონი ვერ ხედავს. შეეხეთ, რომ WiFi Direct 2.4 გჰც-ზე გადაერთოს, რომელიც ყველგან მუშაობს.</string>
     <string name="connection_issue_banner_headunit_server_deaf">თქვენს ტელეფონზე Android Auto-ს მაგნიტოლის სერვერმა პასუხის გაცემა შეწყვიტა. ტელეფონზე გააჩერეთ და ხელახლა გაუშვით ის Android Auto-ს დეველოპერის პარამეტრებში.</string>
     <string name="connection_issue_banner_hands_free_held">სხვა მოწყობილობა იყენებს ამ მოწყობილობის ჰენდსფრის კავშირს, რომელიც Android Auto-ს სჭირდება. გათიშეთ ის მოწყობილობა და ეს მოწყობილობა კავშირს ხელახლა შეეცდება.</string>
+    <string name="connection_issue_banner_usb_bluetooth">USB Bluetooth ადაპტერი ჩართულია, მაგრამ ამ მოწყობილობას არ აქვს Bluetooth რადიო, რომელსაც Android Auto უსადენო კავშირისთვის გამოიყენებდა. გამოიყენეთ კაბელი ან საკუთარი Bluetooth-ის მქონე მოწყობილობა.</string>
     <string name="connection_issue_banner_dismiss">დახურვა</string>
     <string name="auto_connect_pill_cancel">დაკავშირების შეწყვეტა</string>
     <string name="connection_issue_remedy_hotspot_query">ჰოტსპოტის სახელი და პაროლი</string>

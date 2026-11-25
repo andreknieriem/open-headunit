@@ -1273,6 +1273,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Bu ünite seçtiğiniz 5 GHz kanalını kullanmak istemedi ve bazı telefonların göremediği bir kanal seçti. Wi-Fi Direct\'i her yerde çalışan 2,4 GHz\'e geçirmek için dokunun.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Telefonunuzdaki Android Auto ana ünite sunucusu yanıt vermeyi bıraktı. Telefonda, Android Auto geliştirici ayarlarından sunucuyu durdurup yeniden başlatın.</string>
     <string name="connection_issue_banner_hands_free_held">Başka bir cihaz, Android Auto\'nun ihtiyaç duyduğu eller serbest bağlantısını kullanıyor. O cihazın bağlantısını kesin, bu ünite tekrar deneyecek.</string>
+    <string name="connection_issue_banner_usb_bluetooth">Bir USB Bluetooth adaptörü takılı, ancak bu ünitede Android Auto\'nun kablosuz bağlantı için kullanabileceği bir Bluetooth radyosu yok. Kablo kullanın veya kendi Bluetooth\'u olan bir ünite kullanın.</string>
     <string name="connection_issue_banner_dismiss">Kapat</string>
     <string name="auto_connect_pill_cancel">Bağlanmayı durdur</string>
     <string name="connection_issue_remedy_hotspot_query">Erişim noktası adı ve şifresi</string>

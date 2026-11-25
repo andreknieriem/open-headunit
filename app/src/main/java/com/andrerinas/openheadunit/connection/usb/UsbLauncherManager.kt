@@ -726,6 +726,8 @@ class UsbLauncherManager(val service: AapService) {
         accessoryOnly: Boolean = false,
         trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START,
     ) {
+        // Above every gate below: a dongle left in the unit, or a stale record, must reach this scan.
+        UsbBluetoothControllerNotice.review(service)
         val settings = App.provide(service).settings
         val commManager = App.provide(service).commManager
         if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return

@@ -43,6 +43,7 @@ import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.usb.UsbBluetoothControllerNotice
 import com.andrerinas.openheadunit.connection.PhoneExitQuietPolicy
 import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
@@ -65,6 +66,7 @@ import com.andrerinas.openheadunit.utils.OemAppManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -309,6 +311,7 @@ class MainActivity : BaseActivity() {
 
         observeConnectionStateForOverlay()
         observeConnectionStage()
+        observeUsbBluetoothNotice()
     }
 
     /**
@@ -601,6 +604,15 @@ class MainActivity : BaseActivity() {
      * Drives the pill off [ConnectionStageTracker]: it is up whenever the connection stack is
      * armed, not only during an auto-connect attempt, and its second line names the current step.
      */
+    private fun observeUsbBluetoothNotice() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // onResume draws the first state, so only later changes redraw here.
+                UsbBluetoothControllerNotice.changed.drop(1).collect { updateConnectionIssueBanner() }
+            }
+        }
+    }
+
     private fun observeConnectionStage() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -1443,6 +1455,8 @@ class MainActivity : BaseActivity() {
                     R.string.connection_issue_banner_home_wifi_rejoined
                 ConnectionIssue.STALE_USB_ACCESSORY ->
                     R.string.connection_issue_banner_stale_usb_accessory
+                ConnectionIssue.USB_BLUETOOTH_NOT_USABLE ->
+                    R.string.connection_issue_banner_usb_bluetooth
             }
         )
         banner.setOnClickListener { openRemedyFor(issue) }
@@ -1509,6 +1523,8 @@ class MainActivity : BaseActivity() {
             ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> return
             // The remedy is the cable.
             ConnectionIssue.STALE_USB_ACCESSORY -> return
+            // The remedy is hardware: a unit with a Bluetooth radio, or a module route.
+            ConnectionIssue.USB_BLUETOOTH_NOT_USABLE -> return
             // The remedy is the other device's Bluetooth connection, which no setting here reaches.
             ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> return
             // This unit's own Bluetooth stack refused the record. No row here changes its answer.

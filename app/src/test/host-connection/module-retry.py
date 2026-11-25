@@ -80,6 +80,7 @@ class ZbtAaCarrier(
 class Manager {
  val scope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
  var measuringDaemon=false;var enablingAndroidBluetooth=false;var measureGeneration=4;var wakeAwaitingModule=false
+ var onRouteMeasured:(()->Unit)?=null
  var moduleCarrier:ZbtAaCarrier?=null
  var reason:String?=null
  private var notStartedReason:String? get()=reason;set(value){reason=value}

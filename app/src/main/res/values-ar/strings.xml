@@ -1280,6 +1280,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">رفضت هذه الوحدة استخدام قناة 5 غيغاهرتز التي اخترتها واختارت قناة لا تراها بعض الهواتف. انقر لتحويل WiFi Direct إلى 2.4 غيغاهرتز، التي تعمل في كل مكان.</string>
     <string name="connection_issue_banner_headunit_server_deaf">توقف خادم الوحدة الرئيسية في Android Auto على هاتفك عن الاستجابة. على الهاتف، أوقفه ثم شغّله مرة أخرى في إعدادات المطوّرين الخاصة بـ Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">جهاز آخر يستخدم الاتصال الهاتفي الحر الخاص بهذه الوحدة، وهو اتصال يحتاجه Android Auto. افصل ذلك الجهاز وستعيد هذه الوحدة المحاولة.</string>
+    <string name="connection_issue_banner_usb_bluetooth">تم توصيل محول Bluetooth عبر USB، لكن هذا الجهاز لا يملك راديو Bluetooth يمكن لـ Android Auto استخدامه للاتصال اللاسلكي. استخدم كابلًا أو جهازًا يحتوي على Bluetooth خاص به.</string>
     <string name="connection_issue_banner_dismiss">تجاهل</string>
     <string name="auto_connect_pill_cancel">إيقاف الاتصال</string>
     <string name="connection_issue_remedy_hotspot_query">اسم نقطة الاتصال وكلمة المرور</string>

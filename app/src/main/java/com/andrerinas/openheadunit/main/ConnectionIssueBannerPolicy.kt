@@ -24,7 +24,8 @@ object ConnectionIssueBannerPolicy {
         ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE,
         ConnectionIssue.HANDS_FREE_RECORD_REFUSED,
         ConnectionIssue.PHONE_REFUSED_HANDS_FREE,
-        ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT
+        ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT,
+        ConnectionIssue.USB_BLUETOOTH_NOT_USABLE
     )
 
     /** [com.andrerinas.openheadunit.utils.Settings.wifiConnectionMode] for Native AA wireless. */
@@ -60,6 +61,8 @@ object ConnectionIssueBannerPolicy {
      *   so it is keyed like `HANDS_FREE_HELD_ELSEWHERE`.
      * - `HOME_WIFI_REJOINED_BESIDE_GROUP` is raised in `StationStandDown`, which only stands the
      *   station down for a Native AA WiFi Direct group.
+     * - `USB_BLUETOOTH_NOT_USABLE` is raised by `UsbBluetoothControllerNotice` only in Native AA, and
+     *   Native AA runs both transports, so it is keyed to both.
      * - `STALE_USB_ACCESSORY` is raised in `UsbLauncherManager` once both recovery steps fail. USB
      *   runs in every wireless mode and on a cable-only unit, so it is keyed to all of them.
      *
@@ -135,6 +138,8 @@ object ConnectionIssueBannerPolicy {
      * because it is this unit's own Bluetooth stack refusing, and a registration that succeeds on a
      * later arming retires it. `HOME_WIFI_REJOINED_BESIDE_GROUP` has none: its lever is in Android's
      * WiFi settings, and a stand-down that holds through a session retires it.
+     * `USB_BLUETOOTH_NOT_USABLE` has none: the lever is hardware, and the controller leaving or a
+     * usable route appearing retires it.
      *
      * @param hotspotSsid [com.andrerinas.openheadunit.utils.Settings.hotspotSsid]
      * @param hotspotPassword [com.andrerinas.openheadunit.utils.Settings.hotspotPassword] — needed

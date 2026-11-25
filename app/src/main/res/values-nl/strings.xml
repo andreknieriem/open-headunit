@@ -1280,6 +1280,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Dit apparaat wilde het door jou gekozen 5GHz-kanaal niet gebruiken en koos er een dat sommige telefoons niet zien. Tik om Wi-Fi Direct naar 2,4 GHz te zetten, wat overal werkt.</string>
     <string name="connection_issue_banner_headunit_server_deaf">De headunitserver van Android Auto op je telefoon reageert niet meer. Stop de server op je telefoon en start hem opnieuw in de ontwikkelaarsinstellingen van Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">Een ander apparaat gebruikt de handsfreeverbinding van dit apparaat, die Android Auto nodig heeft. Koppel dat apparaat los en dit apparaat probeert het opnieuw.</string>
+    <string name="connection_issue_banner_usb_bluetooth">Er is een USB-Bluetooth-adapter aangesloten, maar deze unit heeft geen Bluetooth-radio die Android Auto voor draadloos kan gebruiken. Gebruik een kabel of een unit met eigen Bluetooth.</string>
     <string name="connection_issue_banner_dismiss">Sluiten</string>
     <string name="auto_connect_pill_cancel">Verbinden stoppen</string>
     <string name="connection_issue_remedy_hotspot_query">Hotspotnaam en wachtwoord</string>

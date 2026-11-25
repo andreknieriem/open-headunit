@@ -25,6 +25,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
     private val service = manager.service
 
     override fun onUsbAttach(device: UsbDevice) {
+        UsbBluetoothControllerNotice.review(service)
         // Android raises its own dialog only now, so a later scan for this path knows it may be up.
         UsbPermissionAsks.stampAttach(device.deviceName)
         if (!UsbDeviceCompat.isConnectable(service, device)) {
@@ -73,6 +74,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
     }
 
     override fun onUsbDetach(device: UsbDevice) {
+        UsbBluetoothControllerNotice.review(service, gone = device)
         manager.noteRecoveryDeviceDetached(device)
         val commManager = App.provide(service).commManager
 

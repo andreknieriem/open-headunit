@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt
 
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -90,5 +91,38 @@ class ZbtDiscoveryTest {
         assertNull(measurement.snapshot().reachable)
         assertFalse(measurement.resolve(keepTrying = { false }))
         assertTrue(measurement.fallsBackToAndroid)
+    }
+
+    @Test
+    fun `an expired refusal stays a refusal for a verdict and unknown for a route`() {
+        mockStatic(SystemClock::class.java).use { clock ->
+            ZbtDaemonReachability.record(false, nowMs = 1_000L)
+            clock.`when`<Long> { SystemClock.elapsedRealtime() }
+                .thenReturn(1_000L + ZbtDaemonReachability.RECHECK_AFTER_MS)
+            val measurement = ZbtDiscovery.measurement(ZbtDiscoveryPolicy.Decision(
+                ZbtDiscoveryPolicy.Mode.REACHABILITY, "rw.zlink.bt.type=extra"))
+            assertNull(measurement.snapshot().reachable)
+            assertNull(ExternalBtTransportPolicy.moduleRefusal(measurement.snapshot(), false, false))
+            assertEquals(false, measurement.lastKnown().reachable)
+            assertEquals(true, ExternalBtTransportPolicy.moduleRefusal(measurement.lastKnown(), false, false))
+        }
+    }
+
+    @Test
+    fun `no answer yet stays pending for a verdict`() {
+        mockStatic(SystemClock::class.java).use {
+            val measurement = ZbtDiscovery.measurement(ZbtDiscoveryPolicy.Decision(
+                ZbtDiscoveryPolicy.Mode.REACHABILITY, "rw.zlink.bt.type=extra"))
+            assertNull(ExternalBtTransportPolicy.moduleRefusal(measurement.lastKnown(), false, false))
+        }
+    }
+
+    @Test
+    fun `a legacy answer never fills an identity snapshot`() {
+        mockStatic(SystemClock::class.java).use {
+            ZbtDaemonReachability.record(false, nowMs = 0L)
+            val candidate = ZbtDiscovery.measurement(ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.IDENTITY, "QF"))
+            assertNull(candidate.lastKnown().reachable)
+        }
     }
 }

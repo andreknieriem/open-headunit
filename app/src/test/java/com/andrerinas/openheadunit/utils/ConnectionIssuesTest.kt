@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.utils
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -161,5 +162,36 @@ class ConnectionIssuesTest {
         ConnectionIssues.raise(store, ConnectionIssue.WIFI_RADIO_OFF, 1_000L)
         ConnectionIssues.raise(store, ConnectionIssue.WIFI_RADIO_OFF, 9_000L)
         assertEquals(9_000L, store.read(ConnectionIssue.WIFI_RADIO_OFF))
+    }
+
+    private val usb = ConnectionIssue.USB_BLUETOOTH_NOT_USABLE
+
+    @Test
+    fun `settle true on an empty store writes the stamp`() {
+        assertTrue(ConnectionIssues.settle(store, usb, true, 5_000L))
+        assertEquals(5_000L, store.read(usb))
+    }
+
+    @Test
+    fun `settle true on a standing record keeps the old stamp`() {
+        store.write(usb, 1_000L)
+        assertFalse(ConnectionIssues.settle(store, usb, true, 9_000L))
+        assertEquals(1_000L, store.read(usb))
+    }
+
+    @Test
+    fun `settle false on a standing record zeroes it`() {
+        store.write(usb, 1_000L)
+        assertTrue(ConnectionIssues.settle(store, usb, false, 9_000L))
+        assertEquals(0L, store.read(usb))
+    }
+
+    @Test
+    fun `settle false on an empty store and settle null change nothing`() {
+        assertFalse(ConnectionIssues.settle(store, usb, false, 9_000L))
+        assertFalse(ConnectionIssues.settle(store, usb, null, 9_000L))
+        store.write(usb, 1_000L)
+        assertFalse(ConnectionIssues.settle(store, usb, null, 9_000L))
+        assertEquals(1_000L, store.read(usb))
     }
 }

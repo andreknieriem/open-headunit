@@ -1282,6 +1282,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Questa unità non ha voluto usare il canale a 5 GHz scelto da te e ne ha scelto uno che alcuni telefoni non vedono. Tocca per passare il WiFi Direct a 2,4 GHz, che funziona ovunque.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Il server head unit di Android Auto sul telefono ha smesso di rispondere. Sul telefono, fermalo e riavvialo nelle impostazioni sviluppatore di Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">Un altro dispositivo sta usando la connessione vivavoce di questa unità, di cui Android Auto ha bisogno. Disconnetti quel dispositivo e questa unità riproverà.</string>
+    <string name="connection_issue_banner_usb_bluetooth">È collegato un adattatore Bluetooth USB, ma questa unità non ha una radio Bluetooth che Android Auto possa usare per la connessione wireless. Usa un cavo o un\'unità con Bluetooth proprio.</string>
     <string name="connection_issue_banner_dismiss">Ignora</string>
     <string name="auto_connect_pill_cancel">Interrompi la connessione</string>
     <string name="connection_issue_remedy_hotspot_query">Nome e password dell\'hotspot</string>

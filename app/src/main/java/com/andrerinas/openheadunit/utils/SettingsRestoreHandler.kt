@@ -16,7 +16,9 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32Rel
 object SettingsRestoreHandler {
     data class Snapshot(
         val wireless: WirelessRearmPolicy.Config,
-        val appearance: Appearance
+        val appearance: Appearance,
+        // The Stop ticket of the user's choice: the restore applies after a file read.
+        val connectionTicket: Long,
     )
 
     data class Appearance(
@@ -29,9 +31,11 @@ object SettingsRestoreHandler {
         val hudMirroring: Boolean
     )
 
-    fun capture(context: Context, settings: Settings): Snapshot = Snapshot(
+    /** [connectionTicket] is the Stop ticket the caller read at the user's choice. */
+    fun capture(context: Context, settings: Settings, connectionTicket: Long): Snapshot = Snapshot(
         WirelessRearmPolicy.capture(settings, Esp32RelaySession.hasSavedEsp32Relay(context)),
-        appearance(settings)
+        appearance(settings),
+        connectionTicket,
     )
 
     private fun appearance(settings: Settings) = Appearance(
@@ -54,13 +58,16 @@ object SettingsRestoreHandler {
         val after = WirelessRearmPolicy.capture(settings, Esp32RelaySession.hasSavedEsp32Relay(context))
         if (WirelessRearmPolicy.requiresRearm(before.wireless, after)) {
             AapService.applyWirelessSettings(context,
-                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi(),
+                ticket = before.connectionTicket)
         }
         context.sendBroadcast(Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).setPackage(context.packageName))
         if (SettingsBackupManager.requiresProjectionRestart(changedKeys) && App.provide(context).commManager.isConnected) {
-            ToastUtils.showToast(context, context.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-            ContextCompat.startForegroundService(context,
-                Intent(context, AapService::class.java).setAction(AapService.ACTION_STOP_SERVICE))
+            // Stop is accepted only while the user's choice still holds its Stop ticket.
+            AapService.stopIntent(context, before.connectionTicket)?.let { stopServiceIntent ->
+                ToastUtils.showToast(context, context.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
+                ContextCompat.startForegroundService(context, stopServiceIntent)
+            }
         }
         AppThemeManager.reapply(context, settings)
         return recreate

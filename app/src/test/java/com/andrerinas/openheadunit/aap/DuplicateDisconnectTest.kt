@@ -61,7 +61,7 @@ class DuplicateDisconnectTest {
             quit.invoke(manager, mock(AapTransport::class.java), false)
             yield()
             manager.disconnectForLinkLoss(attempt, 0)
-            manager.disconnect(honorKillOnDisconnect = false)
+            manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
             yield()
             assertSame(ended, states.value)
             assertEquals(1, callbacks)
@@ -87,7 +87,7 @@ class DuplicateDisconnectTest {
         try {
             val start = CountDownLatch(1)
             val results = (0 until 20).map {
-                pool.submit { start.await(); manager.disconnect(sendByeBye = false,
+                pool.submit { start.await(); manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false,
                     isUserExit = false, honorKillOnDisconnect = false) }
             }
             start.countDown()
@@ -98,7 +98,7 @@ class DuplicateDisconnectTest {
             // Model admission of the next attempt while keeping physical cleanup queued.
             field(manager, "disconnectRequested", false)
             states.value = ConnectionState.Connecting
-            manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+            manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
             assertEquals(2, io.tasks.size)
             assertTrue(states.value is ConnectionState.Disconnected)
             assertNotSame(previous, states.value)

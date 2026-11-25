@@ -75,6 +75,7 @@ import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -3969,7 +3970,8 @@ class AapService : Service() {
             val request = if (intent.hasExtra(EXTRA_STOP_OWNER)) {
                 commManager.acceptedAppExit(intent.getLongExtra(EXTRA_STOP_OWNER, -1L))
             } else {
-                commManager.requestExplicitAppExit(settings.killOnDisconnect && commManager.isConnected)
+                commManager.requestExplicitAppExit(commManager.appConnectionTicket(),
+                    settings.killOnDisconnect && commManager.isConnected)
             }
             if (request == null) {
                 retireRejectedBootstrap()
@@ -4118,7 +4120,7 @@ class AapService : Service() {
                     AppLog.i("AapService: the status pill's X stopped the USB attempt. USB stays " +
                         "down until the USB button asks for it.")
                     usbLauncherManager.stopForUser()
-                    commManager.disconnect()
+                    commManager.disconnect(ConnectionOperation(operationTicket, null))
                     ConnectionStageTracker.clear()
                     return START_STICKY
                 }
@@ -4129,7 +4131,7 @@ class AapService : Service() {
                     // The pill's CONNECTING step: the socket goes before the interface, as on a
                     // user exit, or the teardown races a session still coming up.
                     val cleanupTicket = wifiLauncherManager.cleanupTicket()
-                    commManager.disconnect()
+                    commManager.disconnect(ConnectionOperation(operationTicket, null))
                     serviceScope.launch {
                         commManager.awaitDisconnectComplete()
                         // Only a new arm supersedes the user's X. An automatic socket
@@ -4260,6 +4262,7 @@ class AapService : Service() {
                         // way back is a scan and an association rather than a whole handshake.
                         sessionEndedByHand = true
                         commManager.disconnect(
+                            ConnectionOperation(operationTicket, null),
                             sendByeBye = true,
                             isUserExit = false,
                             honorKillOnDisconnect = false
@@ -4285,6 +4288,7 @@ class AapService : Service() {
                         // goes with it. And the switch outlives "close app on disconnect", or there
                         // is nothing left to show a selector on.
                         commManager.disconnect(
+                            ConnectionOperation(operationTicket, null),
                             sendByeBye = true,
                             isUserExit = false,
                             byeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.DEVICE_SWITCH,
@@ -4444,7 +4448,7 @@ class AapService : Service() {
                 // and unlike the previous isConnected guard it also covers the
                 // Connecting state, so the UI cancel paths work before handshake
                 // completes.
-                commManager.disconnect()
+                commManager.disconnect(ConnectionOperation(operationTicket, null))
             }
             ACTION_CONNECT_SOCKET        -> {
                 // Caller already invoked commManager.connect(socket); the connectionState
@@ -4805,10 +4809,12 @@ class AapService : Service() {
 
         /** Accept once at the synchronous internal producer, never again at service delivery. */
         @androidx.annotation.MainThread
-        fun stopIntent(context: Context): Intent {
+        fun stopIntent(context: Context, ticket: Long): Intent? {
             val component = App.provide(context)
-            val request = component.commManager.requestExplicitAppExit(
-                component.settings.killOnDisconnect && component.commManager.isConnected)
+            // The manager checks the original epoch atomically with accepting Stop; its external
+            // group cleanup runs after it releases the lifecycle monitor.
+            val request = component.commManager.requestExplicitAppExit(ticket,
+                component.settings.killOnDisconnect && component.commManager.isConnected) ?: return null
             return acceptedStopIntent(context, request.id)
         }
 
@@ -4843,19 +4849,18 @@ class AapService : Service() {
          * settings import's file read) passes the one it captured at the user's choice.
          */
         @androidx.annotation.MainThread
-        internal fun applyWirelessSettings(context: Context, startWireless: Boolean, ticket: Long? = null) {
-            // Read on the Save's own turn when its caller did not capture one.
-            fun saveTicket() = ticket ?: com.andrerinas.openheadunit.App.provide(context).commManager.appConnectionTicket()
+        internal fun applyWirelessSettings(context: Context, startWireless: Boolean, ticket: Long) {
+            if (!App.provide(context).commManager.acceptsAppConnectionTicket(ticket)) return
             val service = instance
             if (service != null) {
                 // A queued service Intent can arrive after legacy Self has reopened its listener.
                 // Both settings UI and service lifecycle run on Main, so finish this stop/rearm
                 // inline before applyAudioSettings is allowed to launch the replacement session.
-                if (startWireless) service.startWirelessForSettings(saveTicket())
+                if (startWireless) service.startWirelessForSettings(ticket)
                 else service.stopWirelessForCommand(fromSettings = true)
             } else {
                 // A relay to a service that is not running yet: it carries the Save's ticket.
-                context.startService(operationIntent(context, saveTicket()).apply {
+                context.startService(operationIntent(context, ticket).apply {
                     action = if (startWireless) ACTION_START_WIRELESS else ACTION_STOP_WIRELESS
                     putExtra(EXTRA_SETTINGS_REARM, true)
                 })

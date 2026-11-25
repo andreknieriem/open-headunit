@@ -129,7 +129,7 @@ class UsbLogicalAttemptTest {
             }
         }
         fun closes() = mockingDetails(handle).invocations.count { it.method.name == "close" }
-        fun stopOpen(): Long { comm.requestExplicitAppExit(killProcess = false); return comm.onAppRelaunched() }
+        fun stopOpen(): Long { comm.requestExplicitAppExit(comm.appConnectionTicket(), killProcess = false); return comm.onAppRelaunched() }
         /** A UI dialog owns its captured scan, or only grants permission when no scan was requested. */
         fun permissionReply(ticket: Long?) {
             val fragment = ticket?.let { UsbReceiver.encodeRecheck(comm.usbRecheck(it)) }
@@ -300,7 +300,7 @@ class UsbLogicalAttemptTest {
     }
 
     @Test fun aNewManualUsbInputAfterStopCanOriginateANewRun() = fixture { f ->
-        f.comm.requestExplicitAppExit(killProcess = false)
+        f.comm.requestExplicitAppExit(f.comm.appConnectionTicket(), killProcess = false)
         f.launcher.checkOnRequest(userRequested = true, recheck = f.comm.usbRecheckNow())
         f.queue.drain(); f.connect()
         assertEquals(1, f.opens)
@@ -406,7 +406,7 @@ class UsbLogicalAttemptTest {
             val resumeA = checkNotNull(f.io.take()) { "A did not reach its first IO entry" }
             if (exit) {
                 // The real user-exit disconnect, as the home screen's Exit issues it.
-                f.comm.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                f.comm.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(f.comm.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
             }
             resumeA.run()
             f.connect(jobA)

@@ -233,8 +233,8 @@ class UsbDeferredRecheckTest {
             f.queue.step() // Other endings now have the completed owner's rescan queued on the service dispatcher.
             when (ending) {
                 "stop" -> f.launcher.stopForUser()
-                "exit" -> f.comm.disconnect(honorKillOnDisconnect = false)
-                "save" -> f.comm.disconnect(isUserExit = false, reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+                "exit" -> f.comm.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(f.comm.appConnectionTicket(), null), honorKillOnDisconnect = false)
+                "save" -> f.comm.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(f.comm.appConnectionTicket(), null), isUserExit = false, reason = CommManager.DisconnectReason.SETTINGS_RESTART)
                 "session" -> f.field("usbRecoveryOwner", Any()) // producer rotates before successful handshake publication
                 "destroy" -> f.scope.cancel()
                 "stopping" -> `when`(f.service.isStopping).thenReturn(true)

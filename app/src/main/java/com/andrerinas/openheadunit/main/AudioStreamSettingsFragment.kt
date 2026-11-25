@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.main
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+
 import android.media.AudioManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -116,6 +118,7 @@ class AudioStreamSettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
+        val connectionTicket = App.provide(requireContext()).commManager.appConnectionTicket()
         pendingSeparateAudioStreams?.let { if (it != settings.separateAudioStreams) settings.separateAudioStreams = it }
         pendingMediaAudioStream?.let { if (it != settings.mediaAudioStream) settings.mediaAudioStream = it }
         pendingGuidanceAudioStream?.let { if (it != settings.guidanceAudioStream) settings.guidanceAudioStream = it }
@@ -124,7 +127,7 @@ class AudioStreamSettingsFragment : Fragment() {
         settings.commit()
         val manager = App.provide(requireContext()).commManager
         val connected = manager.isConnected
-        manager.applyAudioSettings()
+        manager.applyAudioSettings(ConnectionOperation(connectionTicket, null))
         val sessionEnded = connected && !manager.isConnected
 
         hasChanges = false

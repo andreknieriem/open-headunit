@@ -95,8 +95,7 @@ recheck_codec = expression(usb_receiver, 'internal fun encodeRecheck(', 'USB rel
     'private fun initializeForStart(ticket:Long, startupScan:UsbRecheck):Boolean {\n'
     '    startupTicket=ticket; startupRecheck=startupScan; initializedForStart=true; return true\n'
     '}\n'
-    'var foreground=false\nvar failForeground=false\n'
-    'fun startForegroundWithCurrentTypes(){check(!failForeground){"foreground promotion rejected"};foreground=true}\n'
+    'var foreground=false\nfun startForegroundWithCurrentTypes(){foreground=true}\n'
     'fun stopForegroundForShutdown(){isDestroying=true;foreground=false}\n'
     'fun stopForAcceptedAppExit(){stopForegroundForShutdown();stops++}\n'
     'fun beforeProcessExit(){error("unexpected process exit")}\n'
@@ -255,7 +254,7 @@ class CommManager {
  fun network()=_connection
  fun requested()=synchronized(transportLifecycleLock){disconnectRequested}
  fun cleanups(){queue.drain()}
- fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel();ConnectionArbiter.actions=null;ConnectionArbiter.reset()}
+ fun close(){disconnectCurrent(honorKillOnDisconnect=false);cleanups();_scope.cancel();ConnectionArbiter.actions=null;ConnectionArbiter.reset()}
  // Private publication fixtures model an already-admitted, accepted unrestricted request. The
  // claimed variant below runs the actual production Main acceptance when that ordering is tested.
  private fun acceptedTicket():Long = synchronized(transportLifecycleLock) {
@@ -306,6 +305,7 @@ shutil.copy2(base/'connection/AppExitPolicy.kt',OUT/'AppExitPolicy.kt')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppExitFixture.kt',OUT/'AppExitFixture.kt')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppExitSerializationFixture.kt',OUT/'AppExitSerializationFixture.kt')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppConnectionIngressFixture.kt',OUT/'AppConnectionIngressFixture.kt')
+shutil.copy2(ROOT/'app/src/test/host-connection/EffectEntryFixture.kt',OUT/'EffectEntryFixture.kt')
 exit_members=comm[comm.index('    private val appExitPolicy'):comm.index('    // The first disconnect chooses app-exit policy')]
 methods['app exit ownership']=hashlib.sha256(exit_members.encode()).hexdigest()
 # Tests control publication scheduling without a global Android Main dispatcher.
@@ -323,15 +323,14 @@ for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:',
     definition = comm[start:comm.index('\n\n', start)]
     methods[declaration] = hashlib.sha256(definition.encode()).hexdigest()
     manager_head += definition + '\n'
-manager_head += 'fun suppressProjectionVideoFocus(value:Boolean)=setProjectionVideoFocusSuppressed(value)\n'
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'internal fun captureHandshake()', 'internal suspend fun startHandshake(', 'private inline fun withLiveHandshake(', 'internal fun captureReading()', 'private inline fun withReading(', 'internal suspend fun startReading(',
- 'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'internal fun currentConnectionAttempt()', 'internal fun disconnectOwned(', 'internal fun disconnectPreempted(', 'internal fun disconnectForAppExit(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(', 'private fun recordTerminal(',
+ 'private fun reachedSsl()', 'private fun transportedQuited(', 'internal fun applyAudioSettings(', 'internal fun disconnect(', 'private fun disconnectCurrent(', 'internal fun currentConnectionAttempt()', 'internal fun disconnectOwned(', 'internal fun disconnectPreempted(', 'internal fun disconnectForAppExit(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(', 'private fun recordTerminal(',
  'internal class Attempt(', 'private fun attemptInFlight()', 'private fun beginAttempt(', 'private fun reachPhysicalConnection()',
  'internal sealed class LaunchOutcome {', 'internal fun launchMark(', 'internal fun arrivedSince(', 'internal fun reportLaunchFailure(',
  'internal suspend fun awaitSettled(', 'internal val isLiveLoopbackSession:',
  'private suspend fun connectIp(', 'private fun publishRequest(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'internal fun disconnectForLinkLoss(', 'fun destroy()',
- 'private fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptRequest(',
+ 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptRequest(',
  'internal suspend fun connect(device: UsbDevice, request: ConnectionRequest)', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
  'internal suspend fun connectHeld(', 'private suspend fun connectSocketWithTicket(', 'private suspend fun runSocketRequest(',
  'internal class ConnectionRequest(', 'private sealed class Admission {', 'private fun admitRequest(', 'private fun admitHeld(',
@@ -512,19 +511,19 @@ fun await(latch:CountDownLatch){check(latch.await(5,TimeUnit.SECONDS)){"probe ba
 
 fun projectionFocusSuppression()=runBlocking{
  val c=CommManager()
- c.suppressProjectionVideoFocus(true)
+ c.setProjectionVideoFocusSuppressed(true)
  c.captureHandshake()?.let { c.startHandshake(it) };c.captureReading()?.let { c.startReading(it) }
  val old=c.owner()
  check(old.isProjectionVideoFocusSuppressed())
- c.suppressProjectionVideoFocus(false)
+ c.setProjectionVideoFocusSuppressed(false)
  check(!old.isProjectionVideoFocusSuppressed())
- c.suppressProjectionVideoFocus(true)
+ c.setProjectionVideoFocusSuppressed(true)
  check(old.isProjectionVideoFocusSuppressed())
- c.disconnect(honorKillOnDisconnect=false);c.cleanups();c.awaitDisconnectComplete()
+ c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect=false);c.cleanups();c.awaitDisconnectComplete()
  c.connectNext();c.captureHandshake()?.let { c.startHandshake(it) };c.captureReading()?.let { c.startReading(it) }
  val fresh=c.owner()
  check(fresh!==old && fresh.isProjectionVideoFocusSuppressed())
- c.suppressProjectionVideoFocus(false)
+ c.setProjectionVideoFocusSuppressed(false)
  check(!fresh.isProjectionVideoFocusSuppressed() && old.isProjectionVideoFocusSuppressed())
  c.close()
  println("PASS projection focus suppression reaches current and replacement transports without changing retired owners")
@@ -534,7 +533,7 @@ fun lateHandshakeEntry()=runBlocking{
  val c=CommManager();c.settings.killOnDisconnect=true
  c.captureHandshake()?.let { c.startHandshake(it) };c.captureReading()?.let { c.startReading(it) };check(c.state is ConnectionState.TransportStarted)
  val old=c.owner()
- c.settings.useAacAudio=true;c.applyAudioSettings()
+ c.settings.useAacAudio=true;c.applyAudioSettings(ConnectionOperation(c.appConnectionTicket(), null))
  check(c.state is ConnectionState.Disconnected && c.context.broadcasts.isEmpty())
  c.captureHandshake()?.let { c.startHandshake(it) }
  check(c.state is ConnectionState.Disconnected && c.failures.isEmpty())
@@ -553,7 +552,7 @@ fun cancelledBeforeStartup()=runBlocking{
  starter.start();await(entered)
  val retired=c.owner()
  try {
-  c.settings.useAacAudio=true;c.applyAudioSettings();c.cleanups();c.awaitCleanup()
+  c.settings.useAacAudio=true;c.applyAudioSettings(ConnectionOperation(c.appConnectionTicket(), null));c.cleanups();c.awaitCleanup()
   check(retired.onQuit==null && retired.aapAudio.closed && retired.liveWorkers()==0)
  } finally {proceed.countDown();starter.join(5000);AppLog.hook=null}
  check(!starter.isAlive && errors.isEmpty()){errors.toString()}
@@ -564,7 +563,7 @@ fun cancelledBeforeStartup()=runBlocking{
 }
 fun oldQuitOutlivesCleanup(settingsSave:Boolean)=runBlocking{
  val c=CommManager();c.captureHandshake()?.let { c.startHandshake(it) };c.captureReading()?.let { c.startReading(it) };val old=c.owner()
- if(settingsSave){c.settings.useAacAudio=true;c.applyAudioSettings()}
+ if(settingsSave){c.settings.useAacAudio=true;c.applyAudioSettings(ConnectionOperation(c.appConnectionTicket(), null))}
  val atTail=CountDownLatch(1);val proceed=CountDownLatch(1)
  // Retirement may cancel callbacks before publishing Disconnected; pause only in the tail.
  Handler.removeHook={if(Thread.currentThread().name=="old-quit" && c.state is ConnectionState.Disconnected){Handler.removeHook=null;atTail.countDown();await(proceed)}}
@@ -590,7 +589,7 @@ fun cancelDuringHandshake()=runBlocking{
  AapTransport.handshakeHook={entered.countDown();await(proceed)}
  val starter=Thread{try{runBlocking{c.captureHandshake()?.let { c.startHandshake(it) }}}catch(t:Throwable){errors.add(t)}}
  starter.start();await(entered);val old=c.owner()
- c.settings.useAacAudio=true;c.applyAudioSettings()
+ c.settings.useAacAudio=true;c.applyAudioSettings(ConnectionOperation(c.appConnectionTicket(), null))
  val cleanup=Thread{c.cleanups();finished.countDown()};cleanup.start()
  try{check(!finished.await(100,TimeUnit.MILLISECONDS)){"cleanup raced active handshake"}}
  finally{proceed.countDown();starter.join(5000);cleanup.join(5000);AapTransport.handshakeHook=null}
@@ -608,7 +607,7 @@ fun controls()=runBlocking{
  val c=CommManager();val recovery=c.recoveryOwner();c.captureHandshake()?.let { c.startHandshake(it) }
  check(c.recoveryOwner()!==recovery){"completed handshake retained an old USB recovery owner"}
  c.captureReading()?.let { c.startReading(it) };val old=c.owner()
- c.settings.killOnDisconnect=true;c.settings.useAacAudio=true;c.applyAudioSettings();old.quit(false)
+ c.settings.killOnDisconnect=true;c.settings.useAacAudio=true;c.applyAudioSettings(ConnectionOperation(c.appConnectionTicket(), null));old.quit(false)
  check(c.state is ConnectionState.Disconnected && c.context.broadcasts.isEmpty() && Handler.delayed.isEmpty())
  c.cleanups();c.connectNext();c.captureHandshake()?.let { c.startHandshake(it) };c.captureReading()?.let { c.startReading(it) }
  check(c.state is ConnectionState.TransportStarted && c.videoDecoder.onDecoderError!=null)
@@ -655,7 +654,7 @@ fun peerBatch()=byteArrayOf(0,0x0b,0,2,0,15, 0,0x0b,0,2,0,11)
 
 fun latePhysicalPublication()=runBlocking{
  for(replace in listOf(false,true)){
-  val c=CommManager();c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
+  val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
   val inConstructor=CountDownLatch(1);val resumeConstructor=CountDownLatch(1)
   val errors=ConcurrentLinkedQueue<Throwable>()
   SocketProjectionConnection.created.clear()
@@ -663,7 +662,7 @@ fun latePhysicalPublication()=runBlocking{
   val opener=Thread{try{runBlocking{c.connectNext()}}catch(t:Throwable){errors.add(t)}}
   opener.start();await(inConstructor);val late=checkNotNull(SocketProjectionConnection.created.peek())
   check(c.state is ConnectionState.Connecting && c.network()==null)
-  c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   check(c.state is ConnectionState.Disconnected && c.network()==null && c.requested())
   SocketProjectionConnection.constructionHook=null
   if(replace){c.connectNext();c.captureHandshake()?.let { c.startHandshake(it) };c.captureReading()?.let { c.startReading(it) }}
@@ -674,7 +673,7 @@ fun latePhysicalPublication()=runBlocking{
   if(replace) check(c.state is ConnectionState.TransportStarted && fresh!=null && !fresh.closed)
   else{
    check(c.state is ConnectionState.Disconnected && c.nullableOwner()==null)
-   c.captureHandshake()?.let { c.startHandshake(it) };c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
+   c.captureHandshake()?.let { c.startHandshake(it) };c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
    check(c.state is ConnectionState.Disconnected && c.network()==null)
   }
   c.close()
@@ -749,7 +748,7 @@ fun interruptedTerminationControl()=runBlocking{
  AapTransport.handshakeHook={entered.countDown();await(proceed)}
  val starter=Thread{try{runBlocking{c.captureHandshake()?.let { c.startHandshake(it) }}}catch(t:Throwable){errors.add(t)}}
  starter.start();await(entered)
- c.disconnect(sendByeBye=false,honorKillOnDisconnect=false)
+ c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false)
  val cleaner=Thread{try{c.cleanups();interruptPreserved=Thread.currentThread().isInterrupted}catch(t:Throwable){errors.add(t)}finally{done.countDown()}}
  cleaner.start()
  try{
@@ -786,7 +785,7 @@ fun presentationRetirementBoundary()=runBlocking {
   val states=mutableListOf<Boolean>()
   old.installReader(AapRead().apply { onRetirePresentation={states.add(c.state is ConnectionState.Disconnected)} })
   when(route) {
-   "disconnect" -> c.disconnect(isUserExit=false,honorKillOnDisconnect=false)
+   "disconnect" -> c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false)
    "transport" -> checkNotNull(old.onQuit).invoke(false)
    "link-loss" -> c.disconnectForLinkLoss(checkNotNull(c.currentConnectionAttempt()),1)
    "destroy" -> c.destroy()
@@ -805,13 +804,13 @@ fun presentationRetirementBoundary()=runBlocking {
 extra += r'''
 fun lateRegisteredResults()=runBlocking {
  for (outcome in listOf("success","false","throw")) for(replace in listOf(false,true)) {
-  val c=CommManager();c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
+  val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
   val connecting=CountDownLatch(1);val resume=CountDownLatch(1);val errors=ConcurrentLinkedQueue<Throwable>()
   SocketProjectionConnection.created.clear()
   SocketProjectionConnection.connectionHook={connecting.countDown();await(resume);when(outcome){"throw"->throw IllegalStateException("late failure");"false"->false;else->true}}
   val opener=Thread {try {runBlocking {c.connectNext()}} catch(t:Throwable){errors.add(t)}}
   opener.start();await(connecting);val old=checkNotNull(c.network())
-  c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   check(old.closed && c.state is ConnectionState.Disconnected)
   check(!(c.state as ConnectionState.Disconnected).hadPhysicalConnection)
   SocketProjectionConnection.connectionHook=null
@@ -827,7 +826,7 @@ fun lateRegisteredResults()=runBlocking {
  println("PASS additional registered physical results: late success/false/exception preserve cancellation and replacement (6 schedules)")
 }
 fun destroyAfterCandidateRegistration()=runBlocking {
- val c=CommManager();c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
+ val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
  val entered=CountDownLatch(1);val resume=CountDownLatch(1);val errors=ConcurrentLinkedQueue<Throwable>()
  SocketProjectionConnection.connectionHook={entered.countDown();await(resume);true}
  val opener=Thread{try{runBlocking{c.connectNext()}}catch(t:Throwable){errors.add(t)}}
@@ -839,7 +838,7 @@ fun destroyAfterCandidateRegistration()=runBlocking {
  c.close();println("PASS destroy control: registered physical candidate is cancelled and late success cannot publish")
 }
 fun destroyDuringCandidateConstruction()=runBlocking {
- val c=CommManager();c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
+ val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
  val constructing=CountDownLatch(1);val resume=CountDownLatch(1);val errors=ConcurrentLinkedQueue<Throwable>()
  SocketProjectionConnection.created.clear()
  SocketProjectionConnection.constructionHook={constructing.countDown();await(resume)}
@@ -879,7 +878,7 @@ open class StandardUsbProjectionConnection(m:UsbManager,private val d:UsbDevice,
 class LibusbProjectionConnection(m:UsbManager,d:UsbDevice,admission:ConnectionAdmission):StandardUsbProjectionConnection(m,d,admission)
 fun usbOpenCancellation()=runBlocking {
  for(race in listOf(false,true)) {
-  val c=CommManager();c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
+  val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false);c.cleanups()
   val opened=CountDownLatch(1);val resumeOpen=CountDownLatch(1);val resultReady=CountDownLatch(1);val resumeResult=CountDownLatch(1)
   val errors=ConcurrentLinkedQueue<Throwable>();val handle=UsbDeviceConnection()
   c.context.usb.openHook={opened.countDown();await(resumeOpen);handle}
@@ -887,7 +886,7 @@ fun usbOpenCancellation()=runBlocking {
   val opener=Thread {try{runBlocking{c.connectDevice(UsbDevice())}}catch(t:Throwable){errors.add(t)}}
   opener.start();await(opened)
   if(!race){resumeOpen.countDown();await(resultReady)}
-  c.disconnect(sendByeBye=false,honorKillOnDisconnect=false)
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,honorKillOnDisconnect=false)
   val cleaner=Thread{try{c.cleanups()}catch(t:Throwable){errors.add(t)}}
   cleaner.start()
   if(race){
@@ -939,7 +938,7 @@ class SettingsActionFixture(val commManager:CommManager) {
  private class Handshake {fun noteSessionEnded(wake:Boolean){}}
  private class Usb {fun isSwitchingToProjection()=false;fun stopForUser(){}}
  private val wifiLauncherManager=Wifi();private val usbLauncherManager=Usb()
- fun action(action:String):Int {when(action) {
+ fun action(action:String):Int {val operationTicket=commManager.appConnectionTicket();when(action) {
 ''' + '\n'.join(body.replace(name, '"'+name+'"',1).replace('CommManager.ConnectionState', 'ConnectionState') for name,body in zip(actions,action_bodies)) + r'''
  };return START_STICKY}
 }
@@ -947,7 +946,7 @@ fun settingsActionCancellation()=runBlocking {
  for(action in listOf("ACTION_STOP_WIRELESS","ACTION_CANCEL_WIRELESS","ACTION_DISCONNECT")) {
   for(cancelAfterCleanup in listOf(false,true)) {
    val c=CommManager()
-   c.disconnect(isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
+   c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
    val saved=c.state as ConnectionState.Disconnected
    if(cancelAfterCleanup){c.cleanups();c.awaitCleanup()}
    SettingsActionFixture(c).action(action)
@@ -971,7 +970,7 @@ fun terminalRouteSnapshots()=runBlocking {
   c.cleanups();opening.join()
   check(c.state is ConnectionState.Connected && c.isLoopbackSession==loopback)
   when(route) {
-   "disconnect" -> c.disconnect(isUserExit=false,honorKillOnDisconnect=false)
+   "disconnect" -> c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false)
    "transport" -> { c.captureHandshake()?.let { c.startHandshake(it) };checkNotNull(c.owner().onQuit).invoke(false) }
    "link-loss" -> c.disconnectForLinkLoss(checkNotNull(c.currentConnectionAttempt()),1)
    "destroy" -> c.destroy()
@@ -995,7 +994,7 @@ fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
   val c=CommManager();val opening=launch(start=CoroutineStart.UNDISPATCHED){c.connectNext()}
   check(!opening.isCompleted && c.state is ConnectionState.Disconnected)
   c.cleanups();opening.join()
-  c.disconnect(honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   var armed:Triple<ConnectionState.Disconnected?,Any?,Any?>?=null
   SocketProjectionConnection.connectionHook={
    armed=c.rearmSnapshot()
@@ -1011,7 +1010,7 @@ fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
   c.cleanups();c.awaitCleanup()
   c.connectNext()
   val live=c.rearmSnapshot().second
-  c.disconnect(honorKillOnDisconnect=false)
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect=false)
   val next=c.state as ConnectionState.Disconnected
   check(live!=null && live!==attempt && next.endedAttempt===live && next.hadPhysicalConnection)
   c.cleanups();c.close()
@@ -1023,7 +1022,7 @@ fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
 // USB paths run here; the launch side is only the decision call its deadline makes. Hooks run
 // inside connectIp's own exception handling, so they record and the case checks afterwards.
 fun launchOutcomeFollowsAttempts()=runBlocking {
- fun ended():CommManager{val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();runBlocking{c.awaitCleanup()};return c}
+ fun ended():CommManager{val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false);c.cleanups();runBlocking{c.awaitCleanup()};return c}
  // Connecting(A) -> Connected(A) -> ended(A) -> Connecting(B) is one equal Connecting to a StateFlow
  // waiter. A's own settlement and the arrival count still answer the launch.
  run {
@@ -1038,7 +1037,7 @@ fun launchOutcomeFollowsAttempts()=runBlocking {
   val waiting=forming as? CommManager.LaunchOutcome.Forming ?: error("A forming attempt did not hold the launch: $forming")
   check(settledAtDecision==false && stateAtDecision===ConnectionState.Connecting){"waiter settled early or saw $stateAtDecision"}
   check(waiting.settled.isCompleted){"an arrival left its attempt's waiter unsettled"}
-  c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   var duringB:CommManager.LaunchOutcome?=null
   SocketProjectionConnection.connectionHook={duringB=c.reportLaunchFailure("timeout",mark);false}
   try{c.connectNext()}finally{SocketProjectionConnection.connectionHook=null}
@@ -1066,7 +1065,7 @@ fun launchOutcomeFollowsAttempts()=runBlocking {
  run {
   val c=ended();val markA=c.launchMark(c.appConnectionTicket())
   c.connectSelf();check(c.isLiveLoopbackSession)
-  c.disconnect(isUserExit=false,honorKillOnDisconnect=false)
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false)
   check(!c.isLiveLoopbackSession)
   c.context.usb.permitted=false
   c.connectDevice(UsbDevice())
@@ -1087,7 +1086,7 @@ fun launchOutcomeFollowsAttempts()=runBlocking {
 // construction hook runs inside connectIp's exception handling, so it only records.
 fun refusedUsbCannotTakeAnAttemptInFlight()=runBlocking {
  for(opens in listOf(true,false)) {
-  val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   val usbChecking=CountDownLatch(1);val bPublished=CountDownLatch(1)
   c.context.usb.permitted=false
   c.context.usb.permissionHook={usbChecking.countDown();check(bPublished.await(5,TimeUnit.SECONDS))}
@@ -1111,7 +1110,7 @@ fun refusedUsbCannotTakeAnAttemptInFlight()=runBlocking {
   c.cleanups();c.close()
  }
  // A live session: the same refused request cannot relabel it as failed either.
- val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+ val c=CommManager();c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
  c.connectSelf();check(c.state===ConnectionState.Connected)
  c.context.usb.permitted=false
  c.connectDevice(UsbDevice())
@@ -1121,7 +1120,7 @@ fun refusedUsbCannotTakeAnAttemptInFlight()=runBlocking {
 }
 fun usbSaveOpenFailures()=runBlocking {
  val permissionCase=CommManager()
- permissionCase.disconnect(sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
+ permissionCase.disconnect(ConnectionOperation(permissionCase.appConnectionTicket(),null), sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
  val permissionOwner=permissionCase.state as ConnectionState.Disconnected
  permissionCase.cleanups();permissionCase.awaitCleanup()
  permissionCase.context.usb.permitted=false
@@ -1131,7 +1130,7 @@ fun usbSaveOpenFailures()=runBlocking {
  for(outcome in listOf("false","throw","late-success")) for(cancelWhileOpening in listOf(false,true)) {
   if(outcome=="late-success" && !cancelWhileOpening)continue
   val c=CommManager()
-  c.disconnect(sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
   val saved=c.state as ConnectionState.Disconnected
   c.cleanups();c.awaitCleanup()
   var opens=0
@@ -1158,7 +1157,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
   val c=CommManager();val opening=launch(start=CoroutineStart.UNDISPATCHED){c.connectNext()}
   check(!opening.isCompleted && c.state is ConnectionState.Disconnected)
   c.cleanups();opening.join()
-  c.disconnect(honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   check((c.state as ConnectionState.Disconnected).hadPhysicalConnection)
   SocketProjectionConnection.connectionHook={if(outcome=="throw")throw IllegalStateException("open failed") else false}
   try { c.connectNext() } finally { SocketProjectionConnection.connectionHook=null }
@@ -1169,7 +1168,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();appExitSerializedEffects();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation();launchOutcomeFollowsAttempts();refusedUsbCannotTakeAnAttemptInFlight()')
+extra=extra.replace('fun main(){', 'fun main(){\n effectEntryAuthority();appExitOwnershipRaces();appExitSerializedEffects();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation();launchOutcomeFollowsAttempts();refusedUsbCannotTakeAnAttemptInFlight()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*

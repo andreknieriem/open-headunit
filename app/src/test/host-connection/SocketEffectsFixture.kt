@@ -97,13 +97,13 @@ object SocketEffectsMain {
     }
 
     private fun idle(): CommManager = CommManager().also { manager ->
-        manager.disconnect(
+        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null),
             sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
         manager.cleanups()
     }
 
     private fun stop(manager: CommManager, reopen: Boolean) {
-        checkNotNull(manager.requestExplicitAppExit(killProcess = false))
+        checkNotNull(manager.requestExplicitAppExit(manager.appConnectionTicket(), killProcess = false))
         if (reopen) manager.onAppRelaunched()
     }
 
@@ -370,7 +370,7 @@ object SocketEffectsMain {
                 val peer = GalVersionPolicy.Peer.Tcp("192.0.2.1", "192.0.2.33",
                     if (inbound) 5288 else 5277, inbound)
                 check(driver.galVersionPeer() == peer) { "wrong service endpoint for inbound=$inbound" }
-                manager.disconnect(
+                manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null),
                     honorKillOnDisconnect = false)
                 manager.cleanups()
             }

@@ -63,8 +63,11 @@ object SettingsRestoreHandler {
         }
         context.sendBroadcast(Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).setPackage(context.packageName))
         if (SettingsBackupManager.requiresProjectionRestart(changedKeys) && App.provide(context).commManager.isConnected) {
-            ToastUtils.showToast(context, context.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-            ContextCompat.startForegroundService(context, AapService.stopIntent(context))
+            // Stop is accepted only while the user's choice still holds its Stop ticket.
+            AapService.stopIntent(context, before.connectionTicket)?.let { stopServiceIntent ->
+                ToastUtils.showToast(context, context.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
+                ContextCompat.startForegroundService(context, stopServiceIntent)
+            }
         }
         AppThemeManager.reapply(context, settings)
         return recreate

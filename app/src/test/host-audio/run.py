@@ -33,8 +33,6 @@ classpath = os.pathsep.join(map(str, [stdlib, annotations, protobuf, protocol_cl
 compiler = [jar("org.jetbrains.kotlin", "kotlin-compiler-embeddable", kotlin), stdlib,
             jar("org.jetbrains.kotlin", "kotlin-reflect", "1.6.10"),
             jar("org.jetbrains.kotlin", "kotlin-script-runtime", kotlin),
-            jar("org.jetbrains.kotlin", "kotlin-build-tools-api", kotlin),
-            jar("org.jetbrains.kotlin", "kotlin-daemon-embeddable", kotlin),
             jar("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0"), annotations]
 sources = [repo / line for line in (base / "sources.txt").read_text().splitlines() if line]
 sources += sorted((base / "stubs").glob("*.kt")) + [base / "Regression.kt"]

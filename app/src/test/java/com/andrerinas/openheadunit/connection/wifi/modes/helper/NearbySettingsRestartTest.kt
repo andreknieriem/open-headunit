@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.helper
 import android.content.Context
 import android.content.SharedPreferences
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
@@ -163,8 +164,8 @@ class NearbySettingsRestartTest {
                 verify(client).startDiscovery(anyString(), callback.capture(), any())
                 when (end) {
                     // The Home Exit the service survives: already Disconnected, it cancels Save.
-                    "exit" -> comm.disconnect(isUserExit = true, honorKillOnDisconnect = false)
-                    "stop" -> { comm.requestExplicitAppExit(killProcess = false); comm.onAppRelaunched() }
+                    "exit" -> comm.disconnect(ConnectionOperation(comm.appConnectionTicket(), null), isUserExit = true, honorKillOnDisconnect = false)
+                    "stop" -> { comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false); comm.onAppRelaunched() }
                 }
                 val peer = mock(DiscoveredEndpointInfo::class.java)
                 `when`(peer.endpointName).thenReturn("Phone")
@@ -210,7 +211,7 @@ class NearbySettingsRestartTest {
                 check(NearbyEndpointCalls.reserve("queued-phone") {})
                 // A tap: its ticket is read now, and its request queues behind the cleanup.
                 manager.connectToEndpoint("queued-phone", comm.appConnectionTicket())
-                if (stop) { comm.requestExplicitAppExit(killProcess = false); comm.onAppRelaunched() }
+                if (stop) { comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false); comm.onAppRelaunched() }
                 NearbyEndpointCalls.drain("queued-phone")
                 // Recorded after every production frame has returned.
                 val requests = mockingDetails(client).invocations.count { it.method.name == "requestConnection" }

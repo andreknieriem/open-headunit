@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.main
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreen
 import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreenPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
@@ -636,6 +637,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
+        val connectionTicket = App.provide(requireContext()).commManager.appConnectionTicket()
         settingsMutations.cancel()
         checkChanges()
         var audioSessionEnded = false
@@ -801,21 +803,22 @@ class SettingsFragment : Fragment() {
 
         if (WirelessRearmPolicy.requiresRearm(wirelessConfigBefore, wirelessRearmConfig())) {
             AapService.applyWirelessSettings(requireContext(),
-                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi(),
+                ticket = connectionTicket)
         }
 
         if (requiresServiceRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {
                 ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-                val stopServiceIntent = AapService.stopIntent(requireContext())
-                ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
+                val stopServiceIntent = AapService.stopIntent(requireContext(), connectionTicket)
+                stopServiceIntent?.let { ContextCompat.startForegroundService(requireContext(), it) }
             }
         }
 
         if (requiresRestart && !requiresServiceRestart) {
             val manager = App.provide(requireContext()).commManager
             val connected = manager.isConnected
-            manager.applyAudioSettings()
+            manager.applyAudioSettings(ConnectionOperation(connectionTicket, null))
             audioSessionEnded = connected && !manager.isConnected
         }
 
@@ -3384,6 +3387,7 @@ class SettingsFragment : Fragment() {
                 touched = true
             }
             .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                val connectionTicket = App.provide(requireContext()).commManager.appConnectionTicket()
                 // Left alone, "All" stays "All" instead of becoming three explicit modes.
                 if (!(all && !touched)) {
                     // This dialog saves immediately, so the toolbar's later Save snapshot
@@ -3392,7 +3396,8 @@ class SettingsFragment : Fragment() {
                     settings.connectionModes = order.filterIndexed { i, _ -> checked[i] }.toSet()
                     if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
                         AapService.applyWirelessSettings(requireContext(),
-                            startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                            startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi(),
+                            ticket = connectionTicket)
                     }
                 }
                 dialog.dismiss()
@@ -3575,9 +3580,13 @@ class SettingsFragment : Fragment() {
         settingsMutations.start(
             prepare = { Unit },
             apply = {
-                // SettingsRestoreHandler reapplies the theme once the screen state is updated.
-                val result = SettingsBackupManager.resetFromContext(appContext, applyTheme = false)
-                handleResetSettings(snapshot, result)
+                if (App.provide(appContext).commManager.acceptsAppConnectionTicket(snapshot.connectionTicket)) {
+                    // SettingsRestoreHandler reapplies the theme once the screen state is updated.
+                    val result = SettingsBackupManager.resetFromContext(appContext, applyTheme = false)
+                    handleResetSettings(snapshot, result)
+                } else {
+                    AppLog.i("Settings: reset withdrawn before applying its preferences")
+                }
             },
             onFailure = { error ->
                 ToastUtils.showToast(appContext, appContext.getString(R.string.settings_reset_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
@@ -3740,8 +3749,12 @@ class SettingsFragment : Fragment() {
                 }
             },
             apply = { prepared ->
-                val result = SettingsBackupManager.applyImport(appContext, prepared, applyTheme = false)
-                handleImportedSettings(snapshot, result)
+                if (App.provide(appContext).commManager.acceptsAppConnectionTicket(snapshot.connectionTicket)) {
+                    val result = SettingsBackupManager.applyImport(appContext, prepared, applyTheme = false)
+                    handleImportedSettings(snapshot, result)
+                } else {
+                    AppLog.i("Settings: import withdrawn before applying its preferences")
+                }
             },
             onFailure = { error ->
                 ToastUtils.showToast(appContext, appContext.getString(R.string.settings_import_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
@@ -3759,8 +3772,12 @@ class SettingsFragment : Fragment() {
                 }
             },
             apply = { prepared ->
-                val result = SettingsBackupManager.applyImport(appContext, prepared, applyTheme = false)
-                handleImportedSettings(snapshot, result)
+                if (App.provide(appContext).commManager.acceptsAppConnectionTicket(snapshot.connectionTicket)) {
+                    val result = SettingsBackupManager.applyImport(appContext, prepared, applyTheme = false)
+                    handleImportedSettings(snapshot, result)
+                } else {
+                    AppLog.i("Settings: import withdrawn before applying its preferences")
+                }
             },
             onFailure = { error ->
                 ToastUtils.showToast(appContext, appContext.getString(R.string.settings_import_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
@@ -4353,7 +4370,7 @@ class SettingsFragment : Fragment() {
      */
     private fun rotateWifiDirectIdentityNow() {
         requireContext().startService(
-            AapService.commandIntent(requireContext(), AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY)
+            AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY)
         )
         val appliesNow = P2pIdentityRotationPolicy.applyNow(
             sessionLive = App.provide(requireContext()).commManager.isConnected,

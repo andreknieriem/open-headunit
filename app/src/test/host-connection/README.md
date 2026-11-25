@@ -230,3 +230,20 @@ rather than asserting completion. A service Stop that arrives after logical Disc
 before the transport has closed waits on that actual retirement, so native removal cannot be
 submitted first. These are recording framework boundaries, not proof of manufacturer radio
 behavior. Activity callback ordering and actual task/process effects still require Android coverage.
+
+The JVM settings-import regressions use the actual backup parser, preferences and device-protected
+mirrors with a blocking Reader. Read/parse may outlive cancellation but has no write authority;
+current-operation validation, apply, mirror synchronization and completion run in one Main turn.
+Save/reset and view destruction invalidate older UI operations without relying on cancellable
+join chains. Final preferences, mirror state and Stop effects are checked after blocked reads return.
+
+
+
+
+
+
+
+
+
+
+

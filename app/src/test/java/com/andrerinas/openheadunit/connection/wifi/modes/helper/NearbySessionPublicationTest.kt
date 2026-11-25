@@ -85,7 +85,7 @@ class NearbySessionPublicationTest {
                         assertSame(CommManager.ConnectionState.Connected, flow.value)
                         assertNotNull(get("connectionAttempt"))
                         verify(candidate, never()).disconnect()
-                        manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                         assertTrue((flow.value as CommManager.ConnectionState.Disconnected).hadPhysicalConnection)
                         assertEquals(1, queued.size)
                     } else {

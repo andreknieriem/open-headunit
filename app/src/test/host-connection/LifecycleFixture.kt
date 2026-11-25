@@ -130,12 +130,12 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     // PRODUCTION ADVANCE
     // PRODUCTION APPLY
     // PRODUCTION DISCONNECT
+    // PRODUCTION DISCONNECT_EFFECT
     // PRODUCTION RECORD_TERMINAL
     // PRODUCTION CANCEL_SETTINGS
     // PRODUCTION REACHED_SSL
     // PRODUCTION QUIT
     // PRODUCTION MANAGER_FOCUS_SUPPRESSION
-    fun suppressProjectionVideoFocus(value: Boolean) = setProjectionVideoFocusSuppressed(value)
     private fun doDisconnect(sendByeBye: Boolean,
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason =
             com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
@@ -343,15 +343,15 @@ internal fun audioLifecycleBoundaryRegression() {
     Handler.reset()
     val focus = ConnectionFixture()
     try {
-        focus.suppressProjectionVideoFocus(true)
+        focus.setProjectionVideoFocusSuppressed(true)
         focus.publish()
         check(focus.isProjectionVideoFocusSuppressed)
-        focus.suppressProjectionVideoFocus(false)
+        focus.setProjectionVideoFocusSuppressed(false)
         check(!focus.isProjectionVideoFocusSuppressed)
-        focus.suppressProjectionVideoFocus(true)
+        focus.setProjectionVideoFocusSuppressed(true)
         focus.nextConnection(); focus.publish()
         check(focus.isProjectionVideoFocusSuppressed)
-        focus.suppressProjectionVideoFocus(false)
+        focus.setProjectionVideoFocusSuppressed(false)
         check(!focus.isProjectionVideoFocusSuppressed)
     } finally { focus.close(); Handler.reset() }
     println("PASS audio lifecycle fixture preserves projection focus suppression across transport publication and replacement")
@@ -369,7 +369,7 @@ internal fun audioLifecycleBoundaryRegression() {
     val errors = java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
     AapTransport.constructionHook = { captured.countDown(); check(publish.await(3, TimeUnit.SECONDS)) }
     val creator = Thread { try { fixture.publish() } catch (t: Throwable) { errors.add(t) } }
-    val applying = Thread { try { fixture.applyAudioSettings() } catch (t: Throwable) { errors.add(t) } }
+    val applying = Thread { try { fixture.applyAudioSettings(ConnectionOperation(fixture.appConnectionTicket(),null)) } catch (t: Throwable) { errors.add(t) } }
     try {
         creator.start(); check(captured.await(2, TimeUnit.SECONDS))
         fixture.settings.useAacAudio = true
@@ -388,7 +388,7 @@ internal fun audioLifecycleBoundaryRegression() {
 
     val before = ConnectionFixture()
     try {
-        before.settings.useAacAudio = true; before.applyAudioSettings(); before.publish()
+        before.settings.useAacAudio = true; before.applyAudioSettings(ConnectionOperation(before.appConnectionTicket(),null)); before.publish()
         check(!before.disconnected && !before.audio.needsSessionRestart())
     } finally { before.close(); Handler.reset() }
     println("PASS settings saved before construction are captured by the next transport")
@@ -399,7 +399,7 @@ internal fun audioLifecycleBoundaryRegression() {
         val closing = ConnectionFixture(Settings().apply { killOnDisconnect = true })
         try {
             closing.publish(); val oldQuit = closing.quitCallback()
-            closing.disconnect(isUserExit = false, honorKillOnDisconnect = honor)
+            closing.disconnect(ConnectionOperation(closing.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = honor)
             check(closing.lateHandshake() == false)
             oldQuit(false); oldQuit(false)
             check(closing.context.broadcasts.isEmpty())

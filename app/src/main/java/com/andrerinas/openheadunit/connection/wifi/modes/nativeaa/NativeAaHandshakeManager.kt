@@ -3301,6 +3301,7 @@ class NativeAaHandshakeManager(
         AppLog.w("NativeAA: [ESP32] $reason — ending Android Auto (endAaOnDisconnect)")
         scope.launch(Dispatchers.Main.immediate) {
             commManager.disconnect(
+                operation = operation,
                 sendByeBye = true,
                 isUserExit = false,
                 honorKillOnDisconnect = false,

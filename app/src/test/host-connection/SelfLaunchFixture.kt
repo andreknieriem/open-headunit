@@ -80,6 +80,7 @@ object ConnectionArbiter {
 }
 // The extracted attempt can hold an owed USB scan; nothing here asks the bus.
 class UsbRecheck
+class ConnectionOperation(val ticket: Long, val save: CommManager.ConnectionState.Disconnected?)
 class CommManager {
     val attemptUserRequested = false
     private var stopEpoch = 0L
@@ -253,10 +254,10 @@ class CommManager {
     // startHandshake's failure: its Error and the disconnect that follows, in one lock section.
     fun failHandshake() = synchronized(transportLifecycleLock) {
         _connectionState.value = ConnectionState.Error("Handshake failed")
-        disconnect(sendByeBye = false, isUserExit = false)
+        disconnectCurrent(sendByeBye = false, isUserExit = false)
     }
     fun end(reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED): ConnectionState.Disconnected {
-        disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, reason = reason)
+        disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, reason = reason)
         return checkNotNull(_connectionState.value as? ConnectionState.Disconnected)
     }
     // connectUsb's refused-permission diagnostic, under its admission rule; run.py runs the real one.
@@ -510,6 +511,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
         }
     }
     fun cancelAction(intent: Intent? = null): Int {
+        val operationTicket = commManager.appConnectionTicket()
         when (ACTION_CANCEL_WIRELESS) {
             // CANCEL_ACTION
         }

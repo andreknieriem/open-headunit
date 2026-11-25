@@ -76,7 +76,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
  *                                                            │
  *                                                    TransportStarted
  *                                                            │
- *                                      disconnect() / read error / phone bye-bye
+ *                                      disconnectCurrent() / read error / phone bye-bye
  *                                                            │
  *                                                      Disconnected
  * ```
@@ -373,7 +373,7 @@ class CommManager(
     private fun stoppedConnectionAttempt(ticket: Long, attempt: Any): Boolean {
         if (appExitPolicy.stopEpoch == ticket) return false
         if (connectionAttempt === attempt && !disconnectRequested) {
-            disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+            disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
         }
         return true
     }
@@ -403,7 +403,7 @@ class CommManager(
                             // A claim merely admitted and then cancelled never reaches this cut.
                             val previous = connectionAttempt
                             if (previous != null && previous.request !== request && !disconnectRequested) {
-                                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                                disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                                 retirement = _disconnectJob?.takeUnless { it.isCompleted }
                             }
                             if (retirement != null) false else {
@@ -426,7 +426,7 @@ class CommManager(
             published?.let { (attempt, previous) ->
                 synchronized(transportLifecycleLock) {
                     if (connectionAttempt === attempt && !disconnectRequested) {
-                        disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                        disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                     }
                 }
                 try { previous?.disconnect() } catch (failure: Exception) {
@@ -445,8 +445,11 @@ class CommManager(
         appExitPolicy.userStopAtDestroy(request)
     }
 
-    internal fun requestExplicitAppExit(killProcess: Boolean): AppExitPolicy.Request {
+    internal fun requestExplicitAppExit(ticket: Long, killProcess: Boolean): AppExitPolicy.Request? {
         val request = synchronized(transportLifecycleLock) {
+            // A fresh Stop may join a committed teardown. Only its original epoch, not Run state,
+            // governs this acceptance; an import/dismiss continuation cannot issue a newer Stop.
+            if (appExitPolicy.stopEpoch != ticket) return@synchronized null
             appExitPolicy.request(killProcess, userStop = true, requiresKillOnDisconnect = false).also {
                 retireInvalidRequest()
                 cancelAppExitCallback()
@@ -455,6 +458,7 @@ class CommManager(
                 withdrawUsbRechecks()
             }
         }
+        if (request == null) return null
         // Retained OS ownership can outlive the service. Never call native/Binder under our lock.
         com.andrerinas.openheadunit.connection.wifi.direct.RetainedNativeGroup.requestStop {
             ownsAppExit(request.id)
@@ -619,7 +623,7 @@ class CommManager(
     /**
      * Called where a failure is discovered, not from a [connectionState] collector.
      * [ConnectionState.Error] never reaches one: the flow is conflated and a synchronous
-     * `disconnect()` follows the emit, so the value has moved on before any collector resumes.
+     * `disconnectCurrent()` follows the emit, so the value has moved on before any collector resumes.
      */
     var onSessionFailure: ((reason: String) -> Unit)? = null
     // Written with the connection token under transportLifecycleLock.
@@ -632,7 +636,7 @@ class CommManager(
 
     /**
      * Called after a USB handshake ends, [AapTransport.HandshakeFailure.NONE] on success, and after
-     * `disconnect()` on failure. The `Error` state never reaches a collector.
+     * `disconnectCurrent()` on failure. The `Error` state never reaches a collector.
      */
     var onUsbHandshakeEnded: ((UsbHandshakeOutcome) -> Unit)? = null
     @Volatile private var _connection: ProjectionConnection? = null
@@ -1065,7 +1069,7 @@ class CommManager(
                 else {
                     val accepted = publishIfOwned { _connection = candidate }
                     // Cleanup may invoke callbacks; it must stay outside the arbiter monitor.
-                    if (!accepted) disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    if (!accepted) disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                     accepted
                 }
             }
@@ -1092,7 +1096,7 @@ class CommManager(
                         return@synchronized
                     }
                 }
-                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
+                disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
             }
         } catch (e: Exception) {
             synchronized(transportLifecycleLock) {
@@ -1104,7 +1108,7 @@ class CommManager(
                 if (published) onSessionFailure?.invoke("connect_failed")
                 // A thrown open failure has the same retry policy as connect() returning false.
                 // No user chose Exit, and an unopened session must not close the service either.
-                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
+                disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -1322,7 +1326,7 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) false
                 else {
                     val accepted = runIfValid(request) { _connection = candidate }
-                    if (!accepted) disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    if (!accepted) disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                     accepted
                 }
             }
@@ -1346,7 +1350,7 @@ class CommManager(
                     }) return@synchronized
                 }
                 if (connectionAttempt === attempt && !disconnectRequested && _connection === candidate) {
-                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
         } catch (e: Exception) {
@@ -1358,7 +1362,7 @@ class CommManager(
                 }
                 if (reported) onSessionFailure?.invoke("connect_failed")
                 if (connectionAttempt === attempt && !disconnectRequested) {
-                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
         } finally {
@@ -1419,7 +1423,7 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) false
                 else {
                     val accepted = runIfValid(request) { _connection = candidate }
-                    if (!accepted) disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    if (!accepted) disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                     accepted
                 }
             }
@@ -1440,7 +1444,7 @@ class CommManager(
                     }) return@synchronized
                 }
                 if (connectionAttempt === attempt && !disconnectRequested && _connection === candidate) {
-                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
         } catch (e: Exception) {
@@ -1452,7 +1456,7 @@ class CommManager(
                 }
                 if (reported) onSessionFailure?.invoke("connect_failed")
                 if (connectionAttempt === attempt && !disconnectRequested) {
-                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
         } finally {
@@ -1951,7 +1955,7 @@ class CommManager(
                     val live = withLiveHandshake(authority, transport) {
                         val silent = failure == AapTransport.HandshakeFailure.PEER_SILENT
                         noteHandshakeOutcome(silent)
-                        // Here, not from a ConnectionState.Error collector: disconnect() follows with no
+                        // Here, not from a ConnectionState.Error collector: disconnectCurrent() follows with no
                         // suspension point, so the conflated flow never delivers Error and the pill kept
                         // the step it had. Measured stuck on "Securing the connection" for 3m39s.
                         ConnectionStageTracker.endAttempt()
@@ -1959,7 +1963,7 @@ class CommManager(
                         _connectionState.value = ConnectionState.Error(if (silent) ERROR_HANDSHAKE_PEER_SILENT else "Handshake failed")
                         settleSessionClaim(formed = false)
                         // Not a user exit: nobody chose to end a session that never formed.
-                        disconnect(sendByeBye = false, isUserExit = false)
+                        disconnectCurrent(sendByeBye = false, isUserExit = false)
                     }
                     // Outside the lock: the USB side starts recovery, which can connect again.
                     if (live && usb) onUsbHandshakeEnded?.invoke(UsbHandshakeOutcome(
@@ -1976,7 +1980,7 @@ class CommManager(
                 onSessionFailure?.invoke("handshake_failed")
                 _connectionState.value = ConnectionState.Error("Handshake failed: ${e.message}")
                 settleSessionClaim(formed = false)
-                disconnect(sendByeBye = false, isUserExit = false)
+                disconnectCurrent(sendByeBye = false, isUserExit = false)
             }
             if (usb) onUsbHandshakeEnded?.invoke(UsbHandshakeOutcome(
                 AapTransport.HandshakeFailure.OTHER, (attemptedConnection as AbstractUsbProjectionConnection).accessoryDevice, recoveryOwner, checkNotNull(recheck), usbIdentity))
@@ -2100,7 +2104,7 @@ class CommManager(
                 _connectionState.value = ConnectionState.Error("Start reading failed: ${e.message}")
                 // Startup failed locally. Preserve automatic recovery and do not send the peer
                 // a USER_SELECTION ByeBye for an exit the user never requested.
-                disconnect(sendByeBye = false, isUserExit = false)
+                disconnectCurrent(sendByeBye = false, isUserExit = false)
             }
         }
     }
@@ -2443,11 +2447,12 @@ class CommManager(
      * cannot renegotiate PCM/AAC or replace a session's focus policy. End that session instead;
      * a settings restart reuses the saved route without reporting a link failure.
      */
-    fun applyAudioSettings(): Unit = synchronized(transportLifecycleLock) {
+    internal fun applyAudioSettings(operation: ConnectionOperation): Unit = synchronized(transportLifecycleLock) {
+        if (!isCurrent(operation)) return@synchronized
         val audio = _transport?.aapAudio ?: return@synchronized
         if (audio.needsSessionRestart()) {
             AppLog.i("CommManager: audio settings changed; reconnecting the projection session")
-            disconnect(isUserExit = false, honorKillOnDisconnect = false,
+            disconnectCurrent(isUserExit = false, honorKillOnDisconnect = false,
                 reason = DisconnectReason.SETTINGS_RESTART)
         } else {
             audio.restartAudio()
@@ -2464,6 +2469,27 @@ class CommManager(
     // Disconnect
     // -----------------------------------------------------------------------------------------
 
+    /**
+     * Initiates a disconnect.
+     *
+     * Sets state to [ConnectionState.Disconnected] synchronously so callers see the change
+     * immediately, then schedules async cleanup via [doDisconnect]. A ByeByeRequest is sent
+     * to the phone before closing the connection.
+     */
+    /** An input's end effect, checked atomically with the state it changes. */
+    internal fun disconnect(
+        operation: ConnectionOperation,
+        sendByeBye: Boolean = true,
+        isUserExit: Boolean = true,
+        byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
+        honorKillOnDisconnect: Boolean = true,
+        reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
+        settingsRetryOwner: ConnectionState.Disconnected? = null,
+    ): Unit = synchronized(transportLifecycleLock) {
+        if (!isCurrent(operation)) return@synchronized
+        disconnectCurrent(sendByeBye, isUserExit, byeByeReason, honorKillOnDisconnect, reason, settingsRetryOwner)
+    }
+
     /** Snapshot at the event that owns delayed session cleanup, before scheduling it. */
     internal fun currentConnectionAttempt(): Attempt? = synchronized(transportLifecycleLock) {
         connectionAttempt?.takeIf { !disconnectRequested }
@@ -2479,30 +2505,24 @@ class CommManager(
         endedBy: EndCause? = null,
     ): Unit = synchronized(transportLifecycleLock) {
         if (connectionAttempt !== attempt) return@synchronized
-        disconnect(sendByeBye = sendByeBye, isUserExit = isUserExit,
+        disconnectCurrent(sendByeBye = sendByeBye, isUserExit = isUserExit,
             honorKillOnDisconnect = honorKillOnDisconnect, reason = reason, endedBy = endedBy)
     }
 
     /** A preemption callback cannot end the successor that already holds the arbiter. */
     internal fun disconnectPreempted(claim: ConnectionArbiter.Claim): Unit = synchronized(transportLifecycleLock) {
         if (connectionAttempt?.claim !== claim) return@synchronized
-        disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+        disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
     }
 
     /** The committed physical Stop owns teardown even after a newer Run asks to follow it. */
     internal fun disconnectForAppExit(request: AppExitPolicy.Request): Unit = synchronized(transportLifecycleLock) {
         if (!appExitPolicy.ownsPhysicalStop(request)) return@synchronized
-        disconnect(sendByeBye = true, honorKillOnDisconnect = false)
+        disconnectCurrent(sendByeBye = true, honorKillOnDisconnect = false)
     }
 
-    /**
-     * Initiates a disconnect.
-     *
-     * Sets state to [ConnectionState.Disconnected] synchronously so callers see the change
-     * immediately, then schedules async cleanup via [doDisconnect]. A ByeByeRequest is sent
-     * to the phone before closing the connection.
-     */
-    fun disconnect(
+    // Internal transport paths enter only with their owner checked under transportLifecycleLock.
+    private fun disconnectCurrent(
         sendByeBye: Boolean = true,
         isUserExit: Boolean = true,
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
@@ -2585,7 +2605,7 @@ class CommManager(
     ) {
         var usbRecheck: UsbRecheck? = null
         val resources = synchronized(transportLifecycleLock) {
-            // destroy() also reaches this path without a preceding disconnect(). Retire an
+            // destroy() also reaches this path without a preceding disconnectCurrent(). Retire an
             // unpublished candidate before the owner-null fast path, just like an active owner.
             // The one place an attempt is retired; a replaced one hands its debts on in beginAttempt.
             disconnectRequested = true

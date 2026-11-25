@@ -6,6 +6,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import com.andrerinas.openheadunit.app.AppForegroundPolicy
 import com.andrerinas.openheadunit.connection.AppExitPolicy
+import lifecycle.ConnectionOperation
 import lifecycle.CommManager
 import lifecycle.ConnectionState
 import lifecycle.ServiceBootstrap
@@ -213,7 +214,7 @@ class HomeAutomaticProducer(
     // HOME_SINGLE_USB
     // HOME_SELF_START
     // HOME_SELF_INTERNAL
-    fun startManualSelf() { startSelfMode() }
+    fun startManualSelf() { startSelfMode(App.provide(requireContext()).commManager.appConnectionTicket()) }
     fun consentGranted() { vpnPermissionLauncher.deliver() }
     fun permissionRequests() = vpnPermissionLauncher.launches
     fun close() { scope.cancel() }
@@ -227,20 +228,20 @@ private class HomeCase(configure: Settings.() -> Unit = {}) {
     val home = HomeAutomaticProducer(manager, settings, clock, io)
     var physicalOpens = 0
     init {
-        manager.disconnect(honorKillOnDisconnect = false)
+        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
         manager.cleanups()
         ContextCompat.serviceStarts.clear()
         manager.onAppRelaunched()
         SocketProjectionConnection.connectionHook = { physicalOpens++; true }
     }
     fun completeStop(): AppExitPolicy.Request {
-        val stop = manager.requestExplicitAppExit(killProcess = false)
+        val stop = checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
         check(manager.commitAppExit(stop) === stop)
         check(manager.completeAppExit(stop).effect == AppExitPolicy.Effect.STOPPED)
         return stop
     }
     fun interrupt(stop: Boolean): Long {
-        if (stop) manager.requestExplicitAppExit(killProcess = false)
+        if (stop) checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
         return manager.onAppRelaunched()
     }
     fun consume(): Int = ContextCompat.serviceStarts.toList().count { intent ->

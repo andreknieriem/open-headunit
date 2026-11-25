@@ -106,15 +106,15 @@ else:
     replacement = {
         '// ACCESSORY_EFFECT': 'val accepted = if (reset) accessory.resetDevice(UsbDevice(), admission) else accessory.connectAndSwitch(UsbDevice(), false, admission)',
         '// DRIVER_CONSTRUCTION': 'val driver = com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(usb, UsbDevice(), admission)',
-        '// REQUEST_STOP': 'checkNotNull(c.requestExplicitAppExit(killProcess = false))',
+        '// REQUEST_STOP': 'checkNotNull(c.requestExplicitAppExit(c.appConnectionTicket(),killProcess = false))',
         '// CAPTURE_HANDSHAKE': 'val authority = checkNotNull(c.captureHandshake())',
         '// START_HANDSHAKE': 'c.startHandshake(authority)',
         '// ACCEPTED_HANDSHAKE': 'c.startHandshake(checkNotNull(c.captureHandshake()))',
         '// CAPTURE_READING': 'val authority = checkNotNull(c.captureReading())',
         '// START_READING': 'c.startReading(authority)',
         '// OUTCOME_RECHECK': 'val recheck = outcome.recheck',
-        '// USB_INITIAL_DISCONNECT': 'c.disconnect(sendByeBye=false,honorKillOnDisconnect=false)',
-        '/* USB_HOME_EXIT */': 'c.disconnect(sendByeBye=false,isUserExit=true,honorKillOnDisconnect=false)',
+        '// USB_INITIAL_DISCONNECT': 'c.disconnect(ConnectionOperation(c.appConnectionTicket(),null),sendByeBye=false,honorKillOnDisconnect=false)',
+        '/* USB_HOME_EXIT */': 'c.disconnect(ConnectionOperation(c.appConnectionTicket(),null),sendByeBye=false,isUserExit=true,honorKillOnDisconnect=false)',
         '// SWITCH_ADAPTERS': '''private fun stake(owner:ConnectionArbiter.Claim) { check(UsbSwitchClaim.stake(owner)) }
     private fun release(owner:ConnectionArbiter.Claim) { UsbSwitchClaim.release(owner) }
     private fun note(owner:ConnectionArbiter.Claim) { UsbSwitchClaim.noteSwitched(owner) }'''

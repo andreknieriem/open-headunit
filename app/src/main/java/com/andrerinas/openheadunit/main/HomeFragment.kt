@@ -1942,10 +1942,10 @@ class HomeFragment : Fragment() {
             (appSettings.effectiveAutoStartOnUsb && appSettings.reopenOnReconnection)
         if (keepServiceAlive) {
             ContextCompat.startForegroundService(requireContext(),
-                AapService.commandIntent(requireContext(), AapService.ACTION_DISCONNECT))
+                AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_DISCONNECT))
         } else {
-            val stopServiceIntent = AapService.stopIntent(requireContext())
-            ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
+            val stopServiceIntent = AapService.stopIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket())
+            stopServiceIntent?.let { ContextCompat.startForegroundService(requireContext(), it) }
         }
         requireActivity().finishAffinity()
     }

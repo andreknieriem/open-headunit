@@ -9,7 +9,7 @@ private fun networkComm() = CommManager().apply {
     // Only producer dispatch is queued; public connect IO completes during the controlled drain.
     CommManager::class.java.getDeclaredField("connectionIoDispatcher")
         .apply { isAccessible = true }.set(this, Dispatchers.Unconfined)
-    disconnect(honorKillOnDisconnect = false)
+    disconnect(ConnectionOperation(appConnectionTicket(), null), honorKillOnDisconnect = false)
     cleanups()
 }
 
@@ -74,7 +74,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             val old = Socket()
             try {
                 val delivery = server.handOffClient(old, comm)
-                if (stop) comm.requestExplicitAppExit(killProcess = false)
+                if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
                 comm.onAppRelaunched()
                 service.main.drain(); delivery.join()
                 check(old.isClosed == stop)
@@ -102,7 +102,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             HeldServerSocket.hold(endpoint, old)
             try {
                 ingress.onServiceFound("192.0.2.70", 5277, old, ticket)
-                if (stop) comm.requestExplicitAppExit(killProcess = false)
+                if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
                 comm.onAppRelaunched()
                 if (replace) HeldServerSocket.hold(endpoint, replacement)
                 service.main.drain()
@@ -142,13 +142,13 @@ fun networkConnectionIngressOwnership() = runBlocking {
         }
         NetworkIngressService(comm).use { service ->
             try {
-                comm.disconnect(isUserExit = false, honorKillOnDisconnect = false, reason = DisconnectReason.SETTINGS_RESTART)
+                comm.disconnect(ConnectionOperation(comm.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = false, reason = DisconnectReason.SETTINGS_RESTART)
                 comm.cleanups()
                 val saved = comm.state as ConnectionState.Disconnected
                 check(saved.isSettingsRestart)
                 val ticket = comm.appConnectionTicket()
                 val ingress = NetworkDiscoveryIngress(service).apply { discoverySave = ticket to saved }
-                if (exit) comm.disconnect(isUserExit = true, honorKillOnDisconnect = false)
+                if (exit) comm.disconnect(ConnectionOperation(comm.appConnectionTicket(), null), isUserExit = true, honorKillOnDisconnect = false)
                 val before = SocketProjectionConnection.created.size
                 ingress.onServiceFound("192.0.2.95", 5277, null, ticket)
                 service.main.drain(); comm.cleanups()
@@ -175,7 +175,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             val scan = NetworkScanIngress(comm, listener)
             scan.startScan(oneShot = true)
             if (pauseAtCallback) scan.io.drain()
-            if (stop) comm.requestExplicitAppExit(killProcess = false)
+            if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
             val owner = comm.onAppRelaunched()
             scan.drain(); service.main.drain()
             check((comm.state is ConnectionState.Connected) == !stop)
@@ -208,7 +208,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             check(scan.startScan(oneShot = true, ticket = oldTicket))
             val oldJob = requireNotNull(scan.scanOwner().first)
             if (pauseAtCallback) scan.io.drain()
-            if (stop) comm.requestExplicitAppExit(killProcess = false)
+            if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
             comm.onAppRelaunched()
             val freshTicket = comm.appConnectionTicket()
             check(scan.startScan(oneShot = stop, ticket = freshTicket) == stop)
@@ -285,7 +285,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
                 NetworkDiscoveryIngress(service).onServiceFound("192.0.2.74", 5277, held, comm.appConnectionTicket())
                 service.main.drain()
                 val handOff = checkNotNull(io.tasks.poll()) { "the hand-off did not reach connection IO" }
-                comm.requestExplicitAppExit(killProcess = false)
+                comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
                 comm.onAppRelaunched()
                 val fresh = launch(start = CoroutineStart.UNDISPATCHED) {
                     comm.connect("192.0.2.74", 5277, ticket = comm.appConnectionTicket())

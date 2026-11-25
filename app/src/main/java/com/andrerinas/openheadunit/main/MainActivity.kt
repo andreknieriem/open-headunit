@@ -1214,8 +1214,8 @@ class MainActivity : BaseActivity() {
 
         if (intentAction == "com.andrerinas.openheadunit.ACTION_EXIT") {
             AppLog.i("MainActivity: Received exit action")
-            val exitIntent = AapService.stopIntent(this)
-            ContextCompat.startForegroundService(this, exitIntent)
+            val exitIntent = AapService.stopIntent(this, App.provide(this).commManager.appConnectionTicket())
+            exitIntent?.let { ContextCompat.startForegroundService(this, it) }
             finishAffinity()
             return
         }
@@ -1278,11 +1278,11 @@ class MainActivity : BaseActivity() {
                 }
             } else if (intentData?.scheme == "headunit" && intentData.host == "disconnect") {
                 AppLog.i("Received disconnect intent")
-                ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_DISCONNECT))
+                ContextCompat.startForegroundService(this, AapService.operationIntent(this, App.provide(this).commManager.appConnectionTicket()).setAction(AapService.ACTION_DISCONNECT))
             } else if (intentData?.scheme == "headunit" && intentData.host == "exit") {
                 AppLog.i("Received full exit intent via deep link")
-                val exitIntent = AapService.stopIntent(this)
-                ContextCompat.startForegroundService(this, exitIntent)
+                val exitIntent = AapService.stopIntent(this, App.provide(this).commManager.appConnectionTicket())
+                exitIntent?.let { ContextCompat.startForegroundService(this, it) }
                 finishAffinity()
             }
         }

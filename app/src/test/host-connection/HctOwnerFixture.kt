@@ -19,7 +19,8 @@ class AapService {
     fun releaseParkedHct() = releaseParked()
     val appliedSettings = mutableListOf<Boolean>()
     companion object {
-        fun applyWirelessSettings(context: AapService, startWireless: Boolean) {
+        fun applyWirelessSettings(context: AapService, startWireless: Boolean, ticket: Long) {
+            if (!context.commManager.acceptsAppConnectionTicket(ticket)) return
             context.appliedSettings.add(startWireless)
             if (!startWireless) context.stopWirelessForCommand(fromSettings = true)
         }
@@ -28,8 +29,11 @@ class AapService {
 }
 interface CancelRestart {
     fun cancelPendingSettingsRestart() = Unit
+    fun appConnectionTicket() = 0L
+    fun acceptsAppConnectionTicket(ticket: Long) = ticket == appConnectionTicket()
 }
 fun interface ConnectionAdmission { fun run(action: () -> Unit): Boolean }
+object App { fun provide(context: AapService) = context }
 class RecordingLauncher {
     var onStop: () -> Unit = {}
     fun stop() = onStop()

@@ -73,7 +73,7 @@ class UsbReconnectOwnershipTest {
                             "user-exit", "settings-save" -> {
                                 states.value = ended
                                 // Even an already-disconnected stop/Save must revoke old checks.
-                                manager.disconnect(isUserExit = outcome == "user-exit",
+                                manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), isUserExit = outcome == "user-exit",
                                     reason = if (outcome == "settings-save") CommManager.DisconnectReason.SETTINGS_RESTART
                                         else CommManager.DisconnectReason.CONNECTION_ENDED)
                             }

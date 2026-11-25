@@ -68,9 +68,10 @@ exit_members = exit_members.replace(
 lifecycle = lifecycle.replace("// PRODUCTION APP_EXIT\n", exit_members)
 for marker, declaration, source in [
     ("PUBLICATION", "val transport = synchronized(transportLifecycleLock)", comm),
-    ("APPLY", "fun applyAudioSettings()", comm),
+    ("APPLY", "internal fun applyAudioSettings(", comm),
     ("ADVANCE", "private inline fun withLiveHandshake(", comm),
-    ("DISCONNECT", "fun disconnect(", comm),
+    ("DISCONNECT", "private fun disconnectCurrent(", comm),
+    ("DISCONNECT_EFFECT", "internal fun disconnect(", comm),
     ("RECORD_TERMINAL", "private fun recordTerminal(", comm),
     ("ATTEMPT", "internal class Attempt(", comm),
     ("CONNECTION_REQUEST", "internal class ConnectionRequest(", comm),
@@ -81,7 +82,7 @@ for marker, declaration, source in [
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
     ("REACHED_SSL", "private fun reachedSsl()", comm),
     ("QUIT", "private fun transportedQuited(", comm),
-    ("MANAGER_FOCUS_SUPPRESSION", "private fun setProjectionVideoFocusSuppressed(", comm),
+    ("MANAGER_FOCUS_SUPPRESSION", "fun setProjectionVideoFocusSuppressed(", comm),
     ("TRANSPORT_FOCUS_SUPPRESSION", "internal fun setProjectionVideoFocusSuppressed(", transport),
     ("OBSERVER", "private fun observeConnectionState()", service),
     ("XYAUTO", "private fun refreshXyAutoMediaPolicy(", service),

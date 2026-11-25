@@ -153,7 +153,7 @@ class SettingsRestartAdmissionTest {
         val request = checkNotNull(manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB Save", saved,
             manager.usbRecheck(manager.appConnectionTicket())))
         assertTrue(ConnectionArbiter.holds(request.claim))
-        manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+        manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
         // Recorded after every production frame has returned.
         val held = ConnectionArbiter.holds(request.claim)
         assertFalse("a user exit left an unpublished USB Save request's claim held (held=$held)", held)

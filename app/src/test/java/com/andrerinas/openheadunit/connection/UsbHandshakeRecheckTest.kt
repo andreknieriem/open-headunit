@@ -188,7 +188,7 @@ class UsbHandshakeRecheckTest {
                 val release = CommManager::class.java.getDeclaredMethod("releaseClaim", ConnectionArbiter.Claim::class.java)
                     .apply { isAccessible = true }
                 if (finishBeforeScan != null) {
-                    launcher.checkAlreadyConnected(force = true)
+                    launcher.checkAlreadyConnected(force = true, recheck = manager.usbRecheckNow())
                     states.value = finishBeforeScan
                     release.invoke(manager, claim)
                 } else if (state is ConnectionState.Connected || state is ConnectionState.StartingTransport) {
@@ -197,7 +197,7 @@ class UsbHandshakeRecheckTest {
                     assertTrue("The pending handshake must still hold its claim", ConnectionArbiter.holds(claim))
                 }
                 // Exercise the production scan entry point, including its isConnected guard.
-                body({ launcher.checkAlreadyConnected(force = force) }, claim, returned, {
+                body({ launcher.checkAlreadyConnected(force = force, recheck = manager.usbRecheckNow()) }, claim, returned, {
                     while (teardown.tasks.isNotEmpty() || timers.isNotEmpty()) {
                         teardown.tasks.removeFirstOrNull()?.run() ?: timers.removeFirst().invoke()
                     }

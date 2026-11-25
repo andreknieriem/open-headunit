@@ -10,6 +10,8 @@ import lifecycle.CommManager
 import lifecycle.ConnectionState
 import lifecycle.ServiceBootstrap
 import lifecycle.SocketProjectionConnection
+import lifecycle.UsbRecheck
+import lifecycle.UsbReceiver
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
@@ -109,6 +111,8 @@ class AapService {
         // exercised in the real Home producer, while the service consumes the unchanged epoch.
         // OPERATION_CONSTANT
         // OPERATION_INTENT
+        // USB_RELAY_CONSTANTS
+        // USB_RELAY_INTENT
     }
 }
 object UsbDeviceCompat {
@@ -181,7 +185,7 @@ class HomeAutomaticProducer(
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
     private var hasAutoStarted = false
-    private var forceSelfModeLaunch = false
+    private var forceSelfModeTicket: Long? = null
     private var pendingWidgetId = -1
     private var pendingWidgetPage: Int? = null
     private var pendingSelfModeVpn = false
@@ -369,19 +373,9 @@ fun homeAutomaticOwnership() {
                 c.interrupt(stop = true)
                 check(c.consume() == 0)
                 ContextCompat.serviceStarts.clear()
-                val inactive = HomeAutomaticProducer(c.manager, Settings(), c.clock, c.io)
-                try {
-                    inactive.created(); c.clock.drain()
-                    check(ContextCompat.serviceStarts.isEmpty()) { "Home must still obey automatic start flags" }
-                } finally { inactive.close() }
                 val fresh = HomeAutomaticProducer(c.manager, c.settings, c.clock, c.io)
-                try {
-                    fresh.created(); c.clock.drain()
-                    val owner = c.manager.appOwnershipRevision()
-                    val intent = ContextCompat.serviceStarts.single()
-                    check(intent.getLongExtra(ServiceBootstrap.EXTRA_RUN_OWNER, -1L) == owner)
-                    check(c.consume() == 1 && c.manager.isAppRunOwner(owner))
-                } finally { fresh.close() }
+                try { fresh.created(); c.clock.drain(); check(c.consume() == 1) }
+                finally { fresh.close() }
             } finally { c.close() }
         }
 

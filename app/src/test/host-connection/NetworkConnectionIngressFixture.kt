@@ -1,6 +1,7 @@
 package lifecycle
 
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.*
 import java.net.Socket
@@ -28,18 +29,18 @@ class NetworkServerIngress(val service: NetworkIngressService) {
 class NetworkDiscoveryIngress(val service: NetworkIngressService) {
     private val io = Dispatchers.Unconfined
     private val commManager get() = service.commManager
+    // What WifiLauncherSharedServices records when a Save starts the scan: that Save, by ticket.
+    var discoverySave: Pair<Long, ConnectionState.Disconnected>? = null
+    private fun discoverySaveFor(ticket: Long) = discoverySave?.takeIf { it.first == ticket }?.second
     // NETWORK_DISCOVERY_HANDOFF
 }
 interface NetworkDiscoveryListener {
     fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long)
     fun onScanFinished(wasOneShot: Boolean, ticket: Long)
 }
-enum class WifiLauncherMode { MANUAL, AUTO, HELPER, NATIVE }
-
 class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDiscoveryListener) {
     val io = QueuedDispatcher()
     val main = QueuedDispatcher()
-    var stationIpv4: String? = null
     private val PROBE_LOCK = Any()
     private val PROBE_MUTEX = Mutex()
     private var inFlightScan: Job? = null
@@ -48,6 +49,8 @@ class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDisc
     private var currentGeneration: Generation? = null
     private val reportedIps = mutableSetOf<String>()
     private var probeHelperPort = false
+    var stationIpv4: String? = null
+    // NETWORK_WIFI_WAIT
     private fun readProbeHelperPort() = false
     private suspend fun scanGateways(ticket: Long): Boolean {
         listener.onServiceFound("192.0.2.72", 5277, null, ticket)
@@ -56,7 +59,6 @@ class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDisc
     private suspend fun scanSubnet(ticket: Long) { error("gateway should have ended this scan") }
     // NETWORK_SCAN_START
     // NETWORK_SCAN_JOB
-    // NETWORK_WIFI_WAIT
     fun scanOwner() = scanJob to currentGeneration?.ticket
     fun scanIsOneShot() = currentGeneration?.oneShot
     fun drain() { io.drain(); main.drain(); io.drain(); main.drain(); io.drain() }
@@ -127,6 +129,34 @@ fun networkConnectionIngressOwnership() = runBlocking {
             service.serviceScope.cancel(); service.main.drain()
             check(old.isClosed && !HeldServerSocket.isHeld("192.0.2.71:5277"))
             comm.close()
+        }
+    }
+    // Save's discovery route: the server it finds connects for that Save. A user exit the service
+    // survives cancels the Save without moving the ticket, so the find connects nothing. The
+    // control, with the Save still owning the state, connects once.
+    for (exit in listOf(true, false)) {
+        val comm = CommManager().apply {
+            CommManager::class.java.getDeclaredField("connectionIoDispatcher")
+                .apply { isAccessible = true }.set(this, Dispatchers.Unconfined)
+        }
+        NetworkIngressService(comm).use { service ->
+            try {
+                comm.disconnect(isUserExit = false, honorKillOnDisconnect = false, reason = DisconnectReason.SETTINGS_RESTART)
+                comm.cleanups()
+                val saved = comm.state as ConnectionState.Disconnected
+                check(saved.isSettingsRestart)
+                val ticket = comm.appConnectionTicket()
+                val ingress = NetworkDiscoveryIngress(service).apply { discoverySave = ticket to saved }
+                if (exit) comm.disconnect(isUserExit = true, honorKillOnDisconnect = false)
+                val before = SocketProjectionConnection.created.size
+                ingress.onServiceFound("192.0.2.95", 5277, null, ticket)
+                service.main.drain(); comm.cleanups()
+                // Recorded after every production frame has returned.
+                val created = SocketProjectionConnection.created.size - before
+                check(created == if (exit) 0 else 1) {
+                    "Save's discovery connected after a user exit cancelled the Save (exit=$exit created=$created)"
+                }
+            } finally { comm.close() }
         }
     }
     // A reusable scanner retains per-scan input through IO entry and Main callback dispatch;
@@ -201,6 +231,25 @@ fun networkConnectionIngressOwnership() = runBlocking {
             check(comm.state is ConnectionState.Connected)
             comm.close()
         }
+    }
+    // On a phone hotspot we deliver scan completion but don't dial until Wi-Fi has joined.
+    for (joined in listOf(false, true)) {
+        val comm = networkComm()
+        comm.settings.headunitServerNetwork = HeadunitServerNetwork.PHONE_HOTSPOT
+        val found = mutableListOf<String>()
+        val finished = mutableListOf<Long>()
+        try {
+            val scan = NetworkScanIngress(comm, object : NetworkDiscoveryListener {
+                override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) { found += ip }
+                override fun onScanFinished(wasOneShot: Boolean, ticket: Long) { finished += ticket }
+            })
+            if (joined) scan.stationIpv4 = "192.0.2.71"
+            val ticket = comm.appConnectionTicket()
+            check(scan.startScan(oneShot = true, ticket = ticket))
+            scan.drain()
+            check(finished == listOf(ticket))
+            check(found == if (joined) listOf("192.0.2.72") else emptyList())
+        } finally { comm.close() }
     }
     // Discovery's hand-off of its held socket is queued behind connection IO when a launch's dial
     // to the same endpoint arrives. The hand-off holds no request yet, so it can be neither joined

@@ -11,6 +11,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any as anyValue
+import org.mockito.kotlin.argThat as argMatching
+import org.mockito.kotlin.eq as eqValue
 
 class UsbRecoveryPermissionTest {
     @Test fun recoveryResultsNeverFallThroughToTheOrdinaryPermissionHandler() {
@@ -44,7 +47,7 @@ class UsbRecoveryPermissionTest {
         try { block() } finally { AppLog.LOGGER = old }
     }
 
-    private fun answer(scheme: String?, token: String, granted: Boolean, device: UsbDevice, ticket: String? = null): Intent {
+    private fun answer(scheme: String?, token: String, granted: Boolean, device: UsbDevice, scan: String? = null): Intent {
         val intent = mock(Intent::class.java)
         `when`(intent.action).thenReturn(UsbReceiver.ACTION_USB_DEVICE_PERMISSION)
         if (scheme != null) {
@@ -52,7 +55,7 @@ class UsbRecoveryPermissionTest {
             `when`(intent.data).thenReturn(data)
             `when`(data.scheme).thenReturn(scheme)
             `when`(data.schemeSpecificPart).thenReturn(token)
-            `when`(data.fragment).thenReturn(ticket)
+            `when`(data.fragment).thenReturn(scan)
         }
         @Suppress("DEPRECATION")
         `when`(intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)).thenReturn(device)
@@ -60,16 +63,20 @@ class UsbRecoveryPermissionTest {
         return intent
     }
 
-    @Test fun anOrdinaryAnswerReachesThePermissionHandlerWithItsTicketAndOthersAreDropped() = quietly {
+    @Test fun anOrdinaryAnswerReachesThePermissionHandlerWithItsScanAndOthersAreDropped() = quietly {
         val listener = mock(UsbReceiver.Listener::class.java)
         val device = mock(UsbDevice::class.java)
+        // A dialog raised outside the launcher: the scan its tap minted, and no launcher token.
         UsbReceiver(listener).onReceive(mock(Context::class.java),
-            answer(UsbReceiver.ASK_PERMISSION_SCHEME, "t", true, device, ticket = "7"))
-        verify(listener).onUsbPermission(true, false, device, 7L, null)
+            answer(UsbReceiver.ASK_PERMISSION_SCHEME, "t", true, device, scan = "7.3"))
+        verify(listener).onUsbPermission(eqValue(true), eqValue(false), eqValue(device),
+            argMatching { ticket == 7L && epoch == 3L }, isNull())
+        // The launcher's own request carries its token on to the launcher.
         val launcher = UsbReceiver.newLauncherToken()
         UsbReceiver(listener).onReceive(mock(Context::class.java),
-            answer(UsbReceiver.ASK_PERMISSION_SCHEME, launcher, true, device, ticket = "7"))
-        verify(listener).onUsbPermission(true, false, device, 7L, launcher)
+            answer(UsbReceiver.ASK_PERMISSION_SCHEME, launcher, true, device, scan = "7.3"))
+        verify(listener).onUsbPermission(eqValue(true), eqValue(false), eqValue(device), anyValue(), eqValue(launcher))
+        // A grant-only ask and an answer with no token start nothing.
         UsbReceiver(listener).onReceive(mock(Context::class.java), answer(UsbReceiver.ASK_PERMISSION_SCHEME, "g", true, device))
         UsbReceiver(listener).onReceive(mock(Context::class.java), answer(null, "", true, device))
         verifyNoMoreInteractions(listener)

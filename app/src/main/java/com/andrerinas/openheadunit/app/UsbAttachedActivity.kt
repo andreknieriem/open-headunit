@@ -166,9 +166,9 @@ class UsbAttachedActivity : Activity() {
         when (decision) {
             UsbAttachActivityPolicy.Action.START_SERVICE -> {
                 AppLog.i("Usb in accessory mode and has permission. Starting AapService.")
-                ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                    action = AapService.ACTION_CHECK_USB
-                })
+                // Only reached unlocked: the attach is the input, and the relay carries its scan.
+                ContextCompat.startForegroundService(this,
+                    AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow()))
                 finish()
                 return
             }
@@ -190,7 +190,9 @@ class UsbAttachedActivity : Activity() {
                         AppLog.i("Not switching ${deviceCompat.uniqueName} here (not on the allow list); letting the service decide")
                     }
                 }
-                handOffToService()
+                // Before first unlock no app component, and so no scan, can exist yet; the
+                // service would refuse an unscoped relay. The session waits for unlock.
+                if (!isLocked) handOffToService()
                 finish()
                 return
             }
@@ -224,7 +226,7 @@ class UsbAttachedActivity : Activity() {
         val commManager = if (isLocked) null else App.provide(this).commManager
         val usbRequest = commManager?.admitUsbRequest(
             ConnectionPriorityPolicy.Tier.USB, "USB switch of ${deviceCompat.uniqueName}", save = null,
-            recheck = commManager.usbRecheck(commManager.appConnectionTicket()),
+            recheck = commManager.usbRecheckNow(),
         )
         val lockedClaim = if (isLocked) ConnectionArbiter.claim(
             ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
@@ -276,10 +278,9 @@ class UsbAttachedActivity : Activity() {
      */
     private fun handOffToService() {
         try {
-            ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                action = AapService.ACTION_CHECK_USB
-                putExtra(AapService.EXTRA_USB_TRIGGER, AapService.USB_TRIGGER_PLUG_IN)
-            })
+            // Only ever unlocked: the attach is the input, and the relay carries its scan.
+            ContextCompat.startForegroundService(this,
+                AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow(), plugIn = true))
         } catch (e: Exception) {
             AppLog.w("Could not hand the USB attach to the service: ${e.message}")
         }

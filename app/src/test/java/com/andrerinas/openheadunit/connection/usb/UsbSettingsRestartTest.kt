@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.usb
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import org.mockito.kotlin.any as anyValue
 import org.mockito.kotlin.anyOrNull
 import org.junit.Test
@@ -26,35 +27,38 @@ class UsbSettingsRestartTest {
         val manager = launcher()
         UsbLauncherManager::class.java.getDeclaredField("cancelledByUser").apply { isAccessible = true }.set(manager, true)
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
-        manager.restartForSettings(saved)
-        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyLong(), anyOrNull())
+        manager.restartForSettings(saved, UsbRecheck(0L, 0L))
+        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyValue())
     }
 
     @Test fun `uncancelled Save still grants one explicit device check`() {
         val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyLong(), anyOrNull())
-        manager.restartForSettings(saved)
-        verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved)
+        val scan = UsbRecheck(0L, 0L)
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyValue())
+        manager.restartForSettings(saved, scan)
+        verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved, recheck = scan)
     }
 
     @Test fun `a hand-off to the service carries the open Save past the settings screen`() {
         val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
+        val scan = UsbRecheck(0L, 0L)
         doReturn(saved).`when`(manager).pendingSettingsRestart()
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyLong(), anyOrNull())
-        manager.checkOnRequest(userRequested = false)
-        verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved, accessoryOnly = false)
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyValue())
+        manager.checkOnRequest(userRequested = false, recheck = scan)
+        verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved, accessoryOnly = false, recheck = scan)
     }
 
     @Test fun `a user's own USB request is not tied to a Save`() {
         val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
+        val scan = UsbRecheck(0L, 0L)
         doReturn(saved).`when`(manager).pendingSettingsRestart()
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyLong(), anyOrNull())
-        manager.checkOnRequest(userRequested = true)
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyValue(), anyValue())
+        manager.checkOnRequest(userRequested = true, recheck = scan)
         verify(manager).checkAlreadyConnected(force = true, userRequested = true, settingsRestart = null, accessoryOnly = false,
-            trigger = UsbPlugInPolicy.Trigger.USER)
+            trigger = UsbPlugInPolicy.Trigger.USER, recheck = scan)
     }
 
     @Test fun `revoking Save cancels queued and permission-waiting USB work without changing AAP state`() {

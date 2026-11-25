@@ -20,8 +20,8 @@ A harness failure fails that job. The `host-connection-diagnostics` artifact ret
 extracted Kotlin sources and method/toolchain metadata, including on failure.
 
 For local lifecycle changes, run `./gradlew :app:testGithubDebugUnitTest` first to populate
-the Kotlin dependency cache and compile the actual generated protocol classes used by the
-audio integration fixture, then `python3 app/src/test/host-connection/run.py`.
+the Kotlin dependency cache and compile the generated GAL protocol classes used by the
+lifecycle and audio integration fixtures, then `python3 app/src/test/host-connection/run.py`.
 The Gradle task alone does not run the harness. The full runner includes the Self launch
 suite, which can also be run separately with `python3 app/src/test/host-connection/self-launch.py`
 after the first full run.
@@ -29,9 +29,9 @@ after the first full run.
 Production member lookup uses exact declarations; a missing or renamed member raises an
 error and must be updated together with its fixture. These tools complement JVM unit tests.
 
-The wireless cleanup suite extracts the complete service disconnect callback. It checks
-late notifications, rearm during teardown, session-resource release and Exit waiter ownership
-with a queued Main dispatcher; platform services are recording doubles.
+The wireless cleanup suite extracts the complete service disconnect callback and foreground
+shutdown. It checks late notifications, rearm during teardown, session-resource release and
+Exit waiter ownership with a queued Main dispatcher; platform services are recording doubles.
 
 The HCT owner suite also checks selection before its IO runner starts, same-channel
 reuse, callback replacement and stale-client cleanup. The native carrier is a recording
@@ -136,10 +136,15 @@ displaced stops at its next step. Its retries stop on its own attempt's arrival,
 shared state SSL may already have moved on. It is never a JOIN target and no launch waits on it.
 A USB scan that cannot run yet is one owed object (`UsbRecheck`) carried by whatever holds it (a
 live attempt, the arbiter, the give-back, the queued scan, the settings hold, a permission
-dialog by its reply token, the request admitted for it) and checked again before it scans and at
+dialog by its reply address, the request admitted for it) and checked again before it scans and at
 USB admission; a user exit, Stop or an end that holds automatic reconnection withdraws it
-wherever it waits, retiring a request admitted for it. Before first unlock the attach screen's
-switch keeps a bare arbiter claim: no request authority can exist yet. The ingress fixtures
+wherever it waits, retiring a request admitted for it. Deferred USB work (the attach fallback,
+the accessory-detach re-sync, the reconnect after an end, Save's retry and fallback, the
+handshake-end recovery, a permission reply) carries the object its input minted when it was
+received and never mints one when it runs; only an input happening now (attach, wake, screen-on,
+a tap, a service command) mints its own. Before first unlock the attach screen's switch keeps a
+bare arbiter claim: no request authority can exist yet, and its worker checks that claim still
+holds before its first USB call. The ingress fixtures
 pause real producers inside
 each former gap (claim before record, Stop or Save or another claim taking a waiting request's
 authority, a discovery hand-off queued behind IO, a cancelled request that published nothing
@@ -150,7 +155,20 @@ an admitted USB request.
 The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
 discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the
 input is accepted and carry it through queued work, permission waits, countdowns and internal
-retries. The caller fixtures extract those producers and run them against the real manager,
+retries. The service's own deferred work does the same: a session end's teardown-wait work
+(Save's retry and fallback, the wired-session re-arm), the reconnect timers, the arbiter's
+wireless give-back, the USB hand-off hold and the WiFi wait, the sleep and settings re-arms, a
+Nearby Save peer, a discovery Save's find and a held Bluetooth arrival each use the ticket of
+their input and hand that value to `setActive`/discovery/connect admission, never a newer one.
+A session end carries the ticket and owed-scan epoch CommManager published it with; the service
+collector does not read them after its hop. The hop after a fresh input is not fresh: the
+service mints a ticket only for genuinely external starts (system restart, media button, a Run
+owner's restore). Every internal relay carries the ticket of its input, and a USB check relay
+carries its scan; one sent without them is refused, as is one whose ticket Stop has moved. The
+Bluetooth arrival reaches MainActivity with its ticket, and the home's automatic Self start
+keeps it. The wireless cleanup fixture runs the real disconnect callback with Stop inside
+Save's teardown wait and before the end is received. The
+caller fixtures extract those producers and run them against the real manager,
 arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
 compatible Open without Stop and genuinely new input remain accepted. A socket discovery holds
 is owned only by the caller that adopts it, decided before anything can refuse it; background
@@ -190,9 +208,7 @@ new cleanup between an older join and publication/terminal capture, then verify 
 audio/video resources retire without closing the replacement. Android effects and dispatchers
 are controlled doubles; native connection teardown stays outside publication locks.
 
-The bootstrap fixture extracts command validation, the startup latch and USB ticket handoff,
-and destruction completion. A tagged relay revoked by Stop cannot start a USB scan after Open;
-a valid relay hands its ticket to the startup scan once, even with duplicate delivery.
+The bootstrap fixture extracts the real command-validation prefix and destruction completion.
 A stale Run/Stop retires an uninitialized service before `stopSelf`, so a queued valid start
 cannot initialize that already-doomed instance; only the current Run is restored afterward.
 Foreground policy tests distinguish actual Intent delivery, retained configuration identity and

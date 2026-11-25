@@ -10,6 +10,7 @@ import lifecycle.HeldServerSocket
 import lifecycle.QueuedDispatcher
 import lifecycle.ServiceBootstrap
 import lifecycle.UsbRecheck
+import lifecycle.UsbReceiver
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.Socket
@@ -21,8 +22,6 @@ object Dispatchers { var IO = QueuedDispatcher() }
 open class Context(val commManager: CommManager) {
     val settings = Settings()
     val android = PlatformContext()
-    var screenLockGranted = false
-    var screenInteractive = true
 }
 object App { fun provide(context: Context) = context }
 class Settings {
@@ -48,9 +47,15 @@ class Intent {
     fun getBooleanExtra(name: String, fallback: Boolean) = extras[name] as? Boolean ?: fallback
     fun getLongExtra(name: String, fallback: Long) = extras[name] as? Long ?: fallback
     fun removeExtra(name: String) { extras.remove(name) }
-    fun setAction(action: String) = apply { this.action = action }
+    fun hasExtra(name: String) = extras.containsKey(name)
+    fun setAction(action: String?) = apply { this.action = action }
     fun platform() = PlatformIntent(action ?: "").also { output ->
-        extras.forEach { (name, value) -> if (value is Long) output.putExtra(name, value) }
+        extras.forEach { (name, value) -> when (value) {
+            is Long -> output.putExtra(name, value)
+            is String -> output.putExtra(name, value)
+            is Boolean -> output.putExtra(name, value)
+            else -> error("Unsupported fixture intent extra: $name")
+        } }
     }
     companion object { const val ACTION_VIEW = "view" }
 }
@@ -73,18 +78,27 @@ class AapService {
         const val ACTION_DISCONNECT = "disconnect"
         const val ACTION_STOP_SERVICE = ServiceBootstrap.ACTION_STOP_SERVICE
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night-update"
-        const val EXTRA_USER_REQUESTED = "user-requested"
+        // USB_RELAY_CONSTANTS
+        // In-app commands read the Stop ticket on their input's own turn; USB relays carry their scan.
+        fun commandIntent(context: Context, action: String?) =
+            operationIntent(context, context.commManager.appConnectionTicket()).setAction(action)
+        // USB_RELAY_INTENT
         // UI_SERVICE_CONSTANTS
         // UI_OPERATION_INTENT
         // UI_ACCEPTED_STOP_INTENT
         // UI_STOP_INTENT
     }
 }
-object HomeFragment { var forceSelfModeLaunch = false; var requestDriverSelection = false }
+/** The home's automatic start; [view] stands for whether a home view is up when MainActivity acts. */
+object HomeFragment { var forceSelfModeTicket: Long? = null; var requestDriverSelection = false; var view: Any? = null }
 object BtAutoStartRearmPolicy {
+    var selfMode = false
     fun launchesSelfMode(selfSelected: Boolean, wirelessSelected: Boolean, mode: Any,
-        sessionUp: Boolean, nativeAttemptInFlight: Boolean?) = false
+        sessionUp: Boolean, nativeAttemptInFlight: Boolean?) = selfMode
 }
+class Fragments { val fragments: List<Any> = listOf(HomeFragment) }
+class NavHost { val childFragmentManager = Fragments() }
+class SupportFragments { fun findFragmentById(id: Int): NavHost? = NavHost() }
 class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : Context(manager) {
     enum class ConnectionUiMode { OVERLAY, PILL }
     val events = ConcurrentLinkedQueue<() -> Unit>()
@@ -93,10 +107,12 @@ class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : C
     fun runOnUiThread(block: () -> Unit) { events.add(block) }
     fun drainUi() { while (true) (events.poll() ?: return).invoke() }
     fun finishAffinity() {}
+    val supportFragmentManager = SupportFragments()
     companion object {
         const val EXTRA_SHOW_DRIVER_SELECTOR = "show-selector"
         const val EXTRA_LAUNCH_SOURCE = "launch-source"
         const val LAUNCH_SOURCE_BLUETOOTH = "bluetooth"
+        const val EXTRA_CONNECTION_TICKET = "connection-ticket"
     }
     // UI_FORCE_SELF_MODE
     // UI_HANDLE_LAUNCH_INTENT
@@ -105,6 +121,7 @@ object android { object R { object id { const val button2 = 2 } } }
 object R {
     object integer { const val key_data = 1 }
     object string { const val found_connecting = 1 }
+    object id { const val main_content = 3 }
 }
 class View(val id: Int, val value: String) { fun getTag(key: Int): Any = value }
 class AddressAdapter(private val context: Context, private val scope: CoroutineScope) {
@@ -130,19 +147,13 @@ class ScanFragment(val activity: MainActivity, val lifecycleScope: CoroutineScop
     // UI_SERVICE_FOUND
 }
 object AppLog { fun i(text: String) {}; fun w(text: String) {}; fun e(text: String, error: Throwable) {} }
-object ScreenPower {
-    fun turnOff(context: Context): Boolean {
-        if (!context.screenLockGranted) return false
-        context.screenInteractive = false
-        return true
-    }
-}
 object Toast { const val LENGTH_SHORT = 0 }
 object ToastUtils { fun showToast(context: Context?, text: String, duration: Int) {} }
 class JSONObject {
     private val values = mutableMapOf<String, Any?>()
     fun put(name: String, value: Any?) = apply { values[name] = value }
     fun string(name: String) = values[name] as? String
+    fun boolean(name: String) = values[name] as? Boolean
 }
 object AutomationCommandPolicy {
     // UI_AUTOMATION_EFFECTS
@@ -150,6 +161,11 @@ object AutomationCommandPolicy {
 object SettingsBackupManager {
     class Reset(val resetKeys: Int)
     fun resetFromContext(context: Context) = Reset(0)
+}
+object ScreenPower {
+    var requests = 0
+    var allowed = true
+    fun turnOff(context: Context): Boolean { requests++; return allowed }
 }
 object LogExporter { fun startCapture(context: Context, level: String) {}; fun stopCapture() {} }
 object AutomationEffectRunner {
@@ -382,5 +398,56 @@ fun uiConnectCallerOwnership() = runBlocking {
             }
         } finally { shared.close(); scanInput.close(); scanManager.close() }
     }
+    // A Bluetooth arrival is relayed to MainActivity with the Stop ticket it was received under
+    // (AutoStartReceiver, or the service's held arrival). Stop is accepted before the activity gets
+    // it: no pill, no Self Mode command, no hand-off to the home. The control, with no Stop, does
+    // all three, and the real service prefix accepts its Self command.
+    for (stop in listOf(true, false)) {
+        Dispatchers.IO = QueuedDispatcher()
+        ContextCompat.starts.clear()
+        val manager = CommManager()
+        manager.disconnect(honorKillOnDisconnect = false)
+        manager.cleanups()
+        val input = Input(manager)
+        BtAutoStartRearmPolicy.selfMode = true
+        HomeFragment.forceSelfModeTicket = null
+        try {
+            val arrival = manager.appConnectionTicket()
+            val relay = Intent("bluetooth-arrival")
+                .putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, MainActivity.LAUNCH_SOURCE_BLUETOOTH)
+                .putExtra(MainActivity.EXTRA_CONNECTION_TICKET, arrival)
+            if (stop) manager.requestExplicitAppExit(killProcess = false)
+            input.main.handleLaunchIntent(relay)
+            // Recorded after every production frame has returned.
+            val selfStarts = ContextCompat.starts.filter { it.action == AapService.ACTION_START_SELF_MODE }
+            if (stop) {
+                check(input.main.overlays == 0 && selfStarts.isEmpty() && HomeFragment.forceSelfModeTicket == null) {
+                    "a Bluetooth arrival relayed before Stop still acted (pill=${input.main.overlays} selfStarts=${selfStarts.size})"
+                }
+            } else {
+                check(input.main.overlays == 1 && selfStarts.size == 1 && HomeFragment.forceSelfModeTicket == arrival) {
+                    "the Bluetooth arrival did not start Self Mode"
+                }
+                val service = ServiceBootstrap(manager)
+                service.onStartCommand(selfStarts.single().platform(), 0, 1)
+                check(service.initializedForStart)
+            }
+        } finally {
+            BtAutoStartRearmPolicy.selfMode = false; HomeFragment.forceSelfModeTicket = null
+            input.close(); manager.close()
+        }
+    }
+    val screenContext = CommManager()
+    try {
+        for (allowed in listOf(false, true)) {
+            val reply = JSONObject()
+            ScreenPower.allowed = allowed
+            val requests = ScreenPower.requests
+            val result = AutomationEffectRunner.run(Context(screenContext),
+                listOf(AutomationCommandPolicy.Effect.TurnScreenOff), reply)
+            check(result == allowed && reply.boolean("screenOff") == allowed && ScreenPower.requests == requests + 1)
+        }
+    } finally { screenContext.close() }
+    println("PASS Bluetooth arrival relayed to the home screen: Stop before delivery acts on nothing; control starts Self once")
     println("PASS UI connect producers: queued main/list/automation/scan inputs, live successor protection, compatible Open, fresh manual input, raw-socket cancellation, adopted scan socket and real relay rejection")
 }

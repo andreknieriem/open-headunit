@@ -339,5 +339,32 @@ fun appExitOwnershipRaces() {
             check(androidx.core.content.ContextCompat.serviceStarts.last().getLongExtra("accepted_run_owner", -1) == latest)
         } finally { close(c) }
     }
+
+    // Real settings operation replacement/cancellation, not a global app revision check.
+    runBlocking {
+        val (c, _) = fixture()
+        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined)
+        val operations = SettingsMutation(scope)
+        val oldResult = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val newResult = kotlinx.coroutines.CompletableDeferred<Unit>()
+        var stops = 0
+        try {
+            operations.start(prepare = { oldResult.await() }, apply = { c.requestExplicitAppExit(false); stops++ }, onFailure = { throw it })
+            operations.start(prepare = { newResult.await() }, apply = { c.requestExplicitAppExit(false); stops++ }, onFailure = { throw it })
+            oldResult.complete(Unit)
+            check(stops == 0)
+            c.onAppRelaunched() // A compatible UI return does not cancel a legitimate result.
+            newResult.complete(Unit)
+            check(stops == 1)
+            val cancelledResult = kotlinx.coroutines.CompletableDeferred<Unit>()
+            operations.start(prepare = { cancelledResult.await() }, apply = { c.requestExplicitAppExit(false); stops++ }, onFailure = { throw it })
+            operations.cancel()
+            cancelledResult.complete(Unit)
+            check(stops == 1)
+        } finally {
+            scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+            close(c)
+        }
+    }
     println("PASS owned app exit: idle reopen, Connecting replacement, rejected candidate, repeated callbacks, eligible exit, opt-out, and queued destruction/restart")
 }

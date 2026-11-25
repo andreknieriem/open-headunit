@@ -104,4 +104,56 @@ class UsbAttachSwitchTest {
             ConnectionArbiter.reset()
         }
     }
+
+    private class Queued : kotlinx.coroutines.CoroutineDispatcher() {
+        val tasks = ArrayDeque<Runnable>()
+        override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) { tasks.addLast(block) }
+        fun drain() { while (tasks.isNotEmpty()) tasks.removeFirst().run() }
+    }
+
+    // The home screen's USB button or a USB list row, on a phone that already granted permission:
+    // the tap admits its request and queues the switch on IO. Before the worker runs, the overlay's
+    // Cancel (the service's ACTION_DISCONNECT, a user exit) or a newer manual connect revokes it, or
+    // the home view goes away and cancels the job. No USB call follows, and the request ends either
+    // way; the newer claim is left alone. The control, revoked by nothing, switches once.
+    @Test fun aManualUsbTapRevokedBeforeItsWorkerRunsMakesNoUsbCall() {
+        for (revoked in listOf("cancel", "manual", "view-gone", "none")) {
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+            val states = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected())
+            fun field(name: String, value: Any) = CommManager::class.java.getDeclaredField(name)
+                .apply { isAccessible = true }.set(manager, value)
+            field("_connectionState", states)
+            field("connectionState", states)
+            field("usbRecoveryOwner", Any())
+            field("settings", mock(com.andrerinas.openheadunit.utils.Settings::class.java))
+            val main = Queued()
+            val io = Queued()
+            val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + main)
+            var switches = 0
+            var outcome: UsbAttachSwitch.Outcome? = null
+            val job = checkNotNull(UsbAttachSwitch.launchManual(scope, manager, "phone", io,
+                switch = { switches++; true }) { outcome = it }) { "the tap was refused" }
+            main.drain() // The job reaches its IO hop; the worker itself is still queued.
+            var newer: ConnectionArbiter.Claim? = null
+            when (revoked) {
+                "cancel" -> manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                "manual" -> newer = checkNotNull(ConnectionArbiter.claim(Tier.USER, ConnectionPriorityPolicy.Owner.MANUAL, "192.0.2.1:5277"))
+                "view-gone" -> scope.coroutineContext[kotlinx.coroutines.Job]!!.cancel()
+            }
+            io.drain(); main.drain()
+            // Recorded after every production frame has returned.
+            if (revoked == "none") {
+                assertEquals("the manual switch did not switch", 1, switches)
+                assertEquals(UsbAttachSwitch.Outcome.SWITCHED, outcome)
+            } else {
+                assertEquals("a manual USB switch revoked before its worker ran still made its USB call (revoked=$revoked switches=$switches)", 0, switches)
+            }
+            assertTrue("the manual switch's job did not finish", job.isCompleted)
+            // Whatever holds the arbiter now is the newer claim or nothing: the tap's request ended.
+            val holder = ConnectionArbiter::class.java.getDeclaredField("holder").apply { isAccessible = true }.get(ConnectionArbiter)
+            assertTrue("the manual switch kept its claim (revoked=$revoked)", holder == null || holder === newer)
+            if (newer != null) assertTrue("the old switch released the newer claim", ConnectionArbiter.holds(newer))
+            ConnectionArbiter.reset()
+        }
+    }
 }

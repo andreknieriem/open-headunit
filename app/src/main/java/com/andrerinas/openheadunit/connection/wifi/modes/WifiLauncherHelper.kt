@@ -55,7 +55,7 @@ class WifiLauncherHelper : WifiLauncher {
     }
 
 
-    override fun start(noInfoToasts: Boolean) {
+    override fun start(noInfoToasts: Boolean, ticket: Long) {
         AppLog.i("WifiLauncher: Using strategy $strategy.")
         ConnectionStageTracker.report(ConnectionStage.SEARCHING)
 
@@ -74,7 +74,7 @@ class WifiLauncherHelper : WifiLauncher {
             }
             HelperStrategy.NEARBY_DEVICES -> { // Google Nearby
                 initNearbyManager()
-                nearbyManager?.start()
+                nearbyManager?.start(ticket)
             }
             HelperStrategy.PHONE_HOTSPOT, HelperStrategy.HEADUNIT_HOTSPOT -> { /* Host/Passive - just wait for connection on WirelessServer port */ }
         }
@@ -82,6 +82,8 @@ class WifiLauncherHelper : WifiLauncher {
         // Hotspot logic for Helper mode if enabled (only for Strategy 4: Headunit Hotspot)
         if (settings.autoEnableHotspot && strategy == HelperStrategy.HEADUNIT_HOTSPOT) {
             service.serviceScope.launch {
+                // The arming input's ticket: a Stop queued ahead of this block refuses the AP.
+                if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return@launch
                 AppLog.i("AapService: Auto-enabling hotspot for Helper mode...")
                 ConnectionStageTracker.report(ConnectionStage.PREPARING_NETWORK)
                 HotspotManager.setHotspotEnabled(service, true)
@@ -89,19 +91,26 @@ class WifiLauncherHelper : WifiLauncher {
         }
     }
 
-    /** A settings retry may overlap association; refreshing must not rebuild its network. */
-    fun refreshAfterSettingsRestart() {
+    /**
+     * A settings retry may overlap association; refreshing must not rebuild its network. [ticket]
+     * is the Stop ticket captured when Save's end was received, and [save] that Save, which a
+     * find it leads to connects for.
+     */
+    fun refreshAfterSettingsRestart(ticket: Long,
+        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
+        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return
         manager.sharedServices.startWirelessServer(this)
         when (strategy) {
             HelperStrategy.WIFI_DIRECT -> manager.sharedServices.wifiDirectManager?.refreshHelperGroup()
-            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.resumeDiscoveryIfIdle()
-            else -> restartDiscovery()
+            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.resumeDiscoveryIfIdle(ticket)
+            else -> restartDiscovery(ticket, save)
         }
     }
 
-    override fun restartDiscovery() {
+    override fun restartDiscovery(ticket: Long,
+        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected?) {
         when (strategy) {
-            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.start()
+            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.start(ticket)
             HelperStrategy.WIFI_DIRECT -> {
                 val wifiManager = service.getSystemService(Context.WIFI_SERVICE) as WifiManager
                 val wifiDirect = manager.sharedServices.wifiDirectManager
@@ -117,7 +126,7 @@ class WifiLauncherHelper : WifiLauncher {
                             "network comes back, rather than scanning the one that went away."
                     )
                 } else {
-                    super.restartDiscovery()
+                    super.restartDiscovery(ticket, save)
                 }
             }
         }
@@ -137,10 +146,11 @@ class WifiLauncherHelper : WifiLauncher {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 val commManager = App.provide(service).commManager
-                nearbyManager = NearbyManager(service, service.serviceScope, commManager) { socket, admission, ticket ->
+                nearbyManager = NearbyManager(service, service.serviceScope, commManager) { socket, admission, ticket, save ->
                     val appSettings = App.provide(service).settings
                     admission.run { appSettings.saveLastConnection(Settings.CONNECTION_TYPE_NEARBY) }
-                    commManager.connect(socket, admission = admission, ticket = ticket)
+                    // Save's own request publishes only while that Save still owns the state.
+                    commManager.connect(socket, admission = admission, ticket = ticket, expectedState = save)
                 }
             } catch (e: Exception) {
                 AppLog.e("AapService: Failed to init NearbyManager: ${e.message}")

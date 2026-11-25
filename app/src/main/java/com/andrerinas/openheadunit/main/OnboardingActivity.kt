@@ -914,7 +914,7 @@ class OnboardingActivity : BaseActivity() {
     }
 
     private fun restoreSettings(uri: Uri? = null, file: File? = null) {
-        restoreModel.restore(this, uri, file)
+        restoreModel.restore(this, App.provide(this).commManager, uri, file)
     }
 
     private fun finishOnboarding() {

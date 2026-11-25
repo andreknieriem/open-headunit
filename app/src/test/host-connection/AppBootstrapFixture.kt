@@ -77,30 +77,52 @@ fun bootstrapRejectionPreservesLatestRun() {
             running.close()
         }
 
-        // A tagged relay preserves its originating Stop ticket across service delivery.
-        for (stop in listOf(false, true)) {
+        // Internal relays carry the Stop ticket of their input; only external entries mint one at
+        // receipt. A relay sent before Stop and received after it, whether it carries that ticket
+        // or was sent untagged, initializes nothing. Control: the carried ticket with no Stop.
+        for (relay in listOf("untagged", "carried", "control")) {
             val manager = CommManager()
+            manager.disconnect(honorKillOnDisconnect = false)
+            manager.cleanups()
+            ContextCompat.serviceStarts.clear()
             try {
-                manager.onAppRelaunched()
-                val ticket = manager.appConnectionTicket()
-                val relay = Intent("check-usb").putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, ticket)
-                if (stop) manager.requestExplicitAppExit(killProcess = false)
-                val reopened = manager.onAppRelaunched()
+                val input = manager.appConnectionTicket()
+                val intent = Intent("check-usb")
+                if (relay != "untagged") intent.putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, input)
+                if (relay != "control") manager.requestExplicitAppExit(killProcess = false)
                 val bootstrap = ServiceBootstrap(manager)
-                bootstrap.onStartCommand(relay, 0, 1)
-                bootstrap.onStartCommand(relay, 0, 2)
-                check(bootstrap.initializedForStart == !stop && manager.isAppRunOwner(reopened))
-                check(bootstrap.usbStartupTickets == if (stop) emptyList() else listOf(ticket)) {
-                    "a stale relay must not arm USB; a valid relay initializes once with its carried ticket"
+                bootstrap.onStartCommand(intent, 0, 1)
+                check(bootstrap.initializedForStart == (relay == "control")) {
+                    "a service relay sent before Stop initialized after it (relay=$relay)"
                 }
             } finally {
                 manager.close()
             }
+        }
+
+        // A link ending deliberately can revoke just the scan epoch while the command ticket
+        // remains current. Bootstrap must hand the old scan along, not silently mint a new one.
+        for (withdrawScan in listOf(false, true)) {
+            val manager = CommManager()
+            try {
+                val scan = manager.usbRecheckNow()
+                if (withdrawScan) manager.disconnect(honorKillOnDisconnect = false)
+                check(manager.acceptsAppConnectionTicket(scan.ticket))
+                val relay = Intent("check-usb")
+                    .putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, scan.ticket)
+                    .putExtra(ServiceBootstrap.EXTRA_USB_RECHECK, UsbReceiver.encodeRecheck(scan))
+                val bootstrap = ServiceBootstrap(manager)
+                bootstrap.onStartCommand(relay, 0, 1)
+                check(bootstrap.initializedForStart && bootstrap.startupTicket == scan.ticket)
+                val startup = checkNotNull(bootstrap.startupRecheck)
+                check(startup.ticket == scan.ticket && startup.epoch == scan.epoch)
+                check(manager.isCurrent(startup) == !withdrawScan)
+            } finally { manager.close() }
         }
     } finally {
         AapService.instance = previousService
         ContextCompat.serviceStarts.clear()
         ContextCompat.serviceStarts.addAll(previousStarts)
     }
-    println("PASS actual service bootstrap: stale Run/Stop and relays cannot initialize; latest Run restores and valid startup arms USB once")
+    println("PASS actual service bootstrap: stale Run/Stop cannot initialize a doomed instance; latest Run restores and completed Stop stays stopped")
 }

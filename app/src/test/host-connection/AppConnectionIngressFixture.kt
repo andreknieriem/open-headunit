@@ -46,6 +46,39 @@ private suspend fun CommManager.connectUsbRequest(tier: ConnectionPriorityPolicy
     try { connect(UsbDevice(), request) } finally { endRequest(request) }
 }
 
+/** A permission result keeps its dialog's original scan, even when the Stop ticket matches. */
+fun usbPermissionScanEpoch() = runBlocking {
+    for (granted in listOf(false, true)) for (withdrawn in listOf(false, true)) {
+        val c = CommManager()
+        c.disconnect(honorKillOnDisconnect = false)
+        c.cleanups()
+        try {
+            val original = c.usbRecheckNow()
+            if (withdrawn) c.disconnect(honorKillOnDisconnect = false)
+            val reply = checkNotNull(UsbReceiver.decodeRecheck(UsbReceiver.encodeRecheck(original)))
+            check(c.acceptsAppConnectionTicket(reply.ticket))
+            c.context.usb.permitted = granted
+            var permissions = 0
+            var opens = 0
+            c.context.usb.permissionHook = { permissions++ }
+            c.context.usb.openHook = { opens++; UsbDeviceConnection() }
+            val request = c.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB permission reply", null, reply)
+            check((request == null) == withdrawn)
+            if (request != null) try {
+                check(c.connect(UsbDevice(), request) == granted)
+            } finally { c.endRequest(request) }
+            // Both CommManager and StandardUsb check permission before opening a granted device.
+            check(permissions == when { withdrawn -> 0; granted -> 2; else -> 1 })
+            check(opens == if (!withdrawn && granted) 1 else 0)
+            check(when {
+                withdrawn -> c.state is ConnectionState.Disconnected
+                granted -> c.state === ConnectionState.Connected
+                else -> c.state == ConnectionState.Error("USB permission not granted for device")
+            })
+        } finally { c.close() }
+    }
+}
+
 /** AapService's preempt callback: it ends only a published attempt or an unformed open. */
 private class ServicePreempt(private val manager: CommManager) : ConnectionArbiter.Actions {
     var preempts = 0

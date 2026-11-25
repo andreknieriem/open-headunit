@@ -73,6 +73,7 @@ class SettingsRetryOwnershipTest {
             field("usbRecoveryOwner", Any())
             field("_scope", CoroutineScope(SupervisorJob() + Never))
             field("settings", mock(Settings::class.java))
+            field("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
             field("physicalConnectionReached", true)
             field("usbSaveOwner", save)
             manager.disconnect(sendByeBye = false, isUserExit = isUserExit, honorKillOnDisconnect = false, settingsRetryOwner = explicit)

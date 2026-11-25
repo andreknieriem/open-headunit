@@ -49,6 +49,11 @@ for name,path,finish in [('MainActivity','main/MainActivity.kt','finishAffinity'
                   'fun deliver(intent:Intent) { finishReceiver.onReceive(context,intent) }\n'
                   + receiver + '\n}\n')
 (OUT/'ExitReceivers.kt').write_text(receivers)
+settings_mutation = base/'main/settings/SettingsMutation.kt'
+(OUT/'SettingsMutation.kt').write_text(settings_mutation.read_text().replace(
+    'package com.andrerinas.openheadunit.main.settings', 'package lifecycle'))
+methods['SettingsMutation.kt'] = hashlib.sha256(settings_mutation.read_bytes()).hexdigest()
+
 # Preserve the production final decision and branch ordering; replace only platform effects.
 service_source=(base/'aap/AapService.kt').read_text()
 completion=extract(service_source, 'private fun completeOwnedDestruction()')
@@ -71,34 +76,38 @@ bootstrap_start = bootstrap_start[:bootstrap_start.index('        // An automati
 bootstrap_start = bootstrap_start.replace('override fun onStartCommand(', 'fun onStartCommand(')
 bootstrap_constants = '\n'.join(next(line.strip().replace('private ', '', 1)
     for line in service_source.splitlines() if re.search(r'\bconst\s+val\s+' + re.escape(name) + r'\s*=', line))
-    for name in ['ACTION_STOP_SERVICE', 'EXTRA_STOP_OWNER', 'EXTRA_RUN_OWNER', 'EXTRA_OPERATION_TICKET'])
+    for name in ['ACTION_STOP_SERVICE', 'EXTRA_STOP_OWNER', 'EXTRA_RUN_OWNER', 'EXTRA_OPERATION_TICKET', 'EXTRA_USB_RECHECK'])
 bootstrap_rejection = extract(service_source, 'private fun retireRejectedBootstrap()')
-# Keep the startup latch and the ticket passed to the already-connected USB scan. Platform
-# setup between them (audio, media, settings and Android receivers) is not part of this fixture.
-bootstrap_init = extract(service_source, 'private fun initializeForStart(')
-bootstrap_init = bootstrap_init[:bootstrap_init.index('        fillBluetoothAddressIfUnset()')] + \
-    next(line for line in bootstrap_init.splitlines() if 'usbLauncherManager.checkAlreadyConnected(' in line) + '\n    }'
+foreground_stop = extract(service_source, '@Synchronized\n    private fun stopForegroundForShutdown()')
+bootstrap_recheck = expression(service_source, 'private fun relayedUsbRecheck(', 'USB bootstrap relay')
+usb_receiver = (base/'connection/usb/UsbReceiver.kt').read_text()
+recheck_codec = expression(usb_receiver, 'internal fun encodeRecheck(', 'USB relay recheck encoding') + '\n' + \
+    extract(usb_receiver, 'internal fun decodeRecheck(', 'USB relay recheck decoding')
+usb_check_intent = extract(service_source, 'internal fun usbCheckIntent(', 'USB relay intent')
+usb_constants = '\n'.join(next(line.strip() for line in service_source.splitlines() if 'const val '+name+' =' in line)
+    for name in ['EXTRA_USB_RECHECK', 'EXTRA_USER_REQUESTED', 'EXTRA_USB_TRIGGER', 'USB_TRIGGER_PLUG_IN'])
 (OUT/'ServiceBootstrap.kt').write_text(
     'package lifecycle\nimport android.content.*\n'
     'import com.andrerinas.openheadunit.connection.AppExitPolicy\n'
+    'internal object UsbReceiver {\n' + recheck_codec + '\n}\n' +
     'class ServiceBootstrap(private val commManager:CommManager) {\n'
     'private val settings get()=commManager.settings\n'
     'var initializedForStart=false\nvar foregroundPromotionFailed=false\nvar isDestroying=false\n'
     'private var appExitRequest:AppExitPolicy.Request?=null\nvar stops=0\n'
-    'fun stopSelf(){stops++}\nval usbStartupTickets = mutableListOf<Long>()\n'
-    'private val usbLauncherManager = object {\n'
-    '    fun checkAlreadyConnected(ticket: Long) { usbStartupTickets.add(ticket) }\n'
+    'fun stopSelf(){stops++}\n'
+    'var startupTicket:Long?=null\nvar startupRecheck:UsbRecheck?=null\n'
+    'private fun initializeForStart(ticket:Long, startupScan:UsbRecheck){\n'
+    '    startupTicket=ticket; startupRecheck=startupScan; initializedForStart=true\n'
     '}\n'
-    'var foreground=false\nvar failForeground=false\n'
+    'var foreground=false\nvar failForeground=false\nprivate var microphoneTypeClaimed=false\n'
     'fun startForegroundWithCurrentTypes(){check(!failForeground){"foreground promotion rejected"};foreground=true}\n'
-    'fun stopForegroundForShutdown(){isDestroying=true;foreground=false}\n'
+    'fun stopForeground(remove:Boolean){foreground=false}\n'
     'fun stopForAcceptedAppExit(){stopForegroundForShutdown();stops++}\n'
     'fun beforeProcessExit(){error("unexpected process exit")}\n'
     'fun recordProcessExit(){error("unexpected process exit")}\n'
     'companion object {\nconst val START_NOT_STICKY=2\nconst val START_STICKY=1\n' +
     bootstrap_constants + '\n}\n' + bootstrap_rejection + '\n' + bootstrap_start + '\n' +
-    bootstrap_init + '\n' +
-    completion + '\n}\n')
+    foreground_stop + '\n' + bootstrap_recheck + '\n' + completion + '\n}\n')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppBootstrapFixture.kt', OUT/'AppBootstrapFixture.kt')
 home_source=(base/'main/HomeFragment.kt').read_text()
 home_fixture=(ROOT/'app/src/test/host-connection/HomeAutomaticFixture.kt').read_text()
@@ -119,6 +128,8 @@ home_members={
     'SINGLE_USB_OVERLAY_POLICY':expression((base/'main/AutoConnectAttemptPolicy.kt').read_text(),'fun singleUsbShowsOverlay(', 'USB overlay policy'),
     'OPERATION_CONSTANT':next(line.strip().replace('private ','',1) for line in service_source.splitlines() if 'const val EXTRA_OPERATION_TICKET =' in line),
     'OPERATION_INTENT':expression(service_source,'internal fun operationIntent(', 'Operation intent'),
+    'USB_RELAY_CONSTANTS':usb_constants,
+    'USB_RELAY_INTENT':usb_check_intent,
 }
 for marker,value in home_members.items(): home_fixture=home_fixture.replace('// '+marker,value)
 (OUT/'HomeAutomaticFixture.kt').write_text(home_fixture)
@@ -140,18 +151,19 @@ ui_members={
     'UI_SERVICE_CONSTANTS':'\n'.join(next(line.strip().replace('private ','',1) for line in service_source.splitlines() if 'const val '+name+' =' in line) for name in ['EXTRA_STOP_OWNER','EXTRA_OPERATION_TICKET']),
     'UI_OPERATION_INTENT':expression(service_source,'internal fun operationIntent(', 'UI operation intent'),
     'UI_ACCEPTED_STOP_INTENT':expression(service_source,'internal fun acceptedStopIntent(', 'UI accepted Stop intent'),
+    'USB_RELAY_CONSTANTS':usb_constants,
+    'USB_RELAY_INTENT':usb_check_intent,
     'UI_STOP_INTENT':extract(service_source,'fun stopIntent(', 'UI Stop producer'),
 }
 for marker,value in ui_members.items(): ui_fixture=ui_fixture.replace('// '+marker,value)
 (OUT/'UiConnectFixture.kt').write_text(ui_fixture)
 
 network_source=(base/'connection/wifi/NetworkDiscovery.kt').read_text()
-network_wifi_wait=network_source[network_source.index('    @Volatile\n    private var waitingForWifiLogged'):
-                                network_source.index('\n\n    /** The DHCP server')]
-methods['Discovery phone hotspot wait']=hashlib.sha256(network_wifi_wait.encode()).hexdigest()
-headunit_network=(base/'connection/wifi/HeadunitServerNetwork.kt').read_text()
-(OUT/'HeadunitServerNetwork.kt').write_text(headunit_network.replace(
-    'package com.andrerinas.openheadunit.connection.wifi', 'package lifecycle'))
+for name in ['HeadunitServerNetwork.kt', 'WifiLauncherMode.kt']:
+    shutil.copy2(base/'connection/wifi'/name, OUT/name)
+network_wifi_wait = network_source[network_source.index('    @Volatile\n    private var waitingForWifiLogged'):
+                                   network_source.index('\n\n    /** The DHCP server')]
+methods['Discovery phone hotspot wait'] = hashlib.sha256(network_wifi_wait.encode()).hexdigest()
 network_fixture=(ROOT/'app/src/test/host-connection/NetworkConnectionIngressFixture.kt').read_text()
 network_members={
     'NETWORK_SERVER_HANDOFF':extract((base/'connection/wifi/server/WirelessServer.kt').read_text(),'internal fun handOffClient(', 'Server accepted socket'),
@@ -178,6 +190,8 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.aap.AapMessageFraming
+import com.andrerinas.openheadunit.aap.AapMessage
+import com.andrerinas.openheadunit.aap.protocol.Channel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
@@ -271,8 +285,10 @@ class CommManager {
   val request=ConnectionRequest(appConnectionTicket(),claim,"fixture:5277",null,null)
   if(acceptRequest(request))connectIp("fixture",5277,request)}
  // A USB request carries one claim through every try; these fixtures name it directly.
- private fun usbRequest(claim:ConnectionArbiter.Claim,save:ConnectionState.Disconnected?=null)=
-  ConnectionRequest(appConnectionTicket(),claim,null,save,null)
+ private fun usbRequest(claim:ConnectionArbiter.Claim,save:ConnectionState.Disconnected?=null):ConnectionRequest {
+  val recheck=usbRecheckNow()
+  return ConnectionRequest(recheck.ticket,claim,null,save,null,recheck)
+ }
  suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,usbRequest(claim))}
  suspend fun connectSelf(){connectIp("127.0.0.1",5277,accepted("127.0.0.1:5277"))}
  suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,accepted("fixture:5277",save=state))}
@@ -426,7 +442,16 @@ transport_fixture=transport_head+'\n'.join(extract(transport,n) for n in [
  'internal fun setProjectionVideoFocusSuppressed('
 ])+'\n}\n'
 bulk=(base/'aap/AapReadMultipleMessages.kt').read_text()
-shutil.copy2(base/'aap/AapMessageFraming.kt',OUT/'AapMessageFraming.kt')
+for name in ['AapMessageFraming.kt', 'AapMessage.kt', 'protocol/Channel.kt', 'protocol/MsgType.kt']:
+    shutil.copy2(base/'aap'/name, OUT/Path(name).name)
+(OUT/'MessageBytes.kt').write_text('''package com.andrerinas.openheadunit.utils
+object Utils {
+    fun intToBytes(value: Int, offset: Int, buf: ByteArray) {
+        buf[offset] = (value ushr 8).toByte()
+        buf[offset + 1] = value.toByte()
+    }
+}
+''')
 process=extract(bulk,'private fun processBulk()')
 (OUT/'AapReadRecoveryPolicy.kt').write_text((base/'aap/AapReadRecoveryPolicy.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 support=r'''
@@ -437,7 +462,8 @@ object AppLog {
 }
 class Settings{
  var useAacAudio=false;var killOnDisconnect=false;var useLibusb=false;var debugUsbReadFault=false
- val wifiConnectionMode=WifiLauncherMode.AUTO;var headunitServerNetwork=HeadunitServerNetwork.SHARED
+ var wifiConnectionMode=com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode.AUTO
+ var headunitServerNetwork=com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork.SHARED
  fun saveLastConnection(type:Int,ip:String="",usbDevice:String=""){}
  companion object{const val CONNECTION_TYPE_WIFI=1;const val CONNECTION_TYPE_USB=2}
 }
@@ -492,8 +518,6 @@ class MicSessions{fun close(shutdown:Boolean){}}
 class SensorSubscriptions{fun stopAll(){}}
 class BluetoothControl{fun shutdown(){}}
 class PresentationController{fun close(){}}
-class AapMessage(val channel:Int,val type:Int,val data:Any){val size=0}
-object Channel{const val ID_CTR=0}
 object LegacyOptimizer{fun setHighPriority(){}}
 object HeadUnitScreenConfig{fun unlockResolution(){}}
 object BluetoothHelper{fun isA2dpMediaLinkActive(c:Context)=false}
@@ -640,7 +664,8 @@ object AapMessageIncoming{
   companion object{const val SIZE=4}
  }
  fun decrypt(h:EncryptedHeader,offset:Int,b:ByteArray,ssl:Ssl):AapMessage?{
-  val id=Utils.bytesToInt(b,offset,true);ssl.observeDecrypt(id);return AapMessage(h.chan,id,Unit)
+  val id=Utils.bytesToInt(b,offset,true);ssl.observeDecrypt(id)
+  return AapMessage(h.chan,h.flags.toByte(),id,2,h.enc_len,b.copyOfRange(offset,offset+h.enc_len))
  }
 }
 fun peerBatch():ByteArray {
@@ -1165,7 +1190,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();appExitSerializedEffects();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation();launchOutcomeFollowsAttempts();refusedUsbCannotTakeAnAttemptInFlight()')
+extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();appExitSerializedEffects();usbPermissionScanEpoch();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation();launchOutcomeFollowsAttempts();refusedUsbCannotTakeAnAttemptInFlight()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -1206,11 +1231,15 @@ class Intent{
  var action:String?=null
  constructor(a:String){action=a};constructor(c:Context,k:Class<*>){}
  fun setPackage(s:String)=this
+ fun setAction(a:String?)=apply{action=a}
  private val extras=mutableMapOf<String,Any>()
  fun putExtra(name:String,value:Long)=apply{extras[name]=value}
  fun putExtra(name:String,value:Boolean)=apply{extras[name]=value}
+ fun putExtra(name:String,value:String)=apply{extras[name]=value}
  fun hasExtra(name:String)=extras.containsKey(name)
  fun getLongExtra(name:String,default:Long)=extras[name] as? Long ?: default
+ fun getStringExtra(name:String)=extras[name] as? String
+ companion object{const val ACTION_MEDIA_BUTTON="android.intent.action.MEDIA_BUTTON";const val ACTION_MAIN="android.intent.action.MAIN"}
 }
 class Context{
  var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();val broadcastIntents=mutableListOf<Intent>();var stops=0
@@ -1234,6 +1263,18 @@ object App {
 shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs/AapService.kt',OUT/'Service.kt')
 for stub in ['ContextCompat.kt', 'RetainedNativeGroup.kt']:
     shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs'/stub,OUT/stub)
+(OUT/'WifiModeFactories.kt').write_text('''package com.andrerinas.openheadunit.connection.wifi.modes
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncher
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
+class WifiLauncherAuto(m: WifiLauncherManager): WifiLauncher
+class WifiLauncherHelper(m: WifiLauncherManager): WifiLauncher
+class WifiLauncherManual(m: WifiLauncherManager): WifiLauncher
+class WifiLauncherNative(m: WifiLauncherManager): WifiLauncher
+''')
+(OUT/'WifiModeTypes.kt').write_text('''package com.andrerinas.openheadunit.connection.wifi
+interface WifiLauncher
+class WifiLauncherManager
+''')
 # Full, byte-for-byte production connection files; Android APIs only are doubled.
 meta={}
 for name in ['ProjectionConnection.kt','AbstractUsbProjectionConnection.kt','StandardUsbProjectionConnection.kt','UsbReadFaultPolicy.kt']:

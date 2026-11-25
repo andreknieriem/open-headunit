@@ -39,7 +39,7 @@ class NearbyHandoffLifecycleTest {
             field(nearby, "lastQuality", java.util.concurrent.ConcurrentHashMap<String, Int>())
             field(nearby, "activeEndpointId", "phone"); field(nearby, "activeNearbySocket", old)
             var handoffs = 0
-            val handoff: suspend (Socket, ConnectionAdmission, Long) -> Unit = { socket, admission, _ ->
+            val handoff: suspend (Socket, ConnectionAdmission, Long, CommManager.ConnectionState.Disconnected?) -> Unit = { socket, admission, _, _ ->
                 admission.run { check(socket === old || socket === replacement); handoffs++ }
             }
             field(nearby, "onSocketReady", handoff)
@@ -96,8 +96,8 @@ class NearbyHandoffLifecycleTest {
         field(nearby, "activeEndpointId", "phone"); field(nearby, "activeNearbySocket", old)
         field(nearby, "context", context); field(nearby, "scope", scope)
         field(nearby, "commManager", comm)
-        val handoff: suspend (Socket, ConnectionAdmission, Long) -> Unit =
-            { socket, admission, ticket -> comm.connect(socket, admission = admission, ticket = ticket) }
+        val handoff: suspend (Socket, ConnectionAdmission, Long, CommManager.ConnectionState.Disconnected?) -> Unit =
+            { socket, admission, ticket, save -> comm.connect(socket, admission = admission, ticket = ticket, expectedState = save) }
         field(nearby, "onSocketReady", handoff)
         val claimed = CompletableDeferred<Unit>()
         val admission = ConnectionAdmission { action ->
@@ -120,7 +120,7 @@ class NearbyHandoffLifecycleTest {
             whenever(request.addOnFailureListener(any())).thenReturn(request)
             whenever(client.requestConnection(anyOrNull<String>(), any(), any())).thenReturn(request)
             Mockito.mockConstruction(Settings::class.java).use {
-                nearby.connectToEndpoint("phone")
+                nearby.connectToEndpoint("phone", comm.appConnectionTicket())
                 verify(client).requestConnection(anyOrNull<String>(), eq("phone"), any())
             }
         } finally {

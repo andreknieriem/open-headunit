@@ -301,6 +301,9 @@ class CommManager(
         appExitPolicy.acceptsConnection(ticket) && appExitPolicy.isRunOwner(appExitPolicy.revision)
     }
 
+    internal fun hasPendingDisconnect(): Boolean =
+        synchronized(transportLifecycleLock) { _disconnectJob?.isCompleted == false }
+
     private fun cancelAppExitCallback() {
         pendingAppExit?.let { appExitHandler.removeCallbacks(it) }
         pendingAppExit = null

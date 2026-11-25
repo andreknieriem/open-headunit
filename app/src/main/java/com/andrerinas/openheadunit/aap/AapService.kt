@@ -3669,21 +3669,26 @@ class AapService : Service() {
 
     private fun stopForAcceptedAppExit() {
         stopForegroundForShutdown()
-        val teardownDone = if (ServiceStopWaitPolicy.waitsForWirelessTeardown(
-                sessionConnected = commManager.isConnected,
-                wirelessLauncherActive = wifiLauncherManager.isActive,
-            )) CompletableDeferred<Unit>() else null
+        val wasConnected = commManager.isConnected
+        val waitForTeardown = ServiceStopWaitPolicy.waitsForWirelessTeardown(
+            transportPending = wasConnected || commManager.hasPendingDisconnect(),
+            wirelessLauncherActive = wifiLauncherManager.isActive,
+        )
+        val teardownDone = if (waitForTeardown && wasConnected) CompletableDeferred<Unit>() else null
         exitTeardownDone = teardownDone
-        if (commManager.isConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
+        if (wasConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
         exitTeardownState = commManager.connectionState.value as? CommManager.ConnectionState.Disconnected
         selfLauncherManager.stop(wasConnected = false)
-        if (teardownDone == null) {
+        if (!waitForTeardown) {
             commManager.finishCurrentAppExitTasks()
             stopSelf()
         } else {
             serviceScope.launch {
                 val gaveItBack = withTimeoutOrNull(ServiceStopWaitPolicy.TEARDOWN_TIMEOUT_MS) {
-                    teardownDone.await()
+                    // An earlier observer may already have captured no exit waiter. Join the
+                    // actual retirement directly rather than waiting on a newly invented latch.
+                    commManager.awaitDisconnectComplete()
+                    teardownDone?.await()
                 } != null
                 if (!gaveItBack) AppLog.w("AapService: wireless teardown timed out; stopping service")
                 if (exitTeardownDone === teardownDone) {

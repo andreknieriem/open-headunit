@@ -25,7 +25,8 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         fun onUsbDetach(device: UsbDevice)
         fun onUsbAttach(device: UsbDevice)
         fun onUsbAccessoryDetach()
-        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long)
+        /** [token] is the launcher's own permission request, or null for one raised elsewhere. */
+        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long, token: String?)
         fun onUsbRecoveryPermission(token: String, granted: Boolean, device: UsbDevice) {}
     }
 
@@ -55,9 +56,11 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
                     // A late recovery reply must never become an ordinary connect request.
                     mListener.onUsbRecoveryPermission(recovery.schemeSpecificPart, permissionGranted, device)
                 } else if (intent.data?.scheme == ASK_PERMISSION_SCHEME) {
+                    val reply = intent.data ?: return
                     // A grant-only ask carries no ticket; its reply cannot start a connection.
-                    val ticket = intent.data?.fragment?.toLongOrNull() ?: return
-                    mListener.onUsbPermission(permissionGranted, connect, device, ticket)
+                    val ticket = reply.fragment?.toLongOrNull() ?: return
+                    mListener.onUsbPermission(permissionGranted, connect, device, ticket,
+                        reply.schemeSpecificPart.takeIf { it.startsWith(LAUNCHER_TOKEN_PREFIX) })
                 }
             }
         }
@@ -69,7 +72,9 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
 
         /**
          * The token in the data makes each request its own PendingIntent, so no answer can carry
-         * another's. A null [ticket] requests the grant only; its reply cannot start a connection.
+         * another's. A launcher token ([newLauncherToken]) also names the launcher's own request, so
+         * its reply continues exactly that request's owed scan; any other token is a new input.
+         * A null [ticket] requests the grant only; its reply cannot start a connection.
          */
         fun createPermissionPendingIntent(context: Context, token: String, ticket: Long?): PendingIntent {
             return PendingIntent.getBroadcast(
@@ -86,6 +91,9 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
 
         internal const val ASK_PERMISSION_SCHEME = "ohu-usb-ask"
         internal const val RECOVERY_PERMISSION_SCHEME = "ohu-usb-recovery"
+        private const val LAUNCHER_TOKEN_PREFIX = "launcher-"
+
+        internal fun newLauncherToken(): String = LAUNCHER_TOKEN_PREFIX + UsbPermissionAsks.newToken()
 
         fun createRecoveryPermissionPendingIntent(context: Context, token: String): PendingIntent =
             PendingIntent.getBroadcast(context, 0,

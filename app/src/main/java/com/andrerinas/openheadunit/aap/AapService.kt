@@ -79,6 +79,7 @@ import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.carkey.CarKeysManager
 import com.andrerinas.openheadunit.connection.wifi.NetworkDiscovery
 import android.support.v4.media.session.MediaSessionCompat
@@ -2407,12 +2408,13 @@ class AapService : Service() {
             return true
         }
 
-        override fun giveBack(wireless: Boolean, usb: Boolean) {
+        override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {
             serviceScope.launch {
                 delay(1500) // The same settle the wired-session re-arm gives the hardware.
                 if (isDestroying) return@launch
                 if (wireless) initWifiModeWithOptionalWait()
-                if (usb) usbLauncherManager.checkAlreadyConnected(force = true)
+                // The owed scan itself decides: a user exit, Stop or held end since withdrew it.
+                if (usb != null) usbLauncherManager.checkAlreadyConnected(force = true, recheck = usb)
             }
         }
 
@@ -3278,8 +3280,11 @@ class AapService : Service() {
         }
     }
 
-    /** A USB auto-connect arrived while the settings screen was on show; its close asks again. */
-    @Volatile private var usbCheckPendingForSettings = false
+    /**
+     * The USB scan an auto-connect owed while the settings screen was on show; its close asks
+     * again, only while that scan is still current (see [UsbRecheck]).
+     */
+    @Volatile private var usbCheckPendingForSettings: UsbRecheck? = null
 
     /** What the held check was. A held plug-in replays as one, so Connect when plugged in still applies. */
     @Volatile private var usbCheckTriggerForSettings = UsbPlugInPolicy.Trigger.APP_START
@@ -3296,12 +3301,12 @@ class AapService : Service() {
 
     private var settingsReplayJob: Job? = null
 
-    fun holdUsbCheckForSettings(trigger: UsbPlugInPolicy.Trigger) {
+    fun holdUsbCheckForSettings(recheck: UsbRecheck, trigger: UsbPlugInPolicy.Trigger) {
         // Two held checks merge; the result stays a plug-in only if both were.
-        if (!usbCheckPendingForSettings || usbCheckTriggerForSettings == UsbPlugInPolicy.Trigger.PLUG_IN) {
+        if (usbCheckPendingForSettings == null || usbCheckTriggerForSettings == UsbPlugInPolicy.Trigger.PLUG_IN) {
             usbCheckTriggerForSettings = trigger
         }
-        usbCheckPendingForSettings = true
+        usbCheckPendingForSettings = recheck
     }
 
     /**
@@ -3314,7 +3319,7 @@ class AapService : Service() {
             return
         }
         if (!AutoConnectHoldPolicy.replaysOnRelease(
-                usbHeld = usbCheckPendingForSettings,
+                usbHeld = usbCheckPendingForSettings != null,
                 bluetoothLaunchHeld = bluetoothLaunchPendingForSettings,
             )) return
 
@@ -3329,12 +3334,13 @@ class AapService : Service() {
                     "behind it, raising the home screen now.")
                 launchMainActivityForBluetooth()
             }
-            if (usbCheckPendingForSettings) {
-                usbCheckPendingForSettings = false
+            val heldUsb = usbCheckPendingForSettings
+            if (heldUsb != null) {
+                usbCheckPendingForSettings = null
                 val trigger = usbCheckTriggerForSettings
                 AppLog.i("AapService: the settings screen closed with a USB auto-connect held " +
                     "behind it, checking USB now (trigger=$trigger).")
-                usbLauncherManager.checkAlreadyConnected(force = true, trigger = trigger)
+                usbLauncherManager.checkAlreadyConnected(force = true, trigger = trigger, recheck = heldUsb)
             }
         }
     }
@@ -3943,7 +3949,7 @@ class AapService : Service() {
             }
             ACTION_CANCEL_WIRELESS       -> {
                 commManager.cancelPendingSettingsRestart()
-                usbCheckPendingForSettings = false
+                usbCheckPendingForSettings = null
                 bluetoothLaunchPendingForSettings = false
                 val stage = ConnectionStageTracker.stage.value
                 if (intent?.getBooleanExtra(EXTRA_USB_ATTEMPT, false) == true ||

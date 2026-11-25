@@ -65,7 +65,11 @@ class UsbRecoveryPermissionTest {
         val device = mock(UsbDevice::class.java)
         UsbReceiver(listener).onReceive(mock(Context::class.java),
             answer(UsbReceiver.ASK_PERMISSION_SCHEME, "t", true, device, ticket = "7"))
-        verify(listener).onUsbPermission(true, false, device, 7L)
+        verify(listener).onUsbPermission(true, false, device, 7L, null)
+        val launcher = UsbReceiver.newLauncherToken()
+        UsbReceiver(listener).onReceive(mock(Context::class.java),
+            answer(UsbReceiver.ASK_PERMISSION_SCHEME, launcher, true, device, ticket = "7"))
+        verify(listener).onUsbPermission(true, false, device, 7L, launcher)
         UsbReceiver(listener).onReceive(mock(Context::class.java), answer(UsbReceiver.ASK_PERMISSION_SCHEME, "g", true, device))
         UsbReceiver(listener).onReceive(mock(Context::class.java), answer(null, "", true, device))
         verifyNoMoreInteractions(listener)

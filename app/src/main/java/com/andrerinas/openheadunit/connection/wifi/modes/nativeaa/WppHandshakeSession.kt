@@ -37,6 +37,11 @@ enum class WppStage {
     AWAIT_INFO_REQUEST,
     /** Credentials delivered; the phone is associating, doing WPS and getting a DHCP lease. */
     SETTLING,
+    /**
+     * The phone reported a good join after Type 3, on a transport that sets a short bound: it has
+     * joined and its session is due. Ends as [SETTLING] does.
+     */
+    JOINED,
     /** The session landed and the phone's channel stays open for it, answering its pings. */
     HOLDING,
     /** The phone's projection session landed, or a held channel was released. */
@@ -89,6 +94,8 @@ sealed class WppAction {
     object SendPingResponse : WppAction()
     /** The phone is still working on it — push the settling deadline out. */
     object ExtendSettle : WppAction()
+    /** The phone joined; wait the short bound for its session. */
+    object AwaitSession : WppAction()
     object CompleteSuccess : WppAction()
     /**
      * [phoneWasSilent] is true when the phone never sent a single message — the signature of a
@@ -147,7 +154,9 @@ class WppHandshakeSession(
      * there is nothing to hold.
      */
     private val holdsChannel: Boolean = false,
-    private val versionNegotiated: Boolean = false
+    private val versionNegotiated: Boolean = false,
+    /** The wait in [WppStage.JOINED], or null for the transports that keep the [WppStage.SETTLING] rules. */
+    private val joinedTimeoutMs: Long? = null
 ) {
 
     companion object {
@@ -184,6 +193,12 @@ class WppHandshakeSession(
     /** Credentials arrived while we were still waiting on the version response. */
     private var credentialsLatched = false
 
+    /** Whether this exchange sent Type 3: only then is a join report a join of the credentials we sent. */
+    private var sentInfoResponse = false
+
+    /** True while the phone's session is due: after a join report or inside the settling window. */
+    val awaitsSession: Boolean get() = stage == WppStage.SETTLING || stage == WppStage.JOINED
+
     /** Total time allowed in [WppStage.SETTLING], grown by [WppAction.ExtendSettle]. */
     private var settleBudgetMs = NativeHandoffPolicy.SETTLE_TIMEOUT_MS
 
@@ -196,6 +211,7 @@ class WppHandshakeSession(
         WppStage.AWAIT_VERSION -> VERSION_RESPONSE_TIMEOUT_MS
         WppStage.AWAIT_INFO_REQUEST -> INFO_REQUEST_TIMEOUT_MS
         WppStage.SETTLING -> settleBudgetMs
+        WppStage.JOINED -> joinedTimeoutMs
         // AWAIT_CREDENTIALS is bounded by the caller's own credential wait, which ends in
         // CredentialsReady or CredentialsUnavailable; NEW, HOLDING, DONE and FAILED never expire.
         else -> null
@@ -236,7 +252,7 @@ class WppHandshakeSession(
             WppStage.AWAIT_VERSION -> onAwaitVersion(event)
             WppStage.AWAIT_CREDENTIALS -> onAwaitCredentials(event)
             WppStage.AWAIT_INFO_REQUEST -> onAwaitInfoRequest(event)
-            WppStage.SETTLING -> onSettling(event)
+            WppStage.SETTLING, WppStage.JOINED -> onSettling(event)
             WppStage.HOLDING, WppStage.DONE, WppStage.FAILED -> emptyList()
         }
     }
@@ -296,7 +312,7 @@ class WppHandshakeSession(
     private fun onAwaitInfoRequest(event: WppEvent): List<WppAction> = when {
         event is WppEvent.MessageReceived && event.type == WppMessageType.INFO_REQUEST -> {
             stage = WppStage.SETTLING
-            listOf(WppAction.SendInfoResponse)
+            sendInfoResponse()
         }
         event is WppEvent.MessageReceived && event.type == WppMessageType.START_RESPONSE ->
             if (isFailureStatus(event.status)) {
@@ -336,15 +352,24 @@ class WppHandshakeSession(
                     joinRefused = event.type == WppMessageType.CONNECT_STATUS
                 ) + WppAction.ResumePoke
             } else if (event.type == WppMessageType.CONNECT_STATUS) {
-                extendSettle()
+                when {
+                    stage == WppStage.JOINED -> emptyList()
+                    joinedTimeoutMs != null && sentInfoResponse -> {
+                        stage = WppStage.JOINED
+                        listOf(WppAction.AwaitSession)
+                    }
+                    else -> extendSettle()
+                }
             } else {
                 // A successful type 7 is an acknowledgement, not progress on the join.
                 emptyList()
             }
         // aa-proxy-rs re-sends the credentials when the phone asks twice; a phone that asks again
         // has not given up, and refusing it would strand a handoff that could still complete.
-        event is WppEvent.MessageReceived && event.type == WppMessageType.INFO_REQUEST ->
-            listOf(WppAction.SendInfoResponse)
+        event is WppEvent.MessageReceived && event.type == WppMessageType.INFO_REQUEST -> {
+            stage = WppStage.SETTLING
+            sendInfoResponse()
+        }
         // Some platforms drop an emptied group the moment the phone's first try leaves it, and
         // the phone then hunts the old name until it gives up. Ending now hands it the new one.
         event is WppEvent.NetworkWithdrawn ->
@@ -369,11 +394,16 @@ class WppHandshakeSession(
             // It asked while the network was still coming up: answer both back to back rather
             // than wait for it to ask again.
             stage = WppStage.SETTLING
-            listOf(WppAction.SendStartRequest, WppAction.SendInfoResponse)
+            listOf(WppAction.SendStartRequest) + sendInfoResponse()
         } else {
             stage = WppStage.AWAIT_INFO_REQUEST
             listOf(WppAction.SendStartRequest)
         }
+    }
+
+    private fun sendInfoResponse(): List<WppAction> {
+        sentInfoResponse = true
+        return listOf(WppAction.SendInfoResponse)
     }
 
     private fun extendSettle(): List<WppAction> {

@@ -472,7 +472,7 @@ class WppTcpServer(
                     AppLog.w("WppTcpServer: handshake failed: ${action.reason} (phone silent=${action.phoneWasSilent})")
                 // The poke and the settling window belong to the Bluetooth path; over TCP the phone
                 // is already on our network, so there is nothing to wake and nothing to extend.
-                WppAction.ExtendSettle, WppAction.ResumePoke, is WppAction.Release -> {}
+                WppAction.ExtendSettle, WppAction.AwaitSession, WppAction.ResumePoke, is WppAction.Release -> {}
             }
         }
 
@@ -547,7 +547,7 @@ class WppTcpServer(
             if (timeout != null && waitedInStage >= timeout) {
                 // SETTLING ends on its own event; it ignores StageTimeout, so feeding that one here
                 // left a settled exchange waiting forever, holding this peer's reservation with it.
-                feed(if (session.stage == WppStage.SETTLING) WppEvent.SettleTimeout else WppEvent.StageTimeout)
+                feed(if (session.awaitsSession) WppEvent.SettleTimeout else WppEvent.StageTimeout)
                 continue
             }
             // Nothing left to wait for: the phone has gone and this stage has no deadline to end

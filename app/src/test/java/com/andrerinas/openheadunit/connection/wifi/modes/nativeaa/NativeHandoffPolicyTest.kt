@@ -309,4 +309,56 @@ class NativeHandoffPolicyTest {
             )
         }
     }
+
+    @Test
+    fun `the first three joins wait 8 s, or 2 s after the channel closed, whichever is less`() {
+        for (joins in 0..2) {
+            assertEquals(8_000L, NativeHandoffPolicy.joinedWaitMs(joins, null))
+        }
+        assertEquals(2_200L, NativeHandoffPolicy.joinedWaitMs(0, 200L))
+        assertEquals(8_000L, NativeHandoffPolicy.joinedWaitMs(1, 7_000L))
+        assertEquals(8_000L, NativeHandoffPolicy.joinedWaitMs(2, 6_000L))
+    }
+
+    @Test
+    fun `from the third spent wake on the old bound returns with no grace`() {
+        assertEquals(timeout, NativeHandoffPolicy.joinedWaitMs(3, null))
+        assertEquals(timeout, NativeHandoffPolicy.joinedWaitMs(4, 200L))
+        assertFalse(NativeHandoffPolicy.fastWakesLeft(3))
+        assertTrue(NativeHandoffPolicy.fastWakesLeft(2))
+    }
+
+    @Test
+    fun `the timeout line counts from the close when the close set the wait`() {
+        val opened = "NativeAA: the phone joined our network and opened no session in"
+        for (closedAfterMs in listOf(0L, 200L, 2_300L, 5_999L)) {
+            assertEquals(
+                "$opened 2s after it closed the channel; waking it again (1 of 3).",
+                NativeHandoffPolicy.joinedTimeoutLine(0, 1, closedAfterMs)
+            )
+        }
+    }
+
+    @Test
+    fun `the timeout line counts from the join when the join set the wait`() {
+        val opened = "NativeAA: the phone joined our network and opened no session in"
+        for (closedAfterMs in listOf(null, 6_000L, 7_000L)) {
+            assertEquals(
+                "$opened 8s; waking it again (3 of 3).",
+                NativeHandoffPolicy.joinedTimeoutLine(2, 3, closedAfterMs)
+            )
+        }
+        for (closedAfterMs in listOf(null, 2_300L)) {
+            assertEquals(
+                "$opened 45s; the fast wakes are spent; keeping the AA listener open and resuming the wake poke.",
+                NativeHandoffPolicy.joinedTimeoutLine(3, 4, closedAfterMs)
+            )
+        }
+    }
+
+    @Test
+    fun `both fast bounds are below the settle timeout`() {
+        assertTrue(NativeHandoffPolicy.JOINED_TIMEOUT_MS < timeout)
+        assertTrue(NativeHandoffPolicy.CHANNEL_CLOSED_GRACE_MS < timeout)
+    }
 }

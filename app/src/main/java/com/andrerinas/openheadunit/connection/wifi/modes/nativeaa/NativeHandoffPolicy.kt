@@ -27,6 +27,46 @@ object NativeHandoffPolicy {
      *  open and the wake poke suppressed indefinitely. Three 15 s extensions past the base window. */
     const val MAX_SETTLE_MS = 90_000L
 
+    /**
+     * How long the head unit waits for the phone's session after it reported a join on the hotspot
+     * transport. Past the slowest landing on file and Android Auto's three socket tries.
+     */
+    const val JOINED_TIMEOUT_MS = 8_000L
+
+    /** The phone closes the Bluetooth channel once it has given up on its socket: wake it this soon after. */
+    const val CHANNEL_CLOSED_GRACE_MS = 2_000L
+
+    /** Joins with no session that get the short bound. Then the old bound returns. */
+    const val MAX_FAST_REWAKES = 3
+
+    fun fastWakesLeft(joinsWithoutSession: Int): Boolean = joinsWithoutSession < MAX_FAST_REWAKES
+
+    /**
+     * The wait after a join report. [closedAfterMs] is how long into the wait the phone closed the
+     * channel, or null while it is open.
+     */
+    fun joinedWaitMs(joinsWithoutSession: Int, closedAfterMs: Long?): Long = when {
+        !fastWakesLeft(joinsWithoutSession) -> SETTLE_TIMEOUT_MS
+        closedAfterMs == null -> JOINED_TIMEOUT_MS
+        else -> minOf(JOINED_TIMEOUT_MS, closedAfterMs + CHANNEL_CLOSED_GRACE_MS)
+    }
+
+    /**
+     * The log line for a join that ran out its wait. A close counts its seconds from the close, not
+     * from the join. [joinsBefore] set the wait; [joinsNow] is the count after this join.
+     */
+    fun joinedTimeoutLine(joinsBefore: Int, joinsNow: Int, closedAfterMs: Long?): String {
+        val limit = joinedWaitMs(joinsBefore, closedAfterMs)
+        val byClose = closedAfterMs != null && limit < JOINED_TIMEOUT_MS
+        val opened = "NativeAA: the phone joined our network and opened no session in " +
+            "${(if (byClose) CHANNEL_CLOSED_GRACE_MS else limit) / 1000}s"
+        return when {
+            !fastWakesLeft(joinsBefore) -> "$opened; the fast wakes are spent; keeping the AA listener open and resuming the wake poke."
+            byClose -> "$opened after it closed the channel; waking it again ($joinsNow of $MAX_FAST_REWAKES)."
+            else -> "$opened; waking it again ($joinsNow of $MAX_FAST_REWAKES)."
+        }
+    }
+
     /** Longest a single credential exchange can legitimately take: the up-to-60 s wait for the
      *  P2P group's credentials, plus the 15 s wait for the phone's Type 2, plus slack. Past this
      *  the exchange is over however it ended, so treating it as live only suppresses recovery. */

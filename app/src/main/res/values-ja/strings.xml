@@ -1342,6 +1342,9 @@
     <string name="show_over_lock_screen_summary">ロック中も地図とルート案内が表示されます。タッチとボタンは無効です。</string>
     <string name="show_over_lock_screen_help">Android Auto の画面をロック画面の上に表示し、ロックを解除せずに地図とルート案内を確認できます。このユニットがロックされている間は、スマートフォンに何も送られません。タッチ、ボタン、ロータリーコントローラー、音声ボタンは保留され、地図が前面に表示されます。「戻る」を押すと PIN、パターン、パスワードでロックを解除でき、その後は通常どおり動作します。スマートフォン本体の音楽、通話、音声アシスタントには影響しません。</string>
     <string name="show_over_lock_screen_locked_toast">ロック中: 地図のみ。「戻る」でロック解除。</string>
+    <string name="night_overlay_while_locked">ロック中のナイトオーバーレイ</string>
+    <string name="night_overlay_while_locked_summary">地図の代わりに時計、次の曲がり角、曲名を表示。</string>
+    <string name="night_overlay_while_locked_help">このユニットがロックされている間、Android Auto の映像の代わりにナイトオーバーレイを表示します。暗い背景に時計、次の曲がり角、再生中の曲が表示されます。地図、保存した場所、発信者名などの Android Auto のポップアップは隠れます。ロックを解除すると映像に戻ります。このユニットの表示だけを変え、スマートフォンには何も送りません。文字サイズ、背景、表示する行は“ジェスチャー”のナイトオーバーレイ設定で決まります。</string>
     <string name="audio_stream_settings">オーディオストリーム</string>
     <string name="audio_stream_settings_description">Android Auto の各チャンネルを再生するシステムストリームを選択します。</string>
     <string name="audio_stream_settings_info">Android Auto は音声を「メディア」「音声案内」「システム音」の 3 チャンネルで送信します。各チャンネルはシステムストリーム経由でヘッドユニットに届き、選んだストリームによって連動する音量キーが決まります。多くのヘッドユニットでは、そもそもアンプが作動するかどうかも左右します。保存する前にスピーカーボタンでテスト音を鳴らして確認してください。</string>

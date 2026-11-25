@@ -275,6 +275,7 @@ object SettingsBackupManager {
         "enable-rotary" to ValueType.BOOLEAN,
         "kill-on-disconnect" to ValueType.BOOLEAN,
         "show-over-lock-screen" to ValueType.BOOLEAN,
+        "night-overlay-while-locked" to ValueType.BOOLEAN,
         "auto-enable-hotspot" to ValueType.BOOLEAN,
         "headunit-server-network" to ValueType.INT,
         "headunit-server-auto-wifi-scan" to ValueType.BOOLEAN,

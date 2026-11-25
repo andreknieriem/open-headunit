@@ -1336,8 +1336,8 @@
     <string name="failed_aa_not_system">失敗: Android Auto がシステムアプリとしてインストールされていません！</string>
     <string name="failed_aa_not_installed">失敗: Android Auto がインストールされていません！</string>
     <string name="raise_projection_during_call">通話中もAndroid Autoを表示したままにする</string>
-    <string name="raise_projection_during_call_description">セルフモード専用。スマートフォンの通話画面の上にAndroid Autoの画面を再び表示し、通話の応答と終了をAndroid Autoの画面で行えるようにします。</string>
-    <string name="raise_projection_during_call_summary">セルフモード専用。スマートフォンの通話画面の上に投影を表示します。</string>
+    <string name="raise_projection_during_call_description">セルフモードでは、スマートフォンの通話画面の上にAndroid Autoの画面を再び表示し、通話の応答と終了をAndroid Autoの画面で行えるようにします。FYTヘッドユニットでは、Android Autoが前面にある間、本体の通話バーや通話画面を表示しないよう本体に要求します。一部の機器やファームウェアのバージョンでは動作しない場合があります。</string>
+    <string name="raise_projection_during_call_summary">セルフモードとFYT機器。通話画面を隠します。一部の機器では動作しない場合があります。</string>
     <string name="show_over_lock_screen">ロック画面の上に表示</string>
     <string name="show_over_lock_screen_summary">ロック中も地図とルート案内が表示されます。タッチとボタンは無効です。</string>
     <string name="show_over_lock_screen_help">Android Auto の画面をロック画面の上に表示し、ロックを解除せずに地図とルート案内を確認できます。このユニットがロックされている間は、スマートフォンに何も送られません。タッチ、ボタン、ロータリーコントローラー、音声ボタンは保留され、地図が前面に表示されます。「戻る」を押すと PIN、パターン、パスワードでロックを解除でき、その後は通常どおり動作します。スマートフォン本体の音楽、通話、音声アシスタントには影響しません。</string>

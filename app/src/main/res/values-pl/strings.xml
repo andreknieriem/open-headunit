@@ -1339,8 +1339,8 @@
     <string name="failed_aa_not_system">Błąd: Android Auto nie jest zainstalowane jako aplikacja systemowa!</string>
     <string name="failed_aa_not_installed">Błąd: Android Auto nie jest zainstalowane!</string>
     <string name="raise_projection_during_call">Pozostań w Android Auto podczas połączeń</string>
-    <string name="raise_projection_during_call_description">Tylko Self Mode. Przywraca projekcję nad ekran połączenia telefonu, dzięki czemu połączenia odbiera się i kończy w interfejsie Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Tylko w trybie samodzielnym. Pokazuje projekcję nad ekranem połączenia telefonu.</string>
+    <string name="raise_projection_during_call_description">W trybie samodzielnym przywraca projekcję nad ekran połączenia telefonu, dzięki czemu połączenia odbiera się i kończy w interfejsie Android Auto. Na urządzeniach FYT prosi urządzenie, aby nie pokazywało własnego paska ani ekranu połączenia, gdy Android Auto jest na wierzchu. Może nie działać na każdym urządzeniu ani w każdej wersji firmware\'u.</string>
+    <string name="raise_projection_during_call_summary">Tryb samodzielny i urządzenia FYT. Ukrywa ekran połączenia. Może nie działać.</string>
     <string name="show_over_lock_screen">Pokaż na ekranie blokady</string>
     <string name="show_over_lock_screen_summary">Mapa i wskazówki są widoczne po zablokowaniu. Dotyk i przyciski nie działają.</string>
     <string name="show_over_lock_screen_help">Wyświetla obraz Android Auto nad ekranem blokady, dzięki czemu mapę i wskazówki można czytać bez odblokowywania. Dopóki to urządzenie jest zablokowane, nic nie trafia do telefonu: dotyk, przyciski, pokrętło i przycisk głosowy są wstrzymywane, a mapa jest przenoszona na pierwszy plan. Naciśnij Wstecz, aby odblokować kodem PIN, wzorem lub hasłem; potem wszystko działa jak zwykle. Muzyka, połączenia i asystent głosowy na samym telefonie nie są objęte tą zmianą.</string>

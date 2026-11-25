@@ -1330,8 +1330,8 @@
     <string name="failed_aa_not_system">失敗：Android Auto 未作為系統應用程式安裝！</string>
     <string name="failed_aa_not_installed">失敗：未安裝 Android Auto！</string>
     <string name="raise_projection_during_call">通話期間停留在 Android Auto</string>
-    <string name="raise_projection_during_call_description">僅限本機模式。將投影畫面帶回手機通話畫面上方，讓你在 Android Auto 介面中接聽及結束通話。</string>
-    <string name="raise_projection_during_call_summary">僅限本機模式。在手機的通話畫面上方顯示投影。</string>
+    <string name="raise_projection_during_call_description">在本機模式下，將投影畫面帶回手機通話畫面上方，讓你在 Android Auto 介面中接聽及結束通話。在 FYT 主機上，會要求裝置在 Android Auto 位於前景時，不顯示自己的通話列和通話畫面。部分裝置或韌體版本可能無法使用。</string>
+    <string name="raise_projection_during_call_summary">本機模式和 FYT 裝置。隱藏通話畫面。部分裝置可能無法使用。</string>
     <string name="show_over_lock_screen">在螢幕鎖定畫面上顯示</string>
     <string name="show_over_lock_screen_summary">鎖定時仍顯示地圖和路線指引。觸控和按鍵無效。</string>
     <string name="show_over_lock_screen_help">在螢幕鎖定畫面上方顯示 Android Auto 畫面，不必解鎖就能查看地圖和路線指引。此裝置鎖定期間，不會有任何操作傳到手機：觸控、按鍵、旋鈕控制器和語音鍵都會被擋下，並將地圖切換到前景。按「返回」即可用 PIN 碼、圖案或密碼解鎖；之後一切照常運作。手機本身的音樂、通話和語音助理不受影響。</string>

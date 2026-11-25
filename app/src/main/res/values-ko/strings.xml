@@ -1327,8 +1327,8 @@
     <string name="failed_aa_not_system">실패: Android Auto가 시스템 앱으로 설치되어 있지 않습니다!</string>
     <string name="failed_aa_not_installed">실패: Android Auto가 설치되어 있지 않습니다!</string>
     <string name="raise_projection_during_call">통화 중에도 Android Auto 유지</string>
-    <string name="raise_projection_during_call_description">단독 모드에서만 사용할 수 있습니다. 휴대전화의 통화 화면 위에 Android Auto 화면을 다시 표시하여 Android Auto에서 통화를 받고 끊을 수 있게 합니다.</string>
-    <string name="raise_projection_during_call_summary">단독 모드 전용입니다. 휴대전화의 통화 화면 위에 투사 화면을 표시합니다.</string>
+    <string name="raise_projection_during_call_description">단독 모드에서는 휴대전화의 통화 화면 위에 Android Auto 화면을 다시 표시하여 Android Auto에서 통화를 받고 끊을 수 있게 합니다. FYT 헤드유닛에서는 Android Auto가 앞에 있는 동안 기기 자체의 통화 바와 통화 화면을 표시하지 않도록 기기에 요청합니다. 일부 기기나 펌웨어 버전에서는 작동하지 않을 수 있습니다.</string>
+    <string name="raise_projection_during_call_summary">단독 모드 및 FYT 기기. 통화 화면을 숨깁니다. 일부 기기에서는 작동하지 않을 수 있습니다.</string>
     <string name="show_over_lock_screen">잠금 화면 위에 표시</string>
     <string name="show_over_lock_screen_summary">잠겨 있어도 지도와 길 안내가 보입니다. 터치와 버튼은 작동하지 않습니다.</string>
     <string name="show_over_lock_screen_help">Android Auto 화면을 잠금 화면 위에 표시하여 잠금을 해제하지 않고도 지도와 길 안내를 볼 수 있습니다. 이 기기가 잠겨 있는 동안에는 휴대전화로 아무것도 전달되지 않습니다. 터치, 버튼, 로터리 컨트롤러, 음성 버튼이 차단되고 지도가 앞으로 표시됩니다. 뒤로를 누르면 PIN, 패턴 또는 비밀번호로 잠금을 해제할 수 있으며, 그 후에는 평소처럼 작동합니다. 휴대전화 자체의 음악, 통화, 음성 비서에는 영향이 없습니다.</string>

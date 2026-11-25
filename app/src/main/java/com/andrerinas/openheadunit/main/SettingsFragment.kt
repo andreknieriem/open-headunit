@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.main
 
+import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreen
+import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreenPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
@@ -2204,9 +2206,9 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        // Self Mode is the only mode where the phone's call screen and the projection share a
-        // screen, so it is the only mode this can do anything in.
-        if (settings.showsSelf()) {
+        // A call screen shares the display with the projection in Self Mode, and on an FYT unit,
+        // whose own call bar draws over every mode.
+        if (FytCallScreenPolicy.showsSetting(settings.showsSelf(), FytCallScreen.isFytUnit(requireContext()))) {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "raiseProjectionDuringCall",
                 nameResId = R.string.raise_projection_during_call,

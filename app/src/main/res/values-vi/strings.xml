@@ -1334,8 +1334,8 @@
     <string name="failed_aa_not_system">Thất bại: Android Auto không được cài đặt dưới dạng ứng dụng hệ thống!</string>
     <string name="failed_aa_not_installed">Thất bại: Android Auto chưa được cài đặt!</string>
     <string name="raise_projection_during_call">Ở lại Android Auto trong khi gọi điện</string>
-    <string name="raise_projection_during_call_description">Chỉ áp dụng cho Chế độ độc lập. Đưa màn hình chiếu trở lại phía trên màn hình cuộc gọi của điện thoại, để trả lời và kết thúc cuộc gọi trong giao diện Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Chỉ dành cho Chế độ độc lập. Hiện màn hình chiếu trên màn hình cuộc gọi của điện thoại.</string>
+    <string name="raise_projection_during_call_description">Trong Chế độ độc lập, đưa màn hình chiếu trở lại phía trên màn hình cuộc gọi của điện thoại, để trả lời và kết thúc cuộc gọi trong giao diện Android Auto. Trên đầu thu FYT, yêu cầu thiết bị không hiện thanh cuộc gọi hoặc màn hình cuộc gọi riêng khi Android Auto đang ở phía trước. Có thể không hoạt động trên mọi thiết bị hoặc phiên bản firmware.</string>
+    <string name="raise_projection_during_call_summary">Chế độ độc lập và thiết bị FYT. Ẩn màn hình cuộc gọi. Có thể không chạy.</string>
     <string name="show_over_lock_screen">Hiển thị trên màn hình khóa</string>
     <string name="show_over_lock_screen_summary">Bản đồ và chỉ đường vẫn hiển thị khi khóa. Chạm và nút bấm không có tác dụng.</string>
     <string name="show_over_lock_screen_help">Hiển thị hình ảnh Android Auto trên màn hình khóa để có thể xem bản đồ và chỉ đường mà không cần mở khóa. Khi thiết bị này đang khóa, không có gì được gửi tới điện thoại: thao tác chạm, nút bấm, núm xoay và nút giọng nói đều bị giữ lại, và bản đồ được đưa lên phía trước. Nhấn Quay lại để mở khóa bằng mã PIN, hình mở khóa hoặc mật khẩu; sau đó mọi thứ hoạt động như bình thường. Nhạc, cuộc gọi và trợ lý giọng nói trên chính điện thoại không bị ảnh hưởng.</string>

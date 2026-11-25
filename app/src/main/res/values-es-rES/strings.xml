@@ -1349,8 +1349,8 @@
     <string name="failed_aa_not_system">Error: ¡Android Auto no está instalado como aplicación del sistema!</string>
     <string name="failed_aa_not_installed">Error: ¡Android Auto no está instalado!</string>
     <string name="raise_projection_during_call">Permanecer en Android Auto durante las llamadas</string>
-    <string name="raise_projection_during_call_description">Solo Modo autónomo. Devuelve la proyección sobre la pantalla de llamada del teléfono para contestar y colgar las llamadas desde la interfaz de Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Solo en el modo autónomo. Muestra la proyección sobre la pantalla de llamada del móvil.</string>
+    <string name="raise_projection_during_call_description">En modo autónomo, devuelve la proyección sobre la pantalla de llamada del teléfono para contestar y colgar las llamadas desde la interfaz de Android Auto. En unidades FYT, pide a la unidad que no muestre su propia barra ni pantalla de llamada mientras Android Auto está en primer plano. Puede no funcionar en todas las unidades ni versiones de firmware.</string>
+    <string name="raise_projection_during_call_summary">Modo autónomo y unidades FYT. Oculta la pantalla de llamada. Puede fallar.</string>
     <string name="show_over_lock_screen">Mostrar sobre la pantalla de bloqueo</string>
     <string name="show_over_lock_screen_summary">El mapa y las indicaciones siguen visibles con bloqueo. Toques y botones no hacen nada.</string>
     <string name="show_over_lock_screen_help">Muestra la imagen de Android Auto sobre la pantalla de bloqueo, para leer el mapa y las indicaciones sin desbloquear. Mientras esta unidad esté bloqueada, nada llega al teléfono: se retienen los toques, los botones, el control giratorio y el botón de voz, y el mapa pasa al frente. Pulsa Atrás para desbloquear con tu PIN, patrón o contraseña; después todo funciona como siempre. La música, las llamadas y el asistente de voz del propio teléfono no se ven afectados.</string>

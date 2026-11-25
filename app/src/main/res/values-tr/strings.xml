@@ -1327,8 +1327,8 @@
     <string name="failed_aa_not_system">Başarısız: Android Auto bir sistem uygulaması olarak yüklü değil!</string>
     <string name="failed_aa_not_installed">Başarısız: Android Auto yüklü değil!</string>
     <string name="raise_projection_during_call">Aramalar sırasında Android Auto\'da kal</string>
-    <string name="raise_projection_during_call_description">Yalnızca Dahili Mod. Yansıtmayı telefonun arama ekranının üzerine geri getirir, böylece aramalar Android Auto arayüzünden yanıtlanır ve sonlandırılır.</string>
-    <string name="raise_projection_during_call_summary">Yalnızca Bağımsız Mod. Yansıtmayı telefonun arama ekranının üzerinde gösterir.</string>
+    <string name="raise_projection_during_call_description">Bağımsız Mod\'da yansıtmayı telefonun arama ekranının üzerine geri getirir, böylece aramalar Android Auto arayüzünden yanıtlanır ve sonlandırılır. FYT ünitelerinde üniteden kendi arama çubuğunu veya arama ekranını Android Auto öndeyken göstermemesini ister. Her ünitede veya donanım yazılımı sürümünde çalışmayabilir.</string>
+    <string name="raise_projection_during_call_summary">Bağımsız Mod ve FYT üniteleri. Arama ekranını gizler. Çalışmayabilir.</string>
     <string name="show_over_lock_screen">Kilit ekranının üzerinde göster</string>
     <string name="show_over_lock_screen_summary">Kilitliyken harita ve yol tarifi görünür kalır. Dokunma ve tuşlar çalışmaz.</string>
     <string name="show_over_lock_screen_help">Android Auto görüntüsünü kilit ekranının üzerinde gösterir; böylece harita ve yol tarifi kilit açmadan okunabilir. Bu cihaz kilitliyken telefona hiçbir şey ulaşmaz: dokunmalar, tuşlar, döner kumanda ve ses tuşu bekletilir ve harita öne getirilir. PIN, desen veya şifrenizle kilidi açmak için Geri tuşuna basın; ardından her şey her zamanki gibi çalışır. Telefonun kendisindeki müzik, aramalar ve sesli asistan bundan etkilenmez.</string>

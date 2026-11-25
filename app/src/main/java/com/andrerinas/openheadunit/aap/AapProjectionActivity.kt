@@ -57,6 +57,8 @@ import com.andrerinas.openheadunit.utils.ScreenPower
 import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
+import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreen
+import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreenPolicy
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
@@ -411,6 +413,14 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     private var resumedAtMs = 0L
+    // The unit forgets the ask at every call end, so it repeats while the projection is in front.
+    private val fytCallScreenRunnable = object : Runnable {
+        override fun run() {
+            if (!FytCallScreen.suppress(this@AapProjectionActivity, settings.raiseProjectionDuringCall, isForeground)) return
+            watchdogHandler.postDelayed(this, FytCallScreenPolicy.REPEAT_MS)
+        }
+    }
+
     private val returnRearmRunnable = Runnable {
         // A kept TextureView can return without a surface callback. Consume the same stop
         // generation here so a later callback cannot grant another recovery cycle.
@@ -1415,6 +1425,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         watchdogHandler.removeCallbacks(videoWatchdogRunnable)
         watchdogHandler.removeCallbacks(reconnectingWatchdog)
         watchdogHandler.removeCallbacks(exitRunnable)
+        watchdogHandler.removeCallbacks(fytCallScreenRunnable)
+        FytCallScreen.restore(this)
         if (isOrientationReceiverRegistered) {
             unregisterReceiver(orientationReceiver)
             isOrientationReceiverRegistered = false
@@ -1492,6 +1504,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         watchdogHandler.postDelayed(watchdogRunnable, 2000)
         watchdogHandler.postDelayed(videoWatchdogRunnable, 3000)
         watchdogHandler.postDelayed(reconnectingWatchdog, 5000)
+        watchdogHandler.removeCallbacks(fytCallScreenRunnable)
+        watchdogHandler.post(fytCallScreenRunnable)
 
 
         if (!isKeyEventReceiverRegistered) {

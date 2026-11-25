@@ -1334,8 +1334,8 @@
     <string name="failed_aa_not_system">Selhalo: Android Auto není nainstalováno jako systémová aplikace!</string>
     <string name="failed_aa_not_installed">Selhalo: Android Auto není nainstalováno!</string>
     <string name="raise_projection_during_call">Zůstat v Android Auto během hovorů</string>
-    <string name="raise_projection_during_call_description">Pouze samostatný režim. Vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Jen samostatný režim. Zobrazí projekci nad obrazovkou hovoru v telefonu.</string>
+    <string name="raise_projection_during_call_description">V samostatném režimu vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto. U jednotek FYT požádá jednotku, aby nezobrazovala vlastní lištu ani obrazovku hovoru, když je Android Auto v popředí. Nemusí fungovat na každé jednotce ani verzi firmwaru.</string>
+    <string name="raise_projection_during_call_summary">Samostatný režim a jednotky FYT. Skryje obrazovku hovoru. Nemusí fungovat všude.</string>
     <string name="show_over_lock_screen">Zobrazit na zamykací obrazovce</string>
     <string name="show_over_lock_screen_summary">Mapa a navigace zůstanou viditelné i při zamčení. Dotyky a tlačítka nefungují.</string>
     <string name="show_over_lock_screen_help">Zobrazí obraz Android Auto přes zamykací obrazovku, takže mapu a navigaci lze číst bez odemčení. Dokud je tato jednotka zamčená, do telefonu nic nedorazí: dotyky, tlačítka, otočný ovladač i hlasové tlačítko jsou blokovány a do popředí se přesune mapa. Stiskem Zpět jednotku odemknete pomocí PIN, gesta nebo hesla; poté vše funguje jako obvykle. Hudba, hovory a hlasový asistent v samotném telefonu nejsou ovlivněny.</string>

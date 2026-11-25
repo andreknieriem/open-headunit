@@ -126,6 +126,7 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 - Native AA: rejoin with the screen off, and recover when the phone refuses the hands-free link, thanks to @tamer1an
 - UI: keep fullscreen active on Android < 11 so volume overlays no longer pull down the status bar (#1257)
 - UI: only show the "Do you see the Android Auto screen?" banner after renderer changes/fallbacks and auto-dismiss it after 10 seconds (#1324)
+- UI: allow setting a custom system bar color with an RGB picker and automatic icon contrast, thanks to @V-Ad
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

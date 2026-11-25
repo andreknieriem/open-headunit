@@ -5,6 +5,7 @@ import android.os.Build
 import com.andrerinas.openheadunit.utils.AppLog
 import java.net.InetAddress
 import java.net.Socket
+import java.security.Provider
 import java.security.Security
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
@@ -20,9 +21,7 @@ object ConscryptInitializer {
         initialized = true
 
         try {
-            val conscrypt = Class.forName("org.conscrypt.Conscrypt")
-            val newProviderMethod = conscrypt.getMethod("newProvider")
-            val provider = newProviderMethod.invoke(null) as java.security.Provider
+            val provider = newProvider()
 
             // Insert at position 1 (highest priority)
             val result = Security.insertProviderAt(provider, 1)
@@ -43,6 +42,11 @@ object ConscryptInitializer {
 
         return conscryptAvailable
     }
+
+    // What Conscrypt.newProvider() builds, without that class: its static block reads a resource, and
+    // Dalvik answers by indexing the whole APK on the main thread at every launch.
+    internal fun newProvider(): Provider =
+        Class.forName("org.conscrypt.OpenSSLProvider").getConstructor().newInstance() as Provider
 
     fun isAvailable(): Boolean = conscryptAvailable
 

@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink
 
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WppFraming
 import com.andrerinas.openheadunit.utils.AppLog
 import java.io.BufferedReader
@@ -111,7 +112,9 @@ class BlinkAutoSerialChannel internal constructor(
         internal val BRIDGE_SCRIPT = STOCK_CLIENT_GUARD + "\n" + BRIDGE_BODY
 
         /** Starts the root bridge. Throws if `su` cannot be run at all. */
-        fun open(onLine: (String) -> Unit, onEnded: (String) -> Unit): BlinkAutoSerialChannel {
+        fun open(onLine: (String) -> Unit, onEnded: (String) -> Unit,
+                 admission: ConnectionAdmission): BlinkAutoSerialChannel {
+            if (!admission.run {}) throw IOException("BLINK connection authority withdrawn")
             val process = Runtime.getRuntime().exec(arrayOf("su", "-c", BRIDGE_SCRIPT))
             return BlinkAutoSerialChannel(process, onLine, onEnded).also { it.start() }
         }
@@ -122,7 +125,9 @@ class BlinkAutoSerialChannel internal constructor(
          * cannot open or set the mode of ends the channel before [portOpened], and the caller falls
          * back to [open]. Throws if `sh` cannot be run at all.
          */
-        fun openDirect(onLine: (String) -> Unit, onEnded: (String) -> Unit): BlinkAutoSerialChannel {
+        fun openDirect(onLine: (String) -> Unit, onEnded: (String) -> Unit,
+                       admission: ConnectionAdmission): BlinkAutoSerialChannel {
+            if (!admission.run {}) throw IOException("BLINK connection authority withdrawn")
             val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", BRIDGE_BODY))
             return BlinkAutoSerialChannel(process, onLine, onEnded).also { it.start() }
         }

@@ -11,8 +11,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.PermissionChecker
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
+import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -47,6 +50,8 @@ class MicrophoneForegroundClaimTest {
             setSdk(34)
             level.setInt(null, Int.MAX_VALUE)
             resources.add(Mockito.mockStatic(SystemClock::class.java))
+            resources.add(Mockito.mockStatic(android.provider.Settings.Global::class.java))
+            resources.add(Mockito.mockStatic(android.os.Looper::class.java))
             val permission = Mockito.mockStatic(PermissionChecker::class.java).also { resources.add(it) }
             var allowed = true
             permission.`when`<Int> { PermissionChecker.checkSelfPermission(any(), eq(Manifest.permission.RECORD_AUDIO)) }
@@ -61,7 +66,7 @@ class MicrophoneForegroundClaimTest {
             val settings = mock<Settings>()
             whenever(settings.useHeadUnitMicrophone).thenReturn(true)
             val component = mock<AppComponent>()
-            val commManager = mock<CommManager>()
+            val commManager = connectionManager(settings)
             whenever(component.commManager).thenReturn(commManager)
             val app = mock<App>()
             App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }
@@ -71,13 +76,16 @@ class MicrophoneForegroundClaimTest {
             whenever(service.getString(any())).thenReturn("Microphone test")
             AapService::class.java.getDeclaredField("settings\$delegate").apply { isAccessible = true }
                 .set(service, lazyOf(settings))
+            AapService::class.java.getDeclaredField("initializedForStart").apply { isAccessible = true }
+                .setBoolean(service, true)
+            AapService::class.java.getDeclaredField("usbLauncherManager").apply { isAccessible = true }
+                .set(service, mock<UsbLauncherManager>())
             val promote = AapService::class.java.getDeclaredMethod("promoteForMicrophone").apply { isAccessible = true }
             fun claim() = promote.invoke(service) as Boolean
             val command = mock<Intent>()
-            whenever(command.action).thenReturn(AapService.ACTION_CONNECT_SOCKET)
             doCallRealMethod().whenever(service).onStartCommand(anyOrNull(), any(), any())
-            fun refresh() {
-                assertEquals(android.app.Service.START_STICKY, service.onStartCommand(command, 0, 1))
+            fun refresh(expected: Int = android.app.Service.START_STICKY) {
+                assertEquals(expected, service.onStartCommand(null, 0, 1))
             }
             val demote = AapService::class.java.getDeclaredMethod("demoteAfterMicrophone").apply { isAccessible = true }
             val baseMask = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or
@@ -136,37 +144,29 @@ class MicrophoneForegroundClaimTest {
 
             setSdk(34)
             assertTrue(claim())
-            whenever(commManager.connectionState).thenReturn(
-                MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected()))
             AapService::class.java.getDeclaredField("wifiLauncherManager").apply { isAccessible = true }
                 .set(service, mock<WifiLauncherManager>())
             AapService::class.java.getDeclaredField("selfLauncherManager").apply { isAccessible = true }
                 .set(service, mock<SelfLauncherManager>())
-            val oldUserStop = AapService.destroyIsUserStop
-            try {
-                whenever(command.action).thenReturn(AapService.ACTION_STOP_SERVICE)
-                assertEquals(android.app.Service.START_NOT_STICKY, service.onStartCommand(command, 0, 2))
-                verify(service).stopForeground(true)
-                verify(service).stopSelf()
-                clearInvocations(service)
+            whenever(command.action).thenReturn(AapService.ACTION_STOP_SERVICE)
+            assertEquals(android.app.Service.START_NOT_STICKY, service.onStartCommand(command, 0, 2))
+            verify(service).stopForeground(true)
+            verify(service).stopSelf()
+            clearInvocations(service)
 
-                // Recorder cleanup runs on its lifecycle FIFO after the service removes its
-                // notification. Releasing that capture must not put the stopped service back.
-                demote.invoke(service)
-                verify(service, never()).startForeground(any(), any(), any())
-                assertFalse(claim())
-                whenever(command.action).thenReturn(AapService.ACTION_CONNECT_SOCKET)
-                refresh()
-                // A delivered start still owes Android a foreground promotion, even after Stop.
-                verify(service).startForeground(eq(1), same(notification), eq(baseMask))
-                verify(service, never()).startForeground(eq(1), same(notification), eq(capturing))
-                clearInvocations(service)
-                demote.invoke(service)
-                assertFalse(claim())
-                verify(service, never()).startForeground(any(), any(), any())
-            } finally {
-                AapService.destroyIsUserStop = oldUserStop
-            }
+            // Recorder cleanup runs on its lifecycle FIFO after the service removes its
+            // notification. Releasing that capture must not put the stopped service back.
+            demote.invoke(service)
+            verify(service, never()).startForeground(any(), any(), any())
+            assertFalse(claim())
+            refresh(android.app.Service.START_NOT_STICKY)
+            // A delivered start still owes Android a foreground promotion, even after Stop.
+            verify(service).startForeground(eq(1), same(notification), eq(baseMask))
+            verify(service, never()).startForeground(eq(1), same(notification), eq(capturing))
+            clearInvocations(service)
+            demote.invoke(service)
+            assertFalse(claim())
+            verify(service, never()).startForeground(any(), any(), any())
         } finally {
             resources.asReversed().forEach { it.close() }
             setSdk(oldSdk)
@@ -195,12 +195,13 @@ class MicrophoneForegroundClaimTest {
         fun field(name: String) = AapService::class.java.getDeclaredField(name).apply { isAccessible = true }
         val level = AppLog::class.java.getDeclaredField("cachedLogLevel").apply { isAccessible = true }
         val oldLevel = level.getInt(null)
-        val oldUserStop = AapService.destroyIsUserStop
         val resources = mutableListOf<AutoCloseable>()
         try {
             setSdk(34)
             level.setInt(null, Int.MAX_VALUE)
             resources.add(Mockito.mockStatic(SystemClock::class.java))
+            resources.add(Mockito.mockStatic(android.provider.Settings.Global::class.java))
+            resources.add(Mockito.mockStatic(android.os.Looper::class.java))
             val permission = Mockito.mockStatic(PermissionChecker::class.java).also { resources.add(it) }
             permission.`when`<Int> { PermissionChecker.checkSelfPermission(any(), eq(Manifest.permission.RECORD_AUDIO)) }
                 .thenReturn(PermissionChecker.PERMISSION_GRANTED)
@@ -218,7 +219,6 @@ class MicrophoneForegroundClaimTest {
 
             for (sdkInt in listOf(28, 29, 34, 35, 36)) {
                 setSdk(sdkInt)
-                AapService.destroyIsUserStop = false
                 val scheduler = TestCoroutineScheduler()
                 val scopeJob = SupervisorJob()
                 val scope = CoroutineScope(StandardTestDispatcher(scheduler) + scopeJob)
@@ -227,7 +227,9 @@ class MicrophoneForegroundClaimTest {
                     val settings = mock<Settings>()
                     whenever(settings.useHeadUnitMicrophone).thenReturn(true)
                     val component = mock<AppComponent>()
-                    val commManager = mock<CommManager>()
+                    val terminal = CommManager.ConnectionState.Disconnected()
+                    val state = MutableStateFlow<CommManager.ConnectionState>(mock<CommManager.ConnectionState.TransportStarted>())
+                    val commManager = connectionManager(settings, state)
                     whenever(component.commManager).thenReturn(commManager)
                     val app = mock<App>()
                     App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }
@@ -237,21 +239,16 @@ class MicrophoneForegroundClaimTest {
                     whenever(service.getString(any())).thenReturn("Shutdown foreground test")
                     field("settings\$delegate").set(service, lazyOf(settings))
                     field("serviceScope").set(service, scope)
+                    field("initializedForStart").setBoolean(service, true)
                     val wifi = mock<WifiLauncherManager>()
                     whenever(wifi.isActive).thenReturn(true)
                     field("wifiLauncherManager").set(service, wifi)
                     val self = mock<SelfLauncherManager>()
                     field("selfLauncherManager").set(service, self)
-                    val terminal = CommManager.ConnectionState.Disconnected()
-                    val state = MutableStateFlow<CommManager.ConnectionState>(mock<CommManager.ConnectionState.TransportStarted>())
-                    whenever(commManager.connectionState).thenReturn(state)
-                    var connected = true
-                    whenever(commManager.isConnected).thenAnswer { connected }
                     doAnswer {
-                        connected = false
                         state.value = terminal
                         null
-                    }.whenever(commManager).disconnect(sendByeBye = true)
+                    }.whenever(commManager).disconnect(sendByeBye = true, honorKillOnDisconnect = false)
                     doCallRealMethod().whenever(service).onStartCommand(anyOrNull(), any(), any())
                     fun claim() = promote.invoke(service) as Boolean
                     assertTrue(claim())
@@ -264,10 +261,12 @@ class MicrophoneForegroundClaimTest {
                     @Suppress("UNCHECKED_CAST")
                     val originalWaiter = field("exitTeardownDone").get(service) as CompletableDeferred<Unit>
                     teardownDone = originalWaiter
+                    val originalOwner = field("appExitRequest").get(service) as AppExitPolicy.Request
                     val originalJob = scopeJob.children.single()
                     fun assertStopPending() {
                         assertTrue("API $sdkInt: Stop must remain in force", field("isDestroying").getBoolean(service))
-                        assertTrue(AapService.destroyIsUserStop)
+                        assertSame(originalOwner, field("appExitRequest").get(service))
+                        assertTrue(commManager.appExitIsUserStop(originalOwner))
                         assertFalse(field("microphoneTypeClaimed").getBoolean(service))
                         assertSame(originalWaiter, field("exitTeardownDone").get(service))
                         assertSame(terminal, field("exitTeardownState").get(service))
@@ -276,7 +275,7 @@ class MicrophoneForegroundClaimTest {
                         assertSame(originalJob, scopeJob.children.single())
                         assertTrue(originalJob.isActive)
                         verify(service, never()).stopSelf()
-                        verify(commManager).disconnect(sendByeBye = true)
+                        verify(commManager).disconnect(sendByeBye = true, honorKillOnDisconnect = false)
                         verify(self).stop(wasConnected = false)
                     }
                     assertStopPending()
@@ -286,8 +285,7 @@ class MicrophoneForegroundClaimTest {
                     scheduler.advanceTimeBy(ServiceStopWaitPolicy.TEARDOWN_TIMEOUT_MS - 1)
                     assertStopPending()
                     clearInvocations(service)
-                    whenever(command.action).thenReturn(AapService.ACTION_CONNECT_SOCKET)
-                    assertEquals(android.app.Service.START_STICKY, service.onStartCommand(command, 0, 2))
+                    assertEquals(android.app.Service.START_NOT_STICKY, service.onStartCommand(null, 0, 2))
                     assertStopPending()
 
                     // Late recorder work must not add another promotion or reclaim capture,
@@ -316,7 +314,8 @@ class MicrophoneForegroundClaimTest {
                     assertNull(field("exitTeardownDone").get(service))
                     assertNull(field("exitTeardownState").get(service))
                     assertTrue(field("isDestroying").getBoolean(service))
-                    assertTrue(AapService.destroyIsUserStop)
+                    assertSame(originalOwner, field("appExitRequest").get(service))
+                    assertTrue(commManager.appExitIsUserStop(originalOwner))
                     assertEquals(completeTeardown, originalWaiter.isCompleted)
                     assertFalse(originalWaiter.isCancelled)
                     clearInvocations(service)
@@ -334,10 +333,22 @@ class MicrophoneForegroundClaimTest {
             try {
                 resources.asReversed().forEach { it.close() }
             } finally {
-                AapService.destroyIsUserStop = oldUserStop
                 setSdk(oldSdk)
                 level.setInt(null, oldLevel)
             }
         }
+    }
+
+    private fun connectionManager(
+        settings: Settings,
+        state: MutableStateFlow<CommManager.ConnectionState> =
+            MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected()),
+    ): CommManager {
+        val manager = Mockito.mock(CommManager::class.java, Mockito.CALLS_REAL_METHODS)
+            .withAppExitDispatcherForTest()
+        CommManager::class.java.getDeclaredField("settings").apply { isAccessible = true }.set(manager, settings)
+        CommManager::class.java.getDeclaredField("_connectionState").apply { isAccessible = true }.set(manager, state)
+        CommManager::class.java.getDeclaredField("connectionState").apply { isAccessible = true }.set(manager, state)
+        return manager
     }
 }

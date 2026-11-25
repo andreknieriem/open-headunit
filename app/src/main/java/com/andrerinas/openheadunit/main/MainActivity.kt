@@ -38,7 +38,9 @@ import com.andrerinas.openheadunit.aap.NativeTransport
 import com.andrerinas.openheadunit.aap.ProjectionWatchdogPolicy
 import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
+import com.andrerinas.openheadunit.app.AppUiEntry
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -102,11 +104,19 @@ class MainActivity : BaseActivity() {
 
     private val finishReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context, intent: Intent) {
-            if (intent.action == "com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES") {
+            if (intent.action == AppExitPolicy.ACTION_FINISH_ACTIVITIES &&
+                App.provide(this@MainActivity).commManager.ownsAppExit(
+                    intent.getLongExtra(AppExitPolicy.EXTRA_EXIT_OWNER, 0L))) {
                 AppLog.i("MainActivity: Received finish request. Closing.")
                 finishAffinity()
             }
         }
+    }
+
+    // The same check, run in the turn that accepts a Stop. See CommManager.addAppExitScreen.
+    private val closeForAppExit: (Long) -> Unit = { owner ->
+        finishReceiver.onReceive(this, Intent(AppExitPolicy.ACTION_FINISH_ACTIVITIES)
+            .putExtra(AppExitPolicy.EXTRA_EXIT_OWNER, owner))
     }
 
     private val recreateReceiver = object : BroadcastReceiver() {
@@ -152,6 +162,10 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         requestedOrientation = Settings(this).screenOrientation.androidOrientation
         super.onCreate(savedInstanceState)
+        if (isExitAppUiDelivery) {
+            handleLaunchIntent(intent)
+            return
+        }
 
         applyTurnScreenOn(intent)
         logLaunchSource()
@@ -194,8 +208,8 @@ class MainActivity : BaseActivity() {
                                         findViewById(android.R.id.content), if (adbRecovery) R.string.wifi_scan_fyt_recovery else R.string.wifi_scan_recovery_notice,
                                         com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
                                     ).setAction(R.string.wifi_scan_restore_short) {
-                                        startActivity(Intent(this@MainActivity, SettingsActivity::class.java)
-                                            .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, getString(R.string.wifi_scan_title)))
+                                        startActivity(AppUiEntry.continuation(Intent(this@MainActivity, SettingsActivity::class.java)
+                                            .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, getString(R.string.wifi_scan_title))))
                                     }
                                     notice?.show()
                                 }
@@ -232,9 +246,6 @@ class MainActivity : BaseActivity() {
             }
         }
 
-        // Start main service immediately to handle connections and wireless server
-        val serviceIntent = Intent(this, AapService::class.java)
-        ContextCompat.startForegroundService(this, serviceIntent)
 
         setFullscreen()
 
@@ -288,15 +299,16 @@ class MainActivity : BaseActivity() {
         // Runtime permissions are requested by the setup wizard's permissions step on fresh
         // installs; for users who already finished onboarding we request them from checkSetupFlow().
         viewModel.register()
-        handleLaunchIntent(intent)
+        if (isNewAppUiDelivery) handleLaunchIntent(intent)
         setupWifiDirectInfo()
 
         ContextCompat.registerReceiver(
             this, finishReceiver,
-            android.content.IntentFilter("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES"),
+            android.content.IntentFilter(AppExitPolicy.ACTION_FINISH_ACTIVITIES),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
         isFinishReceiverRegistered = true
+        App.provide(this).commManager.addAppExitScreen(closeForAppExit)
 
         // Wire cancel affordances. The pill's X stops the whole bring-up; the overlay's button
         // ends only the attempt it belongs to.
@@ -398,9 +410,7 @@ class MainActivity : BaseActivity() {
         AppLog.i("Auto-connect: cancelled by user")
         // Keep Exit ordering in the service: revoke any retained WPP lease before
         // publishing Disconnected. The overlay can finish without waiting for teardown.
-        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_DISCONNECT
-        })
+        ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_DISCONNECT))
         endAutoConnect(success = false)
     }
 
@@ -421,8 +431,7 @@ class MainActivity : BaseActivity() {
         supportFragmentManager.findFragmentById(R.id.main_content)?.childFragmentManager?.fragments
             ?.filterIsInstance<HomeFragment>()?.forEach { it.stopAutoConnectCountdown() }
         cancelAutoConnect()
-        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_CANCEL_WIRELESS
+        ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_CANCEL_WIRELESS).apply {
             putExtra(AapService.EXTRA_USB_ATTEMPT, usbAttempt)
         })
     }
@@ -1177,9 +1186,15 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    private fun forceSelfModeLaunch() {
-        HomeFragment.forceSelfModeLaunch = true
-        val selfModeIntent = Intent(this, AapService::class.java).apply {
+    /** [ticket]: the Stop ticket of the input that asked for this launch, captured at that input. */
+    private fun forceSelfModeLaunch(ticket: Long) {
+        // A home view already up has run, or is running, its own automatic start, and the command
+        // below is this launch: it gets no hand-off to replay later. Only a home still to be
+        // created takes it, under this input's ticket, and consumes it once.
+        val homeViewUp = supportFragmentManager.findFragmentById(R.id.main_content)?.childFragmentManager?.fragments
+            ?.filterIsInstance<HomeFragment>()?.any { it.view != null } == true
+        if (!homeViewUp) HomeFragment.forceSelfModeTicket = ticket
+        val selfModeIntent = AapService.operationIntent(this, ticket).apply {
             this.action = AapService.ACTION_START_SELF_MODE
         }
         ContextCompat.startForegroundService(this, selfModeIntent)
@@ -1199,9 +1214,7 @@ class MainActivity : BaseActivity() {
 
         if (intentAction == "com.andrerinas.openheadunit.ACTION_EXIT") {
             AppLog.i("MainActivity: Received exit action")
-            val exitIntent = Intent(this, AapService::class.java).apply {
-                this.action = AapService.ACTION_STOP_SERVICE
-            }
+            val exitIntent = AapService.stopIntent(this)
             ContextCompat.startForegroundService(this, exitIntent)
             finishAffinity()
             return
@@ -1210,7 +1223,8 @@ class MainActivity : BaseActivity() {
         if (intentAction == AapService.ACTION_START_SELF_MODE ||
            (intentData?.scheme == "headunit" && intentData.host == "selfmode")) {
             AppLog.i("MainActivity: Forced self-mode start requested")
-            forceSelfModeLaunch()
+            // This delivery is the input itself.
+            forceSelfModeLaunch(App.provide(this).commManager.appConnectionTicket())
         }
 
         if (intent.getStringExtra(EXTRA_LAUNCH_SOURCE) == LAUNCH_SOURCE_BLUETOOTH) {
@@ -1219,54 +1233,55 @@ class MainActivity : BaseActivity() {
             // HomeFragment owns the VPN consent and the projection needs a foreground window.
             val commManager = App.provide(this).commManager
             val settings = App.provide(this).settings
-            // The service refuses this arrival while the pill's X holds, and a pill with nothing
-            // behind it would otherwise sit there for the watchdog's full deadline.
-            if (!commManager.isConnected && AapService.instance?.wirelessCancelledByUser() != true) {
-                beginAutoConnect(LAUNCH_SOURCE_BLUETOOTH, ConnectionUiMode.PILL)
-            }
-            val launchesSelfMode = BtAutoStartRearmPolicy.launchesSelfMode(
-                selfSelected = settings.showsSelf(),
-                wirelessSelected = settings.showsWifi(),
-                mode = settings.wifiConnectionMode,
-                sessionUp = commManager.isConnected,
-                nativeAttemptInFlight = AapService.instance?.nativeAttemptInFlight()
-            )
-            if (launchesSelfMode) {
-                AppLog.i("MainActivity: Bluetooth auto-start: forcing a Self Mode launch")
-                forceSelfModeLaunch()
+            // A relay of the Bluetooth arrival, not a new input: it carries the arrival's ticket,
+            // and a Stop since then refuses every effect below.
+            val ticket = intent.getLongExtra(EXTRA_CONNECTION_TICKET, -1L)
+            if (!intent.hasExtra(EXTRA_CONNECTION_TICKET) || !commManager.acceptsAppConnectionTicket(ticket)) {
+                AppLog.i("MainActivity: a Bluetooth auto-start from before Stop is not acted on")
             } else {
-                AppLog.i("MainActivity: Bluetooth auto-start: leaving Self Mode alone")
+                // The service refuses this arrival while the pill's X holds, and a pill with nothing
+                // behind it would otherwise sit there for the watchdog's full deadline.
+                if (!commManager.isConnected && AapService.instance?.wirelessCancelledByUser() != true) {
+                    beginAutoConnect(LAUNCH_SOURCE_BLUETOOTH, ConnectionUiMode.PILL)
+                }
+                val launchesSelfMode = BtAutoStartRearmPolicy.launchesSelfMode(
+                    selfSelected = settings.showsSelf(),
+                    wirelessSelected = settings.showsWifi(),
+                    mode = settings.wifiConnectionMode,
+                    sessionUp = commManager.isConnected,
+                    nativeAttemptInFlight = AapService.instance?.nativeAttemptInFlight()
+                )
+                if (launchesSelfMode) {
+                    AppLog.i("MainActivity: Bluetooth auto-start: forcing a Self Mode launch")
+                    forceSelfModeLaunch(ticket)
+                } else {
+                    AppLog.i("MainActivity: Bluetooth auto-start: leaving Self Mode alone")
+                }
             }
         }
 
         if (intent.action == Intent.ACTION_VIEW) {
             if (intentData?.scheme == "headunit" && intentData.host == "connect") {
+                val commManager = App.provide(this).commManager
+                val ticket = commManager.appConnectionTicket()
                 val ip = intentData.getQueryParameter("ip")
                 if (!ip.isNullOrEmpty()) {
                     AppLog.i("Received connect intent for IP: $ip")
-                    ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+                    ContextCompat.startForegroundService(this, AapService.operationIntent(this, ticket).apply {
                         action = AapService.ACTION_CONNECT_SOCKET
                     })
-                    lifecycleScope.launch(Dispatchers.IO) { App.provide(this@MainActivity).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER) }
+                    lifecycleScope.launch(Dispatchers.IO) { commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = ticket) }
                 } else {
                     AppLog.i("Received connect intent without IP -> triggering last session auto-connect")
-                    val autoIntent = Intent(this, AapService::class.java).apply {
-                        action = AapService.ACTION_CHECK_USB
-                        putExtra(AapService.EXTRA_USER_REQUESTED, true)
-                    }
-                    ContextCompat.startForegroundService(this, autoIntent)
+                    ContextCompat.startForegroundService(this, AapService.usbCheckIntent(this,
+                        commManager.usbRecheck(ticket), userRequested = true))
                 }
             } else if (intentData?.scheme == "headunit" && intentData.host == "disconnect") {
                 AppLog.i("Received disconnect intent")
-                val stopIntent = Intent(this, AapService::class.java).apply {
-                    action = AapService.ACTION_DISCONNECT
-                }
-                ContextCompat.startForegroundService(this, stopIntent)
+                ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_DISCONNECT))
             } else if (intentData?.scheme == "headunit" && intentData.host == "exit") {
                 AppLog.i("Received full exit intent via deep link")
-                val exitIntent = Intent(this, AapService::class.java).apply {
-                    action = AapService.ACTION_STOP_SERVICE
-                }
+                val exitIntent = AapService.stopIntent(this)
                 ContextCompat.startForegroundService(this, exitIntent)
                 finishAffinity()
             }
@@ -1543,8 +1558,8 @@ class MainActivity : BaseActivity() {
             ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED -> getString(R.string.wifi_direct_band)
         }
         startActivity(
-            Intent(this, SettingsActivity::class.java)
-                .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, query)
+            AppUiEntry.continuation(Intent(this, SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, query))
         )
     }
 
@@ -1557,7 +1572,7 @@ class MainActivity : BaseActivity() {
      * gate exists for.
      */
     private fun bringProjectionToFront() {
-        val aapIntent = AapProjectionActivity.intent(this).apply {
+        val aapIntent = AppUiEntry.continuation(AapProjectionActivity.intent(this)).apply {
             putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
             addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
@@ -1626,6 +1641,7 @@ class MainActivity : BaseActivity() {
         ActivityState.release(this, findViewById(R.id.auto_connect_loading_custom_image))
         if (isFinishReceiverRegistered) {
             unregisterReceiver(finishReceiver)
+            App.provide(this).commManager.removeAppExitScreen(closeForAppExit)
             isFinishReceiverRegistered = false
         }
         // Registered in stopAutoConnectVideo(), so without this it outlives the activity that owns
@@ -1657,6 +1673,8 @@ class MainActivity : BaseActivity() {
         const val EXTRA_LAUNCH_SOURCE = "launch_source"
         const val EXTRA_TURN_SCREEN_ON = "turn_screen_on"
         const val LAUNCH_SOURCE_BLUETOOTH = "Bluetooth auto-start"
+        /** With [LAUNCH_SOURCE_BLUETOOTH]: the Stop ticket of the Bluetooth arrival it relays. */
+        const val EXTRA_CONNECTION_TICKET = "connection_ticket"
         const val EXTRA_SHOW_DRIVER_SELECTOR = "show_driver_selector"
 
         /** Launch sources that mean the app opened itself, with nobody necessarily watching. */

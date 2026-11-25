@@ -10,6 +10,7 @@ import android.hardware.usb.UsbManager
 import android.os.Build
 import android.net.Uri
 import androidx.core.content.IntentCompat
+import com.andrerinas.openheadunit.connection.UsbRecheck
 
 
 import com.andrerinas.openheadunit.utils.AppLog
@@ -25,7 +26,11 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         fun onUsbDetach(device: UsbDevice)
         fun onUsbAttach(device: UsbDevice)
         fun onUsbAccessoryDetach()
-        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice)
+        /**
+         * [recheck] is the owed scan the dialog was raised for, as its producer minted it then;
+         * [token] is the launcher's own permission request, or null for one raised elsewhere.
+         */
+        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, recheck: UsbRecheck, token: String?)
         fun onUsbRecoveryPermission(token: String, granted: Boolean, device: UsbDevice) {}
     }
 
@@ -55,7 +60,11 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
                     // A late recovery reply must never become an ordinary connect request.
                     mListener.onUsbRecoveryPermission(recovery.schemeSpecificPart, permissionGranted, device)
                 } else if (intent.data?.scheme == ASK_PERMISSION_SCHEME) {
-                    mListener.onUsbPermission(permissionGranted, connect, device)
+                    val reply = intent.data ?: return
+                    // A grant-only ask carries no owed scan; its reply cannot start a connection.
+                    val recheck = decodeRecheck(reply.fragment) ?: return
+                    mListener.onUsbPermission(permissionGranted, connect, device, recheck,
+                        reply.schemeSpecificPart.takeIf { it.startsWith(LAUNCHER_TOKEN_PREFIX) })
                 }
             }
         }
@@ -65,13 +74,20 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         const val ACTION_USB_DEVICE_PERMISSION = "com.andrerinas.openheadunit" + ".ACTION_USB_DEVICE_PERMISSION"
         const val EXTRA_CONNECT = "EXTRA_CONNECT"
 
-        /** The token in the data makes each request its own PendingIntent, so no answer can carry another's. */
-        fun createPermissionPendingIntent(context: Context, token: String): PendingIntent {
+        /**
+         * The token in the data makes each request its own PendingIntent, so no answer can carry
+         * another's. A launcher token ([newLauncherToken]) also names the launcher's own request, so
+         * its reply continues exactly that request's scan; any other token is a new input. A null
+         * [recheck] requests the grant only; its reply cannot start a connection. Otherwise the reply
+         * carries [recheck] (the owed scan minted when the dialog was raised), so a user exit, Stop
+         * or held end before the answer withdraws what the grant would start.
+         */
+        fun createPermissionPendingIntent(context: Context, token: String, recheck: UsbRecheck?): PendingIntent {
             return PendingIntent.getBroadcast(
                 context, 0,
                 Intent(ACTION_USB_DEVICE_PERMISSION).apply {
                     setPackage(context.packageName)
-                    data = Uri.fromParts(ASK_PERMISSION_SCHEME, token, null)
+                    data = Uri.fromParts(ASK_PERMISSION_SCHEME, token, recheck?.let(::encodeRecheck))
                 },
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
@@ -79,8 +95,20 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
             )
         }
 
+        /** The reply address names the dialog's owed scan by its two fields: "ticket.epoch". */
+        internal fun encodeRecheck(recheck: UsbRecheck): String = "${recheck.ticket}.${recheck.epoch}"
+
+        internal fun decodeRecheck(part: String?): UsbRecheck? {
+            val ticket = part?.substringBefore('.', "")?.toLongOrNull() ?: return null
+            val epoch = part.substringAfter('.', "").toLongOrNull() ?: return null
+            return UsbRecheck(ticket, epoch)
+        }
+
         internal const val ASK_PERMISSION_SCHEME = "ohu-usb-ask"
         internal const val RECOVERY_PERMISSION_SCHEME = "ohu-usb-recovery"
+        private const val LAUNCHER_TOKEN_PREFIX = "launcher-"
+
+        internal fun newLauncherToken(): String = LAUNCHER_TOKEN_PREFIX + UsbPermissionAsks.newToken()
 
         fun createRecoveryPermissionPendingIntent(context: Context, token: String): PendingIntent =
             PendingIntent.getBroadcast(context, 0,

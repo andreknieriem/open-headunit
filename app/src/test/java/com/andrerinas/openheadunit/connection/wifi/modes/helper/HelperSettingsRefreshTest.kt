@@ -2,28 +2,42 @@ package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
 import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
+import android.os.Looper
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
+import com.andrerinas.openheadunit.connection.wifi.direct.RetainedNativeGroup
 import org.junit.Test
 import org.mockito.Mockito.*
 
 class HelperSettingsRefreshTest {
     @Test fun `Save refresh neither recreates a joining group nor races pending creation`() {
-        for (groupExists in listOf(false, true)) for (creating in listOf(false, true)) {
-            val manager = mock(WifiDirectManager::class.java, CALLS_REAL_METHODS)
-            val platform = mock(WifiP2pManager::class.java)
-            val channel = mock(WifiP2pManager.Channel::class.java)
-            fun set(name: String, value: Any) = WifiDirectManager::class.java.getDeclaredField(name)
-                .apply { isAccessible = true }.set(manager, value)
-            set("manager", platform); set("channel", channel); set("isGroupCreatingOrCreated", creating)
-            doNothing().`when`(manager).makeVisible()
-            doAnswer {
-                it.getArgument<WifiP2pManager.GroupInfoListener>(1)
-                    .onGroupInfoAvailable(if (groupExists) mock(WifiP2pGroup::class.java) else null)
-                null
-            }.`when`(platform).requestGroupInfo(eq(channel), any())
-            manager.refreshHelperGroup()
-            verify(manager, times(if (!groupExists && !creating) 1 else 0)).makeVisible()
-            verify(platform, never()).removeGroup(any(), any())
+        mockStatic(Looper::class.java).use { loopers ->
+            val main = mock(Looper::class.java)
+            loopers.`when`<Looper> { Looper.myLooper() }.thenReturn(main)
+            loopers.`when`<Looper> { Looper.getMainLooper() }.thenReturn(main)
+            for (groupExists in listOf(false, true)) for (creating in listOf(false, true)) {
+                val manager = mock(WifiDirectManager::class.java, CALLS_REAL_METHODS)
+                val platform = mock(WifiP2pManager::class.java)
+                val channel = mock(WifiP2pManager.Channel::class.java)
+                val owner = Any()
+                fun set(name: String, value: Any) = WifiDirectManager::class.java.getDeclaredField(name)
+                    .apply { isAccessible = true }.set(manager, value)
+                set("manager", platform); set("channel", channel); set("isGroupCreatingOrCreated", creating)
+                set("groupOwnership", owner)
+                check(!RetainedNativeGroup.deferUntilReady(owner) { error("unexpected pending group removal") })
+                doNothing().`when`(manager).makeVisible()
+                doAnswer {
+                    it.getArgument<WifiP2pManager.GroupInfoListener>(1)
+                        .onGroupInfoAvailable(if (groupExists) mock(WifiP2pGroup::class.java) else null)
+                    null
+                }.`when`(platform).requestGroupInfo(eq(channel), any())
+                try {
+                    manager.refreshHelperGroup()
+                    verify(manager, times(if (!groupExists && !creating) 1 else 0)).makeVisible()
+                    verify(platform, never()).removeGroup(any(), any())
+                } finally {
+                    RetainedNativeGroup.cancelWaiting(owner)
+                }
+            }
         }
     }
 }

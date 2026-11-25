@@ -13,5 +13,6 @@ class Handler(val looper: Looper) {
     }
     fun post(task: Runnable): Boolean { beforePost?.invoke(); tasks.offer(task); return true }
     fun postDelayed(task: Runnable, delay: Long): Boolean { delayed.offer(task); return true }
+    fun removeCallbacks(task: Runnable) { tasks.removeIf { it === task }; delayed.removeIf { it === task } }
 }
 open class HandlerThread(name:String):Thread(name) { val looper=Looper();open fun onLooperPrepared(){};override fun run(){onLooperPrepared()};fun quitSafely()=true;fun quit()=true }

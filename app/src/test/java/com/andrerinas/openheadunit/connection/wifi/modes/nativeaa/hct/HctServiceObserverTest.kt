@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito
@@ -28,6 +29,7 @@ class HctServiceObserverTest {
         var bindingFailure: RuntimeException? = null
         var accepted = true
         var available = true
+        var authorityCurrent = true
         var invalidations = 0
         var connection: ServiceConnection? = null
         var receiver: BroadcastReceiver? = null
@@ -53,13 +55,21 @@ class HctServiceObserverTest {
                 bindingFailure?.let { failure -> throw failure }
                 accepted
             }
-            observer = HctServiceObserver(context, {}, { invalidations++ }, { available })
+            observer = HctServiceObserver(context, {}, { invalidations++ },
+                ConnectionAdmission { action -> if (!authorityCurrent) false else { action(); true } }, { available })
         }
 
         override fun close() {
             observer.close()
             resources.asReversed().forEach { it.close() }
         }
+    }
+
+    @Test fun `withdrawn connection authority cannot bind manufacturer service`(): Unit = Fixture().use { f ->
+        f.authorityCurrent = false
+        assertThrows(kotlinx.coroutines.CancellationException::class.java) { f.observer.start() }
+        assertNull(f.receiver)
+        verify(f.context, never()).bindService(any<Intent>(), any<ServiceConnection>(), any<Int>())
     }
 
     @Test fun `close winning before start is cancellation without framework registration`() = Fixture().use { f ->

@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import android.os.Build
 import android.os.Handler
@@ -31,6 +32,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.ConnectionIssue
 import com.andrerinas.openheadunit.utils.ConnectionIssues
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -77,10 +79,13 @@ class WifiLauncherNative : WifiLauncher {
 
     override fun hasLocalDiscovery() = false
 
-    override fun start(noInfoToasts: Boolean) {
+    // External carriers are tied to this arm even before Stop finishes retiring the launcher.
+    override fun start(noInfoToasts: Boolean, ticket: Long) {
+        val operation = ConnectionOperation(ticket, null)
+        if (!App.provide(service).commManager.isCurrent(operation)) return
         val wifiDirect = manager.sharedServices.wifiDirectManager
 
-        handshakeManager = NativeAaHandshakeManager(service, this, service.serviceScope)
+        handshakeManager = NativeAaHandshakeManager(service, this, service.serviceScope, operation)
         // The wake poke wakes the phone, and a phone that answers takes over the screen. Doing that
         // to somebody who is in the middle of changing settings loses whatever they were reading.
         handshakeManager?.userConfiguringProvider = { SettingsActivity.isForeground }
@@ -419,6 +424,11 @@ class WifiLauncherNative : WifiLauncher {
      * Called by NativeAaHandshakeManager if it's waiting for credentials that haven't arrived yet.
      */
     fun triggerWifiDirectRefresh() {
+        if (Looper.myLooper() !== Looper.getMainLooper()) {
+            service.serviceScope.launch(Dispatchers.Main.immediate) { triggerWifiDirectRefresh() }
+            return
+        }
+        if (manager.active !== this) return
         if (this.strategy == NativeStrategy.HOTSPOT) {
             AppLog.i("AapService: Access point refresh requested.")
             softApCredentialsProvider?.refresh()

@@ -2398,6 +2398,7 @@ class NativeAaHandshakeManager(
      * its whole link within half a second, so the hold ends there and the caller asks again on
      * [HandsFreeRefusalPolicy]'s slower cadence.
      */
+    @SuppressLint("MissingPermission")
     private suspend fun holdPoke(
         socket: BluetoothSocket,
         device: BluetoothDevice,

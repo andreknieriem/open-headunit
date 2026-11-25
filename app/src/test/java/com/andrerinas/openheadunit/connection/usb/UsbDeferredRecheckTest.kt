@@ -56,6 +56,7 @@ class UsbDeferredRecheckTest {
             field("_connectionState", states)
             field("connectionState", states)
             field("transportLifecycleLock", Any())
+            field("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
             field("usbRecoveryOwner", Any())
             field("settings", settings)
             launcher = spy(UsbLauncherManager(service))
@@ -113,7 +114,7 @@ class UsbDeferredRecheckTest {
                 connected = call.getArgument(0)
                 f.states.value = ConnectionState.Connected
                 Unit
-            }.`when`(f.launcher).connectWithRetry(fresh, 3, Tier.USB, null)
+            }.`when`(f.launcher).connectWithRetry(fresh, 3, Tier.USB, null, 0L)
         }
         done.complete(Unit)
         f.queue.drain()
@@ -145,7 +146,7 @@ class UsbDeferredRecheckTest {
             val finish = java.util.concurrent.CountDownLatch(1)
             runBlocking {
                 doAnswer { f.states.value = ConnectionState.Connected; Unit }.`when`(f.launcher)
-                    .connectWithRetry(accessory, 3, Tier.USB, null)
+                    .connectWithRetry(accessory, 3, Tier.USB, null, 0L)
             }
             mockConstruction(UsbAccessoryMode::class.java) { mode, _ ->
                 `when`(mode.connectAndSwitch(normal, false)).thenAnswer {
@@ -173,7 +174,7 @@ class UsbDeferredRecheckTest {
                     .checkAlreadyConnected(true, false, null, true)
                 runBlocking {
                     verify(f.launcher, times(if (outcome == "accessory-ready") 1 else 0))
-                        .connectWithRetry(accessory, 3, Tier.USB, null)
+                        .connectWithRetry(accessory, 3, Tier.USB, null, 0L)
                 }
             }
         }
@@ -423,8 +424,8 @@ class UsbDeferredRecheckTest {
 
     private fun stubRetry(f: Fixture, bus: RecoveryBus, onCall: () -> Unit = {}) = runBlocking {
         doAnswer { onCall(); Unit }.`when`(f.comm).reconnectUsb(eqValue(bus.stale), anyValue(), anyValue(), anyValue())
-        doAnswer { Unit }.`when`(f.launcher).connectWithRetry(bus.fresh, 3, Tier.USB, null)
-        doAnswer { Unit }.`when`(f.launcher).connectWithRetry(bus.stale, 3, Tier.USB, null)
+        doAnswer { Unit }.`when`(f.launcher).connectWithRetry(bus.fresh, 3, Tier.USB, null, 0L)
+        doAnswer { Unit }.`when`(f.launcher).connectWithRetry(bus.stale, 3, Tier.USB, null, 0L)
     }
 
     private fun switching(bus: RecoveryBus, issued: Boolean, entered: java.util.concurrent.CountDownLatch? = null,
@@ -461,7 +462,7 @@ class UsbDeferredRecheckTest {
         switching(bus, issued = true, reenumerates = true).use {
             settled(f, endHandshake(f, bus))
             runBlocking { verify(f.comm).reconnectUsb(eqValue(bus.fresh), anyValue(), anyValue(), anyValue()) }
-            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue())
+            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue(), anyLong())
         }
     }
 
@@ -699,7 +700,7 @@ class UsbDeferredRecheckTest {
             settled(f, endHandshake(f, bus))
             verify(intent, never()).cancel()
             runBlocking { verify(f.comm, never()).reconnectUsb(anyValue(), anyValue(), anyValue(), anyValue()) }
-            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue())
+            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue(), anyLong())
             // The unanswered dialog may still be up, so the path stays asked after the recovery ends.
             assertTrue(UsbPermissionAsks.isAsked(bus.fresh.deviceName, listOf(bus.fresh.deviceName)))
         }
@@ -781,7 +782,7 @@ class UsbDeferredRecheckTest {
         stubRetry(f, bus)
         switching(bus, issued = false).use {
             settled(f, endHandshake(f, bus))
-            verify(f.launcher, times(1)).beginAttempt(Tier.USB, "USB recovery of ${UsbDeviceCompat(bus.stale).uniqueName}", null)
+            verify(f.launcher, times(1)).beginAttempt(Tier.USB, "USB recovery of ${UsbDeviceCompat(bus.stale).uniqueName}", null, 0L)
             runBlocking { verify(f.comm, times(1)).reconnectUsb(eqValue(bus.stale), anyValue(), anyValue(), anyValue()) }
         }
     }
@@ -811,7 +812,7 @@ class UsbDeferredRecheckTest {
             bus.reenumerate()
             settled(f, finished)
             runBlocking { verify(f.comm, never()).reconnectUsb(eqValue(bus.stale), anyValue(), anyValue(), anyValue()) }
-            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue())
+            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue(), anyLong())
         }
     }
 
@@ -826,7 +827,7 @@ class UsbDeferredRecheckTest {
         }).use {
             settled(f, endHandshake(f, bus))
             runBlocking { verify(f.comm, never()).reconnectUsb(anyValue(), anyValue(), anyValue(), anyValue()) }
-            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue())
+            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue(), anyLong())
         }
     }
 
@@ -853,7 +854,7 @@ class UsbDeferredRecheckTest {
             bus.reenumerate()
             settled(f, finished)
             runBlocking { verify(f.comm, never()).reconnectUsb(eqValue(bus.stale), anyValue(), anyValue(), anyValue()) }
-            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue())
+            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue(), anyLong())
         }
     }
 
@@ -888,7 +889,7 @@ class UsbDeferredRecheckTest {
         switching(bus, issued = false).use {
             settled(f, endHandshake(f, bus))
             runBlocking { verify(f.comm, never()).reconnectUsb(anyValue(), anyValue(), anyValue(), anyValue()) }
-            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue())
+            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue(), anyLong())
         }
     }
 
@@ -906,7 +907,7 @@ class UsbDeferredRecheckTest {
             val observation = UsbLauncherManager::class.java.getDeclaredField("recoveryObservation")
                 .apply { isAccessible = true }.get(f.launcher) as java.util.concurrent.atomic.AtomicReference<*>
             assertNull("Cancellation must close the recovery observation window", observation.get())
-            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue())
+            verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean(), anyValue(), anyLong())
         }
     }
 

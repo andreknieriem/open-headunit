@@ -141,6 +141,7 @@ class Service {
     fun isExternalPowerPresent()=false
     fun launchWiredSessionRearm() {}
     var isDestroying=false; var userExitedAA=false; var userExitCooldownUntil=0L
+    private var microphoneTypeClaimed=false
     val USER_EXIT_COOLDOWN_MS=5000L
     val usbLauncherManager=UnitManager(); val nightModeManager: UnitManager?=UnitManager(); val carKeysManager=UnitManager()
     var autoResumePlaybackJob: Job?=null; var mediaMetadataDecodeJob: Job?=null
@@ -162,7 +163,6 @@ class Service {
     fun rearmWirelessAfterWiredSession(quiesced: Boolean, standDownPending: Boolean=false)=false
     var serviceStops=0
     var foregroundStops=0
-    var microphoneTypeClaimed=false
     val networkRemovals=mutableListOf<Boolean>()
     init { commManager.onDisconnect = { state -> serviceScope.launch { notifyEnd(state) } } }
     fun stopForeground(remove: Boolean) { foregroundStops++ }

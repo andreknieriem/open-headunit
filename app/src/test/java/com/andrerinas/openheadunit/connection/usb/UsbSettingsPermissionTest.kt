@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any as anyValue
 
 class UsbSettingsPermissionTest {
     @Test fun `late permission distinguishes cancellation from expired or overtaken Save`() {
@@ -28,11 +29,12 @@ class UsbSettingsPermissionTest {
             set("_connectionState", states)
             set("connectionState", states)
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
             `when`(service.applicationContext).thenReturn(app)
             App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }.set(app, lazyOf(component))
             `when`(component.commManager).thenReturn(comm)
             val manager = spy(UsbLauncherManager(service))
-            doNothing().`when`(manager).checkAlreadyConnected(true, false, null)
+            doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), anyValue(), anyLong())
             val usb = mock(android.hardware.usb.UsbManager::class.java)
             `when`(service.getSystemService(android.content.Context.USB_SERVICE)).thenReturn(usb)
             `when`(service.getSharedPreferences(anyString(), anyInt()))
@@ -45,12 +47,12 @@ class UsbSettingsPermissionTest {
             // cancellation must discard the grant; the other cases use ordinary admission.
             @Suppress("UNCHECKED_CAST")
             val owners = UsbLauncherManager::class.java.getDeclaredField("permissionOwners")
-                .apply { isAccessible = true }.get(manager) as MutableMap<String, CommManager.ConnectionState.Disconnected>
-            owners[device.deviceName] = saved
+                .apply { isAccessible = true }.get(manager) as MutableMap<String, UsbLauncherManager.PermissionAttempt>
+            owners[device.deviceName] = UsbLauncherManager.PermissionAttempt(saved, comm.appConnectionTicket())
             if (outcome == "cancelled") comm.cancelPendingSettingsRestart()
             ConnectionArbiter.reset()
             try {
-                UsbLauncherListener(manager).onUsbPermission(true, true, device)
+                UsbLauncherListener(manager).onUsbPermission(true, true, device, comm.appConnectionTicket())
                 verify(manager, times(if (outcome == "cancelled") 0 else 1))
                     .checkAlreadyConnected(true, false, null)
                 assertFalse(manager.isSwitchingToProjection())

@@ -44,7 +44,7 @@ class UsbRecoveryPermissionTest {
         try { block() } finally { AppLog.LOGGER = old }
     }
 
-    private fun answer(scheme: String?, token: String, granted: Boolean, device: UsbDevice): Intent {
+    private fun answer(scheme: String?, token: String, granted: Boolean, device: UsbDevice, ticket: String? = null): Intent {
         val intent = mock(Intent::class.java)
         `when`(intent.action).thenReturn(UsbReceiver.ACTION_USB_DEVICE_PERMISSION)
         if (scheme != null) {
@@ -52,6 +52,7 @@ class UsbRecoveryPermissionTest {
             `when`(intent.data).thenReturn(data)
             `when`(data.scheme).thenReturn(scheme)
             `when`(data.schemeSpecificPart).thenReturn(token)
+            `when`(data.fragment).thenReturn(ticket)
         }
         @Suppress("DEPRECATION")
         `when`(intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)).thenReturn(device)
@@ -59,11 +60,13 @@ class UsbRecoveryPermissionTest {
         return intent
     }
 
-    @Test fun anOrdinaryAnswerReachesThePermissionHandlerAndOneWithNoTokenIsDropped() = quietly {
+    @Test fun anOrdinaryAnswerReachesThePermissionHandlerWithItsTicketAndOthersAreDropped() = quietly {
         val listener = mock(UsbReceiver.Listener::class.java)
         val device = mock(UsbDevice::class.java)
-        UsbReceiver(listener).onReceive(mock(Context::class.java), answer(UsbReceiver.ASK_PERMISSION_SCHEME, "t", true, device))
-        verify(listener).onUsbPermission(true, false, device)
+        UsbReceiver(listener).onReceive(mock(Context::class.java),
+            answer(UsbReceiver.ASK_PERMISSION_SCHEME, "t", true, device, ticket = "7"))
+        verify(listener).onUsbPermission(true, false, device, 7L)
+        UsbReceiver(listener).onReceive(mock(Context::class.java), answer(UsbReceiver.ASK_PERMISSION_SCHEME, "g", true, device))
         UsbReceiver(listener).onReceive(mock(Context::class.java), answer(null, "", true, device))
         verifyNoMoreInteractions(listener)
     }

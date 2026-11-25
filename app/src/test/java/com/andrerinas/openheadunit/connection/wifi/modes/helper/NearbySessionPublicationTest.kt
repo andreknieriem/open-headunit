@@ -41,7 +41,7 @@ class NearbySessionPublicationTest {
             // The previous teardown leaves this set; a valid transfer must re-arm the new owner.
             set("disconnectRequested", true)
             val guard = NearbyAttemptGuard()
-            val attempt = guard.begin("phone")
+            val attempt = guard.begin("phone", 0L)
             val admission = ConnectionAdmission { action -> guard.run(attempt, action = action) }
             val socket = mock(Socket::class.java)
             val replacement = mock(SocketProjectionConnection::class.java)

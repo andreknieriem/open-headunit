@@ -2,13 +2,15 @@ package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
 /** Serializes tunnel publication with retirement; endpoint IDs alone can be reused on reconnect. */
 internal class NearbyAttemptGuard {
-    class Attempt internal constructor(val endpoint: String)
+    class Attempt internal constructor(val endpoint: String, val ticket: Long)
 
     private var current: Attempt? = null
 
     @Synchronized fun <T> locked(action: () -> T): T = action()
 
-    @Synchronized fun begin(endpoint: String): Attempt = Attempt(endpoint).also { current = it }
+    @Synchronized fun begin(endpoint: String, ticket: Long): Attempt = Attempt(endpoint, ticket).also { current = it }
+
+    @Synchronized fun current(): Attempt? = current
 
     /** The action must not suspend: ownership must cover the actual resource publication. */
     @Synchronized fun run(attempt: Attempt, endpoint: String = attempt.endpoint, action: () -> Unit): Boolean {

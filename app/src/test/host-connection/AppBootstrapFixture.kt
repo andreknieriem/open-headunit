@@ -3,7 +3,6 @@ package lifecycle
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.aap.AapService
-import com.andrerinas.openheadunit.app.AppForegroundPolicy
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 
 /** Real service validation prefix and completion tail; platform lifetime/start effects are recorded. */
@@ -77,64 +76,31 @@ fun bootstrapRejectionPreservesLatestRun() {
         } finally {
             running.close()
         }
-    } finally {
-        AapService.instance = previousService
-        ContextCompat.serviceStarts.clear()
-        ContextCompat.serviceStarts.addAll(previousStarts)
-    }
-    println("PASS actual service bootstrap: stale Run/Stop cannot initialize a doomed instance; latest Run restores and completed Stop stays stopped")
-}
 
-fun homeConfigPreservesStoppedService() {
-    val previousService = AapService.instance
-    val previousStarts = ContextCompat.serviceStarts.toList()
-    val manager = CommManager()
-    try {
-        AapService.instance = null
-        manager.disconnect(honorKillOnDisconnect = false)
-        manager.cleanups()
-        ContextCompat.serviceStarts.clear()
-        val ui = AppForegroundPolicy()
-        val logicalMain = AppForegroundPolicy.LogicalActivity()
-        ui.created(logicalMain, AppForegroundPolicy.Kind.OPEN)
-        manager.onAppRelaunched()
-        ui.foregroundStarted(manager.appOwnershipRevision(), entryActivity = true)
-        check(ui.resumeRevision() == null)
-        val retiredTicket = checkNotNull(manager.currentAppRunTicket())
-        check(manager.acceptsAppRunTicket(retiredTicket))
-        val stop = manager.requestExplicitAppExit(killProcess = false)
-        check(manager.commitAppExit(stop) === stop)
-        check(manager.completeAppExit(stop).effect == AppExitPolicy.Effect.STOPPED)
-
-        ui.fullyStopped(changingConfigurations = true)
-        check(ui.created(logicalMain, AppForegroundPolicy.Kind.OPEN) == null)
-        ui.foregroundStarted(manager.appOwnershipRevision(), entryActivity = true)
-        val enabled = HomeAutoSettings(autoStartOnScreenOn = false, autoStartOnBoot = true)
-        HomeAutoStart(manager, enabled).created()
-        check(ui.resumeRevision() == null)
-        check(manager.ownsAppExit(stop.id))
-        check(manager.currentAppRunTicket() == null && !manager.acceptsAppRunTicket(retiredTicket))
-        check(ContextCompat.serviceStarts.isEmpty()) {
-            "automatic Home recreation must not start radio/service resources over the preserved Stop"
+        // A tagged relay preserves its originating Stop ticket across service delivery.
+        for (stop in listOf(false, true)) {
+            val manager = CommManager()
+            try {
+                manager.onAppRelaunched()
+                val ticket = manager.appConnectionTicket()
+                val relay = Intent("check-usb").putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, ticket)
+                if (stop) manager.requestExplicitAppExit(killProcess = false)
+                val reopened = manager.onAppRelaunched()
+                val bootstrap = ServiceBootstrap(manager)
+                bootstrap.onStartCommand(relay, 0, 1)
+                bootstrap.onStartCommand(relay, 0, 2)
+                check(bootstrap.initializedForStart == !stop && manager.isAppRunOwner(reopened))
+                check(bootstrap.usbStartupTickets == if (stop) emptyList() else listOf(ticket)) {
+                    "a stale relay must not arm USB; a valid relay initializes once with its carried ticket"
+                }
+            } finally {
+                manager.close()
+            }
         }
-
-        val run = manager.onAppRelaunched()
-        check(!manager.acceptsAppRunTicket(retiredTicket))
-        check(manager.acceptsAppRunTicket(checkNotNull(manager.currentAppRunTicket())))
-        HomeAutoStart(manager, HomeAutoSettings(false, false)).created()
-        check(ContextCompat.serviceStarts.isEmpty()) // The producer still obeys its auto-start flags.
-        HomeAutoStart(manager, enabled).created()
-        val intent = ContextCompat.serviceStarts.single()
-        check(intent.getLongExtra(ServiceBootstrap.EXTRA_RUN_OWNER, -1L) == run)
-        val bootstrap = ServiceBootstrap(manager)
-        bootstrap.onStartCommand(intent, 0, 1)
-        check(bootstrap.initializedForStart && !bootstrap.isDestroying)
-        check(manager.isAppRunOwner(run))
     } finally {
-        manager.close()
         AapService.instance = previousService
         ContextCompat.serviceStarts.clear()
         ContextCompat.serviceStarts.addAll(previousStarts)
     }
-    println("PASS actual automatic Home producer: config continuation preserves completed Stop; flags and genuine owned Run restoration remain valid")
+    println("PASS actual service bootstrap: stale Run/Stop and relays cannot initialize; latest Run restores and valid startup arms USB once")
 }

@@ -274,7 +274,7 @@ class UsbListFragment : Fragment() {
                     } else {
                         ToastUtils.showToast(mContext, R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
                         ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java))
-                        UsbPermissionAsks.askFromUi(mContext, device.wrappedDevice)
+                        UsbPermissionAsks.askFromUi(mContext, device.wrappedDevice, App.provide(mContext).commManager.appConnectionTicket())
                     }
                 }
             }

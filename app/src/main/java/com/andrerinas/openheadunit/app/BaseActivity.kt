@@ -9,17 +9,20 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.utils.SystemUI
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -122,6 +125,8 @@ open class BaseActivity : AppCompatActivity() {
 
     fun applyWindowBackground() {
         val settings = Settings(this)
+        // The own color paints the system bars only, never the window background.
+        applyBarColorsFor(settings.systemBarColor)
         currentHomeBackgroundImagePath = settings.homeBackgroundImagePath
         val path = settings.homeBackgroundImagePath
         val file = if (path.isNotEmpty()) File(path) else null
@@ -159,6 +164,45 @@ open class BaseActivity : AppCompatActivity() {
             }
         } else {
             resetWindowBackgroundToTheme()
+        }
+    }
+
+    /**
+     * Shows [color] on the system bars without saving it, so the
+     * color picker can preview live. 0 returns to the saved look.
+     */
+    fun previewSystemBarColor(color: Int) {
+        applyBarColorsFor(if (color != 0) color else Settings(this).systemBarColor)
+    }
+
+    /** The bar colors and icon looks as they were before this activity first painted them. */
+    private class BarLook(val status: Int, val navigation: Int, val lightStatus: Boolean, val lightNavigation: Boolean)
+
+    private var barLookBeforePaint: BarLook? = null
+
+    private fun applyBarColorsFor(color: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
+        val mode = Settings(this).fullscreenMode
+        if (!SystemUI.paintsBarColors(mode)) return
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        if (color != 0) {
+            if (barLookBeforePaint == null) {
+                barLookBeforePaint = BarLook(
+                    window.statusBarColor, window.navigationBarColor,
+                    controller.isAppearanceLightStatusBars, controller.isAppearanceLightNavigationBars
+                )
+            }
+            SystemUI.applyBarColors(window, color, mode)
+        } else {
+            // No own color: leave the bars alone, but undo an own color painted earlier, such as the
+            // live preview of the color picker or a color that was just reset.
+            barLookBeforePaint?.let {
+                window.statusBarColor = it.status
+                window.navigationBarColor = it.navigation
+                controller.isAppearanceLightStatusBars = it.lightStatus
+                controller.isAppearanceLightNavigationBars = it.lightNavigation
+                barLookBeforePaint = null
+            }
         }
     }
 

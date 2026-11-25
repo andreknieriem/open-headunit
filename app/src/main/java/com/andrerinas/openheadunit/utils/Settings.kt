@@ -2675,6 +2675,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("use-gradient-background", false)
         set(value) { prefs.edit().putBoolean("use-gradient-background", value).apply() }
 
+    /** Own solid color for the system bars (status and navigation), as opaque ARGB. 0 is not set. */
+    var systemBarColor: Int
+        get() = prefs.getInt("system-bar-color", 0)
+        set(value) { prefs.edit().putInt("system-bar-color", value).apply() }
+
     var aaMonochromeEnabled: Boolean
         get() = prefs.getBoolean("aa-monochrome-enabled", false)
         set(value) { prefs.edit().putBoolean("aa-monochrome-enabled", value).apply() }

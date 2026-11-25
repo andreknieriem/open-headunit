@@ -114,4 +114,57 @@ class WppEndpointPolicyTest {
         val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 41234, GroupIdentityStability.STABLE)
         assertEquals(41234, (decision as WppEndpointDecision.Advertise).port)
     }
+
+    @Test
+    fun `an endpoint is withheld when no channel can be named`() {
+        // The measured failure: an Android 7 unit advertising an endpoint with channels=[], which
+        // the phone answers NO_SUPPORTED_WIFI_CHANNELS(-8) to and then keeps dialling.
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.WIFI_DIRECT,
+            5299,
+            GroupIdentityStability.STABLE,
+            WppSessionChannel.Unavailable("no group frequency and no station"),
+        )
+        assertTrue(decision is WppEndpointDecision.Withhold)
+        assertTrue((decision as WppEndpointDecision.Withhold).reason.contains("no group frequency and no station"))
+        // Not our own state: the phone must be rejected back to Bluetooth, which is the only route
+        // that works on a unit that cannot name a channel.
+        assertFalse(decision.ourOwnState)
+    }
+
+    @Test
+    fun `an endpoint is advertised once a real channel is named`() {
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.WIFI_DIRECT,
+            5299,
+            GroupIdentityStability.STABLE,
+            WppSessionChannel.Measured(2447),
+        )
+        assertEquals(WppEndpointDecision.Advertise(5299), decision)
+    }
+
+    @Test
+    fun `a channel the phone already refused is not advertised again`() {
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.WIFI_DIRECT,
+            5299,
+            GroupIdentityStability.STABLE,
+            WppSessionChannel.Measured(2447),
+            2447,
+        )
+        assertTrue(decision is WppEndpointDecision.Withhold)
+        assertTrue((decision as WppEndpointDecision.Withhold).reason.contains("2447"))
+    }
+
+    @Test
+    fun `a different channel is advertised after a refusal`() {
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.WIFI_DIRECT,
+            5299,
+            GroupIdentityStability.STABLE,
+            WppSessionChannel.Measured(2437),
+            2447,
+        )
+        assertEquals(WppEndpointDecision.Advertise(5299), decision)
+    }
 }

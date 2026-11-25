@@ -137,7 +137,12 @@ class WppTcpLifecycleTest {
         }
         `when`(callbacks.carInfo()).thenReturn(WppMessages.carInfo("OHU", "HU", "2026", "1", "OHU", "HU"))
         val scope = CoroutineScope(SupervisorJob())
-        val server = WppTcpServer(mock(Context::class.java), scope, callbacks)
+        val server = WppTcpServer(
+            mock(Context::class.java), scope, callbacks,
+            // A nameable channel: the endpoint gate is a separate question from the identity one
+            // this test asks about, and a mock Context reports neither a group nor a station.
+            resolveChannel = { WppSessionChannel.Measured(2447) },
+        )
         val running = WppTcpServer::class.java.getDeclaredField("running").apply { isAccessible = true }
         val listener = mock(ServerSocket::class.java)
         `when`(listener.localPort).thenReturn(5289)

@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import android.content.Context
 import android.os.SystemClock
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
@@ -49,6 +50,18 @@ class WppTcpServer(
     private val createServerSocket: () -> ServerSocket = { ServerSocket() },
     private val createTlsFactory: () -> SSLSocketFactory = { SslContextFactory.create(context).socketFactory },
     private val elapsedRealtime: () -> Long = { SystemClock.elapsedRealtime() },
+    /**
+     * The channel this unit can name. Injected so the exchange's contract tests can describe a unit
+     * that can name one, which no test Context can: [WifiBandCapability] reads a live group and a
+     * live station, and neither exists behind a mock.
+     */
+    private val resolveChannel: () -> WppSessionChannel = {
+        WppSessionChannelPolicy.resolve(
+            groupFrequencyMhz = WifiBandCapability.sessionFrequencyMhz(),
+            stationFrequencyMhz = WifiBandCapability.stationFrequencyMhz(context),
+            associated = WifiBandCapability.stationAssociated(context),
+        )
+    },
 ) {
 
     /** What the server needs from its owner, so it does not have to reach into the manager. */
@@ -110,6 +123,14 @@ class WppTcpServer(
 
         /** How often the exchange services its timers. Matches the Bluetooth path. */
         private const val TICK_MS = 250L
+
+        /**
+         * The phone's answer when no channel in our version request is one it can use.
+         *
+         * Kept next to the loop that sees it rather than in [WppStatus], which names codes for
+         * logging; this one changes what the unit advertises.
+         */
+        private const val NO_SUPPORTED_WIFI_CHANNELS = -8
 
         /**
          * How long to wait for this head unit's own credentials before giving up.
@@ -279,7 +300,12 @@ class WppTcpServer(
             // Read once: the exchange below is held to the network admitted here.
             val admitted = callbacks.credentials()
             val identity = admitted?.identity ?: GroupIdentityStability.UNPROVEN
-            val decision = WppEndpointPolicy.decide(callbacks.strategy(), listeningPort, identity)
+            // The channel the request that brought this phone here carried, so a dial is judged on
+            // the same facts the advertisement was.
+            val sessionChannel = resolveSessionChannel()
+            val decision = WppEndpointPolicy.decide(
+                callbacks.strategy(), listeningPort, identity, sessionChannel, refusedChannelMhz()
+            )
             val servesDial = WppTcpServePolicy.servesDial(decision)
             if (!servesDial && !callbacks.projectionSessionUp()) {
                 refuse(tls, decision, callbacks.projectionSessionUp(), identity)
@@ -320,6 +346,31 @@ class WppTcpServer(
             readerJob?.cancel()
             try { (socket ?: raw).close() } catch (_: Exception) {}
             AppLog.i("WppTcpServer: session closed")
+        }
+    }
+
+    /**
+     * The channel this unit can name right now, resolved identically everywhere it is used.
+     *
+     * One function rather than three reads at each call site, so the endpoint decision and the
+     * channel list in the same version request cannot be built from different instants.
+     */
+    private fun resolveSessionChannel(): WppSessionChannel = resolveChannel()
+
+    private fun refusedChannelMhz(): Int = try {
+        App.provide(context).settings.wppRefusedChannelMhz
+    } catch (e: Exception) {
+        AppLog.d("WppTcpServer: could not read the refused channel: ${e.message}")
+        0
+    }
+
+    private fun recordRefusedChannel(channel: WppSessionChannel) {
+        val mhz = WppSessionChannelPolicy.mhzOf(channel)
+        if (mhz <= 0) return
+        try {
+            App.provide(context).settings.wppRefusedChannelMhz = mhz
+        } catch (e: Exception) {
+            AppLog.d("WppTcpServer: could not record the refused channel: ${e.message}")
         }
     }
 
@@ -414,10 +465,16 @@ class WppTcpServer(
             when (action) {
                 WppAction.SendVersionRequest -> {
                     val snapshot = admittedNetworkOrAbort("Type 4") ?: return
+                    // One resolution feeds both halves of this request: an endpoint is only
+                    // advertised for a channel the phone can match, and the list it checks is the
+                    // one resolved here, never a second read that could disagree.
+                    val sessionChannel = resolveSessionChannel()
                     // The same rule as the Bluetooth path: an endpoint outlives the connection that
                     // carried it, so it only goes out for a network that will still be there.
-                    val endpoint = when (val decision =
-                        WppEndpointPolicy.decide(callbacks.strategy(), listeningPort, snapshot.identity)) {
+                    val endpoint = when (val decision = WppEndpointPolicy.decide(
+                        callbacks.strategy(), listeningPort, snapshot.identity,
+                        sessionChannel, refusedChannelMhz()
+                    )) {
                         is WppEndpointDecision.Withhold -> {
                             AppLog.i("WppTcpServer: not advertising WPP over TCP: ${decision.reason}")
                             null
@@ -428,8 +485,11 @@ class WppTcpServer(
                     }
                     AppLog.i("WppTcpServer: [TX] WifiVersionRequest (Type 4) v${WppHandshakeSession.WPP_VERSION_MAJOR}.${WppHandshakeSession.WPP_VERSION_MINOR}")
                     val channelType = WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context))
-                    val channels = WppChannelListPolicy.forGroup(WifiBandCapability.sessionFrequencyMhz())
-                    AppLog.i("WppTcpServer: [TX] version request channel type=$channelType channels=$channels")
+                    val channels = WppSessionChannelPolicy.channelsFor(sessionChannel)
+                    AppLog.i(
+                        "WppTcpServer: [TX] version request channel type=$channelType channels=$channels" +
+                            if (channelType == null || channels.isEmpty()) " ($sessionChannel)" else ""
+                    )
                     send(output, WppMessages.versionRequest(callbacks.carInfo(), endpoint, channelType, channels).toByteArray(), WppMessageType.VERSION_REQUEST)
                 }
                 WppAction.SendStartRequest -> {
@@ -528,6 +588,17 @@ class WppTcpServer(
                     "WppTcpServer: [RX] Type ${msg.type} (${msg.payload.size} bytes)" +
                         if (status != null) " status=${WppStatus.describe(status)}" else ""
                 )
+                // The phone has told us this channel is unusable. Recording it is what stops the
+                // next request from advertising an endpoint against the same wall: without it the
+                // exchange ends, the group is re-formed, and the same advertisement goes out again.
+                if (status == NO_SUPPORTED_WIFI_CHANNELS) {
+                    val refused = resolveSessionChannel()
+                    recordRefusedChannel(refused)
+                    AppLog.w(
+                        "WppTcpServer: the phone refused this unit's channel and no endpoint will " +
+                            "be advertised for it again: ${WppSessionChannelPolicy.refusalReason(refused)}"
+                    )
+                }
                 feed(WppEvent.MessageReceived(msg.type, status), msg)
                 continue
             }

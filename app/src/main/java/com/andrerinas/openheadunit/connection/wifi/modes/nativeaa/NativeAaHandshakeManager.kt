@@ -4689,10 +4689,19 @@ class NativeAaHandshakeManager(
         alreadyAdvertised: NativeNetworkCredentials?,
     ): NativeNetworkCredentials? {
         val snapshot = credentials
+        // Resolved once: the endpoint below and the channel list further down describe the same
+        // group, and an endpoint is only advertised for a channel the phone can match.
+        val sessionChannel = WppSessionChannelPolicy.resolve(
+            groupFrequencyMhz = WifiBandCapability.sessionFrequencyMhz(),
+            stationFrequencyMhz = WifiBandCapability.stationFrequencyMhz(context),
+            associated = WifiBandCapability.stationAssociated(context),
+        )
         val decision = WppEndpointPolicy.decide(
             transport,
             wppTcpServer?.listeningPort,
             snapshot?.identity ?: GroupIdentityStability.UNPROVEN,
+            sessionChannel,
+            settings.wppRefusedChannelMhz,
         )
         // A repeat after the network changed: the phone may already hold the first endpoint, so
         // this one must not quietly become the exchange's new baseline. The check before Type 1
@@ -4716,8 +4725,18 @@ class NativeAaHandshakeManager(
             else -> null
         }
         val channelType = WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context))
-        val channels = WppChannelListPolicy.forGroup(WifiBandCapability.sessionFrequencyMhz())
-        AppLog.i("NativeAA: [TX] version request channel type=$channelType channels=$channels")
+        // The endpoint gate above still sees Unavailable and withholds WPP. For the Bluetooth
+        // handoff, this 2.4-GHz-only unit can truthfully advertise its supported capability list
+        // even though the legacy API cannot report the current group's one channel. Keep this list
+        // separate from endpoint policy: it is not a claim about the group frequency.
+        val channels = WppBluetoothCapabilityPolicy.channelsFor(
+            sessionChannel,
+            WifiBandCapability.supports5Ghz(context),
+        )
+        AppLog.i(
+            "NativeAA: [TX] version request channel type=$channelType channels=$channels" +
+                if (channelType == null || channels.isEmpty()) " ($sessionChannel)" else ""
+        )
         val request = WppMessages.versionRequest(carInfo(), endpoint, channelType, channels)
         sendProtobuf(output, request.toByteArray(), WppMessageType.VERSION_REQUEST)
         return snapshot.takeIf { endpoint != null }

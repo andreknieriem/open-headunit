@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.direct.P2pChannelClosePolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.P2pInterfaceNamePolicy
@@ -173,8 +174,15 @@ object LocalHotspotPolicy {
         return BAND_TEXT.find(text)?.groupValues?.get(1)?.toIntOrNull() ?: 0
     }
 
-    /** The cap applies on 2.4 GHz and when the band is unknown. No channel list is sent: the channel is not read. */
-    fun capsVideo(band: LocalBand): Boolean = band != LocalBand.ABOVE_24
+    /** The slowest one decides when the hotspot runs on two bands; 0 when nothing was read. */
+    fun liveFrequency(frequencies: List<Int>): Int = frequencies.filter { it > 0 }.minOrNull() ?: 0
+
+    /**
+     * A [liveMhz] that was read decides. With none, the cap applies on 2.4 GHz and when the band is
+     * unknown. No channel list is sent: the platform can move the channel after the handshake.
+     */
+    fun capsVideo(band: LocalBand, liveMhz: Int = 0): Boolean =
+        if (liveMhz > 0) liveMhz <= NarrowBandProfilePolicy.MAX_24GHZ_FREQUENCY_MHZ else band != LocalBand.ABOVE_24
 
     /** Names the grants a start needs and the unit lacks. Empty means the call may go ahead. */
     fun missingGrants(
@@ -304,9 +312,15 @@ object LocalHotspotPolicy {
     fun startedLine(ssid: String, security: Int, bssid: String, iface: String, ip: String) =
         "LocalHotspot: started ssid=$ssid security=$security bssid=$bssid iface=$iface ip=$ip"
 
-    fun bandLine(band: LocalBand, mask: Int) =
-        "LocalHotspot: band ${band.label} (mask=$mask), channel list 0, 2.4 GHz cap " +
-            if (capsVideo(band)) "applied" else "not forced"
+    fun bandLine(band: LocalBand, mask: Int, liveMhz: Int = 0) =
+        "LocalHotspot: band ${band.label} (mask=$mask), channel list 0, 2.4 GHz cap " + capWord(capsVideo(band, liveMhz))
+
+    fun liveBandLine(band: LocalBand, liveMhz: Int) =
+        "LocalHotspot: live frequency $liveMhz MHz, 2.4 GHz cap " + capWord(capsVideo(band, liveMhz))
+
+    fun noLiveBandLine(why: String) = "LocalHotspot: no live frequency ($why), so the requested band decides the cap"
+
+    private fun capWord(caps: Boolean) = if (caps) "applied" else "not forced"
 
     fun stationLine(before: Boolean, after: Boolean) =
         "LocalHotspot: station state before=${joined(before)} after=${joined(after)}"

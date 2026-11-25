@@ -14,6 +14,8 @@ class LocalHotspotRunTest {
         generation = 4
         reservation = Any()
         startInFlight = true
+        bandMask = 2
+        liveFrequencyMhz = 5785
         notAppliedLogged = true
     }
 
@@ -52,9 +54,21 @@ class LocalHotspotRunTest {
     }
 
     @Test
+    fun `a live frequency is taken once, and never from an older run`() {
+        val run = usedRun()
+        assertFalse(run.noteLive(run.generation, 5785))
+        assertFalse(run.noteLive(run.generation - 1, 2437))
+        assertEquals(5785, run.liveFrequencyMhz)
+        assertTrue(run.noteLive(run.generation, 2437))
+        assertEquals(2437, run.liveFrequencyMhz)
+    }
+
+    @Test
     fun `finish with the current generation clears both`() {
         val run = usedRun()
         assertTrue(run.finish(run.generation))
+        assertEquals(0, run.bandMask)
+        assertEquals(0, run.liveFrequencyMhz)
         assertNull(run.reservation)
         assertFalse(run.startInFlight)
     }

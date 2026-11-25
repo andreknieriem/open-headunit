@@ -2948,6 +2948,12 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("hotspot-teardown-proven-unsafe", false)
         set(value) = prefs.edit().putBoolean("hotspot-teardown-proven-unsafe", value).apply()
 
+    // Set once the radio ran above 4 GHz on any network. Some units deny a 5 GHz band they have, and
+    // the hotspot's own band cannot be read. A property of the hardware, so it is never exported.
+    var radioSeenAbove24Ghz: Boolean
+        get() = prefs.getBoolean("radio-seen-above-24ghz", false)
+        set(value) = prefs.edit().putBoolean("radio-seen-above-24ghz", value).apply()
+
     var useLibusb: Boolean
         get() = prefs.getBoolean("use-libusb", false)
         set(value) = prefs.edit().putBoolean("use-libusb", value).apply()

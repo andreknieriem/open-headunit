@@ -12,14 +12,27 @@ data class LocalHotspotRun(
     /** The host that holds the reservation, or null. Kept as `Any` so this class loads below API 26. */
     @Volatile var reservation: Any? = null,
     @Volatile var startInFlight: Boolean = false,
+    /** The band bits the reservation asked for, kept for a frequency that comes after the start. */
+    @Volatile var bandMask: Int = 0,
+    /** What the hotspot runs on now, 0 while nothing was read. The platform can move it. */
+    @Volatile var liveFrequencyMhz: Int = 0,
     /** The "stored manual values are not applied" line is said once per run. */
     @Volatile var notAppliedLogged: Boolean = false,
 ) {
+    /** Takes what generation [gen] runs on now. False for an older run and for a value already held. */
+    fun noteLive(gen: Int, mhz: Int): Boolean {
+        if (gen != generation || mhz == liveFrequencyMhz) return false
+        liveFrequencyMhz = mhz
+        return true
+    }
+
     /** A run of an older generation fails alone: the current run keeps its reservation and its mark. */
     fun finish(gen: Int): Boolean {
         if (gen != generation) return false
         reservation = null
         startInFlight = false
+        bandMask = 0
+        liveFrequencyMhz = 0
         return true
     }
 
@@ -28,6 +41,8 @@ data class LocalHotspotRun(
         generation += 1
         reservation = null
         startInFlight = false
+        bandMask = 0
+        liveFrequencyMhz = 0
         notAppliedLogged = false
     }
 }

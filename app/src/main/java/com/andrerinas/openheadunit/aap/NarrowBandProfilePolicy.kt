@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HotspotBandPreference
 import com.andrerinas.openheadunit.utils.Settings
 
 /**
@@ -59,6 +60,24 @@ object NarrowBandProfilePolicy {
         bandUnreadable: Boolean = false,
     ): Boolean =
         supports5Ghz == false || bandUnreadable || sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ
+
+    /**
+     * The radio's answer as the cap reads it. `is5GHzBandSupported` describes the station side, and a
+     * unit that hosts a 5 GHz hotspot has answered `false`: on the hotspot transport a 5 GHz sighting,
+     * or the user's own 5 GHz choice, makes that `false` unknown. [systemHotspotBand] is the user's
+     * choice for the system hotspot, null on the local one; 2.4 GHz only keeps the `false`.
+     */
+    fun radioAnswer(
+        supports5Ghz: Boolean?,
+        nativeHotspot: Boolean,
+        seenAbove24Ghz: Boolean,
+        systemHotspotBand: HotspotBandPreference?,
+    ): Boolean? = when {
+        supports5Ghz != false || !nativeHotspot -> supports5Ghz
+        systemHotspotBand == HotspotBandPreference.FORCE_2_4GHZ -> false
+        seenAbove24Ghz || systemHotspotBand == HotspotBandPreference.FORCE_5GHZ -> null
+        else -> false
+    }
 
     /**
      * Whether this session should be asked for less than the user's settings say.

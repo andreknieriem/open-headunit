@@ -43,6 +43,8 @@ class LocalOnlyHotspotHost(
     private val stateLock = Any()
     @Volatile private var reservation: WifiManager.LocalOnlyHotspotReservation? = null
     @Volatile private var started = false
+    /** A [LocalHotspotFrequencyWatch], as `Any` so API 26 to 32 never load it. Guarded by [stateLock]. */
+    private var watch: Any? = null
     @Volatile private var closed = false
 
     /** True while a reservation is held and nothing has ended it. */
@@ -51,12 +53,18 @@ class LocalOnlyHotspotHost(
     /**
      * Asks for a hotspot. [onEvent] runs on the main thread, so it must not block. [currentPair] names
      * the interface that is up and new now, so the next start knows which pair this hotspot held.
+     * [onFrequencies] gets the frequencies it runs on, on the main thread, from API 33.
      */
     @SuppressLint("MissingPermission")
-    fun start(currentPair: () -> Pair<String, String>?, onEvent: (Event) -> Unit) {
+    fun start(
+        currentPair: () -> Pair<String, String>?,
+        onFrequencies: (List<Int>) -> Unit = {},
+        onEvent: (Event) -> Unit,
+    ) {
         val call = ledger.called(SystemClock.elapsedRealtime(), this)
         try {
             val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            watchFrequency(wifi, onFrequencies)
             wifi.startLocalOnlyHotspot(object : WifiManager.LocalOnlyHotspotCallback() {
                 override fun onStarted(res: WifiManager.LocalOnlyHotspotReservation) {
                     // Before any close: a late answer still tells the next start which pair to wait out.
@@ -88,6 +96,7 @@ class LocalOnlyHotspotHost(
         } catch (e: RuntimeException) {
             // IllegalStateException while an earlier request of this app is open; never let it reach the scope.
             ledger.threw(call, SystemClock.elapsedRealtime())
+            stopWatch()
             onEvent(Event.Threw(e))
         }
     }
@@ -99,6 +108,7 @@ class LocalOnlyHotspotHost(
             closed = true
             reservation.also { reservation = null }
         }
+        stopWatch()
         held?.let { closeQuietly(it) }
         ledger.closed(this)
     }
@@ -116,7 +126,21 @@ class LocalOnlyHotspotHost(
             closed = true
             reservation = null
         }
+        stopWatch()
         ledger.ended(this, cause)
+    }
+
+    private fun watchFrequency(wifi: WifiManager, onFrequencies: (List<Int>) -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val new = LocalHotspotFrequencyWatch(wifi) { handler.post(it) }
+        synchronized(stateLock) { watch = new }
+        new.start { if (!closed) onFrequencies(it) }
+    }
+
+    private fun stopWatch() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val held = synchronized(stateLock) { watch.also { watch = null } }
+        (held as? LocalHotspotFrequencyWatch)?.stop()
     }
 
     private fun closeQuietly(res: WifiManager.LocalOnlyHotspotReservation) {

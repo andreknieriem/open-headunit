@@ -190,6 +190,8 @@ class SoftApCredentialsProvider(
         seenWokeAtMs = AccPowerState.wokeAtMs
         reportedConfigUnreadable = false
         lastNoApReportAtMs = 0L
+        // Before the access point comes up: on one radio it can take the station down.
+        WifiBandCapability.noteStationFrequency(context, settings)
         if (isLocal && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             launchLocal(causeOverride = null)
             return
@@ -595,6 +597,8 @@ class SoftApCredentialsProvider(
         releaseLocalHost()
         val gen = ++run.generation
         run.startInFlight = true
+        run.bandMask = 0
+        run.liveFrequencyMhz = 0
         localJob = scope.launch(Dispatchers.IO + CoroutineName("LocalHotspot-Run")) {
             runLocal(gen, causeOverride)
         }
@@ -686,7 +690,7 @@ class SoftApCredentialsProvider(
         synchronized(localLock) {
             if (gen != run.generation || !coroutine.isActive) return
             run.reservation = host
-            host.start({ newPair(before) }) { events.trySend(it) }
+            host.start({ newPair(before) }, { onLiveFrequencies(gen, it) }) { events.trySend(it) }
         }
 
         when (val first = withTimeoutOrNull(LocalHotspotPolicy.START_TIMEOUT_MS) { events.receive() }) {
@@ -821,10 +825,13 @@ class SoftApCredentialsProvider(
         val band = LocalHotspotPolicy.bandFromMask(started.bandMask)
         val credentials = NativeNetworkCredentials(ssid, psk, ip, bssid)
         // A stop can land while the address is read: that run must not cap the video or publish.
+        var live = 0
         val current = synchronized(localLock) {
             (gen == run.generation).also {
                 if (it) {
-                    WifiBandCapability.reportLocalHotspotNarrow(LocalHotspotPolicy.capsVideo(band))
+                    run.bandMask = started.bandMask
+                    live = run.liveFrequencyMhz
+                    WifiBandCapability.reportLocalHotspotNarrow(LocalHotspotPolicy.capsVideo(band, live))
                     heldCredentials = credentials
                     run.startInFlight = false
                     ConnectionStageTracker.report(ConnectionStage.CREATING_NETWORK)
@@ -837,7 +844,7 @@ class SoftApCredentialsProvider(
             return false
         }
         AppLog.i(LocalHotspotPolicy.startedLine(ssid, started.securityType, bssid, iface, ip))
-        AppLog.i(LocalHotspotPolicy.bandLine(band, started.bandMask))
+        AppLog.i(LocalHotspotPolicy.bandLine(band, started.bandMask, live))
         AppLog.i(LocalHotspotPolicy.stationLine(stationBefore, stationAfter))
 
         ConnectionIssues.clear(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
@@ -875,6 +882,22 @@ class SoftApCredentialsProvider(
             InterfaceMacReader.fromIpv6LinkLocal(iface) { false }
         )
     )
+
+    /** The hotspot moved, or came up. The cap is set only while its credentials are out, so an end stays an end. */
+    private fun onLiveFrequencies(gen: Int, frequencies: List<Int>) {
+        val mhz = LocalHotspotPolicy.liveFrequency(frequencies)
+        val band = synchronized(localLock) {
+            if (!run.noteLive(gen, mhz)) return
+            LocalHotspotPolicy.bandFromMask(run.bandMask).also {
+                if (heldCredentials != null) {
+                    WifiBandCapability.reportLocalHotspotNarrow(LocalHotspotPolicy.capsVideo(it, mhz))
+                }
+            }
+        }
+        if (mhz == 0) return
+        AppLog.i(LocalHotspotPolicy.liveBandLine(band, mhz))
+        WifiBandCapability.noteFrequency(settings, mhz)
+    }
 
     /** The platform ended a reservation that was live. It invalidates the credentials, so the next refresh restarts. */
     @RequiresApi(Build.VERSION_CODES.O)

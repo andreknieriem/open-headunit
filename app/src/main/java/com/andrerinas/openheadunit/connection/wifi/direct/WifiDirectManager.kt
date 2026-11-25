@@ -1415,6 +1415,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
             // The band the session actually runs on, for the narrow-band profile cap: a 5 GHz-capable
             // unit hosting a 2.4 GHz group is on the same narrow link a 2.4 GHz-only one is.
             WifiBandCapability.reportSessionFrequency(frequency)
+            WifiBandCapability.noteFrequency(App.provide(context).settings, frequency)
             val band = if (frequency > 4000) "5GHz" else if (frequency > 0) "2.4GHz" else "unknown"
             val channelLabel = if (WifiP2pChannelPolicy.is24GHz(frequency)) ", ${WifiP2pChannelPolicy.describe(frequency)}" else ""
             // Names the request beside the result: a group that came up on 5745 after the user asked

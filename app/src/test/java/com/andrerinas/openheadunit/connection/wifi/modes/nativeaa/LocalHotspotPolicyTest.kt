@@ -579,4 +579,43 @@ class LocalHotspotPolicyTest {
         assertTrue(line.contains("Use the system hotspot"))
         assertTrue(LocalHotspotPolicy.failedLine(0, LocalHotspotFailure.NO_INTERFACE, 34).startsWith("LocalHotspot: start failed reason=0 (NO_INTERFACE): "))
     }
+
+    // The live frequency (API 33)
+
+    @Test
+    fun `the slowest live frequency decides and zeros do not count`() {
+        assertEquals(0, LocalHotspotPolicy.liveFrequency(emptyList()))
+        assertEquals(0, LocalHotspotPolicy.liveFrequency(listOf(0, -1)))
+        assertEquals(5785, LocalHotspotPolicy.liveFrequency(listOf(0, 5785)))
+        assertEquals(2437, LocalHotspotPolicy.liveFrequency(listOf(5180, 2437)))
+    }
+
+    @Test
+    fun `a live frequency decides the cap whatever band was asked for`() {
+        for (band in LocalBand.values()) {
+            assertTrue(LocalHotspotPolicy.capsVideo(band, 2462))
+            assertFalse(LocalHotspotPolicy.capsVideo(band, 5785))
+            assertEquals(LocalHotspotPolicy.capsVideo(band), LocalHotspotPolicy.capsVideo(band, 0))
+        }
+    }
+
+    @Test
+    fun `the live band lines`() {
+        assertEquals(
+            "LocalHotspot: live frequency 5785 MHz, 2.4 GHz cap not forced",
+            LocalHotspotPolicy.liveBandLine(LocalBand.BAND_24, 5785),
+        )
+        assertEquals(
+            "LocalHotspot: live frequency 2462 MHz, 2.4 GHz cap applied",
+            LocalHotspotPolicy.liveBandLine(LocalBand.ABOVE_24, 2462),
+        )
+        assertEquals(
+            "LocalHotspot: band 5 GHz or higher (mask=2), channel list 0, 2.4 GHz cap applied",
+            LocalHotspotPolicy.bandLine(LocalBand.ABOVE_24, 2, 2462),
+        )
+        assertEquals(
+            "LocalHotspot: no live frequency (SecurityException), so the requested band decides the cap",
+            LocalHotspotPolicy.noLiveBandLine("SecurityException"),
+        )
+    }
 }

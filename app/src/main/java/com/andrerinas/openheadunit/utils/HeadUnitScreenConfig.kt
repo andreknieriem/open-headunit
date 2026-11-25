@@ -560,7 +560,7 @@ object HeadUnitScreenConfig {
         val context = appContext ?: return null
         return try {
             NarrowBandProfilePolicy.linkCeiling(
-                supports5Ghz = WifiBandCapability.supports5Ghz(context),
+                supports5Ghz = WifiBandCapability.radioAnswerForCap(context, currentSettings),
                 wirelessSession = App.provide(context).commManager.isWirelessSession,
                 capEnabled = currentSettings.narrowBandProfileCap,
                 sessionFrequencyMhz = WifiBandCapability.sessionFrequencyMhz(),

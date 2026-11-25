@@ -38,6 +38,7 @@ import androidx.navigation.fragment.findNavController
 import android.os.Build
 import android.bluetooth.BluetoothDevice
 import android.os.CountDownTimer
+import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.PokeTargetPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
@@ -516,10 +517,12 @@ class HomeFragment : Fragment() {
         val ctx = context ?: return
         val decision = decision ?: return
         val appSettings = App.provide(ctx).settings
+        val facts = status.facts()
+        facts.frequencyMhz?.let { WifiBandCapability.noteFrequency(appSettings, it) }
         val line = HomeWifiStatusPolicy.line(
             phoneHotspot = phoneHotspotChosen(appSettings),
             cardIsWifi = decision.primary == HomePrimaryPolicy.Connection.WIFI,
-            facts = status.facts(),
+            facts = facts,
         )
         HomeUiHelper.applyWifiStatus(ctx, root, appSettings, decision, homePalette(ctx), line, status.isScanning)
     }

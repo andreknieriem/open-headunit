@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
@@ -173,8 +174,34 @@ open class BaseActivity : AppCompatActivity() {
         applyBarColorsFor(if (color != 0) color else Settings(this).systemBarColor)
     }
 
+    /** The bar colors and icon looks as they were before this activity first painted them. */
+    private class BarLook(val status: Int, val navigation: Int, val lightStatus: Boolean, val lightNavigation: Boolean)
+
+    private var barLookBeforePaint: BarLook? = null
+
     private fun applyBarColorsFor(color: Int) {
-        SystemUI.applyBarColors(window, color, Settings(this).fullscreenMode)
+        val mode = Settings(this).fullscreenMode
+        if (!SystemUI.paintsBarColors(mode)) return
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        if (color != 0) {
+            if (barLookBeforePaint == null) {
+                barLookBeforePaint = BarLook(
+                    window.statusBarColor, window.navigationBarColor,
+                    controller.isAppearanceLightStatusBars, controller.isAppearanceLightNavigationBars
+                )
+            }
+            SystemUI.applyBarColors(window, color, mode)
+        } else {
+            // No own color: leave the bars alone, but undo an own color painted earlier, such as the
+            // live preview of the color picker or a color that was just reset.
+            barLookBeforePaint?.let {
+                window.statusBarColor = it.status
+                window.navigationBarColor = it.navigation
+                controller.isAppearanceLightStatusBars = it.lightStatus
+                controller.isAppearanceLightNavigationBars = it.lightNavigation
+                barLookBeforePaint = null
+            }
+        }
     }
 
     protected fun resetWindowBackgroundToTheme() {

@@ -205,6 +205,14 @@
                         android:text="@string/bg_color_summary"
                         android:textColor="?android:attr/textColorSecondary"
                         android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/bg_color_hint"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <ImageView

@@ -1978,6 +1978,7 @@
     <string name="home_wifi_off_hint">Turn it on to connect</string>
     <string name="bg_color_title">Panel background color</string>
     <string name="bg_color_summary">Own color for the system panels</string>
+    <string name="bg_color_hint">Applies when the system bars are shown: not in the immersive full screen modes, and only on Android 14 and older.</string>
     <string name="bg_color_default_value">Default</string>
     <string name="bg_color_red">Red</string>
     <string name="bg_color_green">Green</string>

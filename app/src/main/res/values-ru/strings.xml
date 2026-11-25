@@ -1899,6 +1899,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="home_wifi_off_hint">Включите для подключения</string>
     <string name="bg_color_title">Цвет фона панелей</string>
     <string name="bg_color_summary">Свой цвет системных панелей</string>
+    <string name="bg_color_hint">Действует, когда системные панели видны: не в режимах полноэкранного погружения и только на Android 14 и старше.</string>
     <string name="bg_color_default_value">По умолчанию</string>
     <string name="bg_color_red">Красный</string>
     <string name="bg_color_green">Зелёный</string>

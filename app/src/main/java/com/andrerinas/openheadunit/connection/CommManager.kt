@@ -391,6 +391,10 @@ class CommManager(
         com.andrerinas.openheadunit.connection.wifi.direct.RetainedNativeGroup.requestStop {
             ownsAppExit(request.id)
         }
+        // Close the screens in the turn that accepts the Stop, not after the service relays it.
+        // Android routes an Open before the app sees it: an Open that reaches a stopped screen
+        // still waiting to be finished is dropped when that screen finishes.
+        appExitScreens.toList().forEach { it(request.id) }
         return request
     }
 
@@ -432,6 +436,14 @@ class CommManager(
             putExtra(AppExitPolicy.EXTRA_EXIT_OWNER, request.id)
         })
     }
+
+    // Main only: the live screens that close for an accepted exit, each with its own owner check.
+    // The broadcast above still reaches a screen created after the Stop was accepted.
+    private val appExitScreens = LinkedHashSet<(Long) -> Unit>()
+
+    internal fun addAppExitScreen(close: (Long) -> Unit) { appExitScreens += close }
+
+    internal fun removeAppExitScreen(close: (Long) -> Unit) { appExitScreens -= close }
 
     internal fun finishAppExitTasks(request: AppExitPolicy.Request) {
         if (!ownsAppExit(request.id)) return

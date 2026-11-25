@@ -8,6 +8,7 @@ import com.andrerinas.openheadunit.aap.AapProjectionActivity
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.main.SettingsActivity
+import com.andrerinas.openheadunit.utils.AppLog
 import java.util.UUID
 
 internal class AppUiEntryIdentity : ViewModel() {
@@ -58,6 +59,7 @@ internal object AppUiEntry {
         val manager = App.provide(activity).commManager
         val owner = manager.onAppRelaunched()
         manager.restoreAppForEntry(owner)
+        reopenIfFinishing(activity)
     }
     fun foregroundStarted(activity: Activity) {
         val entryActivity = isEntryActivity(activity)
@@ -74,5 +76,25 @@ internal object AppUiEntry {
         val manager = App.provide(activity).commManager
         val owner = manager.acceptAppResume(revision) ?: return
         manager.restoreAppForEntry(owner)
+        reopenIfFinishing(activity)
+    }
+
+    /**
+     * Android picks the activity for an Open before the app sees it. An Open routed just before a
+     * Stop was accepted, or before that Stop's later broadcast, can therefore reach an activity the
+     * Stop has already finished. The Open has now superseded the Stop and still owns the screen,
+     * so show a fresh instance; Android does not reuse a finishing singleTask instance. The marker
+     * keeps it from counting as a second Open, and the delivered Intent is not replayed: the
+     * finishing activity has already handled its command.
+     */
+    private fun reopenIfFinishing(activity: Activity) {
+        if (!activity.isFinishing) return
+        AppLog.i("AppUiEntry: an Open reached a finishing ${activity.javaClass.simpleName}; reopening it")
+        try {
+            activity.startActivity(continuation(Intent(activity, activity.javaClass)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)))
+        } catch (failure: RuntimeException) {
+            AppLog.e("AppUiEntry: could not reopen ${activity.javaClass.simpleName}: ${failure.message}", failure)
+        }
     }
 }

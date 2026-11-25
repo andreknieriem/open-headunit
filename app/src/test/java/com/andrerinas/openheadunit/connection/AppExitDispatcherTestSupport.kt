@@ -16,7 +16,8 @@ internal fun CommManager.withAppExitDispatcherForTest(
     CommManager::class.java.getDeclaredField("connectionIoDispatcher")
         .apply { isAccessible = true }.set(this, Dispatchers.Unconfined)
     val manager = this
-    for ((name, initial) in listOf("transportLifecycleLock" to Any(), "appExitPolicy" to AppExitPolicy())) {
+    for ((name, initial) in listOf("transportLifecycleLock" to Any(), "appExitPolicy" to AppExitPolicy(),
+            "appExitScreens" to LinkedHashSet<(Long) -> Unit>())) {
         CommManager::class.java.getDeclaredField(name).apply {
             isAccessible = true
             if (get(manager) == null) set(manager, initial)

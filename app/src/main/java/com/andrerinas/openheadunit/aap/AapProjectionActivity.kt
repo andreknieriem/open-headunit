@@ -1129,6 +1129,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
     }
 
+    // The same check, run in the turn that accepts a Stop. See CommManager.addAppExitScreen.
+    private val closeForAppExit: (Long) -> Unit = { owner ->
+        finishReceiver.onReceive(this, Intent(AppExitPolicy.ACTION_FINISH_ACTIVITIES)
+            .putExtra(AppExitPolicy.EXTRA_EXIT_OWNER, owner))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyShowOverLockScreen()
@@ -1285,6 +1291,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         ContextCompat.registerReceiver(this, finishReceiver, android.content.IntentFilter(AppExitPolicy.ACTION_FINISH_ACTIVITIES), ContextCompat.RECEIVER_NOT_EXPORTED)
         isFinishReceiverRegistered = true
+        commManager.addAppExitScreen(closeForAppExit)
 
         // Registered for the activity's whole life, not onResume/onPause: screen-off pauses it,
         // and screen-off is exactly the moment the input hold has to engage.
@@ -2989,6 +2996,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         unregisterAudioModeListener()
         if (isFinishReceiverRegistered) {
             unregisterReceiver(finishReceiver)
+            commManager.removeAppExitScreen(closeForAppExit)
             isFinishReceiverRegistered = false
         }
         if (isKeyEventReceiverRegistered) {

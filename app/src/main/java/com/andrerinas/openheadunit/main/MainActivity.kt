@@ -113,6 +113,12 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    // The same check, run in the turn that accepts a Stop. See CommManager.addAppExitScreen.
+    private val closeForAppExit: (Long) -> Unit = { owner ->
+        finishReceiver.onReceive(this, Intent(AppExitPolicy.ACTION_FINISH_ACTIVITIES)
+            .putExtra(AppExitPolicy.EXTRA_EXIT_OWNER, owner))
+    }
+
     private val recreateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_RECREATE_MAIN) {
@@ -302,6 +308,7 @@ class MainActivity : BaseActivity() {
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
         isFinishReceiverRegistered = true
+        App.provide(this).commManager.addAppExitScreen(closeForAppExit)
 
         // Wire cancel affordances. The pill's X stops the whole bring-up; the overlay's button
         // ends only the attempt it belongs to.
@@ -1627,6 +1634,7 @@ class MainActivity : BaseActivity() {
         ActivityState.release(this, findViewById(R.id.auto_connect_loading_custom_image))
         if (isFinishReceiverRegistered) {
             unregisterReceiver(finishReceiver)
+            App.provide(this).commManager.removeAppExitScreen(closeForAppExit)
             isFinishReceiverRegistered = false
         }
         // Registered in stopAutoConnectVideo(), so without this it outlives the activity that owns

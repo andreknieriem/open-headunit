@@ -109,21 +109,28 @@ object SystemUI {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                         flags = flags or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     } else {
-                        // Older than KitKat: use FLAG_FULLSCREEN for reliability
-                        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                         flags = flags or View.SYSTEM_UI_FLAG_LOW_PROFILE
+                    }
+                    // Keep FLAG_FULLSCREEN on API < 30 so system overlays (e.g. volume bar on
+                    // Android 6 / PX5 head units) do not pull the status bar back down (#1257).
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                     }
                 }
                 Settings.FullscreenMode.STATUS_ONLY -> {
                     flags = flags or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        flags = flags or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    } else {
                         flags = flags or View.SYSTEM_UI_FLAG_LOW_PROFILE
+                    }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                     }
                 }
                 Settings.FullscreenMode.NONE -> {
                     // Reset flags for normal mode
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                     }
                 }

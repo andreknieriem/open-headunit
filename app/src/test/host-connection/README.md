@@ -1,6 +1,6 @@
 # Connection lifecycle regressions
 
-Run `python3 app/src/test/host-connection/run.py` after populating Gradle's Kotlin dependencies.
+Run `python3 app/src/test/host-connection/run.py` after running the GitHub debug Gradle unit tests.
 The runner extracts production lifecycle methods and uses JVM queues and latches to exercise
 cancellation, ownership publication, full worker termination and USB open/close races.
 Android framework and I/O endpoints are test doubles; no device is needed.
@@ -105,3 +105,70 @@ Duration limits, sparse option merging, positive
 video offset direction and clock smoothing are explicit local receiver policies, not
 claims of a recovered normative implementation. A/V control requires attributable audio
 playout; no valid clock means bounded video-only timing rather than fabricated feedback.
+
+## App exit and reentry
+
+The app-exit suite separates one physical service teardown from the latest Run/Stop decision.
+Reopening the app or accepting a replacement connection revokes older finish/kill authority.
+A fresh Stop can join the existing teardown with its own flags; an older accepted relay cannot
+become a new Stop when it is finally delivered. Completion keeps the latest Stop stopped or
+restores the latest Run without replacing the physical completion gate. A later Stop permanently
+cancels waiting connection tickets even if another UI Open follows it.
+
+Public USB/IP/socket entry captures its Stop ticket before IO dispatch. Held-socket adoption
+keeps that ticket and its original connection tier; guards precede claims and preemption, not
+only final publication. A cancelled old attempt therefore cannot tear down a newer connection.
+The actual transport quit callback also cannot downgrade an accepted explicit Stop to a
+conditional kill-on-disconnect request.
+
+The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
+discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the
+input is accepted and carry it through queued work, permission waits, countdowns and internal
+retries. The caller fixtures extract those producers and run them against the real manager,
+arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
+compatible Open without Stop and genuinely new input remain accepted. A held socket is taken
+only by the callback that owns that exact socket. The USB unit regressions drive the actual
+scan, permission poll, retry loop and StandardUsb open; physical opens are counted at
+`UsbManager.openDevice`.
+
+A revoked in-flight scan, Self launch or Nearby attempt never absorbs a valid newer input:
+the stale work is detached and the new input starts, while a same-ticket duplicate is still
+folded into the running work. The overlap regressions submit the fresh input while the stale
+work is still in flight. Nearby validates tickets and changes attempt state lifecycle-first
+(lifecycle lock, then attempt monitor), the same order publication admission uses; SDK calls
+and resource cleanup run outside both. The lock regression drives the actual bandwidth
+callback against a held admission and checks for a JVM-detected deadlock.
+
+Connection acceptance and publication share Main ordering with activity finish and process
+exit effects. The scheduling suite holds task lookup and process-exit preparation while a
+replacement queues, and exercises cancellation before and after resource transfer. Ordinary
+publication rechecks the latest teardown job, not only the job seen before dispatching to Main.
+Restricted handoff rejects an unfinished teardown at final transfer. The regressions queue a
+new cleanup between an older join and publication/terminal capture, then verify old workers and
+audio/video resources retire without closing the replacement. Android effects and dispatchers
+are controlled doubles; native connection teardown stays outside publication locks.
+
+The bootstrap fixture extracts command validation, the startup latch and USB ticket handoff,
+and destruction completion. A tagged relay revoked by Stop cannot start a USB scan after Open;
+a valid relay hands its ticket to the startup scan once, even with duplicate delivery.
+A stale Run/Stop retires an uninitialized service before `stopSelf`, so a queued valid start
+cannot initialize that already-doomed instance; only the current Run is restored afterward.
+Foreground policy tests distinguish actual Intent delivery, retained configuration identity and
+one process-wide fully-stopped return episode across Main, Projection and Settings. They do not
+model every focus-only, PiP, multi-window or config/Home-overlap return.
+Automatic Home work starts only from a current Run and keeps that Stop ticket across both
+auto blocks, the countdown, last-session IP/USB, single USB and Self/VPN consent. Completed
+Stop followed by configuration recreation with screen-on start and single-USB auto-connect
+enabled, with no USB attached, initializes no service; genuine owned Open still restores it.
+Real Android instrumentation separately exercises task return, that configuration case and
+delayed finish delivery.
+
+Native group coordinator tests retain cleanup responsibility beyond service destruction and
+hold new adoption/create work behind submitted removal callbacks. Actual active adoption clears
+only detached cleanup authority, leaving active transport shutdown on the normal service path.
+A late abandoned create records its framework removal boundary before submission, so failure
+preserves responsibility for the next fresh Stop. An absent callback leaves the barrier closed
+rather than asserting completion. A service Stop that arrives after logical Disconnected but
+before the transport has closed waits on that actual retirement, so native removal cannot be
+submitted first. These are recording framework boundaries, not proof of manufacturer radio
+behavior. Activity callback ordering and actual task/process effects still require Android coverage.

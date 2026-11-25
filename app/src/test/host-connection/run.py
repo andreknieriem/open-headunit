@@ -11,7 +11,8 @@ import os, re, subprocess, sys, hashlib, json, shutil
 ROOT=Path(sys.argv[1]).resolve() if len(sys.argv)>1 else Path(__file__).resolve().parents[4]
 if not (ROOT/'app/src/main/java').is_dir():
     raise SystemExit('Pass the extracted source/ directory as the first argument.')
-OUT=ROOT/'build/host-connection'
+BUILD=ROOT/'build/host-connection'
+OUT=BUILD/'lifecycle'
 OUT.mkdir(parents=True,exist_ok=True)
 base=ROOT/'app/src/main/java/com/andrerinas/openheadunit'
 comm=(base/'connection/CommManager.kt').read_text()
@@ -25,8 +26,148 @@ def member(source, name):
             if depth==0:return source[start:end+1]
     raise ValueError(name)
 methods={}
-def extract(source,name):
-    s=member(source,name);methods[name]=hashlib.sha256(s.encode()).hexdigest();return s
+def extract(source,name,key=None):
+    s=member(source,name);methods[key or name]=hashlib.sha256(s.encode()).hexdigest();return s
+def expression(source,name,key):
+    start=source.rfind('\n',0,source.index(name))+1
+    lines=source[start:].splitlines()
+    indent=len(lines[0])-len(lines[0].lstrip())
+    end=1
+    while end<len(lines) and lines[end].strip() and len(lines[end])-len(lines[end].lstrip())>indent:
+        end+=1
+    value='\n'.join(lines[:end]);methods[key]=hashlib.sha256(value.encode()).hexdigest()
+    return value
+receivers='package lifecycle\nimport android.content.*\nimport com.andrerinas.openheadunit.connection.AppExitPolicy\n'
+for name,path,finish in [('MainActivity','main/MainActivity.kt','finishAffinity'),
+                         ('AapProjectionActivity','aap/AapProjectionActivity.kt','finish')]:
+    receiver=member((base/path).read_text(),'private val finishReceiver')
+    methods[name+' finish receiver']=hashlib.sha256(receiver.encode()).hexdigest()
+    receiver=receiver.replace('App.provide(this@MainActivity).commManager','commManager')
+    receivers += (f'class {name}(private val commManager:CommManager, private val context:Context) {{\n'
+                  'var finishes=0\n'
+                  f'fun {finish}() {{ finishes++ }}\n'
+                  'fun deliver(intent:Intent) { finishReceiver.onReceive(context,intent) }\n'
+                  + receiver + '\n}\n')
+(OUT/'ExitReceivers.kt').write_text(receivers)
+# Preserve the production final decision and branch ordering; replace only platform effects.
+service_source=(base/'aap/AapService.kt').read_text()
+completion=extract(service_source, 'private fun completeOwnedDestruction()')
+completion=completion.replace('private fun completeOwnedDestruction()', 'fun finish()')
+completion=completion.replace('com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.beforeProcessExit()', 'beforeProcessExit()')
+completion=completion.replace('System.exit(0)', 'recordProcessExit()')
+exit_tail=completion.replace('commManager.restoreAppForEntry(completion.owner)', 'recordServiceRestart()')
+(OUT/'ExitServiceTail.kt').write_text('package lifecycle\nimport com.andrerinas.openheadunit.connection.AppExitPolicy\n'
+    'internal class ExitServiceTail(private val commManager:CommManager, private val appExitRequest:AppExitPolicy.Request) {\n'
+    'private val initializedForStart=true\nprivate val foregroundPromotionFailed=false\nprivate val settings get()=commManager.settings\n'
+    'var beforeProcessExit:()->Unit = {}\nvar processExits=0\nvar serviceRestarts=0\nvar ownedAtProcessExit=false\n'
+    'fun recordProcessExit(){ownedAtProcessExit=commManager.ownsAppExit(appExitRequest.id);processExits++}\n'
+    'fun recordServiceRestart(){serviceRestarts++}\n' + exit_tail + '\n}\n')
+
+# Keep the real command-validation prefix and rejection/destruction behavior; radio setup and
+# Android service lifetime are recording boundaries, not another model of the ownership guards.
+bootstrap_start = extract(service_source, 'override fun onStartCommand(')
+bootstrap_start = bootstrap_start[:bootstrap_start.index('        // An automation command may ask')] + \
+    '        return START_STICKY\n    }'
+bootstrap_start = bootstrap_start.replace('override fun onStartCommand(', 'fun onStartCommand(')
+bootstrap_constants = '\n'.join(next(line.strip().replace('private ', '', 1)
+    for line in service_source.splitlines() if re.search(r'\bconst\s+val\s+' + re.escape(name) + r'\s*=', line))
+    for name in ['ACTION_STOP_SERVICE', 'EXTRA_STOP_OWNER', 'EXTRA_RUN_OWNER', 'EXTRA_OPERATION_TICKET'])
+bootstrap_rejection = extract(service_source, 'private fun retireRejectedBootstrap()')
+# Keep the startup latch and the ticket passed to the already-connected USB scan. Platform
+# setup between them (audio, media, settings and Android receivers) is not part of this fixture.
+bootstrap_init = extract(service_source, 'private fun initializeForStart(')
+bootstrap_init = bootstrap_init[:bootstrap_init.index('        fillBluetoothAddressIfUnset()')] + \
+    next(line for line in bootstrap_init.splitlines() if 'usbLauncherManager.checkAlreadyConnected(' in line) + '\n    }'
+(OUT/'ServiceBootstrap.kt').write_text(
+    'package lifecycle\nimport android.content.*\n'
+    'import com.andrerinas.openheadunit.connection.AppExitPolicy\n'
+    'class ServiceBootstrap(private val commManager:CommManager) {\n'
+    'private val settings get()=commManager.settings\n'
+    'var initializedForStart=false\nvar foregroundPromotionFailed=false\nvar isDestroying=false\n'
+    'private var appExitRequest:AppExitPolicy.Request?=null\nvar stops=0\n'
+    'fun stopSelf(){stops++}\nval usbStartupTickets = mutableListOf<Long>()\n'
+    'private val usbLauncherManager = object {\n'
+    '    fun checkAlreadyConnected(ticket: Long) { usbStartupTickets.add(ticket) }\n'
+    '}\n'
+    'var foreground=false\nvar failForeground=false\n'
+    'fun startForegroundWithCurrentTypes(){check(!failForeground){"foreground promotion rejected"};foreground=true}\n'
+    'fun stopForegroundForShutdown(){isDestroying=true;foreground=false}\n'
+    'fun stopForAcceptedAppExit(){stopForegroundForShutdown();stops++}\n'
+    'fun beforeProcessExit(){error("unexpected process exit")}\n'
+    'fun recordProcessExit(){error("unexpected process exit")}\n'
+    'companion object {\nconst val START_NOT_STICKY=2\nconst val START_STICKY=1\n' +
+    bootstrap_constants + '\n}\n' + bootstrap_rejection + '\n' + bootstrap_start + '\n' +
+    bootstrap_init + '\n' +
+    completion + '\n}\n')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppBootstrapFixture.kt', OUT/'AppBootstrapFixture.kt')
+home_source=(base/'main/HomeFragment.kt').read_text()
+home_fixture=(ROOT/'app/src/test/host-connection/HomeAutomaticFixture.kt').read_text()
+home_created=extract(home_source,'override fun onViewCreated(', 'Home onViewCreated')
+home_blocks=home_created[home_created.index('        val appSettings = App.provide(requireContext()).settings'):home_created.rfind('\n    }')]
+home_members={
+    'HOME_VPN_CALLBACK':extract(home_source,'private val vpnPermissionLauncher','Home VPN callback').replace('android.app.Activity.RESULT_OK','RESULT_OK'),
+    'HOME_CREATE_STATE':extract(home_source,'override fun onCreate(', 'Home create state'),
+    'HOME_SAVE_STATE':extract(home_source,'override fun onSaveInstanceState(', 'Home save state'),
+    'HOME_AUTO_BLOCKS':home_blocks,
+    'HOME_COUNTDOWN':extract(home_source,'private suspend fun countDownToAutoConnect(', 'Home countdown'),
+    'HOME_AUTO_TARGET':extract(home_source,'private fun autoConnectTarget(', 'Home auto target'),
+    'HOME_LAST_SESSION':extract(home_source,'private fun attemptAutoConnect(', 'Home last session').replace('Dispatchers.IO','ioDispatcher'),
+    'HOME_SINGLE_USB':extract(home_source,'private fun attemptSingleUsbAutoConnect(', 'Home single USB'),
+    'HOME_SELF_START':extract(home_source,'private fun startSelfMode(', 'Home Self start'),
+    'HOME_SELF_INTERNAL':extract(home_source,'private fun startSelfModeInternal(', 'Home Self dispatch'),
+    'SELF_ROUTE_POLICY':expression((base/'connection/self/SelfLaunchRoutePolicy.kt').read_text(),'fun needsDummyVpn(', 'Self VPN route'),
+    'SINGLE_USB_OVERLAY_POLICY':expression((base/'main/AutoConnectAttemptPolicy.kt').read_text(),'fun singleUsbShowsOverlay(', 'USB overlay policy'),
+    'OPERATION_CONSTANT':next(line.strip().replace('private ','',1) for line in service_source.splitlines() if 'const val EXTRA_OPERATION_TICKET =' in line),
+    'OPERATION_INTENT':expression(service_source,'internal fun operationIntent(', 'Operation intent'),
+}
+for marker,value in home_members.items(): home_fixture=home_fixture.replace('// '+marker,value)
+(OUT/'HomeAutomaticFixture.kt').write_text(home_fixture)
+
+ui_main=(base/'main/MainActivity.kt').read_text()
+ui_network=(base/'main/NetworkListFragment.kt').read_text()
+ui_automation=(base/'automation/AutomationEffectRunner.kt').read_text()
+ui_fixture=(ROOT/'app/src/test/host-connection/UiConnectFixture.kt').read_text()
+ui_members={
+    'UI_FORCE_SELF_MODE':extract(ui_main,'private fun forceSelfModeLaunch(', 'Main Self producer'),
+    'UI_HANDLE_LAUNCH_INTENT':extract(ui_main,'private fun handleLaunchIntent(', 'Main launch producer').replace('private fun handleLaunchIntent(','fun handleLaunchIntent(',1),
+    'UI_ADDRESS_ON_CLICK':extract(ui_network,'override fun onClick(', 'Address click producer').replace('override ','',1),
+    'UI_START_SCAN':extract(ui_network,'private fun startScan(', 'Network scan producer').replace('private fun startScan(','fun startScan(',1),
+    'UI_SERVICE_FOUND':extract(ui_network,'override fun onServiceFound(', 'Network UI callback').replace('override ','',1),
+    'UI_AUTOMATION_EFFECTS':extract((base/'automation/AutomationCommandPolicy.kt').read_text(),'sealed interface Effect', 'Automation effects'),
+    'UI_AUTOMATION_RUN':extract(ui_automation,'fun run(', 'Automation run'),
+    'UI_AUTOMATION_START_SERVICE':extract(ui_automation,'private fun startService(', 'Automation service producer'),
+    'UI_AUTOMATION_NIGHT_MODE':extract(ui_automation,'private fun setNightMode(', 'Automation night mode'),
+    'UI_SERVICE_CONSTANTS':'\n'.join(next(line.strip().replace('private ','',1) for line in service_source.splitlines() if 'const val '+name+' =' in line) for name in ['EXTRA_STOP_OWNER','EXTRA_OPERATION_TICKET']),
+    'UI_OPERATION_INTENT':expression(service_source,'internal fun operationIntent(', 'UI operation intent'),
+    'UI_ACCEPTED_STOP_INTENT':expression(service_source,'internal fun acceptedStopIntent(', 'UI accepted Stop intent'),
+    'UI_STOP_INTENT':extract(service_source,'fun stopIntent(', 'UI Stop producer'),
+}
+for marker,value in ui_members.items(): ui_fixture=ui_fixture.replace('// '+marker,value)
+(OUT/'UiConnectFixture.kt').write_text(ui_fixture)
+
+network_source=(base/'connection/wifi/NetworkDiscovery.kt').read_text()
+network_wifi_wait=network_source[network_source.index('    @Volatile\n    private var waitingForWifiLogged'):
+                                network_source.index('\n\n    /** The DHCP server')]
+methods['Discovery phone hotspot wait']=hashlib.sha256(network_wifi_wait.encode()).hexdigest()
+headunit_network=(base/'connection/wifi/HeadunitServerNetwork.kt').read_text()
+(OUT/'HeadunitServerNetwork.kt').write_text(headunit_network.replace(
+    'package com.andrerinas.openheadunit.connection.wifi', 'package lifecycle'))
+network_fixture=(ROOT/'app/src/test/host-connection/NetworkConnectionIngressFixture.kt').read_text()
+network_members={
+    'NETWORK_SERVER_HANDOFF':extract((base/'connection/wifi/server/WirelessServer.kt').read_text(),'internal fun handOffClient(', 'Server accepted socket'),
+    'NETWORK_DISCOVERY_HANDOFF':extract((base/'connection/wifi/WifiLauncherSharedServices.kt').read_text(),'override fun onServiceFound(', 'Discovery accepted socket').replace('override ','',1),
+    'NETWORK_SCAN_GENERATION':extract(network_source,'private class Generation(', 'Discovery generation'),
+    'NETWORK_SCAN_START':extract(network_source,'fun startScan(', 'Discovery start'),
+    'NETWORK_SCAN_JOB':extract(network_source,'private fun newScanJob(', 'Discovery scan job'),
+    'NETWORK_WIFI_WAIT':network_wifi_wait.replace('App.provide(context).settings','commManager.settings')
+        .replace('NetworkAddresses.stationIpv4(context)','stationIpv4'),
+}
+for marker,value in network_members.items():
+    value=value.replace('App.provide(context).commManager','commManager').replace('Dispatchers.IO','io').replace('Dispatchers.Main','main')
+    network_fixture=network_fixture.replace('// '+marker,value)
+(OUT/'NetworkConnectionIngressFixture.kt').write_text(network_fixture)
+shutil.copy2(base/'app/AppForegroundPolicy.kt',OUT/'AppForegroundPolicy.kt')
+
 manager_head=r'''package lifecycle
 import android.hardware.usb.*
 import android.app.Application
@@ -34,9 +175,14 @@ import android.content.Context
 import android.media.AudioManager
 import android.os.*
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
+import com.andrerinas.openheadunit.connection.AppExitPolicy
+import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
+import com.andrerinas.openheadunit.aap.AapMessageFraming
 import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.*
+import java.net.Socket
 
 enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
 sealed class ConnectionState {
@@ -68,7 +214,7 @@ class CommManager {
  private var outgoingEndpoint:Pair<String,Int>?=null
  @Volatile private var _transport:AapTransport?=null
  @Volatile private var projectionVideoFocusSuppressed=false
- @Volatile private var _connection:ProjectionConnection?=ProjectionConnection()
+ @Volatile private var _connection:ProjectionConnection?=FixtureConnection()
  private val _backgroundNotification=Unit
  private val aapSslContext=Ssl()
  val queue=QueuedDispatcher()
@@ -91,24 +237,36 @@ class CommManager {
  private val keyStates=mutableMapOf<Int,Int>()
  private var btMediaLinkCached:Boolean?=null
  private var btMediaLinkCheckedAt:Long?=null
- private fun dropOwedScans(){}
+ private fun dropOwedScans()=ConnectionArbiter.dropUsbDebt()
  private fun noteHandshakeOutcome(silent:Boolean){}
- private fun settleSessionClaim(formed:Boolean){}
+ @Volatile private var sessionClaim:ConnectionArbiter.Claim?=null
+ @Volatile private var claimedEndpointOwner:Pair<ConnectionArbiter.Claim,String>?=null
+ var attemptUserRequested=false
+ private val claimedEndpoint:String? get()=claimedEndpointOwner?.second
  private fun noteSessionEnded(renderedAnyFrame:Boolean, deliberateEnd:Boolean=false){}
  val connectionState get()=_connectionState
  val state get()=_connectionState.value
  fun owner()=checkNotNull(_transport)
  fun nullableOwner()=_transport
- fun network()=_connection
+ fun network()=_connection as FixtureConnection?
  fun requested()=synchronized(transportLifecycleLock){disconnectRequested}
  fun cleanups(){queue.drain()}
- fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel()}
- suspend fun connectNext(){connectIp("fixture",5277, null)}
- suspend fun connectSelf(){connectIp("127.0.0.1",5277,null)}
- suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state)}
+ fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel();ConnectionArbiter.actions=null;ConnectionArbiter.reset()}
+ // Private publication fixtures model an already-accepted unrestricted claim. The claimed
+ // variants below execute the actual production Main acceptance when that ordering is tested.
+ private fun acceptedTicket():Long = synchronized(transportLifecycleLock) {
+  appExitPolicy.supersede();cancelAppExitCallback();appExitPolicy.stopEpoch
+ }
+ suspend fun connectNext(){connectIp("fixture",5277,null,acceptedTicket())}
+ suspend fun connectPrepared(socket:Socket,admission:ConnectionAdmission=ConnectionAdmission.UNRESTRICTED){connectAdmittedSocket(socket,admission,null,null,appConnectionTicket())}
+ suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,null,acceptedTicket())}
+ suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){val ticket=appConnectionTicket();if(acceptAppConnectionClaim(claim,ticket))connectIp("fixture",5277,null,ticket)}
+ suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appConnectionTicket(),appClaim=claim)}
+ suspend fun connectSelf(){connectIp("127.0.0.1",5277,null,acceptedTicket())}
+ suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state,acceptedTicket())}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
- val isUsbSession=false
- suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,saved)}
+ suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,appConnectionTicket(),saved)}
+ suspend fun connectRecovery(d:UsbDevice,admission:ConnectionAdmission)=connectUsb(d,appConnectionTicket(),recoveryOwner=usbRecoveryOwner,recoveryClaim=fixtureClaim(),recoveryAdmission=admission)
  suspend fun awaitCleanup(){_disconnectJob?.join()}
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
 '''
@@ -116,30 +274,55 @@ class CommManager {
 old_state=manager_head[manager_head.index(' class Disconnected('):manager_head.index(' object Connecting:')]
 manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected(')+'\n')
 manager_head=manager_head.replace('\nsealed class ConnectionState', '\n'+extract(comm, 'enum class EndCause')+'\nsealed class ConnectionState', 1)
-for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'ConnectionAdmission.kt', 'UsbRecoveryAdmission.kt']:
+for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'ConnectionAdmission.kt', 'UsbRecoveryAdmission.kt',
+             'ConnectionPriorityPolicy.kt', 'ConnectionArbiter.kt', 'HeldServerSocket.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
+    source=source.replace('import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.',
+                          'import lifecycle.ConnectionPriorityPolicy.')
     (OUT/name).write_text(source)
 (OUT/'UsbRecoveryDevice.kt').write_text((base/'connection/usb/UsbRecoveryDevice.kt').read_text().replace('package com.andrerinas.openheadunit.connection.usb', 'package lifecycle'))
 (OUT/'AaPresentationSession.kt').write_text((base/'aap/AaPresentationSession.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 (OUT/'EndCausePolicy.kt').write_text((base/'connection/EndCausePolicy.kt').read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle').replace('import com.andrerinas.openheadunit.connection.CommManager.EndCause\n', ''))
 (OUT/'FinalMessageDelivery.kt').write_text((base/'aap/FinalMessageDelivery.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
-# These endpoint predicates must be the real ones when testing the terminal route snapshot.
-for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
+shutil.copy2(base/'connection/AppExitPolicy.kt',OUT/'AppExitPolicy.kt')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppExitFixture.kt',OUT/'AppExitFixture.kt')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppExitSerializationFixture.kt',OUT/'AppExitSerializationFixture.kt')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppConnectionIngressFixture.kt',OUT/'AppConnectionIngressFixture.kt')
+exit_members=comm[comm.index('    private val appExitPolicy'):comm.index('    // The first disconnect chooses app-exit policy')]
+methods['app exit ownership']=hashlib.sha256(exit_members.encode()).hexdigest()
+# Tests control publication scheduling without a global Android Main dispatcher.
+# Extracted methods stay unchanged; only the dispatcher's platform initializer is doubled.
+manager_head += exit_members.replace(
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate",
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined").replace(
+    "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.IO",
+    "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
+# Paragraph boundaries retain complete expression bodies, including claimUsb's trailing also.
+for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:', 'val isLoopbackSession:',
+                    'val isUsbSession:', 'internal fun claimUsb(', 'private fun socketOwner(']:
     start = comm.index(declaration)
-    manager_head += comm[start:comm.index('\n\n', start)] + '\n'
+    definition = comm[start:comm.index('\n\n', start)]
+    methods[declaration] = hashlib.sha256(definition.encode()).hexdigest()
+    manager_head += definition + '\n'
+# Keep the production setter private and expose only a fixture entry.
+manager_head += 'fun suppressProjectionVideoFocus(value:Boolean)=setProjectionVideoFocusSuppressed(value)\n'
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
  'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(',
- 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun disconnectForLinkLoss(', 'fun destroy()',
- 'fun setProjectionVideoFocusSuppressed('
+ 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
+ 'private fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(',
+ 'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
+ 'private suspend fun connectSocketWithTicket(', 'private fun claimSocket(',
+ 'private fun releaseClaim(', 'private fun noteClaimedEndpoint(',
+ 'private fun clearClaimedEndpoint(', 'private fun settleSessionClaim('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(
- audioDecoder:AudioDecoder,private val videoDecoder:VideoDecoder,manager:AudioManager,settings:Settings,
- notification:Any,context:Context,externalSsl:Ssl,
- onAaMediaMetadata:((Any,Any)->Unit)?,onAaPlaybackStatus:((Any,Any)->Unit)?,
+ audioDecoder:AudioDecoder,private val videoDecoder:VideoDecoder,audioManager:AudioManager,private val settings:Settings,
+ notification:Any,private val context:Context,
+ private val onAaMediaMetadata:((Any,Any)->Unit)?,private val onAaPlaybackStatus:((Any,Any)->Unit)?,
  private val onAaPresentationClosed:((Any)->Unit)?,
- private val nightOverlayState:Any?=null
+ externalSsl:Ssl,private val nightOverlayState:Any?=null
 ){
  private val lifecycleLock=Any()
  private val presentationSession=AaPresentationSession()
@@ -151,13 +334,13 @@ class AapTransport(
  private val handshakeFinished=CountDownLatch(1)
  private val terminated=CountDownLatch(1)
  private var retiringWorkers:List<Thread> = emptyList()
- val aapAudio=AapAudio(audioDecoder,settings)
+ val aapAudio=AapAudio(audioDecoder,audioManager,settings)
  val aapVideo=AapVideo();val ssl=externalSsl
  var onQuit:((Boolean)->Unit)?=null
  var onAudioFocusStateChanged:((Boolean)->Unit)?=null
  var onUpdateUiConfigReplyReceived:(()->Unit)?=null
  var wasUserExit=false
- enum class HandshakeFailure{NONE,PEER_SILENT,OTHER}
+ enum class HandshakeFailure{NONE,PEER_SILENT,TRANSPORT_ERROR,SSL,OTHER}
  var lastHandshakeFailure=HandshakeFailure.NONE
  private var connection:ProjectionConnection?=null
  private var sendThread:HandlerThread?=null
@@ -167,6 +350,7 @@ class AapTransport(
  private var pollHandler:Handler?=null
  private var videoHandler:Handler?=null
  private var aapRead:AapRead?=null
+ fun installReader(reader:AapRead){aapRead=reader}
  private val quitLock=Any()
  private var peerRequestedClose=false
  private val tlsWriter=object { val isReady get()=ssl.generation>0;fun retire(){} }
@@ -204,13 +388,11 @@ class AapTransport(
   handshakeHook?.invoke()
   forcedFailure?.let { lastHandshakeFailure=it;return false }
   // Network I/O is doubled; a closed connection fails, an open connection succeeds.
-  lastHandshakeFailure=if(conn.closed) HandshakeFailure.OTHER else HandshakeFailure.NONE
-  if(!conn.closed) ssl.beginSession()
-  return !conn.closed
+  lastHandshakeFailure=if(conn.isConnected) HandshakeFailure.NONE else HandshakeFailure.OTHER
+  if(conn.isConnected) ssl.beginSession()
+  return conn.isConnected
  }
- private val micRecorder=Unit; private val settings=Settings();private val context=Context()
- private val onAaMediaMetadata:((Any,Any)->Unit)?=null;private val onAaPlaybackStatus:((Any,Any)->Unit)?=null
- fun installReader(reader:AapRead){aapRead=reader}
+ private val micRecorder=Unit
  fun postPoll(task:()->Unit){check(checkNotNull(pollHandler).post(Runnable{task()}))}
  fun pollSnapshot()=checkNotNull(pollThread)
  fun liveWorkers()=listOfNotNull(sendThread,pollThread,videoThread).count{it.isAlive}
@@ -226,20 +408,23 @@ transport_fixture=transport_head+'\n'.join(extract(transport,n) for n in [
  'internal fun setProjectionVideoFocusSuppressed('
 ])+'\n}\n'
 bulk=(base/'aap/AapReadMultipleMessages.kt').read_text()
+shutil.copy2(base/'aap/AapMessageFraming.kt',OUT/'AapMessageFraming.kt')
 process=extract(bulk,'private fun processBulk()')
 (OUT/'AapReadRecoveryPolicy.kt').write_text((base/'aap/AapReadRecoveryPolicy.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 support=r'''
 object AppLog {
  @Volatile var hook:((String)->Unit)?=null
  fun i(s:String){hook?.invoke(s)};fun e(s:String){};fun e(s:String,e:Throwable){};fun w(s:String){}
+ fun d(s:String){};fun d(s:String,e:Throwable){}
 }
 class Settings{
  var useAacAudio=false;var killOnDisconnect=false;var useLibusb=false;var debugUsbReadFault=false
+ val wifiConnectionMode=WifiLauncherMode.AUTO;var headunitServerNetwork=HeadunitServerNetwork.SHARED
  fun saveLastConnection(type:Int,ip:String="",usbDevice:String=""){}
  companion object{const val CONNECTION_TYPE_WIFI=1;const val CONNECTION_TYPE_USB=2}
 }
-class AudioDecoder { var session=0; fun captureCleanup():()->Unit = {} }
-class AapAudio(decoder:AudioDecoder,private val settings:Settings){
+class AudioDecoder { var session=0;var cleanups=0;fun captureCleanup():()->Unit = {cleanups++} }
+class AapAudio(decoder:AudioDecoder,manager:AudioManager,private val settings:Settings){
  val sessionConfig=AudioConfig();private val savedAac=settings.useAacAudio
  var closed=false
  fun needsSessionRestart()=savedAac!=settings.useAacAudio
@@ -248,19 +433,33 @@ class AapAudio(decoder:AudioDecoder,private val settings:Settings){
 }
 class AudioConfig{val enabled=true;val staticFocus=false;val focusMode=0}
 class DimState{ fun resetForNewSession(){} }
-class VideoDecoder{var framesRenderedThisSession=0L;fun beginSession(){framesRenderedThisSession=0L};var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){}}
+class VideoDecoder{var framesRenderedThisSession=0L;var stops=0;fun beginSession(){framesRenderedThisSession=0L};var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){stops++}}
 class AapVideo{fun release(){}}
 object ProjectionHealthRecorder{fun reset(){}}
 open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=true;retirePresentation()};var onRetirePresentation:(()->Unit)?=null;fun retirePresentation(){onRetirePresentation?.invoke()};companion object{var creations=0};object Factory{
  fun create(connection:ProjectionConnection,transport:AapTransport,mic:Any,audio:AapAudio,video:AapVideo,
  settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession,nightOverlayState:Any?=null):AapRead{creations++;return AapRead()}
 }}
-open class ProjectionConnection{@Volatile var closed=false;open val type=Type.WIFI;open fun connect()=true;open fun disconnect(){closed=true};enum class Type{USB,WIFI}}
-class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
- val isLoopbackPeer get()=ip=="127.0.0.1"
+open class FixtureConnection:ProjectionConnection {
+ @Volatile var closed=false
+ override val type=ProjectionConnection.Type.WIFI
+ override val isConnected get()=!closed
+ override val isSingleMessage=false
+ override suspend fun connect()=true
+ override fun disconnect(){closed=true}
+ override fun sendBlocking(buf:ByteArray,length:Int,timeout:Int):Int=error("unexpected socket write")
+ override fun recvBlocking(buf:ByteArray,length:Int,timeout:Int,readFully:Boolean):Int=error("unexpected socket read")
+}
+class NearbySocket:Socket()
+class SocketProjectionConnection(private val ip:String,port:Int,context:Context):FixtureConnection(){
+ private var rawSocket:Socket?=null
+ constructor(socket:Socket,context:Context,inbound:Boolean=true):this(socket.inetAddress?.hostAddress?:"fixture",socket.port,context){rawSocket=socket}
+ override fun disconnect(){super.disconnect();rawSocket?.close()}
+ override val isSingleMessage get()=rawSocket is NearbySocket
+ val isLoopbackPeer get()=ip=="127.0.0.1" || ip=="::1"
  init { created.add(this);constructionHook?.invoke() }
- override fun connect():Boolean = connectionHook?.invoke(this) ?: super.connect()
- companion object { @Volatile var constructionHook:(()->Unit)?=null;@Volatile var connectionHook:((ProjectionConnection)->Boolean)?=null;val created=ConcurrentLinkedQueue<ProjectionConnection>() }
+ override suspend fun connect():Boolean = connectionHook?.invoke(this) ?: super.connect()
+ companion object { @Volatile var constructionHook:(()->Unit)?=null;@Volatile var connectionHook:((FixtureConnection)->Boolean)?=null;val created=ConcurrentLinkedQueue<FixtureConnection>() }
 }
 class Ssl{
  @Volatile var generation=0
@@ -283,26 +482,26 @@ object BluetoothHelper{fun isA2dpMediaLinkActive(c:Context)=false}
 object PlaybackFocusPolicy{fun shouldAcquirePermanent(mode:Int,staticAudioFocus:Boolean,audioSinkEnabled:Boolean,btMediaLinkActive:Boolean)=false}
 object ConnectionIssue{const val HEADUNIT_SERVER_NOT_ANSWERING=0}
 object ConnectionIssues{fun clear(c:Context,issue:Int){}}
-object ConnectionStageTracker{fun endAttempt(){};fun clear(){};val stage=MutableStateFlow(ConnectionStage.NONE)}
-object ConnectionStage{const val NONE=0;const val USB_ATTACHED=1;const val USB_SWITCHING=2}
+object ConnectionStageTracker{fun endAttempt(){};fun clear(){};fun report(value:Int){stage.value=value};val stage=MutableStateFlow(ConnectionStage.NONE)}
+object ConnectionStage{const val NONE=0;const val USB_ATTACHED=1;const val USB_SWITCHING=2;const val PHONE_ANSWERED=3}
 object TeardownGuard{fun runThenClose(teardown:()->Unit,close:()->Unit,onError:(String,Exception)->Unit){try{teardown()}catch(e:Exception){onError("teardown",e)}finally{close()}}}
 fun await(latch:CountDownLatch){check(latch.await(5,TimeUnit.SECONDS)){"probe barrier timed out"}}
 
 fun projectionFocusSuppression()=runBlocking{
  val c=CommManager()
- c.setProjectionVideoFocusSuppressed(true)
+ c.suppressProjectionVideoFocus(true)
  c.startHandshake();c.startReading()
  val old=c.owner()
  check(old.isProjectionVideoFocusSuppressed())
- c.setProjectionVideoFocusSuppressed(false)
+ c.suppressProjectionVideoFocus(false)
  check(!old.isProjectionVideoFocusSuppressed())
- c.setProjectionVideoFocusSuppressed(true)
+ c.suppressProjectionVideoFocus(true)
  check(old.isProjectionVideoFocusSuppressed())
  c.disconnect(honorKillOnDisconnect=false);c.cleanups();c.awaitDisconnectComplete()
  c.connectNext();c.startHandshake();c.startReading()
  val fresh=c.owner()
  check(fresh!==old && fresh.isProjectionVideoFocusSuppressed())
- c.setProjectionVideoFocusSuppressed(false)
+ c.suppressProjectionVideoFocus(false)
  check(!fresh.isProjectionVideoFocusSuppressed() && old.isProjectionVideoFocusSuppressed())
  c.close()
  println("PASS projection focus suppression reaches current and replacement transports without changing retired owners")
@@ -318,7 +517,7 @@ fun lateHandshakeEntry()=runBlocking{
  check(c.state is ConnectionState.Disconnected && c.failures.isEmpty())
  old.quit(false)
  check(c.context.broadcasts.isEmpty() && Handler.delayed.isEmpty())
- check(!com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy)
+ check(c.context.activityManager.appTasks.all { it.finishes == 0 })
  c.cleanups();c.close()
  println("PASS late handshake entry cannot reopen the no-kill disconnect decision")
 }
@@ -411,14 +610,11 @@ class BulkReaderFixture(private val ssl:Ssl,private val deliver:(AapMessage,Int)
  private fun observeEncryptedBody(channel:Int,encLen:Int){}
  private fun shouldDropForFaultInjection(channel:Int,flags:Int,encLen:Int)=false
  private fun deliverFragment(message:AapMessage,total:Int)=deliver(message,total)
- private fun auditFragment(channel:Int,flags:Int,length:Int,total:Int){}
- private val handler=object {fun handle(message:AapMessage)=deliver(message,0)}
  // BULK METHOD
 }
 object Utils{fun bytesToInt(b:ByteArray,offset:Int,short:Boolean):Int{
  var n=0;for(i in offset until offset+(if(short)2 else 4))n=(n shl 8) or (b[i].toInt() and 255);return n
 }}
-object AapMessageFraming{fun carriesTotalLength(flags:Int)=flags and 1 !=0 && flags and 2==0}
 object AapMessageIncoming{
  class EncryptedHeader{
   val buf=ByteArray(4);var chan=0;var flags=0;var enc_len=0
@@ -429,7 +625,11 @@ object AapMessageIncoming{
   val id=Utils.bytesToInt(b,offset,true);ssl.observeDecrypt(id);return AapMessage(h.chan,id,Unit)
  }
 }
-fun peerBatch()=byteArrayOf(0,0x0b,0,2,0,15, 0,0x0b,0,2,0,11)
+fun peerBatch():ByteArray {
+ val flags=(AapMessageFraming.FLAG_BIT_FIRST or AapMessageFraming.FLAG_BIT_LAST or AapMessageFraming.FLAG_BIT_ENCRYPTED).toByte()
+ return byteArrayOf(0,flags,0,2,0,Control.ControlMsgType.MESSAGE_BYEBYE_REQUEST_VALUE.toByte(),
+                    0,flags,0,2,0,Control.ControlMsgType.MESSAGE_PING_REQUEST_VALUE.toByte())
+}
 
 fun latePhysicalPublication()=runBlocking{
  for(replace in listOf(false,true)){
@@ -465,7 +665,7 @@ fun workerQuitBulkTail()=runBlocking{
  val returnedFromQuit=CountDownLatch(1);val resumeBulk=CountDownLatch(1);val bulkFinished=CountDownLatch(1)
  val errors=ConcurrentLinkedQueue<Throwable>()
  val reader=BulkReaderFixture(old.ssl){message,_->
-  if(message.type==15){
+  if(message.type==Control.ControlMsgType.MESSAGE_BYEBYE_REQUEST_VALUE){
    // Mirrors AapControl.byebyeRequest's synchronous call from the poll/read stack.
    old.quit(clean=true)
    returnedFromQuit.countDown();await(resumeBulk)
@@ -485,7 +685,7 @@ fun workerQuitBulkTail()=runBlocking{
  check(!oldPoll.isAlive && !cleanup.isAlive && errors.isEmpty()){errors.toString()}
  c.awaitCleanup();c.connectNext();c.startHandshake();c.startReading();val fresh=c.owner()
  check(fresh!==old && c.state is ConnectionState.TransportStarted && fresh.ssl===old.ssl)
- check(old.ssl.decrypts.toList()==listOf(1 to 15)){old.ssl.decrypts.toString()}
+ check(old.ssl.decrypts.toList()==listOf(1 to Control.ControlMsgType.MESSAGE_BYEBYE_REQUEST_VALUE)){old.ssl.decrypts.toString()}
  println("PASS worker-originated quit stops bulk tail and reconnect waits for the whole Poll stack")
  c.close()
 }
@@ -541,6 +741,11 @@ fun interruptedTerminationControl()=runBlocking{
  c.close();println("PASS interrupt does not bypass handshake/termination barrier; interrupt status restored; no retired failure report")
 }
 fun main(){
+ bootstrapRejectionPreservesLatestRun()
+ homeautomatic.homeAutomaticOwnership()
+ uiconnect.uiConnectCallerOwnership()
+ networkConnectionIngressOwnership()
+ appConnectionIngressOwnership()
  providedMain()
  failedHandshakeControls();partialStartupExceptionControl();interruptedTerminationControl()
  workerQuitNoTailControl()
@@ -633,16 +838,27 @@ fun destroyDuringCandidateConstruction()=runBlocking {
 '''
 extra += r'''
 object UsbDeviceCompat{fun isInAccessoryMode(d:UsbDevice)=true;fun isConnectable(c:Context,d:UsbDevice)=true;fun getUniqueName(d:UsbDevice)="usb-fixture";fun usbManager(c:Context)=c.getSystemService(Context.USB_SERVICE) as UsbManager}
-// Recovery claim admission is covered by UsbRecoveryAdmissionTest; these fixtures use ordinary connects.
-object ConnectionArbiter{class Claim;fun runIfHeld(claim:Claim, action:()->Unit):Boolean{action();return true}}
+// Legacy claim-admission controls use real arbiter claims, including explicit refused ownership.
+fun fixtureClaim(held:Boolean=true):ConnectionArbiter.Claim {
+ val claim=checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USER,ConnectionPriorityPolicy.Owner.MANUAL,"fixture"))
+ if(!held)ConnectionArbiter.release(claim,sessionFormed=false)
+ return claim
+}
 object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()->Boolean)?=null }
 // The production USB check has to match the fixture's USB double.
 typealias AbstractUsbProjectionConnection=StandardUsbProjectionConnection
-open class StandardUsbProjectionConnection(m:UsbManager,private val d:UsbDevice,readFaultArmed:()->Boolean={false},disarmReadFault:()->Unit={}):ProjectionConnection(){
- val accessoryDevice get()=d
- override val type=Type.USB
+open class StandardUsbProjectionConnection(m:UsbManager,d:UsbDevice,readFaultArmed:()->Boolean={false},disarmReadFault:()->Unit={}):FixtureConnection(){
  private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d,readFaultArmed=readFaultArmed,disarmReadFault=disarmReadFault)
- override fun connect():Boolean {UsbBridge.forcedOpen?.let{return it()};val r=runBlocking{actual.connect()};UsbBridge.afterConnect?.invoke();return r}
+ val accessoryDevice get()=actual.accessoryDevice
+ override val type get()=actual.type
+ override val isSingleMessage get()=actual.isSingleMessage
+ override val isConnected get()=actual.isConnected
+ override suspend fun connect():Boolean {
+  UsbBridge.forcedOpen?.let{return it()}
+  val opened=actual.connect()
+  UsbBridge.afterConnect?.invoke()
+  return opened
+ }
  override fun disconnect(){super.disconnect();actual.disconnect()}
 }
 class LibusbProjectionConnection(m:UsbManager,d:UsbDevice):StandardUsbProjectionConnection(m,d)
@@ -829,7 +1045,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
+extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();appExitSerializedEffects();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -842,7 +1058,7 @@ class Looper{
  @Synchronized fun offer(task:Runnable):Boolean{if(closing)return false;queue.add(task);return true}
  @Synchronized fun offerFirst(task:Runnable):Boolean{if(closing)return false;queue.addFirst(task);return true}
  @Synchronized fun stop(){closing=true;queue.clear();queue.add(wake)}
- fun remove(task:Runnable){queue.remove(task)}
+ fun remove(task:Runnable){queue.removeIf { it === task }}
  fun loop(){while(true){val task=queue.take();if(closing)return;task.run()}}
  companion object{private val main=Looper();fun getMainLooper()=main}
 }
@@ -864,20 +1080,27 @@ class HandlerThread(name:String,priority:Int):Thread(name){
 ''')
 (OUT/'Content.kt').write_text(r'''package android.content
 import android.media.AudioManager
+abstract class BroadcastReceiver{abstract fun onReceive(context:Context,intent:Intent)}
 class Intent{
- fun getBooleanExtra(name:String,default:Boolean)=default
+ fun getBooleanExtra(name:String,default:Boolean)=extras[name] as? Boolean ?: default
  var action:String?=null
  constructor(a:String){action=a};constructor(c:Context,k:Class<*>){}
  fun setPackage(s:String)=this
+ private val extras=mutableMapOf<String,Any>()
+ fun putExtra(name:String,value:Long)=apply{extras[name]=value}
+ fun putExtra(name:String,value:Boolean)=apply{extras[name]=value}
+ fun hasExtra(name:String)=extras.containsKey(name)
+ fun getLongExtra(name:String,default:Long)=extras[name] as? Long ?: default
 }
 class Context{
- var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();var stops=0
- fun sendBroadcast(i:Intent){broadcasts.add(i.action)};fun stopService(i:Intent):Boolean{stops++;return true}
- fun getSystemService(s:String):Any=when(s){"usb"->usb;"audio"->AudioManager();else->android.app.ActivityManager()}
+ var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();val broadcastIntents=mutableListOf<Intent>();var stops=0
+ val activityManager=android.app.ActivityManager()
+ fun sendBroadcast(i:Intent){broadcasts.add(i.action);broadcastIntents.add(i)};fun stopService(i:Intent):Boolean{stops++;return true}
+ fun getSystemService(s:String):Any=when(s){"usb"->usb;"audio"->AudioManager();else->activityManager}
  companion object{const val ACTIVITY_SERVICE="activity";const val USB_SERVICE="usb"}
 }
 ''')
-(OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{val appTasks=emptyList<AppTask>();class AppTask{fun finishAndRemoveTask(){}}}\n')
+(OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{var beforeTasks:(()->Unit)?=null;private val tasks=mutableListOf(AppTask());val appTasks:MutableList<AppTask> get(){beforeTasks?.invoke();return tasks};class AppTask{var finishes=0;fun finishAndRemoveTask(){finishes++}}}\n')
 (OUT/'OpenHeadunitApp.kt').write_text('''package com.andrerinas.openheadunit
 import android.content.Context
 object App {
@@ -888,14 +1111,9 @@ object App {
 }
 ''')
 (OUT/'Media.kt').write_text('package android.media\nclass AudioManager{fun interface OnAudioFocusChangeListener{fun onAudioFocusChange(i:Int)};companion object{const val STREAM_MUSIC=3;const val AUDIOFOCUS_GAIN=1}}\n')
-(OUT/'Service.kt').write_text('package com.andrerinas.openheadunit.aap\nclass AapService{companion object{const val ACTION_STOP_SERVICE="stop";var killProcessOnDestroy=false;var destroyIsUserStop=false}}\n')
-(OUT/'Proto.kt').write_text(r'''package com.andrerinas.openheadunit.aap.protocol.proto
-object Control{
- enum class ByeByeReason{USER_SELECTION}
- class ByeByeRequest{class Builder{fun setReason(r:ByeByeReason)=this;fun build()=ByeByeRequest()};companion object{fun newBuilder()=Builder()}}
- object ControlMsgType{const val MESSAGE_BYEBYE_REQUEST_VALUE=1}
-}
-''')
+shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs/AapService.kt',OUT/'Service.kt')
+for stub in ['ContextCompat.kt', 'RetainedNativeGroup.kt']:
+    shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs'/stub,OUT/stub)
 # Full, byte-for-byte production connection files; Android APIs only are doubled.
 meta={}
 for name in ['ProjectionConnection.kt','AbstractUsbProjectionConnection.kt','StandardUsbProjectionConnection.kt','UsbReadFaultPolicy.kt']:
@@ -941,7 +1159,9 @@ try:
     coroutines=cached("org.jetbrains.kotlinx","kotlinx-coroutines-core-jvm",COROUTINES)
     compile_jars=[cached("org.jetbrains.kotlin","kotlin-compiler-embeddable",KOTLIN),stdlib,
         cached("org.jetbrains.kotlin","kotlin-reflect","1.6.10"),
-        cached("org.jetbrains.kotlin","kotlin-script-runtime",KOTLIN),coroutines,annotations]
+        cached("org.jetbrains.kotlin","kotlin-script-runtime",KOTLIN),
+        cached("org.jetbrains.kotlin","kotlin-build-tools-api",KOTLIN),
+        cached("org.jetbrains.kotlin","kotlin-daemon-embeddable",KOTLIN),coroutines,annotations]
     runtime_jars=[stdlib,coroutines,annotations]
     toolchain="Gradle cache: Kotlin "+KOTLIN+" / kotlinx-coroutines "+COROUTINES
 except FileNotFoundError:
@@ -957,16 +1177,27 @@ except FileNotFoundError:
     for jar in compile_jars+runtime_jars:
         if not jar.is_file(): raise SystemExit("Missing dependency: "+str(jar))
 print("TOOLCHAIN:",toolchain,flush=True)
-(OUT/"toolchain.json").write_text(json.dumps({"description":toolchain,"jars":[
-    {"path":str(j),"sha256":hashlib.sha256(j.read_bytes()).hexdigest()} for j in dict.fromkeys(compile_jars+runtime_jars)
-]},indent=2))
-cp=os.pathsep.join(map(str,runtime_jars));compiler=os.pathsep.join(map(str,compile_jars))
+(BUILD/"toolchain.json").write_text(json.dumps({
+    "description": toolchain,
+    "jars": [{"path":str(j),"sha256":hashlib.sha256(j.read_bytes()).hexdigest()} for j in compile_jars],
+    "runtime_jars": [str(j) for j in runtime_jars],
+},indent=2))
+protobuf_version=re.search(r'protobuf-java:([0-9.]+)',(ROOT/'app/build.gradle.kts').read_text()).group(1)
+protocol_classes=ROOT/'app/build/intermediates/javac/githubDebug/compileGithubDebugJavaWithJavac/classes'
+try:
+    protobuf=cached("com.google.protobuf","protobuf-java",protobuf_version)
+except FileNotFoundError:
+    raise SystemExit("Missing protobuf runtime; run :app:testGithubDebugUnitTest first")
+if not (protocol_classes/'com/andrerinas/openheadunit/aap/protocol/proto/Control.class').is_file():
+    raise SystemExit("Missing compiled GAL protocol classes; run :app:testGithubDebugUnitTest first")
+cp=os.pathsep.join(map(str,[*runtime_jars,protobuf,protocol_classes]))
+compiler=os.pathsep.join(map(str,compile_jars))
 subprocess.run(["java","-cp",compiler,"org.jetbrains.kotlin.cli.jvm.K2JVMCompiler","-no-stdlib","-no-reflect","-nowarn",
     "-classpath",cp,"-d",str(OUT/"probe.jar"),*map(str,sorted(OUT.glob("*.kt")))],check=True,timeout=45)
 subprocess.run(["java","-cp",str(OUT/"probe.jar")+os.pathsep+cp,"lifecycle.ProbeKt"],check=True,timeout=35)
 
 # Exercise real playback ownership as well when both independently mergeable changes are present.
-subprocess.run(["python3", str(Path(__file__).with_name("audio-integration.py"))], check=True)
+subprocess.run(["python3", str(Path(__file__).with_name("audio-integration.py")), str(ROOT)], check=True)
 
 # Exercise actual Self launch jobs and the service cancel action on a queued Main dispatcher.
 subprocess.run(["python3", str(Path(__file__).with_name("self-launch.py"))], check=True)

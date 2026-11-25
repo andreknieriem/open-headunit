@@ -25,7 +25,7 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         fun onUsbDetach(device: UsbDevice)
         fun onUsbAttach(device: UsbDevice)
         fun onUsbAccessoryDetach()
-        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice)
+        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long)
         fun onUsbRecoveryPermission(token: String, granted: Boolean, device: UsbDevice) {}
     }
 
@@ -55,7 +55,9 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
                     // A late recovery reply must never become an ordinary connect request.
                     mListener.onUsbRecoveryPermission(recovery.schemeSpecificPart, permissionGranted, device)
                 } else if (intent.data?.scheme == ASK_PERMISSION_SCHEME) {
-                    mListener.onUsbPermission(permissionGranted, connect, device)
+                    // A grant-only ask carries no ticket; its reply cannot start a connection.
+                    val ticket = intent.data?.fragment?.toLongOrNull() ?: return
+                    mListener.onUsbPermission(permissionGranted, connect, device, ticket)
                 }
             }
         }
@@ -65,13 +67,16 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         const val ACTION_USB_DEVICE_PERMISSION = "com.andrerinas.openheadunit" + ".ACTION_USB_DEVICE_PERMISSION"
         const val EXTRA_CONNECT = "EXTRA_CONNECT"
 
-        /** The token in the data makes each request its own PendingIntent, so no answer can carry another's. */
-        fun createPermissionPendingIntent(context: Context, token: String): PendingIntent {
+        /**
+         * The token in the data makes each request its own PendingIntent, so no answer can carry
+         * another's. A null [ticket] requests the grant only; its reply cannot start a connection.
+         */
+        fun createPermissionPendingIntent(context: Context, token: String, ticket: Long?): PendingIntent {
             return PendingIntent.getBroadcast(
                 context, 0,
                 Intent(ACTION_USB_DEVICE_PERMISSION).apply {
                     setPackage(context.packageName)
-                    data = Uri.fromParts(ASK_PERMISSION_SCHEME, token, null)
+                    data = Uri.fromParts(ASK_PERMISSION_SCHEME, token, ticket?.toString())
                 },
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE

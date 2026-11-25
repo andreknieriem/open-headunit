@@ -2,6 +2,9 @@ package com.andrerinas.openheadunit.connection
 
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** Holds a producer's ownership check through the non-suspending publication it authorizes. */
 fun interface ConnectionAdmission {
@@ -31,6 +34,7 @@ internal suspend fun <T> ConnectionAdmission.prepareAndPublish(
     open: suspend (T) -> Unit,
     publish: (T) -> Boolean,
     dispose: (T) -> Unit,
+    publicationContext: CoroutineContext = EmptyCoroutineContext,
 ): Boolean {
     awaitRetirement()
     currentCoroutineContext().ensureActive()
@@ -39,7 +43,10 @@ internal suspend fun <T> ConnectionAdmission.prepareAndPublish(
     try {
         open(candidate)
         currentCoroutineContext().ensureActive()
-        run { transferred = publish(candidate) }
+        withContext(publicationContext) {
+            currentCoroutineContext().ensureActive()
+            this@prepareAndPublish.run { transferred = publish(candidate) }
+        }
         return transferred
     } finally {
         if (!transferred) dispose(candidate)

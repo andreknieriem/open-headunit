@@ -136,10 +136,11 @@ class WifiLauncherHelper : WifiLauncher {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
-                nearbyManager = NearbyManager(service, service.serviceScope) { socket, admission ->
+                val commManager = App.provide(service).commManager
+                nearbyManager = NearbyManager(service, service.serviceScope, commManager) { socket, admission, ticket ->
                     val appSettings = App.provide(service).settings
                     admission.run { appSettings.saveLastConnection(Settings.CONNECTION_TYPE_NEARBY) }
-                    App.provide(service).commManager.connect(socket, admission = admission)
+                    commManager.connect(socket, admission = admission, ticket = ticket)
                 }
             } catch (e: Exception) {
                 AppLog.e("AapService: Failed to init NearbyManager: ${e.message}")

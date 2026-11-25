@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
+import android.os.Looper
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.utils.Settings
@@ -15,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.RETURNS_DEFAULTS
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.`when`
 import org.mockito.stubbing.Answer
 import org.robolectric.RobolectricTestRunner
@@ -84,7 +86,14 @@ class WifiDirectManagerPurgeLifetimeTest {
         val f = Fixture()
         val stopsReturned = mutableListOf<Boolean>()
         f.onDelete = { _, listener ->
-            val stop = Thread { f.owner.stop() }.apply {
+            val main = Looper.getMainLooper()
+            val stop = Thread {
+                mockStatic(Looper::class.java).use { loopers ->
+                    loopers.`when`<Looper> { Looper.myLooper() }.thenReturn(main)
+                    loopers.`when`<Looper> { Looper.getMainLooper() }.thenReturn(main)
+                    f.owner.stop()
+                }
+            }.apply {
                 isDaemon = true
                 start()
             }
@@ -188,10 +197,7 @@ class WifiDirectManagerPurgeLifetimeTest {
                 .set(owner, true)
         }
 
-        fun startRotation() {
-            WifiDirectManager::class.java.getDeclaredMethod("recreateNativeGroup", Boolean::class.javaPrimitiveType)
-                .apply { isAccessible = true }.invoke(owner, true)
-        }
+        fun startRotation() = owner.rotateNativeIdentityNow()
 
         fun emitProfiles() {
             infoClass.getMethod("onPersistentGroupInfoAvailable", groupListClass).invoke(info, groupList)

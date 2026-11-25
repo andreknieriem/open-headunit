@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Run actual Self launch and service-cancel paths with a queued Main dispatcher.
+"""Run actual Self launch and service-cancel paths with queued Main and IO dispatchers.
 
-Android listener, VPN and Activity effects are counters. Coroutine cancellation is real and the queued dispatcher controls delay deadlines; production method bodies are extracted on every run.
+Stop/Open overlap cases admit fresh input before obsolete Main/IO/network cleanup. Android listener, VPN and Activity effects are counters; the modern launch body and coroutine cancellation remain real. Queued dispatchers control entry, completion and delay deadlines, and production method bodies are extracted on every run.
 """
 from pathlib import Path
 import hashlib
@@ -43,7 +43,7 @@ for marker, file, declaration in [
     ('END_CAUSE', comm, 'enum class EndCause'),
     ('STATE', comm, 'class Disconnected('),
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
-    ('START', manager, 'fun start(settingsRestart:'),
+    ('START', manager, 'fun start('),
     ('ADOPT_VPN', manager, 'private fun adoptDummyVpn('),
     ('STOP', manager, 'fun stop(wasConnected:'),
     ('ENDED', manager, 'internal fun onConnectionEnded('),
@@ -52,6 +52,7 @@ for marker, file, declaration in [
     ('ALLOW_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal suspend fun ensureLaunchAllowed()'),
     ('LEGACY_RUN', legacy, 'override suspend fun run()'),
     ('LEGACY_WAIT', legacy, 'suspend fun runWifiLauncher()'),
+    ('MODERN_RUN', 'connection/self/launchers/SelfLauncherV17_4.kt', 'override suspend fun run()'),
     ('OBSERVER', 'aap/AapService.kt', 'private fun observeConnectionState()'),
     ('MAIN_COMMAND', 'main/MainActivity.kt', 'private fun forceSelfModeLaunch()'),
     ('HOME_COMMAND', 'main/HomeFragment.kt', 'private fun startSelfModeInternal('),
@@ -63,6 +64,9 @@ for marker, file, declaration in [
     code = code.replace('Dispatchers.Main', 'service.main').replace('this@AapService', 'this@Service').replace('AapService.', 'Service.').replace('AapService::class', 'Service::class')
     if marker == 'MAIN_COMMAND':
         code = code.replace('Intent(this,', 'Intent(service,').replace('startForegroundService(this,', 'startForegroundService(service,')
+        code = code.replace('App.provide(this)', 'App.provide(service)').replace('operationIntent(this,', 'operationIntent(service,')
+    if marker == 'MODERN_RUN':
+        code = code.replace('Dispatchers.IO', 'services.aap.io')
     fixture = fixture.replace('// ' + marker + '\n', code + '\n')
 # Extract the full Self branch of the actual service policy; remaining branches are unrelated
 # wireless/USB effects. Fail visibly if its boundary is renamed rather than testing a copy.
@@ -85,8 +89,8 @@ for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt']:
     .replace('package com.andrerinas.openheadunit.connection.wifi', 'package selflaunch'))
 # Reuse the toolchain selected by run.py, including its installed-Kotlin fallback.
 toolchain = json.loads((OUT.parent / 'toolchain.json').read_text())
-jars = [item['path'] for item in toolchain['jars']]
-cp = os.pathsep.join(jars)
+compiler = os.pathsep.join(item['path'] for item in toolchain['jars'])
+cp = os.pathsep.join(toolchain['runtime_jars'])
 # The extracted service observer also contains the wireless scan-control boundary.
 # Share its production policy and recording doubles with the audio lifecycle fixture.
 scan_sources = [SRC / 'connection/wifi/scan/ScanControlPolicy.kt',
@@ -95,7 +99,7 @@ scan_sources = [SRC / 'connection/wifi/scan/ScanControlPolicy.kt',
                 HERE / 'audio-stubs/WifiScanControl.kt',
                 HERE / 'audio-stubs/VideoFocusEvent.kt',
                 HERE / 'audio-stubs/XyAutoMediaSession.kt']
-subprocess.run(['java', '-cp', cp, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
+subprocess.run(['java', '-cp', compiler, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
                 '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp,
                 '-d', str(OUT / 'regression.jar'), *map(str, sorted(OUT.glob('*.kt')) + scan_sources)],
                check=True, timeout=45)

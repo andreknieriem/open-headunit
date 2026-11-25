@@ -71,7 +71,7 @@ class AapBroadcastReceiver : BroadcastReceiver() {
                 val aapIntent = Intent(context, AapProjectionActivity::class.java)
                 aapIntent.putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
                 aapIntent.flags = FLAG_ACTIVITY_NEW_TASK
-                context.startActivity(aapIntent)
+                context.startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(aapIntent))
             }
         }
     }

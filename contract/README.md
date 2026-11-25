@@ -71,6 +71,19 @@ Open to any caller, like the steering-wheel key receivers already are.
 `no_ui` asks for the session without taking the screen, for a macro that connects in the background.
 It applies to the next raise only, so an ordinary reconnect still comes to the front.
 
+### Exit ordering
+
+Stop/Exit is accepted once at its first app ingress. Internal UI commands and automation relays
+carry that same decision to the service; delayed delivery does not make an older accepted Stop
+new again. A new Stop selected after reopening is still honored while an earlier service teardown
+finishes. It reuses that teardown without reviving the older request's finish or process-kill flags.
+
+Notification Exit is accepted when its action reaches the app, not when the notification was
+created. The existing public commands carry no sender-order token, so the app cannot distinguish
+a newly sent Stop from one delayed before its first receipt. If such a Stop first arrives after
+a reopen, it is processed after that reopen even if an external sender originally sent it earlier.
+The contract is first app acceptance order, not an inferred external click/send timestamp.
+
 ## Configuration
 
 **Off by default.** Turn on *Allow external configuration* in Settings first, next to the log

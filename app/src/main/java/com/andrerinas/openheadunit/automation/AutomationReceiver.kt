@@ -26,7 +26,12 @@ class AutomationReceiver : BroadcastReceiver() {
             AutomationCommandPolicy.State(
                 externalConfigAllowed = App.provide(context).settings.allowExternalConfiguration,
                 screenOffGranted = ScreenPower.hasLockGrant(context)
-            )
+            ),
+            acceptStop = {
+                val component = App.provide(context)
+                component.commManager.requestExplicitAppExit(
+                    component.settings.killOnDisconnect && component.commManager.isConnected).id
+            }
         )
 
         val reply = JSONObject().put("action", action ?: "")

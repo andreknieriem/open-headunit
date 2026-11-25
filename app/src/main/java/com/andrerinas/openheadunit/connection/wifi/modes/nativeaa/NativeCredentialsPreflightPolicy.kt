@@ -113,14 +113,19 @@ data class PreflightReport(
  */
 object NativeCredentialsPreflightPolicy {
 
-    fun evaluate(transport: NativeTransport, probe: PreflightProbe): PreflightReport {
+    /**
+     * [localHotspot] is the local-only source: the platform names the network and the address is
+     * read after the start, so nothing about the system hotspot can be asked of the user.
+     */
+    fun evaluate(transport: NativeTransport, probe: PreflightProbe, localHotspot: Boolean = false): PreflightReport {
         val verdicts = LinkedHashMap<CredentialField, FieldVerdict>()
+        val local = localHotspot && transport == NativeTransport.HOTSPOT
 
-        if (transport == NativeTransport.HOTSPOT) {
+        if (transport == NativeTransport.HOTSPOT && !local) {
             verdicts[CredentialField.HOTSPOT_NAME] = nameVerdict(probe)
             verdicts[CredentialField.HOTSPOT_PASSWORD] = passwordVerdict(probe)
         }
-        verdicts[CredentialField.BSSID] = bssidVerdict(probe)
+        verdicts[CredentialField.BSSID] = if (local) FieldVerdict.UNKNOWN else bssidVerdict(probe)
 
         // Location off is only worth raising when it would actually change something. Where the
         // BSSID is already in hand it changes nothing, and telling somebody to turn on location for

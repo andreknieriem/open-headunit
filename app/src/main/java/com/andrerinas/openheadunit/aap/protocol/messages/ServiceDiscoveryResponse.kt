@@ -481,6 +481,7 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
                     sessionFrequencyMhz = WifiBandCapability.sessionFrequencyMhz(),
                     bandUnreadable = WifiBandCapability.bandUnreadable(),
                     linkProvedTooSlow = settings.videoProfileStarvationCap,
+                    localHotspotNarrow = WifiBandCapability.isLocalHotspotNarrow(),
                 )
             } catch (e: Exception) {
                 // Service discovery must not fail over a diagnostic. A missing line is a missing

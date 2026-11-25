@@ -1268,6 +1268,10 @@
     <string name="connection_issue_banner_bt_silent">Telefon se připojil přes Bluetooth, ale Bluetooth této jednotky mu nedokázal nic poslat. Klepnutím zvolte režim, který ho nepotřebuje, například Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Telefon se nedozvěděl, ke které síti se má připojit, protože tato jednotka nesdílela svou adresu Wi-Fi. Zapněte polohu, nebo klepnutím zadejte adresu ručně.</string>
     <string name="connection_issue_banner_hotspot_off">Hotspot této jednotky je vypnutý, takže telefon neměl k čemu se připojit. Zapněte ho, nebo klepnutím nechte hotspot zapnout aplikaci.</string>
+    <string name="connection_issue_banner_local_hotspot">Toto autorádio nemohlo spustit vlastní hotspot, takže telefon neměl k čemu se připojit. Klepnutím zapnete možnost „Použít systémový hotspot“.</string>
+    <string name="use_system_hotspot">Použít systémový hotspot</string>
+    <string name="use_system_hotspot_summary">Vypnuto: aplikace spustí vlastní hotspot a nepotřebuje žádné nastavení.</string>
+    <string name="use_system_hotspot_help">Vypnuto: v Androidu 8 a novějším aplikace spustí vlastní místní hotspot a nic se nemusí nastavovat. Řádky názvu, hesla, rozhraní, pásma a kanálu pak nic nedělají, proto jsou skryté. Vaše hodnoty zůstanou uložené. Zapnuto: aplikace používá hotspot autorádia jako dřív a název, heslo a rozhraní můžete nastavit ručně.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Tato jednotka nemohla vytvořit síť Wi-Fi Direct pro váš telefon. Zkuste ji odpojit od jiné sítě Wi-Fi, nebo klepnutím použijte její hotspot.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Jiná aplikace stále vypíná Wi-Fi Direct, obvykle jde o předinstalovanou aplikaci pro zrcadlení jako ZLink nebo CarLife. Zakažte ji, nebo klepnutím použijte hotspot.</string>
     <string name="connection_issue_banner_hotspot_config">Tato jednotka neposkytne aplikaci název a heslo hotspotu. Klepnutím je zadejte ručně.</string>

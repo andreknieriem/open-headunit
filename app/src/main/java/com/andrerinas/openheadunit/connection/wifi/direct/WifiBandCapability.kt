@@ -44,9 +44,27 @@ object WifiBandCapability {
      *
      * Distinct from a null [supports5Ghz], which also means a WiFi service that refused on a unit
      * that does have the call. Below API 21 neither signal exists: the radio cannot be asked and
-     * [sessionFrequencyMhz] reads 0, so a caller weighing the link has nothing to weigh.
+     * [sessionFrequencyMhz] reads 0, so a caller weighing the link has nothing to weigh. Also true
+     * while the local-only hotspot runs on a band that holds 2.4 GHz or could not be read.
      */
-    fun bandUnreadable(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+    fun bandUnreadable(sdkInt: Int = Build.VERSION.SDK_INT): Boolean =
+        platformCannotAsk(sdkInt) || localHotspotNarrow
+
+    /** Below API 21 the platform has no call for the band. The log header reads this, not [bandUnreadable]. */
+    fun platformCannotAsk(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt < Build.VERSION_CODES.LOLLIPOP
+
+    @Volatile private var localHotspotNarrow = false
+
+    /** Whether the local-only hotspot set the cap, for the advice text. */
+    fun isLocalHotspotNarrow(): Boolean = localHotspotNarrow
+
+    /**
+     * Whether the local-only hotspot forces the video cap. While set, [bandUnreadable] is true;
+     * [sessionFrequencyMhz] stays 0 either way, so no channel list is sent.
+     */
+    fun reportLocalHotspotNarrow(narrow: Boolean) {
+        localHotspotNarrow = narrow
+    }
 
     @Volatile private var liveGroupFrequencyMhz: Int = 0
 

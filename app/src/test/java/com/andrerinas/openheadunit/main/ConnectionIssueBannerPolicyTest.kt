@@ -203,6 +203,42 @@ class ConnectionIssueBannerPolicyTest {
     }
 
     @Test
+    fun `the local hotspot swaps the two system hotspot records for its own`() {
+        val local = ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.HOTSPOT, true, localHotspot = true)
+        assertTrue(ConnectionIssue.LOCAL_HOTSPOT_FAILED in local)
+        assertFalse(ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE in local)
+        assertFalse(ConnectionIssue.HOTSPOT_NOT_RUNNING in local)
+        assertTrue(ConnectionIssue.BLUETOOTH_SENT_NO_DATA in local)
+    }
+
+    @Test
+    fun `the system hotspot keeps both system records and not the local one`() {
+        val system = ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.HOTSPOT, true, localHotspot = false)
+        assertTrue(ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE in system)
+        assertTrue(ConnectionIssue.HOTSPOT_NOT_RUNNING in system)
+        assertFalse(ConnectionIssue.LOCAL_HOTSPOT_FAILED in system)
+        assertFalse(ConnectionIssue.LOCAL_HOTSPOT_FAILED in ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.HOTSPOT, true))
+    }
+
+    @Test
+    fun `WiFi Direct shows no hotspot record whichever source is set`() {
+        for (local in listOf(false, true)) {
+            val relevant = ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.WIFI_DIRECT, true, localHotspot = local)
+            assertFalse(ConnectionIssue.LOCAL_HOTSPOT_FAILED in relevant)
+            assertFalse(ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE in relevant)
+            assertFalse(ConnectionIssue.HOTSPOT_NOT_RUNNING in relevant)
+        }
+    }
+
+    @Test
+    fun `a typed hotspot name and password do not hide the local hotspot record`() {
+        assertFalse(
+            ConnectionIssue.LOCAL_HOTSPOT_FAILED in
+                ConnectionIssueBannerPolicy.remedyApplied("OHU-TEST", "testtest1234", "AA:BB:CC:DD:EE:FF")
+        )
+    }
+
+    @Test
     fun `only the hotspot route can be blocked by there being no access point`() {
         // WiFi Direct hosts its own group, so "no access point" cannot be why it failed.
         assertTrue(
@@ -386,7 +422,7 @@ class ConnectionIssueBannerPolicyTest {
         // The same guard as `every issue can be shown`: a condition no route claims would be
         // recorded on the connection path and then never shown to anybody.
         val everRelevant = NativeTransport.values()
-            .flatMap { ConnectionIssueBannerPolicy.relevantNow(3, it, true) }
+            .flatMap { t -> listOf(false, true).flatMap { ConnectionIssueBannerPolicy.relevantNow(3, t, true, localHotspot = it) } }
             .toSet()
         for (issue in ConnectionIssue.values()) assertTrue(issue.name, issue in everRelevant)
     }

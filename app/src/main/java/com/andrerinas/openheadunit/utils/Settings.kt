@@ -2716,6 +2716,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("auto-enable-hotspot", false)
         set(value) { prefs.edit().putBoolean("auto-enable-hotspot", value).apply() }
 
+    /** Native Hotspot transport: true keeps the system hotspot where the local-only one would run. */
+    var useSystemHotspot: Boolean
+        get() = prefs.getBoolean("use-system-hotspot", false)
+        set(value) { prefs.edit().putBoolean("use-system-hotspot", value).apply() }
+
     /** Headunit Server (Auto) only; see [HeadunitServerNetwork]. */
     var headunitServerNetwork: HeadunitServerNetwork
         get() = HeadunitServerNetwork.byIdOrDefault(prefs.getInt("headunit-server-network", -1), autoEnableHotspot)
@@ -2875,6 +2880,10 @@ class Settings(private val context: Context) {
     var connectionIssueHomeWifiRejoinedAtEpochMs: Long
         get() = prefs.getLong("connection-issue-home-wifi-rejoined", 0L)
         set(value) = prefs.edit().putLong("connection-issue-home-wifi-rejoined", value).apply()
+
+    var connectionIssueLocalHotspotAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-local-hotspot-at", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-local-hotspot-at", value).apply()
 
     var connectionIssueStaleUsbAccessoryAtEpochMs: Long
         get() = prefs.getLong("connection-issue-stale-usb-accessory", 0L)

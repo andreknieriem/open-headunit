@@ -71,6 +71,7 @@ object ConnectionIssueBannerPolicy {
         mode: Int,
         transport: NativeTransport,
         wirelessSelected: Boolean,
+        localHotspot: Boolean = false,
     ): Set<ConnectionIssue> {
         // Keyed on its endpoint rather than on a mode or on wireless being chosen: it is raised
         // only when the peer we dialled was Android Auto's own head unit server, so its presence
@@ -93,10 +94,12 @@ object ConnectionIssueBannerPolicy {
                 ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED,
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP
             )
-            NativeTransport.HOTSPOT -> EITHER_NATIVE_TRANSPORT + setOf(
-                ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE,
-                ConnectionIssue.HOTSPOT_NOT_RUNNING
-            )
+            // The local source never resolves a system hotspot, so its own record replaces both.
+            NativeTransport.HOTSPOT -> EITHER_NATIVE_TRANSPORT + if (localHotspot) {
+                setOf(ConnectionIssue.LOCAL_HOTSPOT_FAILED)
+            } else {
+                setOf(ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE, ConnectionIssue.HOTSPOT_NOT_RUNNING)
+            }
         }
     }
 

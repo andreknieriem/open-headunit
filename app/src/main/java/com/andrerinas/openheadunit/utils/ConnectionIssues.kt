@@ -26,6 +26,13 @@ enum class ConnectionIssue {
     /** No usable BSSID, which the WiFi Direct route aborts on rather than sending. */
     BSSID_UNAVAILABLE,
 
+    /**
+     * The local-only hotspot did not start, or ended, so there was no network for the phone to join.
+     * Its remedy is the "Use the system hotspot" setting. Shown in place of the two system hotspot
+     * records while the local source runs.
+     */
+    LOCAL_HOTSPOT_FAILED,
+
     /** The device will not name its own access point, so the phone had nothing to join. */
     HOTSPOT_CONFIG_UNREADABLE,
 
@@ -280,6 +287,7 @@ object ConnectionIssues {
                 ConnectionIssue.BSSID_UNAVAILABLE -> settings.connectionIssueBssidAtEpochMs
                 ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE -> settings.connectionIssueHotspotConfigAtEpochMs
                 ConnectionIssue.HOTSPOT_NOT_RUNNING -> settings.connectionIssueHotspotOffAtEpochMs
+                ConnectionIssue.LOCAL_HOTSPOT_FAILED -> settings.connectionIssueLocalHotspotAtEpochMs
                 ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED -> settings.connectionIssueWifiDirectRefusedAtEpochMs
                 ConnectionIssue.WIFI_DIRECT_STACK_CYCLED -> settings.connectionIssueWifiDirectCycledAtEpochMs
                 ConnectionIssue.WIFI_DIRECT_STACK_STUCK -> settings.connectionIssueWifiDirectStuckAtEpochMs
@@ -305,6 +313,7 @@ object ConnectionIssues {
                     ConnectionIssue.BSSID_UNAVAILABLE -> settings.connectionIssueBssidAtEpochMs = atEpochMs
                     ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE -> settings.connectionIssueHotspotConfigAtEpochMs = atEpochMs
                     ConnectionIssue.HOTSPOT_NOT_RUNNING -> settings.connectionIssueHotspotOffAtEpochMs = atEpochMs
+                    ConnectionIssue.LOCAL_HOTSPOT_FAILED -> settings.connectionIssueLocalHotspotAtEpochMs = atEpochMs
                     ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED -> settings.connectionIssueWifiDirectRefusedAtEpochMs = atEpochMs
                     ConnectionIssue.WIFI_DIRECT_STACK_CYCLED -> settings.connectionIssueWifiDirectCycledAtEpochMs = atEpochMs
                     ConnectionIssue.WIFI_DIRECT_STACK_STUCK -> settings.connectionIssueWifiDirectStuckAtEpochMs = atEpochMs

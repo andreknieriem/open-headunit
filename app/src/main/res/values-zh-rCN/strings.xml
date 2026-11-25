@@ -1264,6 +1264,10 @@
     <string name="connection_issue_banner_bt_silent">您的手机已通过蓝牙连接，但本机的蓝牙未能向其发送任何数据。点按可选择无需蓝牙的模式，例如 Wireless Helper。</string>
     <string name="connection_issue_banner_bssid">本机不肯提供其 WLAN 地址，因此手机不知道该加入哪个网络。请开启位置信息，或点按手动输入地址。</string>
     <string name="connection_issue_banner_hotspot_off">本机的热点已关闭，手机没有可加入的网络。请开启热点，或点按让应用为您开启。</string>
+    <string name="connection_issue_banner_local_hotspot">本机无法启动自己的热点，手机没有可加入的网络。点按即可开启“使用系统热点”。</string>
+    <string name="use_system_hotspot">使用系统热点</string>
+    <string name="use_system_hotspot_summary">已关闭：应用启动自己的热点，无需设置。</string>
+    <string name="use_system_hotspot_help">已关闭：在 Android 8 及更高版本上，应用会启动自己的本地热点，无需任何设置。此时名称、密码、接口、频段和信道这几行不起作用，因此已隐藏。您已填的值仍会保留。已开启：应用像以前一样使用本机的热点，您可以手动设置名称、密码和接口。</string>
     <string name="connection_issue_banner_wifi_direct_refused">本机无法为手机创建 Wi-Fi Direct 网络。请尝试让本机断开其他 WLAN，或点按改用本机热点。</string>
     <string name="connection_issue_banner_wifi_direct_cycled">另一个应用不断关闭 Wi-Fi Direct，通常是预装的投屏应用，如 ZLink 或 CarLife。请停用该应用，或点按改用热点。</string>
     <string name="connection_issue_banner_hotspot_config">本机不向应用提供其热点名称和密码。点按即可手动输入。</string>

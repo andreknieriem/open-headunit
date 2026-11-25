@@ -63,6 +63,7 @@ class SettingsPendingCopy {
     var wifiConnectionMode: WifiLauncherMode? = null
     var helperConnectionStrategy: HelperStrategy? = null
     var autoEnableHotspot: Boolean? = null
+    var useSystemHotspot: Boolean? = null
     var headunitServerNetwork: HeadunitServerNetwork? = null
     var headunitServerAutoWifiScan: Boolean? = null
     var waitForWifi: Boolean? = null
@@ -164,6 +165,7 @@ class SettingsPendingCopy {
         wifiConnectionMode = settings.wifiConnectionMode
         helperConnectionStrategy = settings.helperConnectionStrategy
         autoEnableHotspot = settings.autoEnableHotspot
+        useSystemHotspot = settings.useSystemHotspot
         headunitServerNetwork = settings.headunitServerNetwork
         headunitServerAutoWifiScan = settings.headunitServerAutoWifiScan
         waitForWifi = settings.waitForWifiBeforeWifiDirect
@@ -266,6 +268,7 @@ class SettingsPendingCopy {
         wifiConnectionMode != settings.wifiConnectionMode ||
         helperConnectionStrategy != settings.helperConnectionStrategy ||
         autoEnableHotspot != settings.autoEnableHotspot ||
+        useSystemHotspot != settings.useSystemHotspot ||
         headunitServerNetwork != settings.headunitServerNetwork ||
         headunitServerAutoWifiScan != settings.headunitServerAutoWifiScan ||
         waitForWifi != settings.waitForWifiBeforeWifiDirect ||

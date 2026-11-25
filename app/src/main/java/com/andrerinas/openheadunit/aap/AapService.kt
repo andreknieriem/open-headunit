@@ -112,6 +112,7 @@ import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ConnectByNameGate
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.LocalHotspotPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NamedPhonePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ModuleRearmPolicy
@@ -2028,6 +2029,8 @@ class AapService : Service() {
                         // ordering below was written to prevent. Read off `active` afterwards, that
                         // ordering could never apply to this mode at all.
                         AppLog.i("AapService: Native AA user exit. Stopping active launcher.")
+                        // The stop below nulls `active`, so the exit is noted while it is still set.
+                        if (state.isUserExit) (wifiLauncherManager.active as? WifiLauncherNative)?.noteUserExit()
                         wifiLauncherManager.stop()
                         wirelessTornDown = true
                     }
@@ -2087,7 +2090,9 @@ class AapService : Service() {
                         settings.helperConnectionStrategy,
                         settings.nativeApStrategy,
                         settings.autoEnableHotspot,
-                        settings.hotspotTeardownProvenUnsafe
+                        settings.hotspotTeardownProvenUnsafe,
+                        LocalHotspotPolicy.source(Build.VERSION.SDK_INT, settings.useSystemHotspot) ==
+                            LocalHotspotPolicy.Source.LOCAL_ONLY
                     )
                     if (action != HotspotExitAction.NONE) {
                         // Stop watching an access point nobody is connecting over, either way: this
@@ -2125,6 +2130,8 @@ class AapService : Service() {
                                 "associated and Android Auto will keep retrying its wireless setup; " +
                                 "switch the hotspot off by hand, or end the session from the phone."
                         )
+                        // The launcher stop above closed the reservation.
+                        HotspotExitAction.RELEASE_LOCAL -> {}
                         HotspotExitAction.NONE -> {}
                     }
                 }

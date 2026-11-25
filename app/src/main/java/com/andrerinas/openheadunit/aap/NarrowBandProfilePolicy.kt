@@ -146,7 +146,8 @@ object NarrowBandProfilePolicy {
         capEnabled: Boolean = true,
         sessionFrequencyMhz: Int = 0,
         bandUnreadable: Boolean = false,
-        linkProvedTooSlow: Boolean = false
+        linkProvedTooSlow: Boolean = false,
+        localHotspotNarrow: Boolean = false
     ): String? {
         if (!wirelessSession) return null
         // The earned cap answers first: it is the one reason that is a measurement of this link
@@ -166,11 +167,12 @@ object NarrowBandProfilePolicy {
         val why = when {
             supports5Ghz == false -> "This unit has no 5 GHz band, so this session runs over 2.4 GHz"
             sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ -> "This session's network is on 2.4 GHz"
+            localHotspotNarrow -> "This unit's local hotspot is on 2.4 GHz or on a band that could not be read"
             else -> "This unit's Android is too old to report which band it is on"
         }
         // The 2.4 GHz measurement belongs to the two arms it was taken on. The third arm has its
         // own unit and says so rather than borrowing theirs.
-        val evidence = if (supports5Ghz == false || sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ)
+        val evidence = if (supports5Ghz == false || sessionFrequencyMhz in 1..MAX_24GHZ_FREQUENCY_MHZ || localHotspotNarrow)
             "on a 2.4 GHz access point, a full-rate stream died having sent no frame at all where " +
                 "a lower one held indefinitely"
         else

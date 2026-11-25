@@ -1,7 +1,9 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import org.junit.Assert.assertEquals
+import com.andrerinas.openheadunit.utils.ConnectionIssue
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -89,6 +91,28 @@ class NativeCredentialsPolicyTest {
                 NativeCredentialsPolicy.onEmptyPassphrase(strategy)
             )
         }
+    }
+
+    @Test
+    fun `an empty passphrase on the local hotspot raises the local record`() {
+        assertEquals(
+            ConnectionIssue.LOCAL_HOTSPOT_FAILED,
+            NativeCredentialsPolicy.recordForEmptyPassphrase(NativeStrategy.HOTSPOT, localHotspot = true)
+        )
+    }
+
+    @Test
+    fun `an empty passphrase on the system hotspot raises the config record`() {
+        assertEquals(
+            ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE,
+            NativeCredentialsPolicy.recordForEmptyPassphrase(NativeStrategy.HOTSPOT, localHotspot = false)
+        )
+    }
+
+    @Test
+    fun `an empty passphrase on WiFi Direct raises no hotspot record`() {
+        assertNull(NativeCredentialsPolicy.recordForEmptyPassphrase(NativeStrategy.WIFI_DIRECT, localHotspot = false))
+        assertNull(NativeCredentialsPolicy.recordForEmptyPassphrase(NativeStrategy.WIFI_DIRECT, localHotspot = true))
     }
 
     @Test

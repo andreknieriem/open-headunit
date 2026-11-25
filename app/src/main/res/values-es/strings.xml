@@ -1276,6 +1276,10 @@
     <string name="connection_issue_banner_bt_silent">Tu teléfono se conectó por Bluetooth, pero el Bluetooth de esta unidad no pudo enviarle nada. Toca para elegir un modo que no lo necesite, como Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Tu teléfono no supo a qué red unirse, porque esta unidad no compartió su dirección Wi-Fi. Activa la ubicación o toca para ingresar la dirección a mano.</string>
     <string name="connection_issue_banner_hotspot_off">El punto de acceso de esta unidad está apagado, así que tu teléfono no tenía red a la que unirse. Actívalo, o toca para que la app lo active.</string>
+    <string name="connection_issue_banner_local_hotspot">Esta unidad no pudo iniciar su propio punto de acceso, así que tu teléfono no tenía red a la que unirse. Toca para activar «Usar el punto de acceso del sistema».</string>
+    <string name="use_system_hotspot">Usar el punto de acceso del sistema</string>
+    <string name="use_system_hotspot_summary">Desactivado: la app inicia su propio punto de acceso y no requiere configuración.</string>
+    <string name="use_system_hotspot_help">Desactivado: en Android 8 y versiones posteriores, la app inicia su propio punto de acceso local y no hay que configurar nada. Las filas de nombre, contraseña, interfaz, banda y canal no tienen efecto, por eso se ocultan. Tus valores se conservan. Activado: la app usa el punto de acceso de esta unidad como antes, y puedes definir el nombre, la contraseña y la interfaz a mano.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Esta unidad no pudo crear la red Wi-Fi Direct para tu teléfono. Intenta desconectarla de otra red Wi-Fi o toca para usar su punto de acceso.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Otra app sigue apagando Wi-Fi Direct, normalmente una app de proyección preinstalada como ZLink o CarLife. Desactívala, o toca para usar el punto de acceso.</string>
     <string name="connection_issue_banner_hotspot_config">Esta unidad no compartirá el nombre y la contraseña de su punto de acceso con la app. Toca para ingresarlos a mano.</string>

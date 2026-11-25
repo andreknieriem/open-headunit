@@ -4039,16 +4039,19 @@ class NativeAaHandshakeManager(
             if (!NativeCredentialsPolicy.isUsablePassphrase(credPsk) &&
                 NativeCredentialsPolicy.onEmptyPassphrase(transport) == UnusablePassphraseAction.ABORT
             ) {
+                val localHotspot = launcher.hotspotSource == LocalHotspotPolicy.Source.LOCAL_ONLY
                 AppLog.e(
                     "NativeAA: these credentials for '$credSsid' carry no passphrase, and the phone " +
                         "refuses an open network. Not sending them. " +
-                        if (transport == NativeTransport.HOTSPOT)
+                        if (transport == NativeTransport.HOTSPOT && localHotspot)
+                            "Turn on 'Use the system hotspot' under Wireless connection."
+                        else if (transport == NativeTransport.HOTSPOT)
                             "Set 'Hotspot password (manual)' as well as the name under Wireless connection."
                         else
                             "The group came up without one, which is a fault in this unit's WiFi Direct stack."
                 )
-                if (transport == NativeTransport.HOTSPOT) {
-                    ConnectionIssues.raise(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
+                NativeCredentialsPolicy.recordForEmptyPassphrase(transport, localHotspot)?.let {
+                    ConnectionIssues.raise(context, it)
                 }
                 abortedLocally = true
                 return@withContext

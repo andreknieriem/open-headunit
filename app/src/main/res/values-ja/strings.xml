@@ -1270,6 +1270,10 @@
     <string name="connection_issue_banner_bt_silent">スマートフォンはBluetoothで接続されましたが、この機器のBluetoothは何も送信できませんでした。タップして、Wireless Helperなど、それを必要としないモードを選択してください。</string>
     <string name="connection_issue_banner_bssid">この機器がWiFiアドレスを共有しなかったため、スマートフォンはどのネットワークに接続すべきか分かりませんでした。位置情報をオンにするか、タップしてアドレスを手動で入力してください。</string>
     <string name="connection_issue_banner_hotspot_off">この機器のホットスポットがオフのため、スマートフォンが接続するネットワークがありませんでした。オンにするか、タップしてアプリでオンにしてください。</string>
+    <string name="connection_issue_banner_local_hotspot">この機器は独自のホットスポットを起動できなかったため、スマートフォンが接続するネットワークがありませんでした。タップして「システムのホットスポットを使用」をオンにしてください。</string>
+    <string name="use_system_hotspot">システムのホットスポットを使用</string>
+    <string name="use_system_hotspot_summary">オフ: アプリが独自のホットスポットを起動します。設定は不要です。</string>
+    <string name="use_system_hotspot_help">オフ: Android 8 以降では、アプリが独自のローカル ホットスポットを起動するため、設定は不要です。この場合、名前、パスワード、インターフェース、バンド、チャンネルの行は機能しないので非表示になります。入力済みの値は保存されたままです。オン: 従来どおりこの機器のホットスポットを使用します。名前、パスワード、インターフェースを手動で設定できます。</string>
     <string name="connection_issue_banner_wifi_direct_refused">この機器はスマートフォン用のWiFi Directネットワークを作成できませんでした。他のWiFiから切断してみるか、タップして代わりにホットスポットを使用してください。</string>
     <string name="connection_issue_banner_wifi_direct_cycled">別のアプリがWiFi Directを繰り返しオフにしています。多くの場合、ZLinkやCarLifeなどのプリインストールされたミラーリングアプリが原因です。無効にするか、タップして代わりにホットスポットを使用してください。</string>
     <string name="connection_issue_banner_hotspot_config">この機器はホットスポット名とパスワードをアプリと共有しません。タップして手動で入力してください。</string>

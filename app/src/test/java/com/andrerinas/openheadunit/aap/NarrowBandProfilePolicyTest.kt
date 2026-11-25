@@ -400,4 +400,39 @@ class NarrowBandProfilePolicyTest {
         assertTrue(NarrowBandProfilePolicy.runsNarrow(supports5Ghz = false, sessionFrequencyMhz = 0))
         assertTrue(NarrowBandProfilePolicy.runsNarrow(supports5Ghz = true, sessionFrequencyMhz = 2437))
     }
+
+    @Test
+    fun `the local hotspot flag names the local hotspot and the 2_4 GHz evidence, not an old Android`() {
+        val advice = NarrowBandProfilePolicy.advice(
+            supports5Ghz = null, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 0, bandUnreadable = true, localHotspotNarrow = true
+        )
+        assertNotNull(advice)
+        assertTrue(advice!!, advice.startsWith("This unit's local hotspot"))
+        assertFalse(advice, advice.contains("too old"))
+        assertTrue(advice, advice.contains("2.4 GHz access point"))
+    }
+
+    @Test
+    fun `without the flag an unreadable band keeps the old Android text`() {
+        val advice = NarrowBandProfilePolicy.advice(
+            supports5Ghz = null, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 0, bandUnreadable = true
+        )
+        assertTrue(advice!!.startsWith("This unit's Android is too old to report which band it is on"))
+    }
+
+    @Test
+    fun `a real 2_4 GHz reading still wins over the local hotspot flag`() {
+        val advice = NarrowBandProfilePolicy.advice(
+            supports5Ghz = null, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 2437, bandUnreadable = true, localHotspotNarrow = true
+        )
+        assertTrue(advice!!.startsWith("This session's network is on 2.4 GHz"))
+        val noBand = NarrowBandProfilePolicy.advice(
+            supports5Ghz = false, fpsLimit = 60, wirelessSession = true, capEnabled = true,
+            sessionFrequencyMhz = 0, bandUnreadable = true, localHotspotNarrow = true
+        )
+        assertTrue(noBand!!.startsWith("This unit has no 5 GHz band"))
+    }
 }

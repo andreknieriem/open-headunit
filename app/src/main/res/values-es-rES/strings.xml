@@ -1279,6 +1279,10 @@
     <string name="connection_issue_banner_bt_silent">Tu teléfono se conectó por Bluetooth, pero el Bluetooth de esta unidad no pudo enviarle nada. Toca para elegir un modo que no lo necesite, como Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Tu teléfono no supo a qué red unirse, porque esta unidad no compartió su dirección WiFi. Activa la ubicación, o toca para introducir la dirección a mano.</string>
     <string name="connection_issue_banner_hotspot_off">El punto de acceso de esta unidad está apagado, así que tu teléfono no tenía red a la que unirse. Actívalo, o toca para que la app lo active.</string>
+    <string name="connection_issue_banner_local_hotspot">Esta unidad no ha podido iniciar su propio punto de acceso, así que tu teléfono no tenía ninguna red a la que unirse. Toca para activar «Usar el punto de acceso del sistema».</string>
+    <string name="use_system_hotspot">Usar el punto de acceso del sistema</string>
+    <string name="use_system_hotspot_summary">Desactivado: la app inicia su propio punto de acceso y no necesita configuración.</string>
+    <string name="use_system_hotspot_help">Desactivado: en Android 8 y posteriores, la app inicia su propio punto de acceso local y no hay que configurar nada. Las filas de nombre, contraseña, interfaz, banda y canal no sirven entonces para nada, así que se ocultan. Tus valores siguen guardados. Activado: la app usa el punto de acceso de esta unidad como antes, y puedes indicar el nombre, la contraseña y la interfaz a mano.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Esta unidad no pudo crear la red WiFi Direct para tu teléfono. Prueba a desconectarla de otra red WiFi, o toca para usar su punto de acceso.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Otra app sigue apagando WiFi Direct, normalmente una app de proyección preinstalada como ZLink o CarLife. Desactívala, o toca para usar el punto de acceso.</string>
     <string name="connection_issue_banner_hotspot_config">Esta unidad no comparte con la app el nombre ni la contraseña de su punto de acceso. Toca para introducirlos a mano.</string>

@@ -1268,6 +1268,10 @@
     <string name="connection_issue_banner_bt_silent">Điện thoại đã kết nối qua Bluetooth, nhưng Bluetooth của thiết bị này không thể gửi được gì. Nhấn để chọn chế độ không cần đến nó, chẳng hạn như Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Điện thoại không biết cần tham gia mạng nào, vì thiết bị này không chia sẻ địa chỉ WiFi của nó. Bật Vị trí, hoặc nhấn để nhập địa chỉ thủ công.</string>
     <string name="connection_issue_banner_hotspot_off">Điểm phát sóng của thiết bị này đang tắt nên điện thoại không có mạng để kết nối. Hãy bật nó, hoặc nhấn để ứng dụng tự bật.</string>
+    <string name="connection_issue_banner_local_hotspot">Thiết bị này không thể bật điểm phát sóng riêng nên điện thoại không có mạng để kết nối. Nhấn để bật “Dùng điểm phát sóng của hệ thống”.</string>
+    <string name="use_system_hotspot">Dùng điểm phát sóng của hệ thống</string>
+    <string name="use_system_hotspot_summary">Đang tắt: ứng dụng tự bật điểm phát sóng riêng và không cần thiết lập.</string>
+    <string name="use_system_hotspot_help">Đang tắt: trên Android 8 trở lên, ứng dụng tự bật điểm phát sóng cục bộ riêng và không cần thiết lập gì. Khi đó các hàng tên, mật khẩu, giao diện, băng tần và kênh không có tác dụng nên được ẩn. Các giá trị của bạn vẫn được lưu. Đang bật: ứng dụng dùng điểm phát sóng của thiết bị này như trước, và bạn có thể tự đặt tên, mật khẩu và giao diện.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Thiết bị này không thể tạo mạng WiFi Direct cho điện thoại. Hãy thử ngắt kết nối khỏi WiFi khác, hoặc nhấn để dùng điểm phát sóng thay thế.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Một ứng dụng khác liên tục tắt WiFi Direct, thường là ứng dụng chiếu màn hình cài sẵn như ZLink hoặc CarLife. Hãy tắt nó, hoặc nhấn để dùng điểm phát sóng thay thế.</string>
     <string name="connection_issue_banner_hotspot_config">Thiết bị này không chia sẻ tên và mật khẩu điểm phát sóng với ứng dụng. Nhấn để nhập thủ công.</string>

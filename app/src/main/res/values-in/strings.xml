@@ -1401,6 +1401,10 @@
     <string name="connection_issue_banner_bt_silent">Ponsel Anda terhubung melalui Bluetooth, tetapi Bluetooth unit ini tidak dapat mengirim apa pun kepadanya. Ketuk untuk memilih mode yang tidak memerlukannya, misalnya Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Ponsel Anda tidak diberi tahu jaringan mana yang harus diikuti, karena unit ini tidak membagikan alamat Wi-Fi-nya. Aktifkan Lokasi, atau ketuk untuk memasukkan alamat secara manual.</string>
     <string name="connection_issue_banner_hotspot_off">Hotspot unit ini nonaktif, sehingga ponsel Anda tidak punya jaringan untuk diikuti. Aktifkan hotspot, atau ketuk agar aplikasi mengaktifkannya.</string>
+    <string name="connection_issue_banner_local_hotspot">Unit ini tidak dapat memulai hotspot sendiri, sehingga ponsel Anda tidak punya jaringan untuk diikuti. Ketuk untuk mengaktifkan ‘Gunakan hotspot sistem’.</string>
+    <string name="use_system_hotspot">Gunakan hotspot sistem</string>
+    <string name="use_system_hotspot_summary">Nonaktif: aplikasi memulai hotspot sendiri dan tidak perlu penyiapan.</string>
+    <string name="use_system_hotspot_help">Nonaktif: di Android 8 dan yang lebih baru, aplikasi memulai hotspot lokal sendiri dan tidak ada yang perlu disiapkan. Baris nama, kata sandi, antarmuka, pita, dan kanal tidak berfungsi saat itu, jadi disembunyikan. Nilai Anda tetap tersimpan. Aktif: aplikasi memakai hotspot unit ini seperti sebelumnya, dan Anda dapat mengatur nama, kata sandi, dan antarmuka secara manual.</string>
     <string name="connection_issue_banner_hotspot_config">Unit ini tidak membagikan nama dan kata sandi hotspot-nya ke aplikasi. Ketuk untuk memasukkannya secara manual.</string>
     <string name="auto_restart_wifi_summary">Memulai ulang Wi-Fi sendiri jika WiFi Direct macet. Perlu root atau ADB lokal.</string>
     <string name="auto_restart_wifi_description">Mematikan dan menyalakan Wi-Fi sendiri jika WiFi Direct macet, yang bisa terjadi setelah aplikasi ditutup di tengah sesi. Perlu root atau ADB lokal. Tidak pernah berjalan selama sesi.</string>

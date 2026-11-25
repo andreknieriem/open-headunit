@@ -244,6 +244,7 @@ open class WifiLauncherManager(val service: AapService) {
     fun stopForUser() {
         service.releaseParkedHct()
         cancelledByUser = true
+        active?.noteUserExit()
         stop(WifiLauncherStopSequence.LAST)
     }
 

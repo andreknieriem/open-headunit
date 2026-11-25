@@ -29,6 +29,29 @@ class NativeCredentialsPreflightPolicyTest {
     private fun wifiDirect(probe: PreflightProbe) =
         NativeCredentialsPreflightPolicy.evaluate(NativeTransport.WIFI_DIRECT, probe)
 
+    // --- the local hotspot has nothing to type ------------------------------------------------------
+
+    @Test
+    fun `the local hotspot asks for no name, password or address`() {
+        val report = NativeCredentialsPreflightPolicy.evaluate(
+            NativeTransport.HOTSPOT,
+            probe(systemConfig = null, probedBssid = null, bssidProbeConclusive = true),
+            localHotspot = true
+        )
+        assertEquals(emptyList<CredentialField>(), report.mustEnter)
+        assertFalse(report.hasFindings)
+        assertEquals(setOf(CredentialField.BSSID), report.verdicts.keys)
+        assertEquals(FieldVerdict.UNKNOWN, report.verdicts[CredentialField.BSSID])
+    }
+
+    @Test
+    fun `the system hotspot still asks when the flag is off`() {
+        val report = NativeCredentialsPreflightPolicy.evaluate(
+            NativeTransport.HOTSPOT, probe(systemConfig = null), localHotspot = false
+        )
+        assertEquals(listOf(CredentialField.HOTSPOT_NAME, CredentialField.HOTSPOT_PASSWORD), report.mustEnter)
+    }
+
     // --- the case the whole feature exists for -------------------------------------------------
 
     @Test

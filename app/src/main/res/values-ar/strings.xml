@@ -1268,6 +1268,10 @@
     <string name="connection_issue_banner_bt_silent">اتصل هاتفك عبر البلوتوث، لكن بلوتوث هذه الوحدة لم يستطع إرسال أي شيء إليه. انقر لاختيار وضع لا يحتاج إليه، مثل Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">لم يُخبَر هاتفك بأي شبكة عليه الانضمام إليها، لأن هذه الوحدة رفضت مشاركة عنوان WiFi الخاص بها. شغّل خدمة الموقع، أو انقر لإدخال العنوان يدويًا.</string>
     <string name="connection_issue_banner_hotspot_off">نقطة اتصال هذه الوحدة متوقفة، لذا لم تكن هناك شبكة ليتصل بها هاتفك. شغّلها، أو انقر للسماح للتطبيق بتشغيلها.</string>
+    <string name="connection_issue_banner_local_hotspot">تعذّر على هذه الوحدة تشغيل نقطة اتصالها الخاصة، لذا لم تكن هناك شبكة ليتصل بها هاتفك. انقر لتفعيل «استخدام نقطة اتصال النظام».</string>
+    <string name="use_system_hotspot">استخدام نقطة اتصال النظام</string>
+    <string name="use_system_hotspot_summary">متوقف: يشغّل التطبيق نقطة اتصاله الخاصة ولا يحتاج إلى أي إعداد.</string>
+    <string name="use_system_hotspot_help">متوقف: في Android 8 والإصدارات الأحدث، يشغّل التطبيق نقطة اتصال محلية خاصة به ولا يلزم أي إعداد. لذلك لا تعمل صفوف الاسم وكلمة المرور والواجهة والنطاق والقناة، وتكون مخفية. تبقى قيمك محفوظة. مفعَّل: يستخدم التطبيق نقطة اتصال هذه الوحدة كما كان من قبل، ويمكنك ضبط الاسم وكلمة المرور والواجهة يدويًا.</string>
     <string name="connection_issue_banner_wifi_direct_refused">تعذر على هذه الوحدة إنشاء شبكة WiFi Direct لهاتفك. جرّب فصلها عن شبكة WiFi أخرى، أو انقر لاستخدام نقطة اتصالها بدلاً من ذلك.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">يستمر تطبيق آخر في إيقاف تشغيل WiFi Direct، وعادة ما يكون تطبيق عرض مثبّتًا مسبقًا مثل ZLink أو CarLife. عطّله، أو انقر لاستخدام نقطة الاتصال بدلاً من ذلك.</string>
     <string name="connection_issue_banner_hotspot_config">لن تشارك هذه الوحدة اسم نقطة اتصالها وكلمة مرورها مع التطبيق. انقر لإدخالهما يدويًا.</string>

@@ -16,7 +16,9 @@ import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDown
 import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownMode
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.LocalHotspotPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
@@ -162,7 +164,8 @@ object LogExporter {
             "wifi=mode:${settings.wifiConnectionMode} strategy:${wifiTransport(settings)} " +
             // The band and the stand-down arm decide how a stuttering capture reads, and both are
             // otherwise only in lines that rotate out of a head unit's buffer within a minute.
-            "band:${band(context)} standDown:${standDown(settings)} autoHotspot:${if (settings.autoEnableHotspot) "on" else "off"} | " +
+            "band:${band(context)} standDown:${standDown(settings)} autoHotspot:${if (settings.autoEnableHotspot) "on" else "off"} " +
+            "localHotspot:${localHotspot(settings)} | " +
             // Which Bluetooth this unit will use. A capture that shows the handshake doing nothing
             // reads completely differently once the header says the route was blocked.
             "bt=${bluetoothRoute(context)} | " +
@@ -177,7 +180,7 @@ object LogExporter {
      * the call, the second is a WiFi service that refused on a unit that does have it.
      */
     private fun band(context: Context): String = when {
-        WifiBandCapability.bandUnreadable() -> "unasked"
+        WifiBandCapability.platformCannotAsk() -> "unasked"
         else -> when (WifiBandCapability.supports5Ghz(context)) {
             true -> "5ghz"
             false -> "2.4only"
@@ -213,6 +216,14 @@ object LogExporter {
      * that mode consults - which meant a header could not tell a Native/WiFi-Direct failure from a
      * Native/hotspot one, and reading it literally sent triage after a Nearby path that never ran.
      */
+    /** `n/a` below API 26 and off the Native Hotspot transport, where no local hotspot can run. */
+    private fun localHotspot(settings: Settings): String {
+        val native = settings.wifiConnectionMode == WifiLauncherMode.NATIVE &&
+            settings.nativeApStrategy == NativeStrategy.HOTSPOT
+        if (!native || Build.VERSION.SDK_INT < LocalHotspotPolicy.MIN_SDK) return "n/a"
+        return if (LocalHotspotPolicy.source(Build.VERSION.SDK_INT, settings.useSystemHotspot) == LocalHotspotPolicy.Source.LOCAL_ONLY) "on" else "off"
+    }
+
     private fun wifiTransport(settings: Settings): String = when (settings.wifiConnectionMode) {
         WifiLauncherMode.NATIVE -> settings.nativeApStrategy.name
         // Headunit Server has no strategy; which network it shares decides whether discovery waits.

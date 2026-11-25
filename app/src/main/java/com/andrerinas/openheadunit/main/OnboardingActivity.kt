@@ -27,6 +27,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
 import com.andrerinas.openheadunit.app.BaseActivity
+import com.andrerinas.openheadunit.app.AppUiEntry
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.decoder.video.preflight.VideoPreflightClipOutcome
 import com.andrerinas.openheadunit.decoder.video.preflight.VideoPreflightFailure
@@ -215,8 +216,10 @@ class OnboardingActivity : BaseActivity() {
                                 Toast.LENGTH_LONG, force = true
                             )
                             sendBroadcast(Intent(MainActivity.ACTION_RECREATE_MAIN).setPackage(packageName))
-                            startActivity(Intent(this@OnboardingActivity, MainActivity::class.java)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                            // The restore's own continuation, not a new open: it must not take
+                            // over a Stop the restore just accepted.
+                            startActivity(AppUiEntry.continuation(Intent(this@OnboardingActivity, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)))
                             finish()
                         }
                         is OnboardingRestoreViewModel.State.Failed -> {
@@ -924,11 +927,11 @@ class OnboardingActivity : BaseActivity() {
         completeOnboarding()
         // NEW_TASK puts Settings in the app's own task, over the main screen, instead of in the
         // wizard's task, which would linger out of Recents once the wizard is gone.
-        startActivity(
+        startActivity(AppUiEntry.continuation(
             Intent(this, SettingsActivity::class.java)
                 .putExtra(SettingsActivity.EXTRA_DESTINATION, destinationId)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
+        ))
         finish()
     }
 

@@ -235,7 +235,7 @@ class UsbListFragment : Fragment() {
                         putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
                         addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                     }
-                    mContext.startActivity(aapIntent)
+                    mContext.startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(aapIntent))
                 } else if (device.isInAccessoryMode) {
                     // Device is in Accessory Mode but we are NOT connected.
                     // Start connection immediately.
@@ -274,7 +274,7 @@ class UsbListFragment : Fragment() {
                     } else {
                         ToastUtils.showToast(mContext, R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
                         ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java))
-                        UsbPermissionAsks.askFromUi(mContext, device.wrappedDevice)
+                        UsbPermissionAsks.askFromUi(mContext, device.wrappedDevice, App.provide(mContext).commManager.appConnectionTicket())
                     }
                 }
             }

@@ -14,7 +14,7 @@ class SelfLaunchCoalescePolicyTest {
     @Test
     fun `a second request while one is in flight does not start another`() {
         // The defect: auto-start-self-mode and an explicit ACTION_START_SELF_MODE both fired, and on
-        // the 17.4+ route the loser's emitError disconnected the winner's session.
+        // the 17.4+ route the loser's failure report disconnected the winner's session.
         assertFalse(SelfLaunchCoalescePolicy.shouldStart(launchInFlight = true, isConnected = false))
     }
 
@@ -24,17 +24,7 @@ class SelfLaunchCoalescePolicyTest {
         assertFalse(SelfLaunchCoalescePolicy.shouldStart(launchInFlight = true, isConnected = true))
     }
 
-    @Test
-    fun `running out of launchers is reportable only while nothing has connected`() {
-        assertTrue(SelfLaunchCoalescePolicy.mayReportAllLaunchersFailed(isConnected = false))
-        assertFalse(SelfLaunchCoalescePolicy.mayReportAllLaunchersFailed(isConnected = true))
-    }
-
-    @Test
-    fun `the two rules agree that a connected session is nobody's to restart or end`() {
-        // Both guards have to hold for the measured failure: the coalesce stops the second launch,
-        // and the report guard covers a duplicate that reached the launchers some other way.
-        assertFalse(SelfLaunchCoalescePolicy.shouldStart(launchInFlight = false, isConnected = true))
-        assertFalse(SelfLaunchCoalescePolicy.mayReportAllLaunchersFailed(isConnected = true))
-    }
+    // The second rule, that running out of launchers is no failure once something connected, is
+    // decided from physical arrivals by CommManager.reportLaunchFailure: InternalFailureRecoveryTest
+    // and the Self host fixture hold it for a duplicate that reached the launchers some other way.
 }

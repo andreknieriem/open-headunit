@@ -160,8 +160,9 @@ policy = (SRC / 'connection/wifi/modes/nativeaa/ModuleRearmPolicy.kt').read_text
     'package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa', 'package moduleretry'))
 (OUT / 'extracted-method-sha256.json').write_text(json.dumps(methods, indent=2))
 toolchain = json.loads((OUT.parent / 'toolchain.json').read_text())
-cp = os.pathsep.join(item['path'] for item in toolchain['jars'])
-subprocess.run(['java', '-cp', cp, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
+compiler = os.pathsep.join(item['path'] for item in toolchain['jars'])
+cp = os.pathsep.join(toolchain['runtime_jars'])
+subprocess.run(['java', '-cp', compiler, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
     '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp, '-d', str(OUT / 'regression.jar'),
     *map(str, sorted(OUT.glob('*.kt')))], check=True, timeout=45)
 subprocess.run(['java', '-cp', str(OUT / 'regression.jar') + os.pathsep + cp,

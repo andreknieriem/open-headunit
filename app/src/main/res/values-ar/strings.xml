@@ -1912,4 +1912,6 @@
     <string name="home_hotspot_not_found">لا توجد شبكة WiFi متصلة. هل نقطة اتصال الهاتف مفعّلة؟</string>
     <string name="home_wifi_hotspot_hint">هل نقطة اتصال الهاتف مفعّلة؟</string>
     <string name="home_wifi_off_hint">شغّله للاتصال</string>
+    <string name="maps_audio_only_summary">إرشادات الملاحة فقط: بلا موسيقى وبلا مكالمات على هذه الوحدة.</string>
+    <string name="maps_audio_only_description">يعلن قناتي الإرشاد وأصوات النظام دون قناة الوسائط، فلا يرسل الهاتف أي موسيقى ولا يمكن لأي تطبيق وسائط التشغيل عبر هذه الوحدة. كما يحجب عنوان البلوتوث الخاص بالاتصال الحر، فيُبقي Android Auto الاتصال الهاتفي معطلاً وتبقى المكالمات على الهاتف. ردود المساعد تستخدم قناة الإرشاد نفسها، لذا سيُسمع رد المساعد أيضًا.</string>
 </resources>

@@ -1914,4 +1914,6 @@
     <string name="home_hotspot_not_found">Kein WLAN verbunden. Ist der Hotspot des Handys an?</string>
     <string name="home_wifi_hotspot_hint">Ist der Hotspot des Handys an?</string>
     <string name="home_wifi_off_hint">Zum Verbinden einschalten</string>
+    <string name="maps_audio_only_summary">Nur Navigationshinweise: keine Musik, keine Anrufe auf diesem Gerät.</string>
+    <string name="maps_audio_only_description">Meldet den Hinweis- und den Systemton-Kanal an, aber nicht den Medienkanal. Das Telefon sendet dann keine Musik und keine Medien-App kann über dieses Gerät abspielen. Außerdem wird die Freisprechadresse nicht bekannt gegeben, sodass Android Auto die Telefonie deaktiviert lässt und Anrufe im Telefon bleiben. Assistentenantworten nutzen denselben Hinweiskanal und sind weiterhin hörbar.</string>
 </resources>

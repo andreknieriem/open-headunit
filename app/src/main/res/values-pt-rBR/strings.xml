@@ -1911,4 +1911,6 @@
     <string name="home_hotspot_not_found">Nenhum WiFi conectado. O hotspot do celular está ligado?</string>
     <string name="home_wifi_hotspot_hint">O hotspot do celular está ligado?</string>
     <string name="home_wifi_off_hint">Ligue-o para conectar</string>
+    <string name="maps_audio_only_summary">Somente instruções de navegação: sem música nem chamadas nesta unidade.</string>
+    <string name="maps_audio_only_description">Anuncia os canais de instruções e de sons do sistema, mas não o canal de mídia, então o telefone não envia música e nenhum app de mídia toca nesta unidade. Também não anuncia o endereço viva-voz, então o Android Auto mantém a telefonia desativada e as chamadas ficam no telefone. As respostas do assistente usam o mesmo canal de instruções e continuam audíveis.</string>
 </resources>

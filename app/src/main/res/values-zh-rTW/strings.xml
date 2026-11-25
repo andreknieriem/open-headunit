@@ -1909,4 +1909,6 @@
     <string name="home_hotspot_not_found">未連上 Wi-Fi。手機熱點已開啟嗎？</string>
     <string name="home_wifi_hotspot_hint">手機熱點已開啟嗎？</string>
     <string name="home_wifi_off_hint">開啟後即可連線</string>
+    <string name="maps_audio_only_summary">僅導航語音：此裝置不播放音樂，也不接聽電話。</string>
+    <string name="maps_audio_only_description">宣告導航提示音與系統音效通道，但不宣告媒體通道，因此手機會停止傳送音樂，任何媒體應用程式都無法在此裝置播放。同時也不宣告免持位址，Android Auto 會讓電話功能保持停用，通話留在手機上。助理回覆使用同一個提示音通道，仍可聽見。</string>
 </resources>

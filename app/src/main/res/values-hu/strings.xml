@@ -1907,4 +1907,6 @@
     <string name="home_hotspot_not_found">Nincs Wi-Fi kapcsolat. Be van kapcsolva a telefon hotspotja?</string>
     <string name="home_wifi_hotspot_hint">Be van kapcsolva a telefon hotspotja?</string>
     <string name="home_wifi_off_hint">Kapcsold be a csatlakozáshoz</string>
+    <string name="maps_audio_only_summary">Csak navigációs útmutatás: zene és hívás nélkül ezen az egységen.</string>
+    <string name="maps_audio_only_description">Az útmutató- és rendszerhang-csatornát hirdeti meg, a médiacsatornát nem, így a telefon nem küld zenét, és médialejátszó nem szólal meg ezen az egységen. A kihangosító címet sem hirdeti meg, ezért az Android Auto a telefonálást letiltva hagyja, a hívások a telefonon maradnak. Az asszisztens válaszai ugyanazt az útmutatócsatornát használják, ezért továbbra is hallhatók.</string>
 </resources>

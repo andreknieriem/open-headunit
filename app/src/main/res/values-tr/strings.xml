@@ -1906,4 +1906,6 @@
     <string name="home_hotspot_not_found">WiFi’ye bağlanılamadı. Telefonun erişim noktası açık mı?</string>
     <string name="home_wifi_hotspot_hint">Telefonun erişim noktası açık mı?</string>
     <string name="home_wifi_off_hint">Bağlanmak için açın</string>
+    <string name="maps_audio_only_summary">Yalnızca navigasyon sesli yönlendirmesi: bu birimde müzik ve arama yok.</string>
+    <string name="maps_audio_only_description">Yönlendirme ve sistem sesi kanallarını duyurur, medya kanalını duyurmaz; bu yüzden telefon müzik göndermez ve hiçbir medya uygulaması bu birimde çalamaz. Eller serbest adresi de duyurulmaz, böylece Android Auto telefon işlevini devre dışı bırakır ve aramalar telefonda kalır. Asistan yanıtları aynı yönlendirme kanalını kullandığı için duyulmaya devam eder.</string>
 </resources>

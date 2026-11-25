@@ -21,13 +21,18 @@ internal data class AudioSessionConfig(
     val systemStream: Int,
     val aac: Boolean,
     val attachHwDspEqualizer: Boolean,
-    val matchingMode: AudioTimeCorrectionMode
+    val matchingMode: AudioTimeCorrectionMode,
+    // Decides which sinks service discovery offers, so it belongs to this session's snapshot and
+    // not to whatever Settings says at the moment the phone asks. Defaulted so the field is
+    // additive for existing construction.
+    val mapsAudioOnly: Boolean = false
 ) {
     companion object {
         fun from(settings: Settings) = AudioSessionConfig(
             settings.enableAudioSink, settings.staticAudioFocus, settings.playbackFocusMode,
             settings.separateAudioStreams, settings.mediaAudioStream, settings.guidanceAudioStream,
-            settings.systemAudioStream, settings.useAacAudio, settings.attachHwDspEqualizer, settings.audioMatchingMode
+            settings.systemAudioStream, settings.useAacAudio, settings.attachHwDspEqualizer, settings.audioMatchingMode,
+            settings.mapsAudioOnly
         )
     }
 }

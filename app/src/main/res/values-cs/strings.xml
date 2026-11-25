@@ -1911,4 +1911,6 @@
     <string name="home_hotspot_not_found">Žádná Wi-Fi není připojena. Je hotspot telefonu zapnutý?</string>
     <string name="home_wifi_hotspot_hint">Je hotspot telefonu zapnutý?</string>
     <string name="home_wifi_off_hint">Zapněte ji pro připojení</string>
+    <string name="maps_audio_only_summary">Jen navigační pokyny: žádná hudba ani hovory na této jednotce.</string>
+    <string name="maps_audio_only_description">Ohlásí kanály pokynů a systémových zvuků, ale ne kanál médií, takže telefon neposílá hudbu a žádná média se přes tuto jednotku nepřehrají. Zároveň nezveřejní adresu hands-free, takže Android Auto ponechá telefonii vypnutou a hovory zůstanou v telefonu. Odpovědi asistenta sdílejí kanál pokynů, takže je stále uslyšíte.</string>
 </resources>

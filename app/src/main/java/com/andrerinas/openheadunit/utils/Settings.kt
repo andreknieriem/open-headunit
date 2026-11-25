@@ -1095,6 +1095,17 @@ class Settings(private val context: Context) {
         }
 
     /** The WiFi Direct group an endpoint last went out on, kept apart from the identity retirement clears. */
+    /**
+     * The channel a phone once answered `NO_SUPPORTED_WIFI_CHANNELS(-8)` to, or 0 for none.
+     *
+     * No endpoint is advertised for that channel again until the group is measured on a different
+     * one. Kept as a frequency rather than a flag so a group that genuinely moves is advertised
+     * again without anyone clearing it, and so the record cannot outlive the wall it describes.
+     */
+    var wppRefusedChannelMhz: Int
+        get() = prefs.getInt("wpp-refused-channel-mhz", 0)
+        set(value) { prefs.edit().putInt("wpp-refused-channel-mhz", value).apply() }
+
     var wifiDirectAdvertisedEndpoint: SoftApAdvertisedEndpoint?
         get() {
             val ssid = prefs.getString("wifi-direct-advertised-endpoint-ssid", null) ?: return null
@@ -1434,6 +1445,15 @@ class Settings(private val context: Context) {
     var enableAudioSink: Boolean
         get() = prefs.getBoolean("enable-audio-sink", true)
         set(value) { prefs.edit().putBoolean("enable-audio-sink", value).apply() }
+
+    // Make a session a map screen: keep guidance (and the system sounds Android Auto requires),
+    // drop the media sink so no music is sent, and withhold the hands-free address so Android Auto
+    // keeps telephony disabled and calls stay on the phone. Off leaves service discovery exactly
+    // as it was before this setting existed. See AudioSinkAnnouncementPolicy and
+    // BluetoothAnnouncePolicy for the two halves.
+    var mapsAudioOnly: Boolean
+        get() = prefs.getBoolean("maps-audio-only", false)
+        set(value) { prefs.edit().putBoolean("maps-audio-only", value).apply() }
 
     var staticAudioFocus: Boolean
         get() = prefs.getBoolean("static-audio-focus", false)

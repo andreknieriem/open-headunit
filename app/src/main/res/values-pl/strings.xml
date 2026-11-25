@@ -1912,4 +1912,6 @@
     <string name="home_hotspot_not_found">Brak połączenia z WiFi. Czy hotspot telefonu jest włączony?</string>
     <string name="home_wifi_hotspot_hint">Czy hotspot telefonu jest włączony?</string>
     <string name="home_wifi_off_hint">Włącz je, aby się połączyć</string>
+    <string name="maps_audio_only_summary">Tylko wskazówki nawigacji: bez muzyki i połączeń na tym urządzeniu.</string>
+    <string name="maps_audio_only_description">Ogłasza kanały wskazówek i dźwięków systemowych, ale nie kanał multimediów, więc telefon nie wysyła muzyki i żadna aplikacja multimedialna nie zagra na tym urządzeniu. Nie ogłasza też adresu zestawu głośnomówiącego, więc Android Auto pozostawia telefonowanie wyłączone, a połączenia zostają w telefonie. Odpowiedzi asystenta korzystają z kanału wskazówek, więc nadal będą słyszalne.</string>
 </resources>

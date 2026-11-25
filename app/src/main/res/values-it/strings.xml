@@ -1913,4 +1913,6 @@
     <string name="home_hotspot_not_found">Nessun WiFi connesso. L’hotspot del telefono è attivo?</string>
     <string name="home_wifi_hotspot_hint">L’hotspot del telefono è attivo?</string>
     <string name="home_wifi_off_hint">Accendilo per connetterti</string>
+    <string name="maps_audio_only_summary">Solo indicazioni di navigazione: niente musica né chiamate su questa unità.</string>
+    <string name="maps_audio_only_description">Annuncia i canali di guida e dei suoni di sistema, ma non quello multimediale: il telefono non invia musica e nessuna app multimediale può riprodurre su questa unità. Non annuncia nemmeno l\'indirizzo vivavoce, quindi Android Auto lascia la telefonia disattivata e le chiamate restano sul telefono. Le risposte dell\'assistente usano lo stesso canale di guida e continueranno a essere udibili.</string>
 </resources>

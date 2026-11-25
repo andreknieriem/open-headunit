@@ -1909,4 +1909,6 @@
     <string name="home_hotspot_not_found">Niciun WiFi conectat. Este pornit hotspotul telefonului?</string>
     <string name="home_wifi_hotspot_hint">Este pornit hotspotul telefonului?</string>
     <string name="home_wifi_off_hint">Pornește-l pentru conectare</string>
+    <string name="maps_audio_only_summary">Doar indicații de navigare: fără muzică și fără apeluri pe această unitate.</string>
+    <string name="maps_audio_only_description">Anunță canalele pentru indicații și sunete de sistem, dar nu canalul media, așa că telefonul nu trimite muzică și nicio aplicație media nu poate reda pe această unitate. De asemenea, nu anunță adresa hands-free, astfel încât Android Auto lasă telefonarea dezactivată și apelurile rămân pe telefon. Răspunsurile asistentului folosesc același canal de indicații și rămân audibile.</string>
 </resources>

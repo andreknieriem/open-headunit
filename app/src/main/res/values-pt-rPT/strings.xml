@@ -1959,4 +1959,6 @@
     <string name="home_hotspot_not_found">Nenhum Wi-Fi ligado. A zona Wi-Fi do telemóvel está ativa?</string>
     <string name="home_wifi_hotspot_hint">A zona Wi-Fi do telemóvel está ativa?</string>
     <string name="home_wifi_off_hint">Ative-o para ligar</string>
+    <string name="maps_audio_only_summary">Apenas indicações de navegação: sem música nem chamadas nesta unidade.</string>
+    <string name="maps_audio_only_description">Anuncia os canais de indicações e de sons do sistema, mas não o canal de multimédia, pelo que o telemóvel não envia música e nenhuma aplicação de multimédia reproduz nesta unidade. Também não anuncia o endereço mãos-livres, pelo que o Android Auto mantém a telefonia desativada e as chamadas ficam no telemóvel. As respostas do assistente usam o mesmo canal de indicações e continuam a ouvir-se.</string>
 </resources>

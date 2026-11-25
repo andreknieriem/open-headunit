@@ -101,9 +101,12 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 - Carplay Integration
 
 ## Changelog
-### 4.1.0-beta1
+### 4.1.0-beta2
+- Video: show late map frames immediately instead of dropping them when wireless transfer exhausts the GAL pacing window, thanks to @o-jcardenass
+- Video: show the newest decoded picture even when video falls behind audio. Under load, the bundled FFmpeg decoder stops pacing before its input queue fills and makes room for recovery frames without discarding queued codec configuration.
+- Connection: ignore USB version replies that started before the opening request and reject replies completed after the negotiation deadline.
 - Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
-- Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
+- Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thanks to @PashaKagan
 - Allow embedding the projection activity, thanks to @codepdbh
 - Feat: Send volume buttons to the phone, and add speed-dependent volume, thanks to @Megalodon-sharky
 - Feat(usb): add wireless dongle display option for home screen
@@ -111,6 +114,18 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 - Add "Show over lock screen": map and directions while locked, no input to the phone, thanks to @DukeShank
 - Feat(home): move All Apps button to sidebar in launcher mode
 - Display: reconnect in the remembered shape, and redraw instead of stretching when the screen turns, thanks to @tamer1an
+- Feat(wifi): Headunit Server asks which network the phone and the unit share. On the phone's hotspot the search waits for the unit to join it, Connect over WiFi scans for the hotspot first, and the main card shows the WiFi network, band and signal; an optional automatic scan helps a slow unit join. The main button becomes a pill led by an icon
+- Feat(wifi): implement staged wireless connection recovery
+- NativeAA: cycle the unit's radio when pokes at a dead link keep failing, and make the dead-link cycle reachable without falsely locking out absent links, thanks to @benzntech
+- Home: fix Android 4.x crash when drawing the WiFi status line, thanks to @o-jcardenass
+- Hotspot: tie access point restart proof to its BSSID and detect AP interfaces before the first station joins, thanks to @andreanicoletto
+- Night overlay: give the next turn more room while navigation is active, and add optional "Night overlay while locked" mode, thanks to @DukeShank
+- GAL: add support for multiple protocol versions (1.6, 5.0, 5.1, 6.0, 6.1), thanks to @emotionbug
+- FYT: keep the head unit's Bluetooth call bar off the projection, thanks to @o-jcardenass
+- Display: pick the Android Auto layout first, then a text size, and send a density that keeps that layout, thanks to @o-jcardenass
+- Native AA: rejoin with the screen off, and recover when the phone refuses the hands-free link, thanks to @tamer1an
+- UI: keep fullscreen active on Android < 11 so volume overlays no longer pull down the status bar (#1257)
+- UI: only show the "Do you see the Android Auto screen?" banner after renderer changes/fallbacks and auto-dismiss it after 10 seconds (#1324)
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

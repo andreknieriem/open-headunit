@@ -9,6 +9,7 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -180,6 +181,7 @@ open class BaseActivity : AppCompatActivity() {
     private var barLookBeforePaint: BarLook? = null
 
     private fun applyBarColorsFor(color: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
         val mode = Settings(this).fullscreenMode
         if (!SystemUI.paintsBarColors(mode)) return
         val controller = WindowInsetsControllerCompat(window, window.decorView)

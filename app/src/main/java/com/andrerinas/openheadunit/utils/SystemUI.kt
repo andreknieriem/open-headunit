@@ -168,6 +168,7 @@ object SystemUI {
      * from the navigation bar color, so this is what colors that panel.
      */
     fun applyBarColors(window: Window, color: Int, mode: Settings.FullscreenMode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
         if (color == 0 || !paintsBarColors(mode)) return
         val darkIcons = HomeUiHelper.readableOn(color) != Color.WHITE
         val controller = WindowInsetsControllerCompat(window, window.decorView)

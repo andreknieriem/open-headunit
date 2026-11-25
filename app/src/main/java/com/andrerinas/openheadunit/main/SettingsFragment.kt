@@ -331,10 +331,13 @@ class SettingsFragment : Fragment() {
         if (result.resultCode == android.app.Activity.RESULT_OK) showWakeDevicePicker()
     }
 
+    private var nativeAaSelectionOperation: ConnectionOperation? = null
     private val bluetoothPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            handleNativeAaSelection()
-        } else {
+        val operation = nativeAaSelectionOperation
+        nativeAaSelectionOperation = null
+        if (isGranted && operation != null) {
+            handleNativeAaSelection(operation)
+        } else if (!isGranted) {
             ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
         }
     }
@@ -1122,12 +1125,18 @@ class SettingsFragment : Fragment() {
                 }
 
                 if (newMode == WifiLauncherMode.NATIVE) {
+                    val operation = ConnectionOperation(
+                        App.provide(requireContext()).commManager.appConnectionTicket(), null
+                    )
                     if (!ExternalBtTransportPolicy.usesExternalModule(pendingExternalBtRoute()) &&
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                         ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                        bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                        if (nativeAaSelectionOperation == null) {
+                            nativeAaSelectionOperation = operation
+                            bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                        }
                     } else {
-                        handleNativeAaSelection()
+                        handleNativeAaSelection(operation)
                     }
                 } else {
                     pendingWifiConnectionMode = newMode
@@ -5108,7 +5117,9 @@ class SettingsFragment : Fragment() {
         editView.requestFocus()
     }
 
-    private fun handleNativeAaSelection() {
+    private fun handleNativeAaSelection(operation: ConnectionOperation) {
+        val manager = App.provide(requireContext()).commManager
+        if (!manager.isCurrent(operation)) return
         // Retain the existing marker-specific explanation: the phone may be bonded to a chip
         // outside Android's paired-device list, so a generic compatibility dialog is insufficient.
         // Known external-module markers and firmware candidates both justify checking ZBT.
@@ -5132,25 +5143,27 @@ class SettingsFragment : Fragment() {
                     discovery.reachable
                         ?: withContext(Dispatchers.IO) {
                             measurement.resolve(
-                                cacheIdentityRefusal = false
+                                cacheIdentityRefusal = false,
+                                keepTrying = { manager.isCurrent(operation) }
                             )
                         }
                 }
-                if (!isAdded) return@launch
+                if (!isAdded || !manager.isCurrent(operation)) return@launch
                 if (measurement.fallsBackToAndroid && !viaModule) {
-                    showAndroidNativeAaCompatibility()
+                    showAndroidNativeAaCompatibility(operation)
                 } else showExternalBtNativeAaDialog(externalBtEvidence, viaModule)
             }
             return
         }
-        showAndroidNativeAaCompatibility()
+        showAndroidNativeAaCompatibility(operation)
     }
 
     // Extracted from the no-external-marker branch of handleNativeAaSelection. An unconfirmed
     // firmware candidate needs that same Android check and dialog, not the module refusal.
     // Keep both callers on this implementation so their compatibility advice stays identical.
-    private fun showAndroidNativeAaCompatibility() {
-        if (NativeAaHandshakeManager.checkCompatibility(requireContext())) {
+    private fun showAndroidNativeAaCompatibility(operation: ConnectionOperation) {
+        if (!App.provide(requireContext()).commManager.isCurrent(operation)) return
+        if (NativeAaHandshakeManager.checkCompatibility(requireContext(), operation)) {
             MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                 .setTitle(R.string.supported_nativeaa)
                 .setMessage(R.string.supported_nativeaa_desc)

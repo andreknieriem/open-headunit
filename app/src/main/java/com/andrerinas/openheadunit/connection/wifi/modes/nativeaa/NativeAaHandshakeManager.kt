@@ -197,7 +197,7 @@ class NativeAaHandshakeManager(
             )
         }
 
-        fun checkCompatibility(context: Context): Boolean {
+        fun checkCompatibility(context: Context, operation: ConnectionOperation): Boolean {
             if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
                 AppLog.i("NativeAA: Bluetooth runs over the Bluetooth relay, so the RFCOMM compatibility check does not apply.")
                 return true
@@ -235,6 +235,7 @@ class NativeAaHandshakeManager(
             }
             val adapter = BluetoothHelper.getBluetoothAdapter(context) ?: return false
             if (!adapter.isEnabled) return false
+            if (!App.provide(context).commManager.isCurrent(operation)) return false
             return try {
                 val socket = adapter.listenUsingRfcommWithServiceRecord("Compatibility Check", AA_UUID)
                 socket.close()

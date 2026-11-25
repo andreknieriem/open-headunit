@@ -4835,15 +4835,6 @@ class AapService : Service() {
             Intent(context, AapService::class.java).putExtra(EXTRA_OPERATION_TICKET, ticket)
 
         /**
-         * A command an in-app input sends to the service on its own turn (a tap, a dialog answer,
-         * a receiver's onReceive): it carries the Stop ticket read now, at that input. Work that
-         * runs after a hop builds its intent with [operationIntent] and the ticket it captured.
-         */
-        internal fun commandIntent(context: Context, action: String?): Intent =
-            operationIntent(context, com.andrerinas.openheadunit.App.provide(context).commManager.appConnectionTicket())
-                .setAction(action)
-
-        /**
          * Apply the wireless part of Save before its caller starts audio retirement/reconnect.
          * [ticket] is the Stop ticket of the Save; a caller that reaches here after a hop (the
          * settings import's file read) passes the one it captured at the user's choice.
@@ -4893,6 +4884,7 @@ class AapService : Service() {
         private const val BOOT_START_NOTIFICATION_ID = 42
         private const val BOOT_LOOP_NOTIFICATION_ID = 43
         private const val PROJECTION_LAUNCH_NOTIFICATION_ID = 43
+        private const val PROJECTION_LAUNCH_FULL_SCREEN_REQUEST = 44
 
         // Service action strings used with startService() and sendBroadcast()
         const val EXTRA_SELF_MODE_VPN = "self_mode_needs_dummy_vpn"
@@ -4916,7 +4908,6 @@ class AapService : Service() {
         const val ACTION_DISCONNECT                = "com.andrerinas.openheadunit.ACTION_DISCONNECT"
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "com.andrerinas.openheadunit.aap.action.REQUEST_NIGHT_MODE_UPDATE"
         const val ACTION_NIGHT_MODE_CHANGED      = "com.andrerinas.openheadunit.ACTION_NIGHT_MODE_CHANGED"
-        private const val PROJECTION_LAUNCH_FULL_SCREEN_REQUEST = 44
         const val ACTION_ORIENTATION_CHANGED     = "com.andrerinas.openheadunit.ACTION_ORIENTATION_CHANGED"
         const val ACTION_REFRESH_SENSORS         = "com.andrerinas.openheadunit.aap.action.REFRESH_SENSORS"
         const val ACTION_RESTART_AUDIO           = "com.andrerinas.openheadunit.aap.action.RESTART_AUDIO"

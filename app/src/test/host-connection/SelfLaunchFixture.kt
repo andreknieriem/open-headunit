@@ -291,7 +291,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchMark: CommManager.LaunchMark? = null
     private var launchTimeoutJob: Job? = null
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
-    private fun installedPath(service: Service) = if (service.modern) SelfLaunchPath.HEADUNIT_SERVER else SelfLaunchPath.LEGACY
+    companion object { fun installedPath(service: Service) = if (service.modern) SelfLaunchPath.HEADUNIT_SERVER else SelfLaunchPath.LEGACY }
     private val VPN_TIMEOUT_MS = 120_000L
     // ADOPT_VPN
     fun stopDummyVpnWatchdog() { selfModeVpnWatchdog?.cancel(); selfModeVpnWatchdog = null }
@@ -347,6 +347,7 @@ object App { fun provide(service: Service) = service }
 object AppLog { fun i(s: String) {}; fun w(s: String) {}; fun w(s: String, e: Throwable) {}; fun w(tag: String, s: String) {}; fun e(s: String) {} }
 object VpnControl {
     fun isVpnAvailable() = true
+    fun consentIntent(service: Service): Intent? = null
     fun isPrepared(service: Service) = service.vpnPrepared
     fun startVpn(service: Service, excludeSelf: Boolean) {
         service.vpnExcludeSelfRequests.add(excludeSelf)
@@ -374,21 +375,28 @@ object ContextCompat {
 object Toast { const val LENGTH_LONG = 1 }
 object ToastUtils { fun showToast(service: Service, message: String, length: Int) { service.toasts++ } }
 /** The home's automatic start; [view] stands for whether a home view is up when MainActivity acts. */
-object HomeFragment { var forceSelfModeTicket: Long? = null; var view: Any? = null }
+object HomeFragment { var view: Any? = null }
 class Fragments { val fragments: List<Any> = listOf(HomeFragment) }
 class NavHost { val childFragmentManager = Fragments() }
 class SupportFragments { fun findFragmentById(id: Int): NavHost? = NavHost() }
 object R { object id { const val main_content = 3 } }
 class Main(private val service: Service) {
+    private class ForcedSelfConsent(val ticket: Long, var cancelled: Boolean = false)
+    private var pendingForcedSelf: ForcedSelfConsent? = null
+    private var queuedForcedSelfTicket: Long? = null
+    private val forcedSelfVpnPermission = object { fun launch(intent: Intent) {} }
+    private fun getSystemService(name: String): Any = service.network
     private val supportFragmentManager = SupportFragments()
     // The request is the input: its ticket is read here, as MainActivity's callers do.
     fun requestSelf() = forceSelfModeLaunch(service.commManager.appConnectionTicket())
     // MAIN_COMMAND
+    // MAIN_DISPATCH
+    // MAIN_CANCEL_PENDING_SELF
 }
 class Home(private val service: Service) {
     private val commManager get() = service.commManager
     private fun requireContext() = service
-    // A manual Home launch captures its ticket at input, as startSelfMode's default does.
+    // A manual Home launch captures its ticket at input, as the click handler does.
     fun requestSelf(needsVpn: Boolean) = startSelfModeInternal(needsVpn, commManager.appConnectionTicket())
     // HOME_COMMAND
 }
@@ -693,7 +701,11 @@ fun main() {
         }
     }
     Service().use { s ->
-        Main(s).requestSelf(); s.deliverHomeCommand(); s.main.drain()
+        // The forced input is online; it becomes offline before the service starts. The later
+        // Home requirement must still merge into this exact pending launch, without a new one.
+        s.network.activeNetwork = Any()
+        Main(s).requestSelf(); s.network.activeNetwork = null
+        s.deliverHomeCommand(); s.main.drain()
         val originalJob = s.manager.currentLaunch()
         check(s.manager.inFlight() && s.wifiLauncherManager.listenerStarts == 1)
         check(s.vpnCommands.isEmpty() && s.activities == 0)

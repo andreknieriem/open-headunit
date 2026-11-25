@@ -96,6 +96,8 @@ for marker, file, declaration, braced in [
     # The session-end VPN decision of onDisconnected; wireless-cleanup.py runs the whole callback.
     ('VPN_RELEASE', service, 'if (!superseded && !selfLauncherManager.isLaunchPending) {', True),
     ('MAIN_COMMAND', 'main/MainActivity.kt', 'private fun forceSelfModeLaunch(', True),
+    ('MAIN_DISPATCH', 'main/MainActivity.kt', 'private fun dispatchForcedSelf(', True),
+    ('MAIN_CANCEL_PENDING_SELF', 'main/MainActivity.kt', 'internal fun cancelPendingSelfLaunch(', True),
     ('HOME_COMMAND', 'main/HomeFragment.kt', 'private fun startSelfModeInternal(', True),
     ('START_ACTION', service, 'ACTION_START_SELF_MODE       ->', True),
     ('CANCEL_ACTION', service, 'ACTION_CANCEL_WIRELESS       ->', True),
@@ -104,9 +106,10 @@ for marker, file, declaration, braced in [
     # Main and its delay scheduler are controlled; production launch/delay calls and Jobs remain intact.
     code = code.replace('Dispatchers.Main', 'service.main').replace('this@AapService', 'this@Service').replace('AapService.', 'Service.').replace('AapService::class', 'Service::class')
     code = code.replace('com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason', 'ByeByeReason')
-    if marker == 'MAIN_COMMAND':
+    if marker in ('MAIN_COMMAND','MAIN_DISPATCH'):
         code = code.replace('Intent(this,', 'Intent(service,').replace('startForegroundService(this,', 'startForegroundService(service,')
         code = code.replace('App.provide(this)', 'App.provide(service)').replace('operationIntent(this,', 'operationIntent(service,')
+        code = code.replace('installedPath(this)', 'installedPath(service)').replace('consentIntent(this)', 'consentIntent(service)')
     if marker == 'MODERN_RUN':
         code = code.replace('Dispatchers.IO', 'services.aap.io')
     if marker == 'REPORT_FAILURE':
@@ -130,7 +133,7 @@ fixture = fixture.replace('// SELF_END_POLICY\n', policy + '\n')
 (OUT / 'SelfLaunchFixture.kt').write_text(fixture)
 (OUT / 'ProjectionRaiseDeadlinePolicy.kt').write_text((SRC / 'aap/ProjectionRaiseDeadlinePolicy.kt').read_text()
     .replace('package com.andrerinas.openheadunit.aap', 'package selflaunch'))
-for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt']:
+for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt', 'SelfLaunchRoutePolicy.kt']:
     source = (SRC / 'connection/self' / name).read_text()
     (OUT / name).write_text(source.replace('package com.andrerinas.openheadunit.connection.self', 'package selflaunch'))
 (OUT / 'DummyVpnStartRequests.kt').write_text((SRC / 'utils/DummyVpnStartRequests.kt').read_text().replace('package com.andrerinas.openheadunit.utils', 'package selflaunch'))

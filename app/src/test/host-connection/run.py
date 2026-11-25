@@ -134,6 +134,8 @@ ui_automation=(base/'automation/AutomationEffectRunner.kt').read_text()
 ui_fixture=(ROOT/'app/src/test/host-connection/UiConnectFixture.kt').read_text()
 ui_members={
     'UI_FORCE_SELF_MODE':extract(ui_main,'private fun forceSelfModeLaunch(', 'Main Self producer'),
+    'UI_FORCED_SELF_DISPATCH':extract(ui_main,'private fun dispatchForcedSelf(', 'Main Self dispatch'),
+    'UI_CANCEL_PENDING_SELF':extract(ui_main,'internal fun cancelPendingSelfLaunch(', 'Main pending Self cancellation'),
     'UI_HANDLE_LAUNCH_INTENT':extract(ui_main,'private fun handleLaunchIntent(', 'Main launch producer').replace('private fun handleLaunchIntent(','fun handleLaunchIntent(',1),
     'UI_ADDRESS_ON_CLICK':extract(ui_network,'override fun onClick(', 'Address click producer').replace('override ','',1),
     'UI_START_SCAN':extract(ui_network,'private fun startScan(', 'Network scan producer').replace('private fun startScan(','fun startScan(',1),

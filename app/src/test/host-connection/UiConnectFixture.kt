@@ -24,6 +24,11 @@ open class Context(val commManager: CommManager) {
     var screenInteractive = true
     val settings = Settings()
     val android = PlatformContext()
+    val connectivity = ConnectivityManager()
+    var screenLockGranted = false
+    var screenInteractive = true
+    fun getSystemService(name: String): Any = connectivity
+    companion object { const val CONNECTIVITY_SERVICE = "connectivity" }
 }
 object App { fun provide(context: Context) = context }
 class Settings {
@@ -70,15 +75,14 @@ class AapService {
     companion object {
         var instance: AapService? = null
         const val ACTION_START_SELF_MODE = "start-self"
+        const val EXTRA_SELF_MODE_VPN = "self-vpn"
         const val ACTION_CONNECT_SOCKET = "connect-socket"
         const val ACTION_CHECK_USB = "check-usb"
         const val ACTION_DISCONNECT = "disconnect"
         const val ACTION_STOP_SERVICE = ServiceBootstrap.ACTION_STOP_SERVICE
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night-update"
         const val EXTRA_USER_REQUESTED = "user-requested"
-        // In-app commands read the Stop ticket on their input's own turn; USB relays carry their scan.
-        fun commandIntent(context: Context, action: String?) =
-            operationIntent(context, context.commManager.appConnectionTicket()).setAction(action)
+        // USB relays carry their original owed scan.
         fun usbCheckIntent(context: Context, recheck: UsbRecheck, action: String? = ACTION_CHECK_USB,
             userRequested: Boolean = false) = operationIntent(context, recheck.ticket).setAction(action)
             .putExtra("relayed_usb_recheck", "${recheck.ticket}.${recheck.epoch}")
@@ -89,7 +93,7 @@ class AapService {
     }
 }
 /** The home's automatic start; [view] stands for whether a home view is up when MainActivity acts. */
-object HomeFragment { var forceSelfModeTicket: Long? = null; var requestDriverSelection = false; var view: Any? = null }
+object HomeFragment { var pendingDriverSelectionTicket: Long? = null; var view: Any? = null }
 object BtAutoStartRearmPolicy {
     var selfMode = false
     fun launchesSelfMode(selfSelected: Boolean, wirelessSelected: Boolean, mode: Any,
@@ -98,7 +102,16 @@ object BtAutoStartRearmPolicy {
 class Fragments { val fragments: List<Any> = listOf(HomeFragment) }
 class NavHost { val childFragmentManager = Fragments() }
 class SupportFragments { fun findFragmentById(id: Int): NavHost? = NavHost() }
+class ConnectivityManager { val activeNetwork: Any? = Any() }
+object Build { object VERSION { const val SDK_INT = 35 }; object VERSION_CODES { const val M = 23 } }
+object SelfLauncherManager { fun installedPath(context: Context) = 1 }
+object SelfLaunchRoutePolicy { fun needsDummyVpn(path: Int, offline: Boolean, vpnAvailable: Boolean) = false }
+object VpnControl { fun isVpnAvailable() = false; fun consentIntent(context: Context): Intent? = null }
 class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : Context(manager) {
+    private class ForcedSelfConsent(val ticket: Long, var cancelled: Boolean = false)
+    private var pendingForcedSelf: ForcedSelfConsent? = null
+    private var queuedForcedSelfTicket: Long? = null
+    private val forcedSelfVpnPermission = object { fun launch(intent: Intent) {} }
     enum class ConnectionUiMode { OVERLAY, PILL }
     val events = ConcurrentLinkedQueue<() -> Unit>()
     var overlays = 0
@@ -114,6 +127,8 @@ class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : C
         const val EXTRA_CONNECTION_TICKET = "connection-ticket"
     }
     // UI_FORCE_SELF_MODE
+    // UI_FORCED_SELF_DISPATCH
+    // UI_CANCEL_PENDING_SELF
     // UI_HANDLE_LAUNCH_INTENT
 }
 object android { object R { object id { const val button2 = 2 } } }
@@ -159,6 +174,7 @@ class JSONObject {
     private val values = mutableMapOf<String, Any?>()
     fun put(name: String, value: Any?) = apply { values[name] = value }
     fun string(name: String) = values[name] as? String
+    fun boolean(name: String) = values[name] as? Boolean
 }
 object AutomationCommandPolicy {
     // UI_AUTOMATION_EFFECTS
@@ -368,6 +384,18 @@ fun uiConnectCallerOwnership() = runBlocking {
         check(!service.initializedForStart && service.stops == 1)
     } finally { stoppedManager.close() }
 
+    // The generated automation runner reports what the power boundary actually did.
+    val screenManager = CommManager()
+    try {
+        val screen = Context(screenManager)
+        for (granted in listOf(false, true)) {
+            screen.screenLockGranted = granted
+            val reply = JSONObject()
+            val ok = AutomationEffectRunner.run(screen, listOf(AutomationCommandPolicy.Effect.TurnScreenOff), reply)
+            check(ok == granted && reply.boolean("screenOff") == granted && screen.screenInteractive == !granted)
+        }
+    } finally { screenManager.close() }
+
     // P2-B(b). The user's scan reports its held socket and its hand-off waits for IO while a
     // concurrent IP request to the same endpoint adopts that socket and connects, then completes
     // SSL. The scan hand-off does not own the socket: it ends without taking the session over or
@@ -401,8 +429,8 @@ fun uiConnectCallerOwnership() = runBlocking {
     }
     // A Bluetooth arrival is relayed to MainActivity with the Stop ticket it was received under
     // (AutoStartReceiver, or the service's held arrival). Stop is accepted before the activity gets
-    // it: no pill, no Self Mode command, no hand-off to the home. The control, with no Stop, does
-    // all three, and the real service prefix accepts its Self command.
+    // it: no pill or Self Mode command. The control raises the pill and one direct command;
+    // there is no home handoff to replay, and the real service prefix accepts its Self command.
     for (stop in listOf(true, false)) {
         Dispatchers.IO = QueuedDispatcher()
         ContextCompat.starts.clear()
@@ -411,7 +439,7 @@ fun uiConnectCallerOwnership() = runBlocking {
         manager.cleanups()
         val input = Input(manager)
         BtAutoStartRearmPolicy.selfMode = true
-        HomeFragment.forceSelfModeTicket = null
+        HomeFragment.pendingDriverSelectionTicket = null
         try {
             val arrival = manager.appConnectionTicket()
             val relay = Intent("bluetooth-arrival")
@@ -422,11 +450,11 @@ fun uiConnectCallerOwnership() = runBlocking {
             // Recorded after every production frame has returned.
             val selfStarts = ContextCompat.starts.filter { it.action == AapService.ACTION_START_SELF_MODE }
             if (stop) {
-                check(input.main.overlays == 0 && selfStarts.isEmpty() && HomeFragment.forceSelfModeTicket == null) {
+                check(input.main.overlays == 0 && selfStarts.isEmpty() && HomeFragment.pendingDriverSelectionTicket == null) {
                     "a Bluetooth arrival relayed before Stop still acted (pill=${input.main.overlays} selfStarts=${selfStarts.size})"
                 }
             } else {
-                check(input.main.overlays == 1 && selfStarts.size == 1 && HomeFragment.forceSelfModeTicket == arrival) {
+                check(input.main.overlays == 1 && selfStarts.size == 1 && HomeFragment.pendingDriverSelectionTicket == null) {
                     "the Bluetooth arrival did not start Self Mode"
                 }
                 val service = ServiceBootstrap(manager)
@@ -434,7 +462,7 @@ fun uiConnectCallerOwnership() = runBlocking {
                 check(service.initializedForStart)
             }
         } finally {
-            BtAutoStartRearmPolicy.selfMode = false; HomeFragment.forceSelfModeTicket = null
+            BtAutoStartRearmPolicy.selfMode = false; HomeFragment.pendingDriverSelectionTicket = null
             input.close(); manager.close()
         }
     }

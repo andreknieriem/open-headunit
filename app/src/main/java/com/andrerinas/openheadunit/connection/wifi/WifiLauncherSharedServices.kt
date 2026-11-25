@@ -65,7 +65,8 @@ class WifiLauncherSharedServices(val service: AapService) {
         if (wifiDirectManager != null)
             stopWifiDirect() // reset from previous session
 
-        wifiDirectManager = WifiDirectManager(service)
+        // Its framework channel may outlive this service to retire a preserved Native group.
+        wifiDirectManager = WifiDirectManager(service.applicationContext)
 
         // This chipset potentially can't run SoftAP and WiFi Direct concurrently — make sure hotspot
         // is off before P2P starts. On IO because the wait for it to actually go is a blocking one.

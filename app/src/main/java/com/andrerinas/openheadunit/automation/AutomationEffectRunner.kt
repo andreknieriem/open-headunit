@@ -39,6 +39,8 @@ object AutomationEffectRunner {
                     AppLog.w("Automation: refused - ${effect.reason}")
                 }
                 is AutomationCommandPolicy.Effect.StartService -> startService(context, effect)
+                is AutomationCommandPolicy.Effect.StopApp -> ContextCompat.startForegroundService(
+                    context, AapService.acceptedStopIntent(context, effect.owner))
                 is AutomationCommandPolicy.Effect.ConnectSocket ->
                     CoroutineScope(Dispatchers.IO).launch {
                         component.commManager.connect(effect.ip, effect.port, ConnectionPriorityPolicy.Tier.USER)

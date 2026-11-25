@@ -22,8 +22,10 @@ import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.`when`
 import org.mockito.stubbing.Answer
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.ConscryptMode
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [28])
@@ -158,6 +160,25 @@ class WifiDirectManagerPurgeLifetimeTest {
         }
     }
 
+    @Test fun `permission lost during a group retry does not tear down or block the next update`() {
+        val f = Fixture()
+        try {
+            f.claimGroup()
+            f.denyGroupInfo = true
+            f.owner.onGroupInfoAvailable(null)
+            shadowOf(Looper.getMainLooper()).idleFor(2, TimeUnit.SECONDS)
+            assertEquals(1, f.groupQueries)
+            assertEquals(0, f.removals)
+
+            f.denyGroupInfo = false
+            f.owner.onGroupInfoAvailable(null)
+            shadowOf(Looper.getMainLooper()).idleFor(1, TimeUnit.SECONDS)
+            assertEquals(2, f.groupQueries)
+        } finally {
+            f.owner.stop()
+        }
+    }
+
     private class Fixture(rotationPending: Boolean = true, retirementOwed: Boolean = false) {
         val deleted = mutableListOf<Int>()
         private val arm = ConnectionOperation(0L, null)
@@ -166,7 +187,9 @@ class WifiDirectManagerPurgeLifetimeTest {
         ))
         var armCurrent = true
         var commandCurrent = true
-        private var groupQueries = 0
+        var denyGroupInfo = false
+        var groupQueries = 0
+            private set
         var creates = 0
         var removals = 0
         var purgeRequested = false
@@ -218,9 +241,11 @@ class WifiDirectManagerPurgeLifetimeTest {
                     null
                 }
                 "requestGroupInfo" -> {
+                    groupQueries++
+                    if (denyGroupInfo) throw SecurityException("permission revoked")
                     val listener = call.arguments[1] as WifiP2pManager.GroupInfoListener
                     // Answer the adopt-or-create query, not credential delivery after adoption.
-                    if (groupQueries++ == 0) listener.onGroupInfoAvailable(liveGroup)
+                    if (groupQueries == 1) listener.onGroupInfoAvailable(liveGroup)
                     null
                 }
                 else -> RETURNS_DEFAULTS.answer(call)
@@ -262,11 +287,14 @@ class WifiDirectManagerPurgeLifetimeTest {
                 .set(owner, true)
         }
 
-        fun startRotation() {
-            // This private continuation normally follows the public bring-up's owner claim.
+        fun claimGroup() {
             val groupOwner = WifiDirectManager::class.java.getDeclaredField("groupOwnership")
                 .apply { isAccessible = true }.get(owner)
             check(!RetainedNativeGroup.deferUntilReady(groupOwner) { error("unexpected pending group removal") })
+        }
+
+        fun startRotation() {
+            claimGroup()
             WifiDirectManager::class.java.getDeclaredMethod(
                 "recreateNativeGroup", Boolean::class.javaPrimitiveType, ConnectionOperation::class.java,
             ).apply { isAccessible = true }.invoke(owner, true, command)

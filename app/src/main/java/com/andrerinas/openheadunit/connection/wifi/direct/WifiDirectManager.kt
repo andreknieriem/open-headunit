@@ -1702,9 +1702,7 @@ class WifiDirectManager(private val context: Context, private val operation: Con
                 val epoch = groupInfoEpoch
                 handler.postDelayed({
                     if (epoch != groupInfoEpoch) return@postDelayed
-                    channel?.let { ch ->
-                        manager?.requestGroupInfo(ch) { group -> handleGroupInfo(group, operation) }
-                    }
+                    channel?.let { ch -> requestCurrentGroupInfo(manager, ch, operation) }
                 }, 1000L)
             } else {
                 AppLog.e("WifiDirectManager: FATAL: Group info remained null after 20 retries.")
@@ -1725,6 +1723,15 @@ class WifiDirectManager(private val context: Context, private val operation: Con
                     )
                 }
             }
+        }
+    }
+
+    private fun requestCurrentGroupInfo(mgr: WifiP2pManager?, ch: WifiP2pManager.Channel, operation: ConnectionOperation) {
+        if (!isCurrent(operation)) return
+        try {
+            mgr?.requestGroupInfo(ch) { group -> handleGroupInfo(group, operation) }
+        } catch (e: SecurityException) {
+            AppLog.w("WifiDirectManager: permission denied reading the group: ${e.message}")
         }
     }
 
@@ -1858,7 +1865,7 @@ class WifiDirectManager(private val context: Context, private val operation: Con
                     AppLog.i("WifiDirectManager: the address of $ssid became readable on $iface after ${second}s ($mac); asking for group info again so it is graded and sent.")
                     handler.post {
                         if (!isCurrent(operation) || epoch != credentialsEpoch) return@post
-                        channel?.let { ch -> manager?.requestGroupInfo(ch) { group -> handleGroupInfo(group, operation) } }
+                        channel?.let { ch -> requestCurrentGroupInfo(manager, ch, operation) }
                     }
                     return@Thread
                 }
@@ -2135,12 +2142,13 @@ class WifiDirectManager(private val context: Context, private val operation: Con
         }
         val ch = channel
         if (ch != null) {
+            val mgr = manager ?: return
             val appSettings = App.provide(context).settings
             if (appSettings.wifiConnectionMode == WifiLauncherMode.HELPER && appSettings.helperConnectionStrategy == HelperStrategy.WIFI_DIRECT) {
                 reportScanning(true)
             }
             if (!ownsDiscovery()) return
-            manager?.discoverPeers(ch, object : WifiP2pManager.ActionListener {
+            val listener = object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
                     if (!ownsDiscovery()) return
                     // INFO, not DEBUG: discoverPeers() puts the P2P radio into find mode, sweeping
@@ -2168,7 +2176,13 @@ class WifiDirectManager(private val context: Context, private val operation: Con
                     AppLog.w("WifiDirectManager: Discovery failed: $reason")
                     reportScanning(false)
                 }
-            })
+            }
+            try {
+                mgr.discoverPeers(ch, listener)
+            } catch (e: SecurityException) {
+                reportScanning(false)
+                AppLog.w("WifiDirectManager: permission denied starting peer discovery: ${e.message}")
+            }
         }
     }
 
@@ -3106,7 +3120,7 @@ class WifiDirectManager(private val context: Context, private val operation: Con
         handler.postDelayed({
             if (!isCurrent(operation)) return@postDelayed
             mgr.requestConnectionInfo(ch) { info -> handleConnectionInfo(info, operation) }
-            mgr.requestGroupInfo(ch) { group -> handleGroupInfo(group, operation) }
+            requestCurrentGroupInfo(mgr, ch, operation)
         }, 1000L)
     }
 

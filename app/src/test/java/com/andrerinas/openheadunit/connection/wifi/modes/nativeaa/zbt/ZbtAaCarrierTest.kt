@@ -29,6 +29,10 @@ class ZbtAaCarrierTest {
     private var busy = false
     private var evidence = 0
     private var canServe = true
+    private var admitted = true
+    private val admission = com.andrerinas.openheadunit.connection.ConnectionAdmission { action ->
+        if (!admitted) false else { action(); true }
+    }
     private val logs = mutableListOf<String>()
     private val sinks = mutableListOf<ByteArrayOutputStream>()
 
@@ -85,6 +89,7 @@ class ZbtAaCarrierTest {
         factory: ((Int, ByteArray) -> Unit, (ByteArray) -> Unit) -> ZbtByteChannel,
         serve: suspend (HandshakeLink) -> Unit = { running = false; it.close() }
     ) = ZbtAaCarrier(
+        admission = admission,
         serve = serve, isRunning = { running }, isFinishedForSession = { false },
         isSessionConnected = { connected }, isSettling = { false },
         isHandshakeInFlight = { busy }, mayServeHandshake = { canServe },
@@ -105,6 +110,54 @@ class ZbtAaCarrierTest {
     }
     private fun wakeCount() = sinks.sumOf { ids(it).count { id -> id == ZbtMessages.REQUEST_RECONN } }
 
+    @Test fun `withdrawn arm cannot claim or open the external module`() = runBlocking {
+        admitted = false
+        val carrier = carrier({ _, _ -> error("withdrawn arm opened a channel") })
+        carrier.requestWake(true, admission = admission)
+        carrier.run()
+        assertTrue(sinks.isEmpty())
+        assertFalse(ZbtDaemonReachability.carrierWantsClient())
+    }
+
+    @Test fun `channel end cannot reopen under a withdrawn original arm`() = runBlocking {
+        var opens = 0
+        val carrier = carrier({ control, rfcomm ->
+            opens++
+            open(emptyList(), control, rfcomm, eof = { admitted = false })
+        })
+        carrier.run()
+        assertEquals(1, opens)
+        assertFalse(ZbtDaemonReachability.carrierWantsClient())
+    }
+
+    @Test fun `queued wake is checked again after the daemon read returns`() = runBlocking {
+        val carrier = carrier({ control, rfcomm ->
+            open(listOf(Step(frame(ZbtMessages.INIT_INFO)) { admitted = false }), control, rfcomm)
+        })
+        carrier.requestWake(true, admission = admission)
+        carrier.run()
+        assertEquals(0, wakeCount())
+        assertEquals(1, sinks.size)
+        assertEquals(listOf(ZbtMessages.REQUEST_INIT), ids(sinks.single()))
+    }
+
+    @Test fun `Save cancellation withdraws its queued wake while the carrier remains armed`() = runBlocking {
+        var commandCurrent = true
+        val command = com.andrerinas.openheadunit.connection.ConnectionAdmission { action ->
+            if (!commandCurrent) false else { action(); true }
+        }
+        val carrier = carrier({ control, rfcomm ->
+            open(listOf(Step(frame(ZbtMessages.INIT_INFO)) {
+                advance(8_001)
+                commandCurrent = false
+            }), control, rfcomm)
+        })
+        carrier.requestWake(true, admission = command)
+        carrier.run()
+        assertEquals(0, wakeCount())
+        assertTrue(admitted)
+    }
+
     @Test fun `connected phone consumes startup wake and starts handshake without waiting`() = runBlocking {
         val startedAt = elapsed
         var served = false
@@ -117,7 +170,7 @@ class ZbtAaCarrierTest {
             running = false
             link.close()
         })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertTrue(served)
         assertEquals(0, wakeCount())
@@ -127,7 +180,7 @@ class ZbtAaCarrierTest {
         val carrier = carrier({ control, rfcomm -> open(listOf(
             Step(presence(false)), Step(presence()) { advance(1_000) }
         ), control, rfcomm) })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertEquals(0, wakeCount())
         assertEquals(1, evidence)
@@ -138,12 +191,12 @@ class ZbtAaCarrierTest {
         lateinit var carrier: ZbtAaCarrier
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(frame(ZbtMessages.INIT_INFO)),
-            Step { advance(7_999); assertEquals(0, wakeCount()); carrier.requestWake(true) },
+            Step { advance(7_999); assertEquals(0, wakeCount()); carrier.requestWake(true, admission = admission) },
             Step { advance(1); assertEquals(0, wakeCount()) },
             Step { advance(20_000); assertEquals(1, wakeCount()) }
         ), control, rfcomm) })
-        carrier.requestWake()
-        carrier.requestWake(true)
+        carrier.requestWake(admission = admission)
+        carrier.requestWake(true, admission = admission)
         carrier.run()
         assertEquals(1, wakeCount())
     }
@@ -153,7 +206,7 @@ class ZbtAaCarrierTest {
             Step(frame(ZbtMessages.HFP_LINK_INFO, byteArrayOf(0x10, 0))),
             Step(frame(ZbtMessages.LINK_INFO, byteArrayOf(0x10, 1, 0x18, 0, 0x20, 1)))
         ), control, rfcomm) }, { fail("no connected phone or blind deadline") })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertEquals(0, wakeCount())
     }
@@ -169,7 +222,7 @@ class ZbtAaCarrierTest {
             running = false
             link.close()
         })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertTrue(served)
         assertEquals(1, wakeCount())
@@ -187,7 +240,7 @@ class ZbtAaCarrierTest {
             running = false
             link.close()
         })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertEquals(0, wakeCount())
     }
@@ -197,8 +250,8 @@ class ZbtAaCarrierTest {
         lateinit var carrier: ZbtAaCarrier
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(frame(ZbtMessages.RFCOMM_DATA, byteArrayOf(1))),
-            Step { advance(8_001); carrier.requestWake() },
-            Step { advance(16_000); repeat(20) { carrier.requestWake(true) } }
+            Step { advance(8_001); carrier.requestWake(admission = admission) },
+            Step { advance(16_000); repeat(20) { carrier.requestWake(true, admission = admission) } }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(0, wakeCount())
@@ -211,7 +264,7 @@ class ZbtAaCarrierTest {
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(frame(ZbtMessages.RFCOMM_DATA, byteArrayOf(1))),
             Step(presence(false)) { advance(8_001) },
-            Step { carrier.requestWake(true) }
+            Step { carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(1, wakeCount())
@@ -224,7 +277,7 @@ class ZbtAaCarrierTest {
             Step(frame(ZbtMessages.RFCOMM_DATA, byteArrayOf(1))),
             Step(frame(ZbtMessages.LINK_INFO, byteArrayOf(0x10, 1))),
             Step(frame(ZbtMessages.HFP_LINK_INFO, byteArrayOf(0x10, 0))),
-            Step { advance(8_001); carrier.requestWake(true) }
+            Step { advance(8_001); carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(0, wakeCount())
@@ -239,7 +292,7 @@ class ZbtAaCarrierTest {
                 open(listOf(Step(frame(ZbtMessages.RFCOMM_DATA, byteArrayOf(1)))),
                     control, rfcomm, eof = {})
             } else {
-                open(listOf(Step { advance(8_001); carrier.requestWake(true) }), control, rfcomm)
+                open(listOf(Step { advance(8_001); carrier.requestWake(true, admission = admission) }), control, rfcomm)
             }
         })
         carrier.run()
@@ -252,7 +305,7 @@ class ZbtAaCarrierTest {
         lateinit var carrier: ZbtAaCarrier
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(frame(ZbtMessages.RFCOMM_DATA)),
-            Step { advance(8_001); carrier.requestWake(true) }
+            Step { advance(8_001); carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(1, wakeCount())
@@ -284,7 +337,7 @@ class ZbtAaCarrierTest {
                 // socket's pending work must not transfer to the next phone/channel.
                 oldControl!!(ZbtMessages.LINK_INFO2, peer(false))
                 busy = true
-                carrier.requestWake(true)
+                carrier.requestWake(true, admission = admission)
                 busy = false
             } else running = false
             link.close()
@@ -300,10 +353,10 @@ class ZbtAaCarrierTest {
         lateinit var carrier: ZbtAaCarrier
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(presence()),
-            Step(presence(false)) { advance(9_000); carrier.requestWake(true) },
-            Step { carrier.requestWake(true) }
+            Step(presence(false)) { advance(9_000); carrier.requestWake(true, admission = admission) },
+            Step { carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertEquals(1, wakeCount())
     }
@@ -312,7 +365,7 @@ class ZbtAaCarrierTest {
         val carrier = carrier({ control, rfcomm -> open(listOf(
             Step(frame(ZbtMessages.INIT_INFO)), Step { advance(9_000); connected = true }
         ), control, rfcomm) }, { fail("projection is already live") })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertEquals(0, wakeCount())
     }
@@ -322,9 +375,9 @@ class ZbtAaCarrierTest {
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(frame(ZbtMessages.INIT_INFO)), Step { advance(11_000); carrier.close() }
         ), control, rfcomm) }, { fail("closed carrier") })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
-        carrier.requestWake(true)
+        carrier.requestWake(true, admission = admission)
         assertEquals(0, wakeCount())
     }
 
@@ -333,10 +386,10 @@ class ZbtAaCarrierTest {
         lateinit var carrier: ZbtAaCarrier
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(frame(ZbtMessages.INIT_INFO)),
-            Step { busy = true; advance(59_999); carrier.requestWake(true) },
+            Step { busy = true; advance(59_999); carrier.requestWake(true, admission = admission) },
             Step { advance(1); busy = false }, Step { advance(1) }
         ), control, rfcomm) })
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertEquals(0, wakeCount())
     }
@@ -347,7 +400,7 @@ class ZbtAaCarrierTest {
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(presence()),
             Step(frame(ZbtMessages.LINK_INFO, byteArrayOf(0x10, 1))),
-            Step { advance(8_001); carrier.requestWake(true) }
+            Step { advance(8_001); carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(0, wakeCount())
@@ -361,7 +414,7 @@ class ZbtAaCarrierTest {
             Step(presence()),
             Step(frame(ZbtMessages.LINK_INFO2, byteArrayOf(0x10, 1))),
             Step(frame(ZbtMessages.LINK_INFO2, byteArrayOf(0x10, 1, 0x18, 2))),
-            Step { advance(8_001); carrier.requestWake(true) }
+            Step { advance(8_001); carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(0, wakeCount())
@@ -374,9 +427,9 @@ class ZbtAaCarrierTest {
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(presence()),
             Step(frame(ZbtMessages.LINK_INFO, byteArrayOf(0x18, 1))),
-            Step { advance(8_001); carrier.requestWake(true) },
+            Step { advance(8_001); carrier.requestWake(true, admission = admission) },
             Step(frame(ZbtMessages.LINK_INFO, byteArrayOf(0x18, 0))) { assertEquals(0, wakeCount()) },
-            Step { carrier.requestWake(true) }
+            Step { carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(1, wakeCount())
@@ -389,9 +442,9 @@ class ZbtAaCarrierTest {
         carrier = carrier({ control, rfcomm -> open(listOf(
             Step(presence()),
             Step(frame(ZbtMessages.LINK_INFO2, byteArrayOf(0x18, 1))),
-            Step { advance(8_001); carrier.requestWake(true) },
+            Step { advance(8_001); carrier.requestWake(true, admission = admission) },
             Step(frame(ZbtMessages.LINK_INFO2, byteArrayOf(0x10, 3, 0x18, 1))) { assertEquals(0, wakeCount()) },
-            Step { carrier.requestWake(true) }
+            Step { carrier.requestWake(true, admission = admission) }
         ), control, rfcomm) })
         carrier.run()
         assertEquals(1, wakeCount())
@@ -401,6 +454,7 @@ class ZbtAaCarrierTest {
     private fun openingCarrier(
         factory: (ZbtChannelOpening, (Int, ByteArray) -> Unit, (ByteArray) -> Unit) -> ZbtByteChannel
     ) = ZbtAaCarrier(
+        admission = admission,
         serve = { fail("a retired opening must not reach the handshake") },
         isRunning = { running }, isFinishedForSession = { false },
         isSessionConnected = { connected }, isSettling = { false },
@@ -408,6 +462,27 @@ class ZbtAaCarrierTest {
         onPhoneEvidence = { evidence++ }, openChannel = factory,
         now = { wall }, elapsedNow = { elapsed }
     )
+
+    @Test fun `withdrawal while daemon connect returns prevents RequestInit`() = runBlocking {
+        val sink = ByteArrayOutputStream()
+        var closes = 0
+        val carrier = openingCarrier { opening, control, rfcomm ->
+            ZbtByteChannel.open(
+                onControlFrame = control, onRfcommData = rfcomm, opening = opening,
+                socketFactory = { object : java.net.Socket() {
+                    override fun connect(endpoint: java.net.SocketAddress, timeout: Int) { admitted = false }
+                    override fun setSoTimeout(timeout: Int) = Unit
+                    override fun getInputStream(): InputStream = java.io.ByteArrayInputStream(byteArrayOf())
+                    override fun getOutputStream(): java.io.OutputStream = sink
+                    override fun close() { closes++ }
+                } }
+            )
+        }
+        carrier.run()
+        assertEquals(0, sink.size())
+        assertTrue(closes > 0)
+        assertFalse(ZbtDaemonReachability.carrierWantsClient())
+    }
 
     @Test fun `close reaches a connecting socket before channel publication`() = runBlocking {
         val sink = ByteArrayOutputStream()
@@ -429,7 +504,7 @@ class ZbtAaCarrierTest {
                 } }
             )
         }
-        carrier.requestWake()
+        carrier.requestWake(admission = admission)
         carrier.run()
         assertEquals(1, connects)
         assertTrue(closes > 0)
@@ -503,6 +578,7 @@ class ZbtAaCarrierTest {
         steps: (Int) -> List<Step>
     ): Limited = runBlocking {
         val carrier = ZbtAaCarrier(
+            admission = admission,
             // A phone that never answers WPP: every served attempt ends as one counted failure.
             serve = { link ->
                 state.served++; state.failures++; link.close()

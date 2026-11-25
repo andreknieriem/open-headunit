@@ -12,22 +12,38 @@ class AapService {
     var isStopping = false
     var wirelessPausedForSettings = false
     val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    var wirelessRearmPendingForSettings = false
+    var wirelessRearmRequest: Any? = null
+    val wirelessRearmPendingForSettings: Boolean get() = wirelessRearmRequest != null
     val commManager = object : CancelRestart {}
     val wifiLauncherManager = RecordingLauncher()
     var releaseParked: () -> Unit = {}
+    var captureParked: () -> (() -> Unit)? = { releaseParked }
     fun releaseParkedHct() = releaseParked()
+    fun captureParkedHctRelease() = captureParked()
     val appliedSettings = mutableListOf<Boolean>()
     companion object {
-        fun applyWirelessSettings(context: AapService, startWireless: Boolean) {
+        fun applyWirelessSettings(context: AapService, startWireless: Boolean, ticket: Long) {
             context.appliedSettings.add(startWireless)
-            if (!startWireless) context.stopWirelessForCommand(fromSettings = true)
+            if (!startWireless) context.stopWirelessForCommand(fromSettings = true, ticket = ticket)
         }
     }
     // STOP_WIRELESS
 }
-interface CancelRestart { fun cancelPendingSettingsRestart() = Unit }
-class RecordingLauncher { var onStop: () -> Unit = {}; fun stop() = onStop() }
+interface CancelRestart {
+    fun cancelPendingSettingsRestart() = Unit
+    fun appConnectionTicket() = 0L
+    fun acceptsAppConnectionTicket(ticket: Long) = ticket == 0L
+    fun <T> withAppConnectionLifecycleLock(action: () -> T): T = action()
+}
+class ConnectionOperation(val ticket: Long, val save: Any?)
+fun interface ConnectionAdmission { fun run(action: () -> Unit): Boolean }
+object App { fun provide(context: AapService) = context }
+class RecordingLauncher {
+    var onStop: () -> Unit = {}
+    fun stop() = onStop()
+    fun detachForOperation(operation: ConnectionOperation): (() -> Unit)? = onStop
+    fun stopForOperation(operation: ConnectionOperation): Boolean { stop(); return true }
+}
 class Settings {
     enum class ConnectionMode { USB, WIFI, SELF }
     var connectionModes = setOf(ConnectionMode.USB, ConnectionMode.WIFI)
@@ -63,7 +79,7 @@ class SettingsScreen(val service: AapService) {
 }
 object Wireless { data class WifiVersionRequest(val tag: Int) }
 interface HandshakeLink
-interface ExternalModuleCarrier { val sendsWake: Boolean; fun requestWake(userAsked: Boolean); fun close() }
+interface ExternalModuleCarrier { val sendsWake: Boolean; fun requestWake(userAsked: Boolean, admission: ConnectionAdmission); fun close() }
 object AppLog { fun i(s: String) {}; fun w(s: String) {} }
 object BluetoothPeerInventory { fun normalizeAddress(s: String): String? = s.takeIf { it.length == 17 } }
 object HctWakePolicy { enum class Result { UNUSED } }
@@ -71,7 +87,8 @@ class HctAaCarrier(
     service: AapService, val openingRequest: () -> Wireless.WifiVersionRequest,
     val serve: suspend (HandshakeLink) -> Unit, val mayServe: () -> Boolean,
     val acceptPeer: (String) -> Boolean, val onPhoneEvidence: () -> Unit,
-    val onUnavailable: (HctWakePolicy.Result?, () -> Boolean) -> Unit
+    val onUnavailable: (HctWakePolicy.Result?, () -> Boolean) -> Unit,
+    val admission: ConnectionAdmission,
 ) {
     companion object { val all = CopyOnWriteArrayList<HctAaCarrier>() }
     val requested = mutableListOf<String>()
@@ -79,7 +96,8 @@ class HctAaCarrier(
     init { all.add(this) }
     suspend fun run() { ended.await() }
     val replacementGrants = mutableListOf<Boolean>()
-    fun requestWakeFor(mac: String, allowReplacePending: Boolean, selected: () -> Unit): Boolean {
+    fun requestWakeFor(mac: String, allowReplacePending: Boolean, admission: ConnectionAdmission, selected: () -> Unit): Boolean {
+        if (!this.admission.run {} || !admission.run {}) return false
         requested.add(mac); replacementGrants.add(allowReplacePending); selected(); return true
     }
     fun close() { ended.complete(Unit) }
@@ -112,12 +130,19 @@ fun main() = runBlocking {
     var selected = 0
     var busy = false
     var prompt = false
+    var authorityEpoch = 0
+    val commandAdmission = ConnectionAdmission { action -> action(); true }
     val served = CopyOnWriteArrayList<Int>()
-    fun attach(tag: Int) = owner.attach({ Wireless.WifiVersionRequest(tag) },
-        { served.add(tag); awaitCancellation() }, { true }, { true }, { notices++ }, { notices++ }, maySelect = { !busy })
+    fun attach(tag: Int): HctWppOwner.Client {
+        val capturedEpoch = authorityEpoch
+        return owner.attach({ Wireless.WifiVersionRequest(tag) },
+            { served.add(tag); awaitCancellation() }, { true }, { true }, { notices++ }, { notices++ },
+            admission = ConnectionAdmission { action -> if (capturedEpoch != authorityEpoch) false else { action(); true } },
+            maySelect = { !busy })
+    }
     val first = attach(1)
     // Deliberately do not run Client.run: Main selection can precede its IO coroutine.
-    check(first.requestWakeFor("11:22:33:44:55:66") { selected++ })
+    check(first.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission) { selected++ })
     val physical = HctAaCarrier.all.single()
     check(selected == 1 && physical.requested.size == 1)
     check(physical.replacementGrants == listOf(false))
@@ -129,24 +154,32 @@ fun main() = runBlocking {
     owner.releaseParked() // Opening settings during active projection cannot disconnect it.
     check(HctRetainedChannel.latest.isOpen && !HctRetainedChannel.latest.isParked)
     owner.park()
+    val firstParkedRelease = checkNotNull(owner.captureParkedRelease())
     first.close()
     check(HctRetainedChannel.latest.isOpen)
     val second = attach(2)
+    firstParkedRelease()
+    check(HctRetainedChannel.latest.isOpen && HctRetainedChannel.latest.isParked)
+    val beforeReuseRelease = checkNotNull(owner.captureParkedRelease())
     check(physical.openingRequest().tag == 2) // No closure retaining the old launcher.
     busy = true
-    check(!second.requestWakeFor("11:22:33:44:55:66") { selected++ })
+    check(!second.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission) { selected++ })
     check(selected == 1 && HctRetainedChannel.latest.isParked)
     busy = false
-    check(second.requestWakeFor("11:22:33:44:55:66") { selected++ })
+    check(second.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission) { selected++ })
     check(selected == 2)
     withTimeout(2_000) { while (served.size < 2) delay(1) }
     check(HctAaCarrier.all.size == 1 && physical.requested.size == 1)
+    owner.park()
+    beforeReuseRelease()
+    check(HctRetainedChannel.latest.isOpen && HctRetainedChannel.latest.isParked)
+    check(second.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission))
     first.close() // Retired client cannot close its replacement's physical owner.
     check(HctRetainedChannel.latest.isOpen)
     physical.onUnavailable(null) { true } // Queued for client 2; replacement must invalidate it.
     owner.close()
     val third = attach(3)
-    check(third.requestWakeFor("11:22:33:44:55:66", allowReplacePending = true))
+    check(third.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission, allowReplacePending = true))
     check(HctAaCarrier.all.last().replacementGrants == listOf(true))
     physical.onUnavailable(null) { true } // A retired worker resumes after the replacement was installed.
     physical.onPhoneEvidence()
@@ -173,11 +206,12 @@ fun main() = runBlocking {
 
     // Exercise the actual dialog callback, not a direct call to the owner cleanup helper.
     val fourth = attach(4)
-    check(fourth.requestWakeFor("11:22:33:44:55:66"))
+    check(fourth.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission))
     val dialogServing = launch { HctAaCarrier.all.last().serve(object : HandshakeLink {}) }
     withTimeout(2_000) { while (4 !in served) delay(1) }
     service.wirelessPausedForSettings = false
     service.releaseParked = { owner.releaseParked() }
+    service.captureParked = { owner.captureParkedRelease() }
     service.wifiLauncherManager.onStop = { fourth.close() }
     val screen = SettingsScreen(service)
     screen.showConnectionModeDialog() // Merely opening it preserves the live projection.
@@ -202,6 +236,29 @@ fun main() = runBlocking {
     screen.showConnectionModeDialog()
     MaterialAlertDialogBuilder.latest.accept(MaterialAlertDialogBuilder.latest, 0)
     check(screen.settings.connectionModes.isEmpty() && service.appliedSettings.isEmpty())
+    owner.close()
+    val queued = attach(5)
+    val beforeQueued = HctAaCarrier.all.size
+    authorityEpoch++
+    queued.run()
+    check(!queued.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission))
+    check(HctAaCarrier.all.size == beforeQueued)
+    val current = attach(6)
+    check(!current.requestWakeFor("11:22:33:44:55:66", admission = ConnectionAdmission { false }))
+    check(HctAaCarrier.all.size == beforeQueued)
+    check(current.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission))
+    val currentPhysical = HctAaCarrier.all.last()
+    queued.close()
+    check(!currentPhysical.ended.isCompleted)
+    val beforeNotice = notices
+    currentPhysical.onPhoneEvidence()
+    authorityEpoch++
+    notifications.drain()
+    check(notices == beforeNotice)
+    val finalClient = attach(7)
+    check(finalClient.requestWakeFor("11:22:33:44:55:66", admission = commandAdmission))
+    check(HctAaCarrier.all.last() !== currentPhysical && currentPhysical.ended.isCompleted)
     owner.close(); service.serviceScope.cancel()
-    println("PASS HCT owner: selection before run, single carrier, retained reuse, current opening callback and stale client close")
+    println("PASS HCT owner: selection before run, single carrier, retained reuse, current opening callback, stale client close and old parked cleanup after same-channel reuse")
+    println("PASS HCT original admission: queued run/wake and notice cannot inherit replacement authority; fresh attach owns a new carrier")
 }

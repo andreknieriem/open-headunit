@@ -13,16 +13,18 @@ enum class SelfLaunchPath {
  * How long a Self Mode launch may take before the user is told it did not work, and what may be
  * torn down when that happens.
  *
- * The deadline used to be 2500 ms for both routes, and expiring it called `CommManager.emitError`,
- * which disconnects. On [SelfLaunchPath.LEGACY] that is self-defeating twice over: the disconnect
+ * The deadline used to be 2500 ms for both routes, and expiring it reported an error that also
+ * disconnected. On [SelfLaunchPath.LEGACY] that is self-defeating twice over: the disconnect
  * takes down the dummy VPN whose `Network` we just handed Gearhead as `PARAM_SERVICE_WIFI_NETWORK`,
  * and it closes the port 5288 server that is the only way the phone can arrive. Gearhead needs 15
  * to 20 s on that route, so the deadline expired every time and killed sessions that were working.
  *
- * Hence the two rules here. A deadline the slower route can actually meet, and a timeout that
- * reports without tearing anything down - the launch may still be in flight, and on the head unit
- * server route a connection dropped before the AAP version exchange leaves that server deaf until
- * the user restarts it by hand.
+ * Hence the two rules. A deadline the slower route can actually meet, and a timeout that reports
+ * without tearing anything down - the launch may still be in flight, and on the head unit server
+ * route a connection dropped before the AAP version exchange leaves that server deaf until the
+ * user restarts it by hand. A timeout means "we have not heard yet", not "nothing is coming".
+ * `CommManager.reportLaunchFailure` holds the second rule on every route: it never disconnects,
+ * and it reports only while no attempt is in flight, so there is nothing a report could take down.
  */
 object SelfLaunchTimeoutPolicy {
 
@@ -44,13 +46,4 @@ object SelfLaunchTimeoutPolicy {
         SelfLaunchPath.LEGACY -> LEGACY_DEADLINE_MS
         SelfLaunchPath.HEADUNIT_SERVER -> HEADUNIT_SERVER_DEADLINE_MS
     }
-
-    /**
-     * Never, on either route, and a test holds that. A timeout means "we have not heard yet", which
-     * is not the same as "nothing is coming" - the answer is to say so, not to remove the things the
-     * answer would arrive on. A route that ever needs a teardown here should justify it in this
-     * function rather than reaching for a disconnect at the call site.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    fun mayDisconnect(path: SelfLaunchPath): Boolean = false
 }

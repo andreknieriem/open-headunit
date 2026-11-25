@@ -6,6 +6,7 @@ import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbNative
 import com.andrerinas.openheadunit.utils.AppLog
@@ -15,12 +16,12 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
 class LibusbProjectionConnection(usbMgr: UsbManager,
-                                 device: UsbDevice
+                                 device: UsbDevice,
+                                 private val admission: ConnectionAdmission
 ) : AbstractUsbProjectionConnection(usbMgr, device) {
 
     @Volatile
     override var isConnected = false
-    @Volatile private var isConnecting = false
     private var usbInterface: UsbInterface? = null
     private var endpointIn: UsbEndpoint? = null
     @Volatile private var endpointOut: UsbEndpoint? = null
@@ -42,205 +43,115 @@ class LibusbProjectionConnection(usbMgr: UsbManager,
         get() = false
 
     override suspend fun connect() = withContext(Dispatchers.IO) {
-        synchronized(stateLock) {
-            if (isConnected || isConnecting) {
-                return@withContext false
+        val owner = OpenAttempt()
+        var reserved = false
+        admission.run {
+            synchronized(stateLock) {
+                if (!isConnected && opening == null && usbDeviceConnection == null) {
+                    opening = owner
+                    reserved = true
+                }
             }
-            isConnecting = true
         }
-
+        if (!reserved) return@withContext false
+        var connection: UsbDeviceConnection? = null
+        var iface: UsbInterface? = null
+        var claimed = false
+        var native: UsbNative? = null
+        var published = false
         try {
-            if (!usbMgr.hasPermission(device)) {
-                AppLog.e("LibusbAccessoryConnection: No permission for USB device")
-                synchronized(stateLock) { isConnecting = false }
-                return@withContext false
-            }
-
-            // Open device
-            var conn: UsbDeviceConnection? = null
+            if (!mayOpen(owner) || !usbMgr.hasPermission(device)) return@withContext false
             for (i in 0 until 3) {
-                if (!isConnecting) {
-                    conn?.close()
-                    return@withContext false
-                }
+                if (!mayOpen(owner)) return@withContext false
                 try {
-                    conn = usbMgr.openDevice(device)
-                    if (conn != null) break
-                } catch (t: Throwable) {
-                    AppLog.w("LibusbAccessoryConnection: Attempt ${i + 1} to openDevice failed: ${t.message}")
+                    connection = usbMgr.openDevice(device)
+                    if (connection != null) break
+                } catch (failure: Throwable) {
+                    AppLog.w("LibusbAccessoryConnection: Attempt ${i + 1} to openDevice failed: ${failure.message}")
                 }
-                if (i < 2) {
-                    try {
-                        for (k in 0 until 10) {
-                            if (!isConnecting) {
-                                conn?.close()
-                                return@withContext false
-                            }
-                            Thread.sleep(100)
-                        }
-                    } catch (_: Exception) {
+                if (i < 2) repeat(10) {
+                    if (!mayOpen(owner)) return@withContext false
+                    try { Thread.sleep(100) } catch (_: Exception) {}
+                }
+            }
+            val candidate = connection ?: return@withContext false
+            if (!mayOpen(owner) || device.interfaceCount <= 0) return@withContext false
+            iface = device.getInterface(0)
+            if (!mayOpen(owner) || !candidate.claimInterface(iface, true)) return@withContext false
+            claimed = true
+            val (input, output) = UsbDeviceCompat.selectEndpoints(checkNotNull(iface))
+            if (input == null || output == null || !mayOpen(owner)) return@withContext false
+            val wrapper = UsbNative()
+            native = wrapper
+            if (!mayOpen(owner)) return@withContext false
+            if (!wrapper.wrap(candidate, input.address, output.address)) return@withContext false
+            admission.run {
+                synchronized(stateLock) {
+                    if (opening === owner) {
+                        usbDeviceConnection = candidate
+                        usbInterface = iface
+                        endpointIn = input
+                        endpointOut = output
+                        usbNative = wrapper
+                        isConnected = true
+                        opening = null
+                        published = true
                     }
                 }
             }
-
-            if (conn == null) {
-                AppLog.e("LibusbAccessoryConnection: connection is null")
-                synchronized(stateLock) { isConnecting = false }
-                return@withContext false
-            }
-
-            if (!isConnecting) {
-                conn.close()
-                return@withContext false
-            }
-
-            synchronized(stateLock) {
-                usbDeviceConnection = conn
-            }
-
-            if (device.interfaceCount <= 0) {
-                AppLog.e("LibusbAccessoryConnection: No interface found on device")
-                synchronized(stateLock) {
-                    conn.close()
-                    usbDeviceConnection = null
-                    isConnecting = false
+            if (published) AppLog.i("LibusbAccessoryConnection: Successfully connected via JNI Libusb")
+            published
+        } catch (failure: Exception) {
+            AppLog.e("LibusbAccessoryConnection: Error during connect: ${failure.message}")
+            false
+        } finally {
+            try {
+                if (!published) {
+                    try { native?.close() } catch (_: Exception) {}
+                    if (claimed) try { connection?.releaseInterface(iface) } catch (_: Exception) {}
+                    try { connection?.close() } catch (_: Exception) {}
                 }
-                return@withContext false
+            } finally {
+                synchronized(stateLock) { if (opening === owner) opening = null }
+                owner.finished.countDown()
             }
-            val iface = device.getInterface(0)
-            synchronized(stateLock) {
-                usbInterface = iface
-            }
-
-            if (!conn.claimInterface(iface, true)) {
-                AppLog.e("LibusbAccessoryConnection: Failed to claim interface")
-                synchronized(stateLock) {
-                    conn.close()
-                    usbDeviceConnection = null
-                    usbInterface = null
-                    isConnecting = false
-                }
-                return@withContext false
-            }
-
-            // Find endpoints, bulk preferred; the standard transport asks the same helper.
-            val (epIn, epOut) = UsbDeviceCompat.selectEndpoints(iface)
-            if (epIn == null || epOut == null) {
-                AppLog.e("LibusbAccessoryConnection: Unable to find endpoints")
-                synchronized(stateLock) {
-                    conn.releaseInterface(iface)
-                    conn.close()
-                    usbDeviceConnection = null
-                    usbInterface = null
-                    isConnecting = false
-                }
-                return@withContext false
-            }
-
-            synchronized(stateLock) {
-                endpointIn = epIn
-                endpointOut = epOut
-            }
-
-            if (!isConnecting) {
-                synchronized(stateLock) {
-                    conn.releaseInterface(iface)
-                    conn.close()
-                    usbDeviceConnection = null
-                    usbInterface = null
-                    endpointIn = null
-                    endpointOut = null
-                    isConnecting = false
-                }
-                return@withContext false
-            }
-
-            val native = UsbNative()
-            if (!native.wrap(conn, epIn.address, epOut.address)) {
-                AppLog.e("LibusbAccessoryConnection: Failed to wrap USB device via JNI")
-                synchronized(stateLock) {
-                    native.close()
-                    conn.releaseInterface(iface)
-                    conn.close()
-                    usbDeviceConnection = null
-                    usbInterface = null
-                    endpointIn = null
-                    endpointOut = null
-                    isConnecting = false
-                }
-                return@withContext false
-            }
-
-            synchronized(stateLock) {
-                if (!isConnecting) {
-                    native.close()
-                    conn.releaseInterface(iface)
-                    conn.close()
-                    usbDeviceConnection = null
-                    usbInterface = null
-                    endpointIn = null
-                    endpointOut = null
-                    isConnecting = false
-                    return@withContext false
-                }
-                usbNative = native
-                isConnected = true
-                isConnecting = false
-            }
-            AppLog.i("LibusbAccessoryConnection: Successfully connected via JNI Libusb")
-            return@withContext true
-        } catch (e: Exception) {
-            AppLog.e("LibusbAccessoryConnection: Error during connect: ${e.message}")
-            synchronized(stateLock) {
-                isConnecting = false
-            }
-            disconnect()
-            return@withContext false
         }
     }
 
+    private fun mayOpen(owner: OpenAttempt): Boolean {
+        var current = false
+        admission.run { synchronized(stateLock) { current = opening === owner } }
+        return current
+    }
+
     override fun disconnect() {
-        synchronized(stateLock) {
-            isConnecting = false
+        val (retired, pendingOpen) = synchronized(stateLock) {
+            val pendingOpen = opening
+            opening = null
             isConnected = false
-        }
-
-        // Wait for active JNI transfers (readers/writers) to finish before freeing context.
-        // Capped at 1500ms because the JNI read timeout chunk is capped at 1000ms.
-        val start = SystemClock.elapsedRealtime()
-        while (activeTransfers.get() > 0 && SystemClock.elapsedRealtime() - start < 1500) {
-            try {
-                Thread.sleep(50)
-            } catch (e: InterruptedException) {
-                break
-            }
-        }
-
-        synchronized(stateLock) {
-            try {
-                usbNative?.close()
-            } catch (e: Exception) {
-                AppLog.e("LibusbAccessoryConnection: Error closing native: ${e.message}")
-            }
+            val retired = Triple(usbNative, usbDeviceConnection, usbInterface)
             usbNative = null
-
-            try {
-                if (usbDeviceConnection != null && usbInterface != null) {
-                    usbDeviceConnection!!.releaseInterface(usbInterface)
-                }
-            } catch (e: Exception) {}
-
-            try {
-                usbDeviceConnection?.close()
-            } catch (e: Exception) {}
-
             usbDeviceConnection = null
             usbInterface = null
             endpointIn = null
             endpointOut = null
             leftoverSize = 0
             leftoverPos = 0
+            retired to pendingOpen
         }
+        pendingOpen?.awaitFinished()
+        // Retired resources are local: an old cleanup never reads or clears a successor's fields.
+        val start = SystemClock.elapsedRealtime()
+        while (activeTransfers.get() > 0 && SystemClock.elapsedRealtime() - start < 1500) {
+            try { Thread.sleep(50) } catch (_: InterruptedException) { break }
+        }
+        try { retired.first?.close() } catch (failure: Exception) {
+            AppLog.e("LibusbAccessoryConnection: Error closing native: ${failure.message}")
+        }
+        if (retired.second != null && retired.third != null) {
+            try { retired.second?.releaseInterface(retired.third) } catch (_: Exception) {}
+        }
+        try { retired.second?.close() } catch (_: Exception) {}
     }
 
     override fun sendBlocking(buf: ByteArray, length: Int, timeout: Int): Int {

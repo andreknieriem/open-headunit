@@ -10,7 +10,7 @@ import re
 
 base = Path(__file__).resolve().parent
 repo = base.parents[3]
-cache = Path.home() / ".gradle/caches/modules-2/files-2.1"
+cache = Path(os.environ.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))) / "caches/modules-2/files-2.1"
 
 
 def jar(group, artifact, version="*"):

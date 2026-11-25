@@ -21,6 +21,7 @@ import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbAttachActivityPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbAttachSwitch
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
@@ -165,9 +166,9 @@ class UsbAttachedActivity : Activity() {
         when (decision) {
             UsbAttachActivityPolicy.Action.START_SERVICE -> {
                 AppLog.i("Usb in accessory mode and has permission. Starting AapService.")
-                ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                    action = AapService.ACTION_CHECK_USB
-                })
+                // Only reached unlocked: the attach is the input, and the relay carries its scan.
+                ContextCompat.startForegroundService(this,
+                    AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow()))
                 finish()
                 return
             }
@@ -189,7 +190,9 @@ class UsbAttachedActivity : Activity() {
                         AppLog.i("Not switching ${deviceCompat.uniqueName} here (not on the allow list); letting the service decide")
                     }
                 }
-                handOffToService()
+                // Before first unlock no app component, and so no scan, can exist yet; the
+                // service would refuse an unscoped relay. The session waits for unlock.
+                if (!isLocked) handOffToService()
                 finish()
                 return
             }
@@ -213,13 +216,23 @@ class UsbAttachedActivity : Activity() {
 
         val usbManager = UsbDeviceCompat.usbManager(this) ?: run { finish(); return }
 
-        // The switch starts the USB attempt, so it takes the connection arbiter here, before the
-        // stage is reported: standing the wireless stack down clears the status pill.
-        val arbiterClaim = ConnectionArbiter.claim(
+        // The switch starts the USB attempt, so it takes its authority here, before the stage is
+        // reported: standing the wireless stack down clears the status pill. Unlocked, it is a USB
+        // request, admitted on this activity's Main thread where the claim was always taken.
+        // Before first unlock it is a bare arbiter claim, as it always was: no app component, and so
+        // no CommManager, Stop ticket or other request, can exist then (building one reads
+        // credential-protected settings and throws), so there is nothing a request could be
+        // consistent with; the claim still holds off every other arbiter claimer.
+        val commManager = if (isLocked) null else App.provide(this).commManager
+        val usbRequest = commManager?.admitUsbRequest(
+            ConnectionPriorityPolicy.Tier.USB, "USB switch of ${deviceCompat.uniqueName}", save = null,
+            recheck = commManager.usbRecheckNow(),
+        )
+        val lockedClaim = if (isLocked) ConnectionArbiter.claim(
             ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
             "USB switch of ${deviceCompat.uniqueName}"
-        )
-        if (arbiterClaim == null) {
+        ) else null
+        if (usbRequest == null && lockedClaim == null) {
             finish()
             return
         }
@@ -231,25 +244,33 @@ class UsbAttachedActivity : Activity() {
         ToastUtils.showToast(this, getString(R.string.switching_usb_accessory_mode, deviceCompat.uniqueName), Toast.LENGTH_SHORT)
         val useLibusb = settings?.useLibusb ?: false
         // The claim keeps the service's 2 s attach fallback off a device we are already switching.
-        // noHistory means this activity can be finished out from under the thread, so the release
-        // is in a finally and the claim expires on its own if even that is missed.
-        UsbSwitchClaim.stake()
+        // noHistory means this activity can be finished out from under the thread, so the request
+        // ends in a finally and the claim expires on its own if even that is missed.
+        val switchOwner = usbRequest?.claim ?: checkNotNull(lockedClaim)
+        if (!UsbSwitchClaim.stake(switchOwner)) {
+            if (usbRequest != null) commManager?.endRequest(usbRequest)
+            else ConnectionArbiter.release(lockedClaim, sessionFormed = false)
+            finish()
+            return
+        }
         Thread {
-            val result = try {
-                usbMode.connectAndSwitch(device, useLibusb).also { if (it) UsbSwitchClaim.noteSwitched() }
-            } catch (e: Exception) {
-                AppLog.e("AOA switch threw for ${deviceCompat.uniqueName}", e)
-                false
-            } finally {
-                UsbSwitchClaim.release()
-                ConnectionArbiter.release(arbiterClaim, sessionFormed = false)
+            val outcome = UsbAttachSwitch.run(commManager, usbRequest, lockedClaim, deviceCompat.uniqueName) { admission ->
+                usbMode.connectAndSwitch(device, useLibusb, admission)
             }
             runOnUiThread {
-                if (result) {
-                    ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
-                } else {
-                    ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
-                    if (!App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
+                when (outcome) {
+                    // Whatever revoked it owns the stage and its feedback now.
+                    UsbAttachSwitch.Outcome.REVOKED -> Unit
+                    UsbAttachSwitch.Outcome.SWITCHED ->
+                        ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
+                    UsbAttachSwitch.Outcome.FAILED -> {
+                        ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
+                        // Asked now, not at onCreate: the user may have unlocked during the switch,
+                        // and only an unlocked process may build the app component.
+                        val lockedNow = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                            !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+                        if (lockedNow || !App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
+                    }
                 }
                 finish()
             }
@@ -263,10 +284,9 @@ class UsbAttachedActivity : Activity() {
      */
     private fun handOffToService() {
         try {
-            ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                action = AapService.ACTION_CHECK_USB
-                putExtra(AapService.EXTRA_USB_TRIGGER, AapService.USB_TRIGGER_PLUG_IN)
-            })
+            // Only ever unlocked: the attach is the input, and the relay carries its scan.
+            ContextCompat.startForegroundService(this,
+                AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow(), plugIn = true))
         } catch (e: Exception) {
             AppLog.w("Could not hand the USB attach to the service: ${e.message}")
         }
@@ -279,12 +299,13 @@ class UsbAttachedActivity : Activity() {
         openHome("USB auto-start")
     }
 
+    /** Both callers are attach-driven, so the launch is a continuation, not a user Open. */
     private fun openHome(source: String) {
         try {
-            startActivity(Intent(this, MainActivity::class.java).apply {
+            startActivity(AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
-            })
+            }))
         } catch (e: Exception) {
             AppLog.w("Could not start UI from $source: ${e.message}")
         }

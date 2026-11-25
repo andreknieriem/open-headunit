@@ -1,20 +1,15 @@
 package com.andrerinas.openheadunit.connection.self
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SelfLaunchTimeoutPolicyTest {
 
-    @Test
-    fun `no route may tear the session down when it runs out of patience`() {
-        // The defect this replaces: the timeout disconnected, which took down the dummy VPN handed
-        // to Gearhead and closed the port 5288 server the phone still had to arrive on.
-        for (path in SelfLaunchPath.values()) {
-            assertFalse(path.name, SelfLaunchTimeoutPolicy.mayDisconnect(path))
-        }
-    }
+    // No route may tear the session down when it runs out of patience: the timeout once
+    // disconnected, which took down the dummy VPN handed to Gearhead and closed the port 5288
+    // server the phone still had to arrive on. CommManager.reportLaunchFailure reports without a
+    // disconnect on every route; InternalFailureRecoveryTest holds that.
 
     @Test
     fun `every route gets a deadline, and none of them is the old 2500ms`() {

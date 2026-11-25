@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.main
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreen
 import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreenPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
@@ -73,6 +74,7 @@ import com.andrerinas.openheadunit.main.settings.SettingsCategory
 import com.andrerinas.openheadunit.main.settings.SettingsFilterPolicy
 import com.andrerinas.openheadunit.main.settings.SettingsHeaderController
 import com.andrerinas.openheadunit.main.settings.SettingsLayoutPolicy
+import com.andrerinas.openheadunit.main.settings.SettingsMutation
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
@@ -119,6 +121,7 @@ import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment() {
     private lateinit var settings: Settings
+    private lateinit var settingsMutations: SettingsMutation
 
     /** The in-flight credentials pre-flight, so a second one replaces it rather than racing it. */
     private var preflightJob: Job? = null
@@ -328,10 +331,13 @@ class SettingsFragment : Fragment() {
         if (result.resultCode == android.app.Activity.RESULT_OK) showWakeDevicePicker()
     }
 
+    private var nativeAaSelectionOperation: ConnectionOperation? = null
     private val bluetoothPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            handleNativeAaSelection()
-        } else {
+        val operation = nativeAaSelectionOperation
+        nativeAaSelectionOperation = null
+        if (isGranted && operation != null) {
+            handleNativeAaSelection(operation)
+        } else if (!isGranted) {
             ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
         }
     }
@@ -399,6 +405,7 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        settingsMutations = SettingsMutation(viewLifecycleOwner.lifecycleScope)
 
         settings = App.provide(requireContext()).settings
 
@@ -461,6 +468,11 @@ class SettingsFragment : Fragment() {
                 outState.putParcelable("recycler_scroll", it)
             }
         }
+    }
+
+    override fun onDestroyView() {
+        settingsMutations.cancel()
+        super.onDestroyView()
     }
 
     private fun reloadPendingStateFromSettings() {
@@ -628,6 +640,8 @@ class SettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
+        val connectionTicket = App.provide(requireContext()).commManager.appConnectionTicket()
+        settingsMutations.cancel()
         checkChanges()
         var audioSessionEnded = false
         val languageChanged = pendingAppLanguage != settings.appLanguage
@@ -792,23 +806,22 @@ class SettingsFragment : Fragment() {
 
         if (WirelessRearmPolicy.requiresRearm(wirelessConfigBefore, wirelessRearmConfig())) {
             AapService.applyWirelessSettings(requireContext(),
-                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi(),
+                ticket = connectionTicket)
         }
 
         if (requiresServiceRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {
                 ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-                val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
-                    action = AapService.ACTION_STOP_SERVICE
-                }
-                ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
+                val stopServiceIntent = AapService.stopIntent(requireContext(), connectionTicket)
+                stopServiceIntent?.let { ContextCompat.startForegroundService(requireContext(), it) }
             }
         }
 
         if (requiresRestart && !requiresServiceRestart) {
             val manager = App.provide(requireContext()).commManager
             val connected = manager.isConnected
-            manager.applyAudioSettings()
+            manager.applyAudioSettings(ConnectionOperation(connectionTicket, null))
             audioSessionEnded = connected && !manager.isConnected
         }
 
@@ -1112,12 +1125,18 @@ class SettingsFragment : Fragment() {
                 }
 
                 if (newMode == WifiLauncherMode.NATIVE) {
+                    val operation = ConnectionOperation(
+                        App.provide(requireContext()).commManager.appConnectionTicket(), null
+                    )
                     if (!ExternalBtTransportPolicy.usesExternalModule(pendingExternalBtRoute()) &&
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                         ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                        bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                        if (nativeAaSelectionOperation == null) {
+                            nativeAaSelectionOperation = operation
+                            bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                        }
                     } else {
-                        handleNativeAaSelection()
+                        handleNativeAaSelection(operation)
                     }
                 } else {
                     pendingWifiConnectionMode = newMode
@@ -3377,6 +3396,7 @@ class SettingsFragment : Fragment() {
                 touched = true
             }
             .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                val connectionTicket = App.provide(requireContext()).commManager.appConnectionTicket()
                 // Left alone, "All" stays "All" instead of becoming three explicit modes.
                 if (!(all && !touched)) {
                     // This dialog saves immediately, so the toolbar's later Save snapshot
@@ -3385,7 +3405,8 @@ class SettingsFragment : Fragment() {
                     settings.connectionModes = order.filterIndexed { i, _ -> checked[i] }.toSet()
                     if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
                         AapService.applyWirelessSettings(requireContext(),
-                            startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                            startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi(),
+                            ticket = connectionTicket)
                     }
                 }
                 dialog.dismiss()
@@ -3565,17 +3586,21 @@ class SettingsFragment : Fragment() {
     private fun resetSettingsToDefaults() {
         val appContext = requireContext().applicationContext
         val snapshot = createImportSnapshot()
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.resetFromContext(appContext, applyTheme = false)
+        settingsMutations.start(
+            prepare = { Unit },
+            apply = {
+                if (App.provide(appContext).commManager.acceptsAppConnectionTicket(snapshot.connectionTicket)) {
+                    // SettingsRestoreHandler reapplies the theme once the screen state is updated.
+                    val result = SettingsBackupManager.resetFromContext(appContext, applyTheme = false)
+                    handleResetSettings(snapshot, result)
+                } else {
+                    AppLog.i("Settings: reset withdrawn before applying its preferences")
                 }
-                handleResetSettings(snapshot, result)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_reset_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
-            }
-        }
+            },
+            onFailure = { error ->
+                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_reset_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
+            },
+        )
     }
 
     private fun handleResetSettings(snapshot: SettingsRestoreHandler.Snapshot, result: SettingsBackupManager.ResetResult) {
@@ -3726,36 +3751,51 @@ class SettingsFragment : Fragment() {
     private fun importSettingsFromUri(uri: Uri) {
         val appContext = requireContext().applicationContext
         val snapshot = createImportSnapshot()
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.importFromUri(appContext, uri, applyTheme = false)
+        settingsMutations.start(
+            prepare = {
+                withContext(Dispatchers.IO) {
+                    SettingsBackupManager.prepareImportFromUri(appContext, uri)
                 }
-                handleImportedSettings(snapshot, result)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                ToastUtils.showToast(requireContext(), getString(R.string.settings_import_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
-            }
-        }
+            },
+            apply = { prepared ->
+                if (App.provide(appContext).commManager.acceptsAppConnectionTicket(snapshot.connectionTicket)) {
+                    val result = SettingsBackupManager.applyImport(appContext, prepared, applyTheme = false)
+                    handleImportedSettings(snapshot, result)
+                } else {
+                    AppLog.i("Settings: import withdrawn before applying its preferences")
+                }
+            },
+            onFailure = { error ->
+                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_import_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
+            },
+        )
     }
 
     private fun importSettingsFromFile(file: File) {
         val appContext = requireContext().applicationContext
         val snapshot = createImportSnapshot()
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.importFromFile(appContext, file, applyTheme = false)
+        settingsMutations.start(
+            prepare = {
+                withContext(Dispatchers.IO) {
+                    SettingsBackupManager.prepareImportFromFile(file)
                 }
-                handleImportedSettings(snapshot, result)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                ToastUtils.showToast(requireContext(), getString(R.string.settings_import_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
-            }
-        }
+            },
+            apply = { prepared ->
+                if (App.provide(appContext).commManager.acceptsAppConnectionTicket(snapshot.connectionTicket)) {
+                    val result = SettingsBackupManager.applyImport(appContext, prepared, applyTheme = false)
+                    handleImportedSettings(snapshot, result)
+                } else {
+                    AppLog.i("Settings: import withdrawn before applying its preferences")
+                }
+            },
+            onFailure = { error ->
+                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_import_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
+            },
+        )
     }
 
-    private fun createImportSnapshot() = SettingsRestoreHandler.capture(requireContext(), settings)
+    private fun createImportSnapshot() = SettingsRestoreHandler.capture(requireContext(), settings,
+        App.provide(requireContext()).commManager.appConnectionTicket())
 
     private fun handleImportedSettings(snapshot: SettingsRestoreHandler.Snapshot, result: SettingsBackupManager.ImportResult) {
         val ctx = context ?: return
@@ -4339,9 +4379,7 @@ class SettingsFragment : Fragment() {
      */
     private fun rotateWifiDirectIdentityNow() {
         requireContext().startService(
-            Intent(requireContext(), AapService::class.java).apply {
-                action = AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY
-            }
+            AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY)
         )
         val appliesNow = P2pIdentityRotationPolicy.applyNow(
             sessionLive = App.provide(requireContext()).commManager.isConnected,
@@ -5079,7 +5117,9 @@ class SettingsFragment : Fragment() {
         editView.requestFocus()
     }
 
-    private fun handleNativeAaSelection() {
+    private fun handleNativeAaSelection(operation: ConnectionOperation) {
+        val manager = App.provide(requireContext()).commManager
+        if (!manager.isCurrent(operation)) return
         // Retain the existing marker-specific explanation: the phone may be bonded to a chip
         // outside Android's paired-device list, so a generic compatibility dialog is insufficient.
         // Known external-module markers and firmware candidates both justify checking ZBT.
@@ -5103,25 +5143,27 @@ class SettingsFragment : Fragment() {
                     discovery.reachable
                         ?: withContext(Dispatchers.IO) {
                             measurement.resolve(
-                                cacheIdentityRefusal = false
+                                cacheIdentityRefusal = false,
+                                keepTrying = { manager.isCurrent(operation) }
                             )
                         }
                 }
-                if (!isAdded) return@launch
+                if (!isAdded || !manager.isCurrent(operation)) return@launch
                 if (measurement.fallsBackToAndroid && !viaModule) {
-                    showAndroidNativeAaCompatibility()
+                    showAndroidNativeAaCompatibility(operation)
                 } else showExternalBtNativeAaDialog(externalBtEvidence, viaModule)
             }
             return
         }
-        showAndroidNativeAaCompatibility()
+        showAndroidNativeAaCompatibility(operation)
     }
 
     // Extracted from the no-external-marker branch of handleNativeAaSelection. An unconfirmed
     // firmware candidate needs that same Android check and dialog, not the module refusal.
     // Keep both callers on this implementation so their compatibility advice stays identical.
-    private fun showAndroidNativeAaCompatibility() {
-        if (NativeAaHandshakeManager.checkCompatibility(requireContext())) {
+    private fun showAndroidNativeAaCompatibility(operation: ConnectionOperation) {
+        if (!App.provide(requireContext()).commManager.isCurrent(operation)) return
+        if (NativeAaHandshakeManager.checkCompatibility(requireContext(), operation)) {
             MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                 .setTitle(R.string.supported_nativeaa)
                 .setMessage(R.string.supported_nativeaa_desc)

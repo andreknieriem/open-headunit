@@ -7,6 +7,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -16,6 +17,7 @@ class ConnectionArbiterTest {
     private var now = 1_000L
     private var wirelessUp = true
     private val givenBack = mutableListOf<Pair<Boolean, Boolean>>()
+    private val usbGivenBack = mutableListOf<UsbRecheck>()
     private val timers = mutableListOf<Pair<Long, () -> Unit>>()
     private var savedLogger: AppLog.Logger? = null
 
@@ -26,8 +28,9 @@ class ConnectionArbiterTest {
             wirelessUp = false
             return was
         }
-        override fun giveBack(wireless: Boolean, usb: Boolean) {
-            givenBack += wireless to usb
+        override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {
+            givenBack += wireless to (usb != null)
+            usb?.let { usbGivenBack += it }
             if (wireless) wirelessUp = true
         }
         override fun schedule(delayMs: Long, block: () -> Unit) {
@@ -151,39 +154,24 @@ class ConnectionArbiterTest {
     }
 
     @Test
-    fun `a user connect preempting USB gives USB back when it fails`() {
-        ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB")
+    fun `a user connect preempting USB gives the same USB scan back when it fails`() {
+        val scan = UsbRecheck(ticket = 0L, epoch = 0L)
+        ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB", scan)
         val user = must(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "192.0.2.1:5277"))
         ConnectionArbiter.release(user, sessionFormed = false)
         assertEquals(listOf(true to true), givenBack)
+        assertTrue(usbGivenBack.single() === scan)
     }
 
     @Test
-    fun `a dropped debt gives nothing back`() {
-        val wireless = must(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "wireless"))
-        ConnectionArbiter.holdUsbCheck()
-        ConnectionArbiter.dropUsbDebt()
-        ConnectionArbiter.release(wireless, sessionFormed = false)
-        advance(60_000)
-        assertEquals(emptyList<Pair<Boolean, Boolean>>(), givenBack)
-    }
-
-    @Test
-    fun `a dropped USB debt still gives the stood-down wireless back`() {
-        val usb = must(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB"))
-        ConnectionArbiter.dropUsbDebt()
-        ConnectionArbiter.release(usb, sessionFormed = false)
-        advance(60_000)
-        assertEquals(listOf(true to false), givenBack)
-    }
-
-    @Test
-    fun `a debt after the drop is owed again`() {
-        val first = must(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "wireless"))
-        ConnectionArbiter.dropUsbDebt()
-        ConnectionArbiter.holdUsbCheck()
-        ConnectionArbiter.release(first, sessionFormed = false)
+    fun `a refused USB scan is handed back as itself when the holder ends`() {
+        wirelessUp = false
+        val scan = UsbRecheck(ticket = 0L, epoch = 0L)
+        val user = must(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "192.0.2.1:5277"))
+        assertNull(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB", scan))
+        ConnectionArbiter.release(user, sessionFormed = false)
         advance(60_000)
         assertEquals(listOf(false to true), givenBack)
+        assertTrue(usbGivenBack.single() === scan)
     }
 }

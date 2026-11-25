@@ -14,7 +14,7 @@ class CredentialsHandoffTest {
 
     @Test
     fun `a listener registered first is called on publish`() {
-        val handoff = CredentialsHandoff()
+        val handoff = CredentialsHandoff<NativeNetworkCredentials>()
         val seen = mutableListOf<NativeNetworkCredentials>()
         handoff.setListener { seen.add(it) }
 
@@ -25,7 +25,7 @@ class CredentialsHandoffTest {
 
     @Test
     fun `a listener registered afterwards is given what was published before it existed`() {
-        val handoff = CredentialsHandoff()
+        val handoff = CredentialsHandoff<NativeNetworkCredentials>()
         val seen = mutableListOf<NativeNetworkCredentials>()
 
         // The ordering that cost a connection: the transport resolved while the service that owns
@@ -38,7 +38,7 @@ class CredentialsHandoffTest {
 
     @Test
     fun `each value is delivered exactly once, whichever order it arrived in`() {
-        val handoff = CredentialsHandoff()
+        val handoff = CredentialsHandoff<NativeNetworkCredentials>()
         val seen = mutableListOf<NativeNetworkCredentials>()
 
         handoff.publish(creds("early"))
@@ -50,7 +50,7 @@ class CredentialsHandoffTest {
 
     @Test
     fun `a second listener does not replay a value the first already took`() {
-        val handoff = CredentialsHandoff()
+        val handoff = CredentialsHandoff<NativeNetworkCredentials>()
         val first = mutableListOf<NativeNetworkCredentials>()
         val second = mutableListOf<NativeNetworkCredentials>()
 
@@ -64,7 +64,7 @@ class CredentialsHandoffTest {
 
     @Test
     fun `only the newest latched value survives`() {
-        val handoff = CredentialsHandoff()
+        val handoff = CredentialsHandoff<NativeNetworkCredentials>()
         val seen = mutableListOf<NativeNetworkCredentials>()
 
         // An access point that came up, went down and came back describes one network by the time
@@ -79,7 +79,7 @@ class CredentialsHandoffTest {
 
     @Test
     fun `clear drops a latched value but keeps the listener`() {
-        val handoff = CredentialsHandoff()
+        val handoff = CredentialsHandoff<NativeNetworkCredentials>()
         val seen = mutableListOf<NativeNetworkCredentials>()
         handoff.setListener { seen.add(it) }
 
@@ -95,7 +95,7 @@ class CredentialsHandoffTest {
 
     @Test
     fun `a value latched before stop is not replayed to the next run`() {
-        val handoff = CredentialsHandoff()
+        val handoff = CredentialsHandoff<NativeNetworkCredentials>()
         val seen = mutableListOf<NativeNetworkCredentials>()
 
         assertFalse(handoff.publish(creds("stale")))
@@ -110,7 +110,7 @@ class CredentialsHandoffTest {
         // The two callers really are on different threads: the resolve loop runs on IO and the
         // registration on the main thread, which is the whole reason this class exists.
         repeat(200) {
-            val handoff = CredentialsHandoff()
+            val handoff = CredentialsHandoff<NativeNetworkCredentials>()
             val seen = java.util.Collections.synchronizedList(mutableListOf<NativeNetworkCredentials>())
             val start = CountDownLatch(1)
             val done = CountDownLatch(2)

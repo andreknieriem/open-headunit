@@ -5,10 +5,16 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.CommManager
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
@@ -16,9 +22,14 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [28])
 class SettingsRestoreHandlerTest {
+    private val ticket = 42L
+    private val connection = mock<CommManager>()
+    private val app = mock<App>()
     private val context = object : ContextWrapper(RuntimeEnvironment.getApplication()) {
         val broadcasts = mutableListOf<Intent>()
         val services = mutableListOf<Intent>()
+
+        override fun getApplicationContext(): Context = app
 
         override fun sendBroadcast(intent: Intent) {
             broadcasts.add(intent)
@@ -32,8 +43,21 @@ class SettingsRestoreHandlerTest {
     private val settings = Settings(context)
     private val prefs = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
 
+    init {
+        val component = mock<AppComponent>()
+        App::class.java.getDeclaredField("component\$delegate")
+            .apply { isAccessible = true }.set(app, lazyOf(component))
+        whenever(app.applicationContext).thenReturn(app)
+        whenever(app.getSharedPreferences(any(), any())).thenAnswer {
+            context.getSharedPreferences(it.getArgument(0), it.getArgument(1))
+        }
+        whenever(component.commManager).thenReturn(connection)
+        whenever(component.settings).thenReturn(settings)
+        whenever(connection.acceptsAppConnectionTicket(ticket)).thenReturn(true)
+    }
+
     @Test fun `unchanged import updates theme and night mode without rearming wireless`() {
-        val before = SettingsRestoreHandler.capture(context, settings)
+        val before = SettingsRestoreHandler.capture(context, settings, ticket)
         val themeVersion = AppThemeManager.themeVersion.value
         assertFalse(SettingsRestoreHandler.apply(context, settings, before, emptySet()))
         assertTrue(context.services.isEmpty())
@@ -44,7 +68,7 @@ class SettingsRestoreHandlerTest {
 
     @Test fun `wireless changes use the same service handoff as settings imports`() {
         settings.connectionModes = setOf(Settings.ConnectionMode.WIFI)
-        val before = SettingsRestoreHandler.capture(context, settings)
+        val before = SettingsRestoreHandler.capture(context, settings, ticket)
         settings.externalBtZbtTransport = !settings.externalBtZbtTransport
         assertFalse(SettingsRestoreHandler.apply(context, settings, before, setOf("external-bt-zbt-transport")))
         assertEquals(listOf(AapService.ACTION_START_WIRELESS), context.services.map { it.action })
@@ -54,10 +78,10 @@ class SettingsRestoreHandlerTest {
     @Test fun `restoring automatic Bluetooth startup rearms the wireless launcher`() {
         settings.connectionModes = setOf(Settings.ConnectionMode.WIFI)
         settings.nativeAaEnableBluetooth = false
-        val before = SettingsRestoreHandler.capture(context, settings)
+        val before = SettingsRestoreHandler.capture(context, settings, ticket)
         assertFalse(before.wireless.nativeAaEnableBluetooth)
         settings.nativeAaEnableBluetooth = true
-        assertTrue(SettingsRestoreHandler.capture(context, settings).wireless.nativeAaEnableBluetooth)
+        assertTrue(SettingsRestoreHandler.capture(context, settings, ticket).wireless.nativeAaEnableBluetooth)
         assertFalse(SettingsRestoreHandler.apply(context, settings, before, setOf("native-aa-enable-bluetooth")))
         assertEquals(listOf(AapService.ACTION_START_WIRELESS), context.services.map { it.action })
         assertTrue(context.services.single().getBooleanExtra(AapService.EXTRA_SETTINGS_REARM, false))
@@ -65,7 +89,7 @@ class SettingsRestoreHandlerTest {
 
     @Test fun `removing wireless connection mode stops instead of starting the launcher`() {
         settings.connectionModes = setOf(Settings.ConnectionMode.WIFI)
-        val before = SettingsRestoreHandler.capture(context, settings)
+        val before = SettingsRestoreHandler.capture(context, settings, ticket)
         settings.connectionModes = setOf(Settings.ConnectionMode.USB)
         SettingsRestoreHandler.apply(context, settings, before, setOf("connection-modes"))
         assertEquals(listOf(AapService.ACTION_STOP_WIRELESS), context.services.map { it.action })
@@ -83,7 +107,7 @@ class SettingsRestoreHandlerTest {
         )
         for ((key, value) in changes) {
             prefs.edit().clear().commit()
-            val before = SettingsRestoreHandler.capture(context, settings)
+            val before = SettingsRestoreHandler.capture(context, settings, ticket)
             val editor = prefs.edit()
             when (value) {
                 is String -> editor.putString(key, value)

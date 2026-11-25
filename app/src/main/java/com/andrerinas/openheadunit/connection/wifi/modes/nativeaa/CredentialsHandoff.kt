@@ -36,11 +36,11 @@ data class NativeNetworkCredentials(
  * lock; delivery happens outside it, because the listener reaches all the way into the Bluetooth
  * handshake and holding a lock across that invites the deadlock this class exists to avoid.
  */
-class CredentialsHandoff {
+class CredentialsHandoff<T : Any> {
 
     private val lock = Any()
-    private var listener: ((NativeNetworkCredentials) -> Unit)? = null
-    private var pending: NativeNetworkCredentials? = null
+    private var listener: ((T) -> Unit)? = null
+    private var pending: T? = null
 
     /**
      * Hands [credentials] over, or latches them until someone is listening.
@@ -48,7 +48,7 @@ class CredentialsHandoff {
      * @return whether they were delivered. `false` means they are held for the next [setListener],
      *   which is worth saying out loud: it is the ordering fault above, and it is silent otherwise.
      */
-    fun publish(credentials: NativeNetworkCredentials): Boolean {
+    fun publish(credentials: T): Boolean {
         val target = synchronized(lock) {
             val current = listener
             pending = if (current == null) credentials else null
@@ -59,7 +59,7 @@ class CredentialsHandoff {
     }
 
     /** Registers [callback], and gives it anything [publish] latched before it existed. */
-    fun setListener(callback: (NativeNetworkCredentials) -> Unit) {
+    fun setListener(callback: (T) -> Unit) {
         val replay = synchronized(lock) {
             listener = callback
             pending.also { pending = null }

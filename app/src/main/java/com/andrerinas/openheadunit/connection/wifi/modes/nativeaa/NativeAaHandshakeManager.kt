@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner
@@ -78,7 +80,8 @@ import java.util.concurrent.ConcurrentHashMap
 class NativeAaHandshakeManager(
     private val context: AapService,
     private val launcher: WifiLauncherNative,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val operation: ConnectionOperation,
 ) {
     companion object {
         /** Where the BLINK daemon keeps its module's Bluetooth address. BLINK only. */
@@ -194,7 +197,7 @@ class NativeAaHandshakeManager(
             )
         }
 
-        fun checkCompatibility(context: Context): Boolean {
+        fun checkCompatibility(context: Context, operation: ConnectionOperation): Boolean {
             if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
                 AppLog.i("NativeAA: Bluetooth runs over the Bluetooth relay, so the RFCOMM compatibility check does not apply.")
                 return true
@@ -232,6 +235,7 @@ class NativeAaHandshakeManager(
             }
             val adapter = BluetoothHelper.getBluetoothAdapter(context) ?: return false
             if (!adapter.isEnabled) return false
+            if (!App.provide(context).commManager.isCurrent(operation)) return false
             return try {
                 val socket = adapter.listenUsingRfcommWithServiceRecord("Compatibility Check", AA_UUID)
                 socket.close()
@@ -248,6 +252,16 @@ class NativeAaHandshakeManager(
     private val commManager = App.provide(context).commManager
     // Lit from the phone's request for credentials until its join is over. See JoinScreenWakePolicy.
     private val joinScreenWake = JoinScreenWake(context)
+
+    private fun isCurrent(command: ConnectionOperation): Boolean =
+        commManager.isCurrent(operation) && commManager.isCurrent(command)
+
+    private fun admissionFor(command: ConnectionOperation) = ConnectionAdmission { action ->
+        commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command)) false else { action(); true }
+        }
+    }
+    private val effectAdmission = admissionFor(operation)
     private var aaServerSocket: BluetoothServerSocket? = null
     private var hfpServerSocket: BluetoothServerSocket? = null
 
@@ -279,7 +293,7 @@ class NativeAaHandshakeManager(
     private var bluetoothStartupJob: Job? = null
     // Bumped by stop() so a measurement that outlives its arming cannot start the next one.
     @Volatile private var measureGeneration = 0
-    @Volatile private var wakeAwaitingModule = false
+    @Volatile private var wakeAwaitingModule: ConnectionOperation? = null
     // Set by closeAaListeners() so the AA accept loops can tell "we closed this on purpose
     // after a successful handoff" apart from a real socket error, for logging only.
     @Volatile private var aaListenersClosedForSession = false
@@ -302,10 +316,15 @@ class NativeAaHandshakeManager(
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action != BluetoothAdapter.ACTION_STATE_CHANGED) return
             if (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) != BluetoothAdapter.STATE_ON) return
-            if (!isRunning || !aaListenerLost) return
-            aaReopenAttempts = 0
+            val lost = commManager.withAppConnectionLifecycleLock {
+                if (!isCurrent(operation) || !isRunning || !aaListenerLost) false else {
+                    aaReopenAttempts = 0
+                    true
+                }
+            }
+            if (!lost) return
             val adapter = BluetoothHelper.getBluetoothAdapter(this@NativeAaHandshakeManager.context)
-            if (adapter != null) reopenAaListener(adapter, "now this unit's Bluetooth is back on")
+            if (adapter != null) reopenAaListener(adapter, "now this unit's Bluetooth is back on", operation)
         }
     }
     private var btStateReceiverRegistered = false
@@ -330,6 +349,7 @@ class NativeAaHandshakeManager(
     @Volatile private var radioCycles = 0
     @Volatile private var lastRadioCycleAt = 0L
     @Volatile private var radioCycleJob: Job? = null
+    @Volatile private var radioCycleInFlight = false
     // Until when each device is left alone after a cycle, so the ordinary loop does not poke away
     // the very link the cycle handed back 15 s later.
     private val radioCycleQuietUntil = ConcurrentHashMap<String, Long>()
@@ -400,13 +420,10 @@ class NativeAaHandshakeManager(
     // socket closed." lines, with the old boolean stuck true for the rest of the process. See
     // NativeHandoffPolicy.isHandshaking.
     @Volatile private var handshakeStartedAt = 0L
-    // True for the duration of a single pokeDevice() attempt (its socket.connect() call itself
-    // can fire an OS-level ACL_CONNECTED broadcast before any real handshake starts) - see
-    // isAttemptInFlight().
-    @Volatile private var pokeAttemptInFlight = false
-    // The address a poke is inside socket.connect() for, or null when none is. Narrower than
-    // pokeAttemptInFlight, which stays true for the whole hold as well - see PokeOverlapPolicy.
-    @Volatile private var pokeConnectingTo: String? = null
+    // Physical work survives cancellation while an RFCOMM connect is still blocked.
+    @Volatile private var pokeAttemptsInFlight = 0
+    // Guarded by the app lifecycle lock. A poke for another phone may finish out of order.
+    private val pokeConnections = mutableMapOf<String, Job>()
     // elapsedRealtime() when the last WifiInfoResponse (Type 3) went out, or 0 when no handoff is
     // settling. The phone spends the next several seconds associating, doing WPS and getting a
     // DHCP lease; see isHandoffSettling() and NativeHandoffPolicy.
@@ -468,8 +485,7 @@ class NativeAaHandshakeManager(
     @Volatile private var selectionCanceledAt = 0L
     /** Whether a poke aimed at one chosen phone owns the poke slot. */
     @Volatile private var manualPokeInFlight = false
-    /** The phone the last connected poke was refused by, or null. Read by the chosen phone's wake loop. */
-    @Volatile private var lastPokeRefusedMac: String? = null
+    @Volatile private var pokeOperation: ConnectionOperation? = null
     /** When a target device is selected, only this MAC is allowed to proceed. */
     @Volatile var pendingSelectionTargetMac: String? = null
         private set
@@ -500,17 +516,19 @@ class NativeAaHandshakeManager(
     /**
      * Targets a specific driver device, ending the prompt window and waking only that device.
      */
-    fun selectDriver(mac: String, explicit: Boolean) {
+    fun selectDriver(mac: String, explicit: Boolean, command: ConnectionOperation) {
+        if (!isCurrent(command)) return
+        val admission = admissionFor(command)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             (moduleCarrier as? HctWppOwner.Client)?.let { carrier ->
-                val accepted = carrier.requestWakeFor(mac, allowReplacePending = explicit) {
+                val accepted = carrier.requestWakeFor(mac, allowReplacePending = explicit, admission = admission) {
                     commitDriverSelection(mac, explicit)
                     wakeStoodDown = false
                     sessionEndedAt = 0L
                     resetHandshakeBackoff()
                     resetJoinRefusals()
                 }
-                if (!accepted) {
+                if (!accepted && isCurrent(command)) {
                     // Resolved UI selections close the picker even when the target is held.
                     // On success its hold is released inside the admission transaction; doing
                     // that earlier would let incoming AA reserve opening against the old target.
@@ -521,8 +539,7 @@ class NativeAaHandshakeManager(
                 return
             }
         }
-        commitDriverSelection(mac, explicit)
-        manualPoke(mac)
+        if (admission.run { commitDriverSelection(mac, explicit) }) manualPoke(mac, command)
     }
 
     private fun commitDriverSelection(mac: String, explicit: Boolean) {
@@ -746,16 +763,24 @@ class NativeAaHandshakeManager(
         ip: String,
         bssid: String,
         identity: GroupIdentityStability,
+        command: ConnectionOperation,
     ) {
-        AppLog.i("NativeAA: Credentials updated. SSID=$ssid, IP=$ip, BSSID=$bssid, identity stable=${GroupIdentityStabilityPolicy.label(identity)}")
-        credentialStore.publish(NativeNetworkCredentials(ssid, psk, ip, bssid, identity))
-        earlyWakeSpent = false
+        val accepted = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command)) false else {
+                credentialStore.publish(NativeNetworkCredentials(ssid, psk, ip, bssid, identity))
+                earlyWakeSpent = false
+                true
+            }
+        }
+        if (accepted) AppLog.i("NativeAA: Credentials updated. SSID=$ssid, IP=$ip, BSSID=$bssid, identity stable=${GroupIdentityStabilityPolicy.label(identity)}")
     }
 
     /** Clears cached credentials so an in-progress wait doesn't hand out stale ones for a group
      *  that's about to be torn down. */
-    fun invalidateCredentials() {
-        credentialStore.withdraw()
+    fun invalidateCredentials(command: ConnectionOperation) {
+        commManager.withAppConnectionLifecycleLock {
+            if (isCurrent(command)) credentialStore.withdraw()
+        }
     }
 
     // isRunning alone isn't enough once closeAaListeners() can close the AA_UUID listener while
@@ -764,7 +789,7 @@ class NativeAaHandshakeManager(
     // not just whether the manager was start()ed. See the "Re-arm on Bluetooth reconnect" fix
     // this restores the invariant for: isActive() must mean "genuinely able to accept," not
     // "believed to be running."
-    fun isActive(): Boolean = isRunning && !aaListenersClosedForSession && !aaListenerLost
+    fun isActive(): Boolean = commManager.isCurrent(operation) && isRunning && !aaListenersClosedForSession && !aaListenerLost
 
     /**
      * Whether the handshake servers were ever brought up, as opposed to [isActive]'s "can accept a
@@ -853,11 +878,10 @@ class NativeAaHandshakeManager(
         )
     }
 
-    // True while either a wake-up poke's socket.connect() or a real handshake is in progress, or
-    // a delivered handoff is still settling. AutoStartReceiver's own poke can generate the
-    // ACL_CONNECTED broadcast that re-triggers AapService's BT auto-start re-arm; callers
-    // deciding whether it's safe to force-reinit should check this instead of isActive() alone.
-    fun isAttemptInFlight(): Boolean = enablingAndroidBluetooth || isHandshakeInFlight() || pokeAttemptInFlight || isHandoffSettling()
+    // A wake or radio cycle can generate the very ACL_CONNECTED broadcast that would re-arm
+    // Native AA. Do not rebuild the arm underneath its own wake or a joining phone.
+    fun isAttemptInFlight(): Boolean = enablingAndroidBluetooth || radioCycleInFlight ||
+        pokeAttemptsInFlight != 0 || isHandshakeInFlight() || isHandoffSettling()
 
     fun isMeasuringDaemon(): Boolean = measuringDaemon
 
@@ -866,15 +890,17 @@ class NativeAaHandshakeManager(
         generation: Int,
         arm: () -> Unit = { start(resumingMeasurement = true) }
     ) {
-        if (measureGeneration != generation) return
+        if (!isCurrent(operation) || measureGeneration != generation) return
         measuringDaemon = false
         val deferredWake = wakeAwaitingModule
         arm()
-        wakeAwaitingModule = false
+        commManager.withAppConnectionLifecycleLock {
+            if (wakeAwaitingModule === deferredWake) wakeAwaitingModule = null
+        }
         // A module carrier consumes its queued wake in startOverExternalModule.
         // Android fallback still owes the picker its explicitly selected phone.
-        if (deferredWake && moduleCarrier == null && isRunning && !isSelectionCanceled) {
-            pendingSelectionTargetMac?.let { manualPoke(it) } ?: triggerPoke()
+        if (deferredWake != null && isCurrent(deferredWake) && moduleCarrier == null && isRunning && !isSelectionCanceled) {
+            pendingSelectionTargetMac?.let { manualPoke(it, deferredWake) } ?: triggerPoke(deferredWake)
         }
     }
 
@@ -885,7 +911,7 @@ class NativeAaHandshakeManager(
         completion: ZbtDiscovery.Measurement.Completion,
         arm: () -> Unit = { start(resumingMeasurement = true) },
     ) {
-        if (measureGeneration != generation || !measuringDaemon) return
+        if (!isCurrent(operation) || measureGeneration != generation || !measuringDaemon) return
         if (completion == ZbtDiscovery.Measurement.Completion.CANCELLED) return
         if (completion == ZbtDiscovery.Measurement.Completion.CARRIER_BUSY) {
             if (!decision.requiresIdentity) {
@@ -894,7 +920,7 @@ class NativeAaHandshakeManager(
                 // failure or immediately re-arming against the same unknown result. The WiFi
                 // button can start a fresh measurement after the previous owner has retired.
                 measuringDaemon = false
-                wakeAwaitingModule = false
+                wakeAwaitingModule = null
                 notStartedReason = "the Bluetooth module is still in use by another OHU operation; try again when it finishes"
                 AppLog.w("NativeAA: $notStartedReason")
                 return
@@ -922,7 +948,8 @@ class NativeAaHandshakeManager(
 
     /** Runs inside the ZBT window, after each refusal: the measurement's own gates already passed. */
     private fun zjSocketEndsZbtWait(refusals: Int): Boolean {
-        if (ZjSocketPolicy.probesDuringZbtWait(refusals, ZjSocketProbe.answer())) ZjSocketProbe.measure()
+        if (!commManager.isCurrent(operation)) return true
+        if (ZjSocketPolicy.probesDuringZbtWait(refusals, ZjSocketProbe.answer())) ZjSocketProbe.measure(admission = effectAdmission)
         return ZjSocketPolicy.endsZbtWait(refusals, ZjSocketProbe.answer())
     }
 
@@ -930,6 +957,7 @@ class NativeAaHandshakeManager(
 
     @SuppressLint("MissingPermission")
     private fun start(resumingMeasurement: Boolean) {
+        if (!commManager.isCurrent(operation)) return
         // A measurement in flight calls start() itself when it ends; a second one would ask twice.
         if (isRunning || measuringDaemon || enablingAndroidBluetooth) return
         if (!resumingMeasurement) {
@@ -973,7 +1001,7 @@ class NativeAaHandshakeManager(
             scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZbtReachability")) {
                 val measurement = ZbtDiscovery.measurement(discovery.decision)
                 val completion = measurement.awaitResolution(
-                    keepTrying = { measuringDaemon && measureGeneration == generation },
+                    keepTrying = { commManager.isCurrent(operation) && measuringDaemon && measureGeneration == generation },
                     refusalIsFinal = ::zjSocketEndsZbtWait
                 )
                 // A socket refused early in the window may be up by its end, so ask it again.
@@ -982,7 +1010,7 @@ class NativeAaHandshakeManager(
                 if (completion != ZbtDiscovery.Measurement.Completion.CANCELLED &&
                     measuringDaemon && measureGeneration == generation && wantsZjSocketProbe()
                 ) {
-                    ZjSocketProbe.measure()
+                    ZjSocketProbe.measure(admission = effectAdmission)
                 }
                 withContext(Dispatchers.Main.immediate) {
                     completeDaemonMeasurement(generation, discovery.decision, completion)
@@ -1083,10 +1111,10 @@ class NativeAaHandshakeManager(
         AppLog.i("NativeAA: Starting Bluetooth Handshake Servers (primary radio [$localRadioName])...")
 
         // Start AA RFCOMM Server
-        launchAaAcceptLoop(adapter, localRadioName)
+        launchAaAcceptLoop(adapter, localRadioName, command = operation)
 
         // Start HFP RFCOMM Server (Required by some phones to detect HU)
-        launchHfpServer(adapter, localRadioName)
+        launchHfpServer(adapter, localRadioName, operation)
 
         // Some head units have two Bluetooth radios (e.g. "K706" and "CAR8032"). The phone may
         // be bonded to whichever one isn't the primary, so it never reaches the listener above.
@@ -1097,7 +1125,7 @@ class NativeAaHandshakeManager(
         val secondaries = secondaryRadioHandles()
         if (secondaries.isNotEmpty()) {
             AppLog.i("NativeAA: Opening AA listeners on ${secondaries.size} secondary Bluetooth radio(s) for dual-radio head units: ${secondaries.joinToString { it.serviceName }}")
-            secondaries.forEach { launchExtraServers(it.serviceName, it.adapter) }
+            secondaries.forEach { launchExtraServers(it.serviceName, it.adapter, operation) }
         }
     }
 
@@ -1105,19 +1133,22 @@ class NativeAaHandshakeManager(
      * Publishes the stand-in Hands-Free record on the primary radio where it advertises none, and
      * answers on it. Withdrawn while a session is live, so a phone cannot attach calls to it.
      */
-    private fun launchHfpServer(adapter: BluetoothAdapter, radioName: String) {
+    private fun launchHfpServer(adapter: BluetoothAdapter, radioName: String, command: ConnectionOperation) {
         standingInForHfp = shouldRegisterDummyHfp(adapter, radioName)
         if (!standingInForHfp) return
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-HfpServer")) {
-            val server = openHfpRecord(adapter, radioName)
+            val server = openHfpRecord(adapter, radioName, command)
             if (server == null) {
                 if (isRunning) ConnectionIssues.raiseOnce(context, ConnectionIssue.HANDS_FREE_RECORD_REFUSED)
                 return@launch
             }
+            val published = commManager.withAppConnectionLifecycleLock {
+                if (!isCurrent(command) || !isRunning) false else { hfpServerSocket = server; true }
+            }
+            if (!published) { try { server.close() } catch (_: Exception) {}; return@launch }
             ConnectionIssues.clear(context, ConnectionIssue.HANDS_FREE_RECORD_REFUSED)
-            hfpServerSocket = server
             try {
-                while (isRunning && isActive) {
+                while (commManager.isCurrent(operation) && isRunning && isActive) {
                     val socket = server.accept()
                     if (socket != null) {
                         logHfpAccept(socket, radioName)
@@ -1129,7 +1160,8 @@ class NativeAaHandshakeManager(
                                 socket,
                                 "radio [$radioName]",
                                 initiate = shouldInitiateSlc(standingInForHfp),
-                                closeWhenDone = true
+                                closeWhenDone = true,
+                                command = operation
                             )
                         }
                     }
@@ -1139,6 +1171,11 @@ class NativeAaHandshakeManager(
                     AppLog.e("NativeAA: HFP Server socket error: ${e.message}", e)
                 } else {
                     AppLog.d("NativeAA: HFP Server socket closed cleanly.")
+                }
+            } finally {
+                try { server.close() } catch (_: Exception) {}
+                commManager.withAppConnectionLifecycleLock {
+                    if (hfpServerSocket === server) hfpServerSocket = null
                 }
             }
         }
@@ -1160,24 +1197,31 @@ class NativeAaHandshakeManager(
      * Opens the Android Auto listener on one radio and serves it until the socket closes. The
      * primary radio and every secondary one run this same loop; [serviceName] names a secondary.
      */
-    private fun launchAaAcceptLoop(adapter: BluetoothAdapter, radioName: String, serviceName: String? = null) {
+    private fun launchAaAcceptLoop(adapter: BluetoothAdapter, radioName: String, serviceName: String? = null, command: ConnectionOperation) {
         val coroutineName = if (serviceName == null) "NativeAa-RfcommServer" else "NativeAa-RfcommServer-2"
         scope.launch(Dispatchers.IO + CoroutineName(coroutineName)) {
             val label = if (serviceName == null) "AA Server socket" else "Secondary AA server"
             val suffix = if (serviceName == null) "" else " ['$serviceName' $radioName]"
+            var ownedServer: BluetoothServerSocket? = null
             try {
-                val server = listenOnAaUuid(adapter)
+                val server = listenOnAaUuid(adapter, command) ?: return@launch
+                ownedServer = server
+                val published = commManager.withAppConnectionLifecycleLock {
+                    if (!isCurrent(command) || !isRunning) false else {
+                        if (serviceName == null) aaServerSocket = server else extraAaServerSockets.add(server)
+                        true
+                    }
+                }
+                if (!published) return@launch
                 if (serviceName == null) {
-                    aaServerSocket = server
                     AppLog.i("NativeAA: ACTIVELY LISTENING on Android Auto UUID ($AA_UUID) on radio [$radioName]... Waiting for phone to connect back!")
                     // A stood-down wake has nothing to show: the pill would claim an attempt that
                     // is only a socket waiting. The phone's own return below puts it back up.
                     if (!wakeStoodDown) ConnectionStageTracker.report(ConnectionStage.WAITING_FOR_PHONE)
                 } else {
-                    extraAaServerSockets.add(server)
                     AppLog.i("NativeAA: ACTIVELY LISTENING on Android Auto UUID on secondary radio '$serviceName' [$radioName]")
                 }
-                while (isRunning && isActive) {
+                while (commManager.isCurrent(operation) && isRunning && isActive) {
                     val socket = server.accept()
                     if (socket != null) {
                         val remoteAddress = try { socket.remoteDevice.address } catch (_: Exception) { "" }
@@ -1214,9 +1258,16 @@ class NativeAaHandshakeManager(
                         AppLog.d("NativeAA: $label closed cleanly$suffix.")
                     AaListenerRecoveryPolicy.Exit.FAILED -> {
                         AppLog.e("NativeAA: $label error$suffix: ${e.message}", e)
-                        if (serviceName == null) onAaListenerLost()
+                        if (serviceName == null) onAaListenerLost(command, ownedServer)
                     }
                 }
+            } finally {
+                try { ownedServer?.close() } catch (_: Exception) {}
+                if (serviceName == null) {
+                    commManager.withAppConnectionLifecycleLock {
+                        if (aaServerSocket === ownedServer) aaServerSocket = null
+                    }
+                } else ownedServer?.let { extraAaServerSockets.remove(it) }
             }
         }
     }
@@ -1258,10 +1309,17 @@ class NativeAaHandshakeManager(
                                 else -> BluetoothAdapterStartup.State.UNAVAILABLE
                             }
                         },
-                        requestEnable = { adapter.enable() },
+                        // A radio effect: a Stop since this arming leaves the adapter alone.
+                        requestEnable = {
+                            val enabled = commManager.withAppConnectionLifecycleLock {
+                                isCurrent(operation) && enablingAndroidBluetooth && measureGeneration == generation &&
+                                    settings.nativeAaEnableBluetooth
+                            }
+                            enabled && adapter.enable()
+                        },
                     )
                 }
-                if (measureGeneration != generation || !settings.nativeAaEnableBluetooth) return@launch
+                if (!isCurrent(operation) || measureGeneration != generation || !settings.nativeAaEnableBluetooth) return@launch
                 enablingAndroidBluetooth = false
                 bluetoothStartupJob = null
                 if (result == BluetoothAdapterStartup.Result.READY) {
@@ -1270,15 +1328,15 @@ class NativeAaHandshakeManager(
                 } else {
                     notStartedReason = "the selected Android Bluetooth adapter did not turn on ($result); enable it in system Settings"
                     AppLog.w("NativeAA: $notStartedReason")
-                    wakeAwaitingModule = false
+                    wakeAwaitingModule = null
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (measureGeneration == generation) {
+                if (isCurrent(operation) && measureGeneration == generation) {
                     notStartedReason = "the selected Android Bluetooth adapter could not be enabled; enable it in system Settings"
                     AppLog.w("NativeAA: $notStartedReason: ${e.message}")
-                    wakeAwaitingModule = false
+                    wakeAwaitingModule = null
                 }
             } finally {
                 if (measureGeneration == generation && bluetoothStartupJob === coroutineContext[Job]) {
@@ -1300,23 +1358,29 @@ class NativeAaHandshakeManager(
      * the phone until it is reopened. Says so, then reopens it as soon as there is a radio to
      * reopen it on: the head unit's own Bluetooth bouncing is routine on these units.
      */
-    private fun onAaListenerLost() {
-        if (aaListenerLost) return
-        aaListenerLost = true
-        aaServerSocket = null
+    private fun onAaListenerLost(command: ConnectionOperation, owner: BluetoothServerSocket?) {
+        val lost = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command) || aaListenerLost || aaServerSocket !== owner) false else {
+                aaListenerLost = true
+                aaServerSocket = null
+                true
+            }
+        }
+        if (!lost) return
         AppLog.w(
             "NativeAA: the Android Auto listener is down, so nothing can answer the phone. " +
                 "Reopening it as soon as this unit's Bluetooth is back."
         )
-        scheduleAaListenerReopen()
+        scheduleAaListenerReopen(command)
     }
 
     /** Reopens a lost listener, bounded, and gives up to the radio's own return once spent. */
-    private fun scheduleAaListenerReopen() {
-        if (aaReopenJob?.isActive == true) return
+    private fun scheduleAaListenerReopen(command: ConnectionOperation) {
+        if (!isCurrent(command) || aaReopenJob?.isActive == true) return
         aaReopenJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ListenerReopen")) {
-            while (isRunning && isActive && aaListenerLost) {
+            while (isCurrent(command) && isRunning && isActive && aaListenerLost) {
                 delay(AaListenerRecoveryPolicy.REOPEN_DELAY_MS)
+                if (!isCurrent(command) || !isRunning || !aaListenerLost) return@launch
                 val adapter = BluetoothHelper.getBluetoothAdapter(context)
                 val enabled = try { adapter != null && adapter.isEnabled } catch (e: Exception) { false }
                 if (!AaListenerRecoveryPolicy.mayReopen(enabled, aaReopenAttempts)) {
@@ -1328,21 +1392,26 @@ class NativeAaHandshakeManager(
                     return@launch
                 }
                 aaReopenAttempts++
-                if (reopenAaListener(adapter!!, "after the listener was lost")) return@launch
+                if (reopenAaListener(adapter!!, "after the listener was lost", command)) return@launch
             }
         }
     }
 
     /** Opens the primary Android Auto listener again. True when it is serving. */
     @SuppressLint("MissingPermission")
-    private fun reopenAaListener(adapter: BluetoothAdapter, why: String): Boolean {
-        if (!isRunning || !aaListenerLost) return true
-        aaListenerLost = false
+    private fun reopenAaListener(adapter: BluetoothAdapter, why: String, command: ConnectionOperation): Boolean {
+        val reopen = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command) || !isRunning || !aaListenerLost) false else {
+                aaListenerLost = false
+                true
+            }
+        }
+        if (!reopen) return true
         AppLog.i("NativeAA: reopening the Android Auto listener $why.")
-        launchAaAcceptLoop(adapter, localRadioName)
+        launchAaAcceptLoop(adapter, localRadioName, command = command)
         secondaryRadioHandles().forEach {
             val radioName = try { it.adapter.name ?: "?" } catch (e: Exception) { "?" }
-            launchAaAcceptLoop(it.adapter, radioName, it.serviceName)
+            launchAaAcceptLoop(it.adapter, radioName, it.serviceName, command)
         }
         return true
     }
@@ -1377,7 +1446,7 @@ class NativeAaHandshakeManager(
     /** Credentials and carrier selection can complete in either order. Report readiness from both. */
     fun reportHctNetworkReady() {
         scope.launch(Dispatchers.Main.immediate) {
-            if (!usesHctCarrier() || !isRunning || aaListenersClosedForSession || context.userExitedAA ||
+            if (!commManager.isCurrent(operation) || !usesHctCarrier() || !isRunning || aaListenersClosedForSession || context.userExitedAA ||
                 !wakesPhone() || credentials?.let { NativeCredentialsPolicy.isUsablePassphrase(it.psk) } != true ||
                 commManager.isConnected || commManager.connectionState.value is CommManager.ConnectionState.Connecting) return@launch
             // A pre-selection credential callback can have reported an Android-radio wake.
@@ -1398,7 +1467,8 @@ class NativeAaHandshakeManager(
      * phone keys its reconnect on, and forget credentials that still name the live network.
      */
     @SuppressLint("MissingPermission")
-    fun rearmForNextSession() {
+    fun rearmForNextSession(command: ConnectionOperation) {
+        if (!isCurrent(command)) return
         if (!isRunning) {
             // The one line whose absence made a reporter's capture unreadable: the caller has
             // already said it is reopening the listeners, and nothing here can.
@@ -1434,7 +1504,7 @@ class NativeAaHandshakeManager(
         }
 
         if (!SessionEndGroupPolicy.shouldReopenAaListeners(isRunning, aaListenersClosedForSession)) {
-            if (!aaListenerLost) {
+            if (!aaListenerLost && aaServerSocket != null) {
                 AppLog.i("NativeAA: the Android Auto listeners are still open, so the phone can come straight back.")
                 return
             }
@@ -1451,11 +1521,11 @@ class NativeAaHandshakeManager(
         aaListenerLost = false
         aaReopenAttempts = 0
         AppLog.i("NativeAA: reopening the Android Auto listeners for the phone's return.")
-        launchAaAcceptLoop(adapter, localRadioName)
-        if (hfpServerSocket == null) launchHfpServer(adapter, localRadioName)
+        launchAaAcceptLoop(adapter, localRadioName, command = command)
+        if (hfpServerSocket == null) launchHfpServer(adapter, localRadioName, command)
         secondaryRadioHandles().forEach {
             val radioName = try { it.adapter.name ?: "?" } catch (e: Exception) { "?" }
-            launchAaAcceptLoop(it.adapter, radioName, it.serviceName)
+            launchAaAcceptLoop(it.adapter, radioName, it.serviceName, command)
         }
     }
 
@@ -1464,19 +1534,22 @@ class NativeAaHandshakeManager(
      * bonded to that radio (dual-Bluetooth head units) can still reach us. Experimental, and
      * fully guarded so a bad radio cannot affect the primary listener.
      */
-    private fun launchExtraServers(serviceName: String, extra: BluetoothAdapter) {
+    private fun launchExtraServers(serviceName: String, extra: BluetoothAdapter, command: ConnectionOperation) {
         // extra.name, not extra.address - see the comment on localRadioName in start(); the
         // address is always the masked placeholder, the name is the real, useful identifier.
         val radioName = try { extra.name ?: "?" } catch (e: Exception) { "?" }
-        launchAaAcceptLoop(extra, radioName, serviceName)
+        launchAaAcceptLoop(extra, radioName, serviceName, command)
         // Held rather than asked twice: this radio's own answer, because standingInForHfp speaks
         // only for the primary and a secondary stand-in still has to open its link.
         val standingInOnExtra = shouldRegisterDummyHfp(extra, "'$serviceName' $radioName")
         if (standingInOnExtra) scope.launch(Dispatchers.IO + CoroutineName("NativeAa-HfpServer-2")) {
-            val server = openHfpRecord(extra, "'$serviceName' $radioName") ?: return@launch
+            val server = openHfpRecord(extra, "'$serviceName' $radioName", command) ?: return@launch
+            val published = commManager.withAppConnectionLifecycleLock {
+                if (!isCurrent(command) || !isRunning) false else { extraHfpServerSockets.add(server); true }
+            }
+            if (!published) { try { server.close() } catch (_: Exception) {}; return@launch }
             try {
-                extraHfpServerSockets.add(server)
-                while (isRunning && isActive) {
+                while (commManager.isCurrent(operation) && isRunning && isActive) {
                     val socket = server.accept()
                     if (socket != null) {
                         logHfpAccept(socket, "$serviceName $radioName")
@@ -1485,7 +1558,8 @@ class NativeAaHandshakeManager(
                                 socket,
                                 "radio [$serviceName $radioName]",
                                 initiate = shouldInitiateSlc(standingInOnExtra),
-                                closeWhenDone = true
+                                closeWhenDone = true,
+                                command = operation
                             )
                         }
                     }
@@ -1493,6 +1567,9 @@ class NativeAaHandshakeManager(
             } catch (e: Exception) {
                 if (isRunning) AppLog.e("NativeAA: Secondary HFP server error ['$serviceName' $radioName]: ${e.message}", e)
                 else AppLog.d("NativeAA: Secondary HFP server closed cleanly ['$serviceName' $radioName].")
+            } finally {
+                try { server.close() } catch (_: Exception) {}
+                extraHfpServerSockets.remove(server)
             }
         }
     }
@@ -1524,13 +1601,20 @@ class NativeAaHandshakeManager(
      * where the bond or its link key is gone on one side. Everything behind it still applies: the
      * accept path refuses a device this unit is not bonded to.
      */
-    private fun listenOnAaUuid(adapter: BluetoothAdapter): BluetoothServerSocket =
-        if (settings.insecureAaRfcommListener) {
+    private fun listenOnAaUuid(adapter: BluetoothAdapter, command: ConnectionOperation): BluetoothServerSocket? {
+        // All initial, delayed recovery and secondary-radio registrations enter here.
+        // The immutable arm must still own the effect after their IO dispatch/delay.
+        if (!isCurrent(command) || !isRunning) return null
+        val server = if (settings.insecureAaRfcommListener) {
             AppLog.i("NativeAA: publishing the Android Auto record as insecure, at the user's request.")
             adapter.listenUsingInsecureRfcommWithServiceRecord("AndroidAuto", AA_UUID)
         } else {
             adapter.listenUsingRfcommWithServiceRecord("AndroidAuto", AA_UUID)
         }
+        if (isCurrent(command) && isRunning) return server
+        try { server.close() } catch (_: Exception) {}
+        return null
+    }
 
     /**
      * Ask [adapter] for the stand-in Hands-Free record, giving a refusal a few more tries.
@@ -1539,11 +1623,14 @@ class NativeAaHandshakeManager(
      * sent, and then had no hands-free profile for Android Auto to see. Null means this radio will
      * not publish one at all, which is the caller's to report.
      */
-    private suspend fun openHfpRecord(adapter: BluetoothAdapter, radio: String): BluetoothServerSocket? {
+    private suspend fun openHfpRecord(adapter: BluetoothAdapter, radio: String, command: ConnectionOperation): BluetoothServerSocket? {
         var attempt = 1
-        while (isRunning) {
+        while (isCurrent(command) && isRunning) {
             try {
-                return adapter.listenUsingRfcommWithServiceRecord("Hands-Free Unit", HFP_UUID)
+                val server = adapter.listenUsingRfcommWithServiceRecord("Hands-Free Unit", HFP_UUID)
+                if (isCurrent(command) && isRunning) return server
+                try { server.close() } catch (_: Exception) {}
+                return null
             } catch (e: Exception) {
                 if (!isRunning) return null
                 if (!HfpServiceRecordPolicy.registrationRefused(attempt)) {
@@ -1624,11 +1711,13 @@ class NativeAaHandshakeManager(
         label: String,
         initiate: Boolean,
         closeWhenDone: Boolean,
+        command: ConnectionOperation,
         // How far the walk got, for a caller that has to report a hold nothing answered. The socket
         // outlives this coroutine's cancellation, so the stage cannot be returned.
         onStage: ((HfpSlcInitiator.Stage) -> Unit)? = null
     ) = withContext(Dispatchers.IO) {
         try {
+            if (!isCurrent(command) || !isRunning) return@withContext
             val input = socket.inputStream
             val output = socket.outputStream
             val buf = ByteArray(1024)
@@ -1636,6 +1725,7 @@ class NativeAaHandshakeManager(
             // partial writes on one RFCOMM channel is a corrupt command line.
             val writeLock = Any()
             fun write(lines: List<String>) {
+                if (!isCurrent(command)) throw CancellationException("wireless arm withdrawn")
                 if (lines.isEmpty()) return
                 synchronized(writeLock) {
                     lines.forEach { output.write(it.toByteArray(Charsets.US_ASCII)) }
@@ -1656,7 +1746,7 @@ class NativeAaHandshakeManager(
                     write(opening.writes)
                 }
 
-                while (isRunning && isActive && socket.isConnected) {
+                while (isCurrent(command) && isRunning && isActive && socket.isConnected) {
                     if (input.available() > 0) {
                         val read = input.read(buf)
                         if (read == -1) break
@@ -1680,7 +1770,7 @@ class NativeAaHandshakeManager(
                             )
                             keepAlive = launch(CoroutineName("NativeAa-HfpKeepAlive")) {
                                 try {
-                                    while (isRunning && isActive && socket.isConnected) {
+                                    while (isCurrent(command) && isRunning && isActive && socket.isConnected) {
                                         write(listOf(HfpSlcInitiator.command(HfpSlcInitiator.KEEPALIVE_COMMAND)))
                                         delay(HfpSlcInitiator.KEEPALIVE_INTERVAL_MS)
                                     }
@@ -1829,6 +1919,8 @@ class NativeAaHandshakeManager(
         reason: BluetoothWakePolicy.WakeReason,
         standDownSince: Long,
         now: Long,
+        command: ConnectionOperation,
+        worker: Job,
     ): Boolean {
         val verdict = NativeAaWakeDamagePolicy.Verdict.of(settings.nativeAaWakeDamageVerdict)
         val escalate = HandsFreeWakeEscalationPolicy.shouldEscalate(
@@ -1850,8 +1942,14 @@ class NativeAaHandshakeManager(
             now = now,
         )
         if (!escalate) return false
-        escalatedWakes++
-        lastEscalatedWakeAt = now
+        val generation = commManager.withAppConnectionLifecycleLock {
+            if (!worker.isActive || pokeJob !== worker || !isCurrent(command) || !isRunning) null else {
+                escalatedWakes++
+                lastEscalatedWakeAt = now
+                escalationProbeUntil[device.address] = now + NativeAaWakeDamagePolicy.PROBE_WINDOW_MS
+                measureGeneration
+            }
+        } ?: return false
         AppLog.i(
             "NativeAA: waking ${device.name ?: "unnamed"} (${device.address}) despite the hands-free " +
                 "link — it has not started Android Auto in ${(now - standDownSince) / 1000}s, and a " +
@@ -1860,7 +1958,7 @@ class NativeAaHandshakeManager(
                 "the link is left alone for " +
                 "${NativeAaWakeDamagePolicy.PROBE_WINDOW_MS / 1000}s to come back."
         )
-        armWakeProbe(device, verdict)
+        armWakeProbe(verdict, command, generation)
         return true
     }
 
@@ -1903,6 +2001,7 @@ class NativeAaHandshakeManager(
         standDownSince: Long,
         now: Long,
         waitMs: Long = BluetoothRadioCyclePolicy.CYCLE_AFTER_MS,
+        callActive: Boolean = isCallActiveNow(),
     ): BluetoothRadioCyclePolicy.Blocker? = BluetoothRadioCyclePolicy.blocker(
         sdkInt = Build.VERSION.SDK_INT,
         verdict = BluetoothRadioCyclePolicy.Verdict.of(settings.nativeAaRadioCycleVerdict),
@@ -1912,8 +2011,9 @@ class NativeAaHandshakeManager(
             targetMac = device.address,
             lastConnectedNativeMac = settings.lastConnectedNativeMac,
         ),
-        callActive = isCallActiveNow(),
-        sessionInProgress = commManager.isConnected || isHandshakeInFlight() || isHandoffSettling(),
+        callActive = callActive,
+        sessionInProgress = commManager.isConnected || commManager.connectionState.value is CommManager.ConnectionState.Connecting ||
+            isHandshakeInFlight() || isHandoffSettling(),
         standDownSinceMs = standDownSince,
         lastCycleMs = lastRadioCycleAt,
         cyclesUsed = radioCycles,
@@ -1939,60 +2039,83 @@ class NativeAaHandshakeManager(
     @Suppress("DEPRECATION")
     private suspend fun cycleOwnRadio(
         device: BluetoothDevice,
+        reason: BluetoothWakePolicy.WakeReason,
         standDownSince: Long,
         now: Long,
+        command: ConnectionOperation,
         linkWasAbsent: Boolean = false,
     ) {
+        val worker = currentCoroutineContext()[Job] ?: return
+        if (!isCurrent(command)) return
         val adapter = BluetoothHelper.getBluetoothAdapter(context)
         val enabled = try { adapter != null && adapter.isEnabled } catch (e: Exception) { false }
         if (adapter == null || !enabled) {
             AppLog.i("NativeAA: this unit's Bluetooth is already off, so there is nothing to cycle.")
             return
         }
-        radioCycles++
-        lastRadioCycleAt = now
-        val verdict = BluetoothRadioCyclePolicy.Verdict.of(settings.nativeAaRadioCycleVerdict)
-        AppLog.i(
-            "NativeAA: cycling this unit's Bluetooth to wake ${device.name ?: "unnamed"} " +
-                "(${device.address}) — it has not started Android Auto in " +
-                "${(now - standDownSince) / 1000}s, and a hands-free link that never changes raises " +
-                "no event for the phone to notice. A poke would take that link and keep it; this " +
-                "hands it back."
-        )
-        // The reconnect this produces is a real ACL_CONNECTED, so AutoStartReceiver will fire once,
-        // as it does for a poke. Once per arming against the poke loop's every 15 s.
-        var disableCalled = false
-        // Cancellation is rethrown rather than caught as a failure. stop() cancels this job on every
-        // mode change and user exit, and reading that as "the radio never came back" condemned a
-        // healthy unit for the life of the install, which is the latch this policy exists to avoid.
-        val offReached = try {
-            adapter.disable()
-            disableCalled = true
-            awaitAdapterState(adapter, BluetoothAdapter.STATE_OFF, BluetoothRadioCyclePolicy.ADAPTER_OFF_WAIT_MS)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            AppLog.w("NativeAA: this unit would not turn its Bluetooth off: ${e.message}")
-            false
+        val waitMs = if (linkWasAbsent) DeadLinkRecoveryPolicy.MIN_STREAK_MS else BluetoothRadioCyclePolicy.CYCLE_AFTER_MS
+        // Once OFF is requested, cancellation can revoke the wake, but it cannot leave the user's
+        // adapter disabled. Finish that physical transition without reopening or recording stale work.
+        withContext(NonCancellable) {
+            val callActive = isCallActiveNow()
+            val generation = commManager.withAppConnectionLifecycleLock {
+                if (!worker.isActive || pokeJob !== worker || !isCurrent(command) || !isRunning ||
+                    radioCycleInFlight || pokeAttemptsInFlight != 0 ||
+                    radioCycleBlocker(device, reason, standDownSince, now, waitMs, callActive) != null
+                ) {
+                    null
+                } else {
+                    radioCycleInFlight = true
+                    radioCycles++
+                    lastRadioCycleAt = now
+                    measureGeneration
+                }
+            } ?: return@withContext
+            try {
+                val verdict = BluetoothRadioCyclePolicy.Verdict.of(settings.nativeAaRadioCycleVerdict)
+                AppLog.i(
+                    "NativeAA: cycling this unit's Bluetooth to wake ${device.name ?: "unnamed"} " +
+                        "(${device.address}) — it has not started Android Auto in " +
+                        "${(now - standDownSince) / 1000}s, and a hands-free link that never changes raises " +
+                        "no event for the phone to notice. A poke would take that link and keep it; this " +
+                        "hands it back."
+                )
+                if (!worker.isActive || !isCurrent(command) || !isRunning) return@withContext
+                val offReached = try {
+                    adapter.disable()
+                    awaitAdapterState(adapter, BluetoothAdapter.STATE_OFF, BluetoothRadioCyclePolicy.ADAPTER_OFF_WAIT_MS)
+                } catch (e: Exception) {
+                    AppLog.w("NativeAA: this unit would not turn its Bluetooth off: ${e.message}")
+                    null
+                }
+                // Even a timeout can mean the adapter is still on its way down.
+                val onReached = if (offReached == null) false else try {
+                    adapter.enable()
+                    awaitAdapterState(adapter, BluetoothAdapter.STATE_ON, BluetoothRadioCyclePolicy.ADAPTER_ON_WAIT_MS)
+                } catch (e: Exception) {
+                    AppLog.w("NativeAA: this unit would not turn its Bluetooth back on: ${e.message}")
+                    false
+                }
+                val entitled = commManager.withAppConnectionLifecycleLock {
+                    if (!worker.isActive || !isCurrent(command) || !isRunning || measureGeneration != generation) {
+                        false
+                    } else {
+                        if (linkWasAbsent) clearDeadLinkRecord(device.address)
+                        if (onReached) {
+                            radioCycleQuietUntil[device.address] =
+                                SystemClock.elapsedRealtime() + BluetoothRadioCyclePolicy.POST_CYCLE_QUIET_MS
+                        }
+                        true
+                    }
+                }
+                if (!entitled) return@withContext
+                if (onReached) reopenListenersAfterCycle(adapter, command)
+                // Null where the radio never went down: nothing was cycled or measured.
+                noteRadioCycleOutcome(verdict, onReached.takeIf { offReached == true }, linkWasAbsent, generation, command)
+            } finally {
+                radioCycleInFlight = false
+            }
         }
-        // Unconditional after a disable() that did not throw: the radio may still be on its way
-        // down, and leaving it there would cost the user Bluetooth entirely.
-        val onReached = if (!disableCalled) false else try {
-            adapter.enable()
-            awaitAdapterState(adapter, BluetoothAdapter.STATE_ON, BluetoothRadioCyclePolicy.ADAPTER_ON_WAIT_MS)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            AppLog.w("NativeAA: this unit would not turn its Bluetooth back on: ${e.message}")
-            false
-        }
-        if (onReached) {
-            reopenListenersAfterCycle()
-            radioCycleQuietUntil[device.address] =
-                SystemClock.elapsedRealtime() + BluetoothRadioCyclePolicy.POST_CYCLE_QUIET_MS
-        }
-        // Null where the radio never went down: nothing was cycled, so nothing was measured either.
-        noteRadioCycleOutcome(verdict, if (offReached) onReached else null, linkWasAbsent)
     }
 
     /**
@@ -2012,11 +2135,14 @@ class NativeAaHandshakeManager(
 
     /** The radio is back, so take the listeners up without waiting for the reopen loop's own delay. */
     @SuppressLint("MissingPermission")
-    private fun reopenListenersAfterCycle() {
-        if (!isRunning || !aaListenerLost) return
-        aaReopenAttempts = 0
-        val adapter = BluetoothHelper.getBluetoothAdapter(context) ?: return
-        reopenAaListener(adapter, "after this unit's Bluetooth was cycled to wake the phone")
+    private fun reopenListenersAfterCycle(adapter: BluetoothAdapter, command: ConnectionOperation) {
+        val shouldReopen = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command) || !isRunning || !aaListenerLost) false else {
+                aaReopenAttempts = 0
+                true
+            }
+        }
+        if (shouldReopen) reopenAaListener(adapter, "after this unit's Bluetooth was cycled to wake the phone", command)
     }
 
     /**
@@ -2026,8 +2152,11 @@ class NativeAaHandshakeManager(
     private fun noteRadioCycleOutcome(
         verdict: BluetoothRadioCyclePolicy.Verdict,
         backOn: Boolean?,
-        linkWasAbsent: Boolean = false,
+        linkWasAbsent: Boolean,
+        generation: Int,
+        command: ConnectionOperation,
     ) {
+        if (!isCurrent(command) || !isRunning || measureGeneration != generation) return
         when (backOn) {
             null -> AppLog.w(
                 "NativeAA: this unit's Bluetooth never went down, so nothing was cycled and nothing " +
@@ -2041,10 +2170,11 @@ class NativeAaHandshakeManager(
         }
         if (!BluetoothRadioCyclePolicy.isProbe(verdict)) return
         val window = BluetoothRadioCyclePolicy.RECOVERY_WINDOW_MS
-        radioCycleJob?.cancel()
-        radioCycleJob = scope.launch(CoroutineName("NativeAa-RadioCycleProbe")) {
+        val candidate = scope.launch(CoroutineName("NativeAa-RadioCycleProbe"), start = CoroutineStart.LAZY) {
+            if (!isCurrent(command) || !isRunning || measureGeneration != generation) return@launch
             val link = if (backOn != true) false else {
                 delay(window)
+                if (!isCurrent(command) || !isRunning || measureGeneration != generation) return@launch
                 BluetoothHelper.handsFreeLinkState(context, includeGatewayRole = false)
             }
             val measured = BluetoothRadioCyclePolicy.verdictFrom(backOn, link, linkWasAbsent)
@@ -2061,7 +2191,16 @@ class NativeAaHandshakeManager(
                 )
                 return@launch
             }
-            settings.nativeAaRadioCycleVerdict = measured.ordinal
+            val worker = currentCoroutineContext()[Job]
+            val recorded = commManager.withAppConnectionLifecycleLock {
+                if (!isCurrent(command) || !isRunning || measureGeneration != generation || radioCycleJob !== worker) {
+                    false
+                } else {
+                    settings.nativeAaRadioCycleVerdict = measured.ordinal
+                    true
+                }
+            }
+            if (!recorded) return@launch
             if (measured == BluetoothRadioCyclePolicy.Verdict.RECOVERS) {
                 AppLog.i(
                     "NativeAA: this unit's Bluetooth came back and reconnected its hands-free link " +
@@ -2076,6 +2215,13 @@ class NativeAaHandshakeManager(
                 )
             }
         }
+        val accepted = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command) || !isRunning || measureGeneration != generation) false else {
+                radioCycleJob = candidate
+                true
+            }
+        }
+        if (accepted) candidate.start() else candidate.cancel()
     }
 
     /**
@@ -2117,14 +2263,13 @@ class NativeAaHandshakeManager(
      * the first escalated wake this unit has ever made, records whether it did. The hold is the
      * repair; the reading is what lets a unit that never recovers stop waking by itself.
      */
-    private fun armWakeProbe(device: BluetoothDevice, verdict: NativeAaWakeDamagePolicy.Verdict) {
+    private fun armWakeProbe(verdict: NativeAaWakeDamagePolicy.Verdict, command: ConnectionOperation, generation: Int) {
         val window = NativeAaWakeDamagePolicy.PROBE_WINDOW_MS
-        escalationProbeUntil[device.address] = SystemClock.elapsedRealtime() + window
         if (!NativeAaWakeDamagePolicy.isProbe(verdict, settings.nativeAaWakeArmingsWithoutSession)) return
         val acceptedBefore = acceptedAaConnectionThisArming
-        wakeProbeJob?.cancel()
-        wakeProbeJob = scope.launch(CoroutineName("NativeAa-WakeProbe")) {
+        val candidate = scope.launch(CoroutineName("NativeAa-WakeProbe"), start = CoroutineStart.LAZY) {
             delay(window)
+            if (!isCurrent(command) || !isRunning || measureGeneration != generation) return@launch
             val returned = BluetoothHelper.handsFreeLinkState(context, includeGatewayRole = false)
             val measured = NativeAaWakeDamagePolicy.verdictFrom(
                 linkReturned = returned,
@@ -2135,8 +2280,17 @@ class NativeAaHandshakeManager(
                     "after the wake, so whether a wake costs it the link stays unmeasured.")
                 return@launch
             }
-            settings.nativeAaWakeDamageVerdict = measured.ordinal
-            settings.nativeAaWakeArmingsWithoutSession = 0
+            val worker = currentCoroutineContext()[Job]
+            val recorded = commManager.withAppConnectionLifecycleLock {
+                if (!isCurrent(command) || !isRunning || measureGeneration != generation || wakeProbeJob !== worker) {
+                    false
+                } else {
+                    settings.nativeAaWakeDamageVerdict = measured.ordinal
+                    settings.nativeAaWakeArmingsWithoutSession = 0
+                    true
+                }
+            }
+            if (!recorded) return@launch
             if (measured == NativeAaWakeDamagePolicy.Verdict.SAFE) {
                 AppLog.i("NativeAA: the wake either brought the phone in or the hands-free link " +
                     "came back within ${window / 1000}s, so waking over it costs this unit a blip " +
@@ -2147,6 +2301,18 @@ class NativeAaHandshakeManager(
                     "again — the phone has to raise the Bluetooth event itself.")
             }
         }
+        var previous: Job? = null
+        val accepted = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command) || !isRunning || measureGeneration != generation) false else {
+                previous = wakeProbeJob
+                wakeProbeJob = candidate
+                true
+            }
+        }
+        if (!accepted) candidate.cancel() else {
+            previous?.cancel()
+            candidate.start()
+        }
     }
 
     /**
@@ -2154,10 +2320,13 @@ class NativeAaHandshakeManager(
      * may now open its own. False means another poke has been connecting to this phone for the
      * whole bound: a second socket to a stuck one only made every record fail.
      */
-    private suspend fun awaitPokeSlot(device: BluetoothDevice): Boolean {
+    private suspend fun awaitPokeSlot(device: BluetoothDevice, command: ConnectionOperation): Boolean {
         var waitedMs = 0L
-        while (isRunning) {
-            when (PokeOverlapPolicy.step(pokeConnectingTo, device.address, waitedMs)) {
+        while (isCurrent(command) && isRunning) {
+            val connectingTo = commManager.withAppConnectionLifecycleLock {
+                device.address.takeIf { it in pokeConnections }
+            }
+            when (PokeOverlapPolicy.step(connectingTo, device.address, waitedMs)) {
                 PokeOverlapPolicy.Step.PROCEED -> return true
                 PokeOverlapPolicy.Step.ABANDON -> {
                     AppLog.i("NativeAA: another poke has been connecting to ${device.name} for " +
@@ -2189,12 +2358,13 @@ class NativeAaHandshakeManager(
      * manual poke alike. The outcome separates a stand-down, which opens nothing, from a dial that
      * nothing answered: a budget counted in attempts must not spend one on the first.
      */
-    private suspend fun pokeDevice(device: BluetoothDevice, holdMs: Long): BluetoothWakePolicy.WakeOutcome {
-        // Only a poke that connects can be refused; every other way out of here says nothing about it.
-        lastPokeRefusedMac = null
+    private suspend fun pokeDevice(device: BluetoothDevice, holdMs: Long, command: ConnectionOperation): PokeResult {
+        val worker = currentCoroutineContext()[Job] ?: return PokeResult.STOOD_DOWN
+        val address = device.address
+        if (!isCurrent(command) || !isRunning || radioCycleInFlight) return PokeResult.STOOD_DOWN
         // Credentials may queue this worker before the OEM carrier is selected. Never let
         // that stale Android-radio job compete with the manufacturer's HFP/AA connection.
-        if (usesHctCarrier()) return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+        if (usesHctCarrier()) return PokeResult.STOOD_DOWN
         // A poke that connects takes the phone's single hands-free slot, and this unit's own client
         // is dropped to make room. The link reads are adapter-wide, so the policy is told which role
         // is up and what the target itself is doing, and says whose link it takes it to be.
@@ -2210,6 +2380,7 @@ class NativeAaHandshakeManager(
                 switchAgeMs = SystemClock.elapsedRealtime() - driverSwitchStartedAt
             )
         )
+        if (!worker.isActive || !isCurrent(command) || !isRunning) return PokeResult.STOOD_DOWN
         if (!decision.poke) {
             val now = SystemClock.elapsedRealtime()
             // The stamp outlives an escalated wake on purpose: it dates the stand-down, so the
@@ -2221,16 +2392,16 @@ class NativeAaHandshakeManager(
             // one pass. Below API 33 the cycle goes first: it gives the link back, the wake cannot.
             val action = BluetoothRadioCyclePolicy.chooseAction(
                 cycleAllowed = allowsRadioCycle(device, decision.reason, standDownSince, now),
-                wakeAllowed = { escalateHandsFreeWake(device, decision.reason, standDownSince, now) },
+                wakeAllowed = { escalateHandsFreeWake(device, decision.reason, standDownSince, now, command, worker) },
             )
             when (action) {
                 BluetoothRadioCyclePolicy.StandDownAction.CYCLE_RADIO -> {
-                    cycleOwnRadio(device, standDownSince, now)
-                    return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+                    cycleOwnRadio(device, decision.reason, standDownSince, now, command)
+                    return PokeResult.STOOD_DOWN
                 }
                 BluetoothRadioCyclePolicy.StandDownAction.NOTHING -> {
                     noteHandsFreePokeSkip(device, decision.reason)
-                    return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+                    return PokeResult.STOOD_DOWN
                 }
                 BluetoothRadioCyclePolicy.StandDownAction.ESCALATED_WAKE -> Unit
             }
@@ -2256,9 +2427,8 @@ class NativeAaHandshakeManager(
                         waitMs = DeadLinkRecoveryPolicy.MIN_STREAK_MS,
                     )
                 ) {
-                    cycleOwnRadio(device, firstFailure, now, linkWasAbsent = true)
-                    clearDeadLinkRecord(device.address)
-                    return BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+                    cycleOwnRadio(device, decision.reason, firstFailure, now, command, linkWasAbsent = true)
+                    return PokeResult.STOOD_DOWN
                 }
                 // Said once per arming rather than every pass: the streak that earned the cycle is
                 // the useful line, and a refusal nobody explains is what hid the previous version
@@ -2269,7 +2439,7 @@ class NativeAaHandshakeManager(
                         "NativeAA: ${deadLinkFailures[device.address] ?: 0} failed pokes at " +
                             "${device.name ?: "unnamed"} (${device.address}) over " +
                             "${(now - firstFailure) / 1000}s earn a radio cycle, but " +
-                            "${radioCycleBlocker(device, decision.reason, firstFailure, now)} " +
+                            "${radioCycleBlocker(device, decision.reason, firstFailure, now, DeadLinkRecoveryPolicy.MIN_STREAK_MS)} " +
                             "refuses it."
                     )
                 }
@@ -2304,38 +2474,60 @@ class NativeAaHandshakeManager(
             AppLog.w("NativeAA: Not poking ${device.name ?: "unnamed"} (${device.address}) — it is not " +
                 "currently paired with this head unit, and connecting to an unpaired device would " +
                 "ask the user to pair rather than wake anything.")
-            return BluetoothWakePolicy.WakeOutcome.NOT_PAIRED
+            return PokeResult.NOT_PAIRED
         }
 
-        pokeAttemptInFlight = true
+        val generation = commManager.withAppConnectionLifecycleLock {
+            if (!worker.isActive || pokeJob !== worker || !isCurrent(command) || !isRunning || radioCycleInFlight) null
+            else {
+                pokeAttemptsInFlight++
+                measureGeneration
+            }
+        } ?: return PokeResult.STOOD_DOWN
         try {
             for (uuid in BluetoothWakePolicy.POKE_TARGETS) {
                 // cancel() cannot interrupt a blocking connect(), so a cancelled poke arrives here
                 // with its first record already spent. Stop rather than spend the second one too.
-                currentCoroutineContext().ensureActive()
+                worker.ensureActive()
                 val profile = BluetoothWakePolicy.profileName(uuid)
                 var socket: BluetoothSocket? = null
                 try {
+                    if (!isCurrent(command) || !isRunning) return PokeResult.STOOD_DOWN
                     socket = device.createRfcommSocketToServiceRecord(uuid)
                     AppLog.i("NativeAA: Calling socket.connect() for ${device.name} via $profile ($uuid)...")
-                    pokeConnectingTo = device.address
+                    val mayConnect = commManager.withAppConnectionLifecycleLock {
+                        if (!worker.isActive || pokeJob !== worker || !isCurrent(command) || !isRunning ||
+                            measureGeneration != generation || address in pokeConnections
+                        ) {
+                            false
+                        } else {
+                            pokeConnections[address] = worker
+                            true
+                        }
+                    }
+                    if (!mayConnect) return PokeResult.STOOD_DOWN
                     socket.connect()
-                    // Cleared before the hold, not in the finally below: the marker means "inside
-                    // connect()", and a hold that keeps it set would stall the next poke for
-                    // nothing - the phone is already awake by then.
-                    pokeConnectingTo = null
-                    // The socket reached the phone, so whatever this unit's link was doing, the
-                    // dead-link streak is over and the next session end starts from nothing.
-                    clearDeadLinkRecord(device.address)
+                    val mayHold = commManager.withAppConnectionLifecycleLock {
+                        // Connection to this address no longer blocks another poke during the hold.
+                        if (pokeConnections[address] === worker) pokeConnections.remove(address)
+                        if (!worker.isActive || pokeJob !== worker || !isCurrent(command) || !isRunning ||
+                            measureGeneration != generation
+                        ) {
+                            false
+                        } else {
+                            clearDeadLinkRecord(address)
+                            pokesSinceLastAccept++
+                            true
+                        }
+                    }
+                    if (!mayHold) return PokeResult.STOOD_DOWN
                     // Named, not just the UUID: which record we ended up on is the first thing to
                     // check when a reporter's calls come out of the phone instead of the car.
                     AppLog.i("NativeAA: Successfully poked ${device.name} via $profile. Holding ${holdMs}ms...")
-                    // Counted before the hold, so a poke that is cancelled mid-hold still counts:
-                    // the phone answered, which is the whole point of the count.
-                    pokesSinceLastAccept++
-                    val refused = holdPoke(socket, device, profile, uuid, holdMs)
-                    lastPokeRefusedMac = if (refused) device.address else null
-                    return BluetoothWakePolicy.WakeOutcome.ANSWERED
+                    val refused = holdPoke(socket, device, profile, uuid, holdMs, command)
+                    worker.ensureActive()
+                    if (!isCurrent(command) || !isRunning) return PokeResult.STOOD_DOWN
+                    return if (refused) PokeResult.REFUSED else PokeResult.ANSWERED
                 } catch (e: CancellationException) {
                     // Rethrow instead of falling through to the next UUID: a cancelled poke (e.g.
                     // handleHandshake()'s pokeJob?.cancel() once a real handshake lands) must stop
@@ -2347,17 +2539,34 @@ class NativeAaHandshakeManager(
                     // saw the attempt and never its outcome. Address as well as name, because
                     // getName() is null for an unbonded device.
                     AppLog.i("NativeAA: Poke via $profile to ${device.name ?: "unnamed"} (${device.address}) failed: ${e.message}")
-                    noteDeadLinkFailure(device.address)
+                    worker.ensureActive()
+                    commManager.withAppConnectionLifecycleLock {
+                        if (pokeJob === worker && isCurrent(command) && isRunning && measureGeneration == generation) {
+                            noteDeadLinkFailure(address)
+                        }
+                    }
                 } finally {
-                    pokeConnectingTo = null
+                    commManager.withAppConnectionLifecycleLock {
+                        if (pokeConnections[address] === worker) pokeConnections.remove(address)
+                    }
                     socket?.let { closePhoneSocket(it) }
                 }
             }
-            return BluetoothWakePolicy.WakeOutcome.DIALLED
+            return PokeResult.DIALLED
         } finally {
-            pokeConnectingTo = null
-            pokeAttemptInFlight = false
+            commManager.withAppConnectionLifecycleLock {
+                if (measureGeneration == generation) pokeAttemptsInFlight--
+            }
         }
+    }
+
+    private enum class PokeResult(val outcome: BluetoothWakePolicy.WakeOutcome) {
+        STOOD_DOWN(BluetoothWakePolicy.WakeOutcome.STOOD_DOWN),
+        NOT_PAIRED(BluetoothWakePolicy.WakeOutcome.NOT_PAIRED),
+        DIALLED(BluetoothWakePolicy.WakeOutcome.DIALLED),
+        ANSWERED(BluetoothWakePolicy.WakeOutcome.ANSWERED),
+        // The RFCOMM socket connected, but the phone refused the hands-free link itself.
+        REFUSED(BluetoothWakePolicy.WakeOutcome.ANSWERED),
     }
 
     /**
@@ -2404,7 +2613,8 @@ class NativeAaHandshakeManager(
         device: BluetoothDevice,
         profile: String,
         uuid: UUID,
-        holdMs: Long
+        holdMs: Long,
+        command: ConnectionOperation,
     ): Boolean {
         if (!shouldInitiateSlc(standingInForHfp) || !BluetoothWakePolicy.carriesServiceLevelConnection(uuid)) {
             delay(holdMs)
@@ -2419,7 +2629,7 @@ class NativeAaHandshakeManager(
             // A child of this poke, not of the service scope, so cancelling the poke job unwinds it
             // and joins it before pokeDevice()'s own finally closes the socket underneath it.
             val slc = launch(CoroutineName("NativeAa-HfpSlc-${device.address}")) {
-                serveHfpSocket(socket, "$profile poke to ${device.address}", initiate = true, closeWhenDone = false) {
+                serveHfpSocket(socket, "$profile poke to ${device.address}", initiate = true, closeWhenDone = false, command = command) {
                     reached.set(it)
                 }
             }
@@ -2428,25 +2638,35 @@ class NativeAaHandshakeManager(
                 // has already let go of only delays the next ask.
                 val probeMs = minOf(HandsFreeRefusalPolicy.LINK_PROBE_MS, holdMs)
                 delay(probeMs)
+                if (!isCurrent(command) || !isRunning) return@coroutineScope
                 linkAfterProbe = BluetoothWakePolicy.TargetLink.of(BluetoothHelper.deviceConnectionState(device))
                 if (!HandsFreeRefusalPolicy.refused(reached.get(), linkAfterProbe)) delay(holdMs - probeMs)
             } finally {
                 slc.cancel()
             }
         }
+        if (!isCurrent(command) || !isRunning) return false
         val stage = reached.get()
         if (stage == HfpSlcInitiator.Stage.ESTABLISHED) {
-            ConnectionIssues.clear(context, ConnectionIssue.PHONE_REFUSED_HANDS_FREE)
+            admissionFor(command).run {
+                if (isRunning) ConnectionIssues.clear(context, ConnectionIssue.PHONE_REFUSED_HANDS_FREE)
+            }
             return false
         }
         if (HandsFreeRefusalPolicy.refused(stage, linkAfterProbe)) {
+            val reported = commManager.withAppConnectionLifecycleLock {
+                if (!isCurrent(command) || !isRunning) false else {
+                    ConnectionIssues.raiseOnce(context, ConnectionIssue.PHONE_REFUSED_HANDS_FREE)
+                    true
+                }
+            }
+            if (!reported) return false
             AppLog.w(
                 "NativeAA: ${device.name ?: "unnamed"} (${device.address}) took the hands-free " +
                     "connection and dropped its whole link at once, so it is refusing another Bluetooth " +
                     "audio device. Phones hold two at a time, and the car's own Bluetooth plus earbuds " +
                     "or a headset fill them: disconnect one and this unit connects by itself."
             )
-            ConnectionIssues.raiseOnce(context, ConnectionIssue.PHONE_REFUSED_HANDS_FREE)
             return true
         }
         HfpServiceRecordPolicy.standInRefusalReason(initiated = true, stage = stage)?.let { why ->
@@ -2474,7 +2694,8 @@ class NativeAaHandshakeManager(
      * does not need yet. The handshake opens with the version exchange and waits for credentials
      * afterwards, so the phone's own wake latency runs alongside the bring-up instead of after it.
      */
-    fun triggerEarlyWake(userExited: Boolean) {
+    fun triggerEarlyWake(userExited: Boolean, command: ConnectionOperation) {
+        if (!isCurrent(command)) return
         // isActive() is "started, and the listener not closed for this session": the accept loop
         // is launched in the same start() call, so this is as close to "accepting" as there is.
         if (!EarlyWakePolicy.mayWakeBeforeCredentials(
@@ -2485,10 +2706,11 @@ class NativeAaHandshakeManager(
             )
         ) return
         AppLog.i("NativeAA: waking the phone while the WiFi group is still forming.")
-        triggerPoke()
+        triggerPoke(command)
     }
 
-    fun triggerPoke() {
+    fun triggerPoke(command: ConnectionOperation) {
+        if (!isCurrent(command)) return
         if (isHandoffSettling()) {
             // Info, not debug: this line is the evidence the suppression is working, and reporter
             // logs default to INFO.
@@ -2516,17 +2738,21 @@ class NativeAaHandshakeManager(
         // than at the callers covers the credential path and WppAction.ResumePoke at once.
         moduleCarrier?.let {
             if (it.sendsWake) ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
-            it.requestWake()
+            it.requestWake(admission = admissionFor(command))
             return
         }
         // No route yet, and the one being measured is probably the module: an HFP poke is wasted.
         if (enablingAndroidBluetooth) {
-            wakeAwaitingModule = true
+            commManager.withAppConnectionLifecycleLock {
+                if (isCurrent(command)) wakeAwaitingModule = command
+            }
             AppLog.i("NativeAA: the selected Android Bluetooth adapter is still turning on, so the wake waits.")
             return
         }
         if (measuringDaemon) {
-            wakeAwaitingModule = true
+            commManager.withAppConnectionLifecycleLock {
+                if (isCurrent(command)) wakeAwaitingModule = command
+            }
             AppLog.i("NativeAA: the vendor daemon is still being asked for a route, so the wake waits for it.")
             return
         }
@@ -2543,7 +2769,10 @@ class NativeAaHandshakeManager(
         // a local called credentials would shadow it with a Triple that is never null.
         val snapshot = credentials
         val pokeKey = Triple(snapshot?.ssid ?: "", snapshot?.ip ?: "", snapshot?.bssid ?: "")
-        if (!EarlyWakePolicy.shouldRestartLoop(pokeJob?.isActive == true, lastPokeTriggerCredentials, pokeKey)) {
+        if (!EarlyWakePolicy.shouldRestartLoop(
+                pokeJob?.isActive == true && pokeOperation?.let { isCurrent(it) &&
+                    it.ticket == command.ticket && it.save === command.save } == true,
+                lastPokeTriggerCredentials, pokeKey)) {
             AppLog.d("NativeAA: a wake poke is already running for these credentials - not restarting it.")
             lastPokeTriggerCredentials = pokeKey
             // The loop re-reads credentials every pass, so from here it is a credentialed one.
@@ -2554,16 +2783,11 @@ class NativeAaHandshakeManager(
             AppLog.i("NativeAA: not waking the phone again before the WiFi group exists; the last wake brought it back to nothing.")
             return
         }
-        lastPokeTriggerCredentials = pokeKey
-        pokeLoopStartedEmpty = EarlyWakePolicy.isEmptyKey(pokeKey)
-
-        pokeJob?.cancel()
-        pokeDeferralLogged = false
-        pokeJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Wakeup")) {
+        val candidate = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Wakeup"), start = CoroutineStart.LAZY) {
             // isActive() goes true in the same start() that launches the accept loop, so this
             // usually costs nothing; it is here for a poke triggered before start() has run.
             var waitedMs = 0L
-            while (!isActive() && waitedMs < POKE_READY_WAIT_MS && isActive) {
+            while (isCurrent(command) && !isActive() && waitedMs < POKE_READY_WAIT_MS && isActive) {
                 delay(POKE_READY_POLL_MS)
                 waitedMs += POKE_READY_POLL_MS
             }
@@ -2599,10 +2823,10 @@ class NativeAaHandshakeManager(
                 delay(refusalWaitMs)
             }
 
-            // One re-arm per loop. rearmForNextSession() also clears the driver prompt and the
+            // One re-arm per loop. rearmForNextSession(command) also clears the driver prompt and the
             // handshake backoff, so asking it every pass would wipe a selection the user is inside.
             var rearmAsked = false
-            while (isActive) {
+            while (isCurrent(command) && isActive) {
                 if (!wakesPhone()) break
                 when (PokeReadinessPolicy.step(isRunning, aaListenersClosedForSession, commManager.isConnected)) {
                     PokeReadinessPolicy.Step.STOP -> break
@@ -2610,8 +2834,8 @@ class NativeAaHandshakeManager(
                         if (rearmAsked) break
                         rearmAsked = true
                         AppLog.i("NativeAA: the Android Auto listeners are closed, so the wake poke reopens them before waking the phone.")
-                        rearmForNextSession()
-                        if (!isActive()) break
+                        rearmForNextSession(command)
+                        if (!isCurrent(command) || !isActive()) break
                     }
                     PokeReadinessPolicy.Step.POKE -> {}
                 }
@@ -2746,7 +2970,7 @@ class NativeAaHandshakeManager(
                 var promptTookOver = false
                 for (device in devicesToPoke) {
                     promptTookOver = isSelectionPromptActive && pendingSelectionTargetMac == null
-                    if (!isActive() || !isActive || isHandshakeInFlight() ||
+                    if (!isCurrent(command) || !isActive() || !isActive || isHandshakeInFlight() ||
                         isHandoffSettling() || promptTookOver) break
                     if (commManager.isConnected) {
                         AppLog.i("NativeAA: USB/other session became active mid-poke. Stopping poke loop.")
@@ -2757,9 +2981,9 @@ class NativeAaHandshakeManager(
                     // If RFCOMM connects before WiFi credentials exist, the phone times out after 10s waiting for WifiStartRequest.
                     if (credentials == null) {
                         AppLog.i("NativeAA: WiFi credentials not ready before poke. Requesting WiFi refresh...")
-                        launcher.triggerWifiDirectRefresh()
+                        launcher.triggerWifiDirectRefresh(command)
                         var waitedMs = 0
-                        while (credentials == null && waitedMs < 4000 && isActive() && isActive) {
+                        while (isCurrent(command) && credentials == null && waitedMs < 4000 && isActive() && isActive) {
                             delay(200)
                             waitedMs += 200
                         }
@@ -2771,7 +2995,7 @@ class NativeAaHandshakeManager(
                     // A credential redelivery cancels this loop and starts a fresh one, and cancel
                     // cannot interrupt a blocking connect() — so the poke we replaced may still be
                     // inside one aimed at this same phone.
-                    if (!awaitPokeSlot(device)) continue
+                    if (!awaitPokeSlot(device, command)) continue
 
                     // An escalated wake has just taken this phone's hands-free slot. The guard now
                     // reads no link to defer to, so without this the ordinary loop re-takes the slot
@@ -2810,11 +3034,12 @@ class NativeAaHandshakeManager(
                     }
 
                     // Recheck after credential/listener waits, including jobs queued before Save.
-                    if (!wakesPhone()) break
+                    if (!isCurrent(command) || !wakesPhone()) break
                     AppLog.i("NativeAA: Attempting active poke to device: ${device.name} (${device.address})...")
                     ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
-                    pokeDevice(device, holdMs = 15000)
+                    pokeDevice(device, holdMs = 15000, command = command)
                 }
+                if (!isCurrent(command) || !isRunning) return@launch
 
                 // [BUG_FIX] Say out loud that the phone answers but never calls back. Untold, that
                 // unit's log is indistinguishable from a healthy one waiting for the user, which is
@@ -2853,16 +3078,35 @@ class NativeAaHandshakeManager(
                 delay(JoinRefusalPolicy.retryDelayMs(consecutiveJoinRefusals, POKE_RETRY_GAP_MS))
             }
         }
+        var previous: Job? = null
+        val accepted = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command)) false else {
+                previous = pokeJob
+                pokeJob = candidate
+                pokeOperation = command
+                lastPokeTriggerCredentials = pokeKey
+                pokeLoopStartedEmpty = EarlyWakePolicy.isEmptyKey(pokeKey)
+                pokeDeferralLogged = false
+                true
+            }
+        }
+        if (!accepted) candidate.cancel() else {
+            previous?.cancel()
+            candidate.start()
+        }
     }
 
 
     /** The WiFi button on the module route: there is no Android device to name, only the module. */
-    fun wakeOverModule(): Boolean {
+    fun wakeOverModule(command: ConnectionOperation): Boolean {
+        if (!isCurrent(command)) return false
         val carrier = moduleCarrier
         if (carrier == null) {
             // The route is still being measured; hold the wake for the channel, as triggerPoke does.
             if (!measuringDaemon && !enablingAndroidBluetooth) return false
-            wakeAwaitingModule = true
+            commManager.withAppConnectionLifecycleLock {
+                if (isCurrent(command)) wakeAwaitingModule = command
+            }
             AppLog.i("NativeAA: the Bluetooth route is not ready yet, so the wake waits for it.")
             return true
         }
@@ -2872,17 +3116,20 @@ class NativeAaHandshakeManager(
         AppLog.i("NativeAA: Manual poke requested — asking the Bluetooth module to connect Android Auto.")
         resetHandshakeBackoff()
         resetJoinRefusals()
-        carrier.requestWake(userAsked = true)
+        carrier.requestWake(userAsked = true, admission = admissionFor(command))
         return true
     }
 
     /**
      * Start a manual poke (wakeup) for a specific Bluetooth device.
      */
-    fun manualPoke(address: String) {
+    fun manualPoke(address: String, command: ConnectionOperation) {
+        if (!isCurrent(command)) return
         if (enablingAndroidBluetooth) {
             pendingSelectionTargetMac = address
-            wakeAwaitingModule = true
+            commManager.withAppConnectionLifecycleLock {
+                if (isCurrent(command)) wakeAwaitingModule = command
+            }
             AppLog.i("NativeAA: holding the chosen phone's wake until the selected Bluetooth adapter is ON.")
             return
         }
@@ -2892,14 +3139,14 @@ class NativeAaHandshakeManager(
                 sessionEndedAt = 0L
                 resetHandshakeBackoff()
                 resetJoinRefusals()
-                it.requestWakeFor(address)
+                it.requestWakeFor(address, admission = admissionFor(command))
                 return
             }
         }
         // Pressing the button is the way out of the stand-down and its settle, as well as of a
         // backoff: the user wants this phone woken now, whatever the last session ended on.
         // The user asking to try again is the way out of a backoff on either route.
-        if (wakeOverModule()) return
+        if (wakeOverModule(command)) return
         wakeStoodDown = false
         sessionEndedAt = 0L
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -2918,20 +3165,14 @@ class NativeAaHandshakeManager(
             resetHandshakeBackoff()
             resetJoinRefusals()
 
-            pokeJob?.cancel()
-            // The manual job takes the slot the retry loop uses, so forget what the loop last poked
-            // for. Left set, a redelivery of unchanged credentials during this poke reads as "the
-            // loop is already running for these" and the loop is never started again.
-            lastPokeTriggerCredentials = null
-            manualPokeInFlight = true
-            pokeJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ManualWakeup")) {
+            val candidate = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ManualWakeup"), start = CoroutineStart.LAZY) {
                 try {
                     // Pre-flight: Ensure WiFi credentials (SSID/IP) are ready before connecting RFCOMM to phone.
                     if (credentials == null) {
                         AppLog.i("NativeAA: WiFi credentials not ready before manual poke. Requesting WiFi refresh...")
-                        launcher.triggerWifiDirectRefresh()
+                        launcher.triggerWifiDirectRefresh(command)
                         var waitedMs = 0
-                        while (credentials == null && waitedMs < 4000 && isActive() && isActive) {
+                        while (isCurrent(command) && credentials == null && waitedMs < 4000 && isActive() && isActive) {
                             delay(200)
                             waitedMs += 200
                         }
@@ -2942,7 +3183,7 @@ class NativeAaHandshakeManager(
 
                     // pokeJob.cancel() above cannot interrupt a blocking connect(), so the
                     // automatic poke it replaced may still be inside one aimed at this same phone.
-                    if (!awaitPokeSlot(device)) return@launch
+                    if (!awaitPokeSlot(device, command)) return@launch
 
                     // One hold used to be the whole wake, and it ended before the accept gate
                     // reopened, so the phone the driver had just left won the race back in.
@@ -2958,10 +3199,15 @@ class NativeAaHandshakeManager(
                         outcome, roundsDialled, SystemClock.elapsedRealtime() - wakeStartedAt
                     ) || HandsFreeRefusalPolicy.keepsAsking(firstRefusalAt, SystemClock.elapsedRealtime())
                     while (keepWaking()) {
-                        if (!isActive() || !isActive || isHandshakeInFlight() || isHandoffSettling()) break
+                        if (!isCurrent(command) || !isActive() || !isActive || isHandshakeInFlight() || isHandoffSettling()) break
                         if (usesHctCarrier()) {
                             reportHctNetworkReady()
                             break
+                        }
+                        val cycleQuietLeftMs = (radioCycleQuietUntil[device.address] ?: 0L) - SystemClock.elapsedRealtime()
+                        if (radioCycleInFlight || cycleQuietLeftMs > 0) {
+                            delay(POKE_RETRY_GAP_MS)
+                            continue
                         }
                         // The escalation now fires on this path too, so its give-back has to hold
                         // here as well: re-poking inside the window is what it exists to prevent.
@@ -2978,8 +3224,10 @@ class NativeAaHandshakeManager(
                         // The pill shows this wake like the retry loop's: waking while a round
                         // runs, back to waiting after one the phone did not answer.
                         ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
-                        outcome = pokeDevice(device, holdMs = 20000)
-                        if (firstRefusalAt == 0L && lastPokeRefusedMac.equals(device.address, ignoreCase = true)) {
+                        val result = pokeDevice(device, holdMs = 20000, command = command)
+                        if (!isCurrent(command) || !isRunning) break
+                        outcome = result.outcome
+                        if (firstRefusalAt == 0L && result == PokeResult.REFUSED) {
                             firstRefusalAt = SystemClock.elapsedRealtime()
                         }
                         AppLog.i("NativeAA: Manual poke to ${device.name} finished.")
@@ -3015,11 +3263,29 @@ class NativeAaHandshakeManager(
                         }
                     }
                 } finally {
-                    manualPokeInFlight = false
+                    val finished = currentCoroutineContext()[Job]
+                    commManager.withAppConnectionLifecycleLock {
+                        if (pokeJob === finished) manualPokeInFlight = false
+                    }
                 }
             }
+            var previous: Job? = null
+            val accepted = commManager.withAppConnectionLifecycleLock {
+                if (!isCurrent(command)) false else {
+                    previous = pokeJob
+                    pokeJob = candidate
+                    pokeOperation = command
+                    // The manual job takes the retry loop's slot and owns its completion flag.
+                    lastPokeTriggerCredentials = null
+                    manualPokeInFlight = true
+                    true
+                }
+            }
+            if (!accepted) candidate.cancel() else {
+                previous?.cancel()
+                candidate.start()
+            }
         } catch (e: Exception) {
-            manualPokeInFlight = false
             AppLog.e("NativeAA: Manual poke error", e)
         }
     }
@@ -3057,6 +3323,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverExternalModule() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3067,6 +3334,7 @@ class NativeAaHandshakeManager(
                 "own Bluetooth radio."
         )
         val carrier = ZbtAaCarrier(
+            admission = effectAdmission,
             // The module's arrival is this route's "phone answered", or the pill never moves past waking.
             serve = { link ->
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
@@ -3091,13 +3359,16 @@ class NativeAaHandshakeManager(
             }
         )
         moduleCarrier = carrier
-        if (wakeAwaitingModule) {
-            wakeAwaitingModule = false
+        val deferredWake = commManager.withAppConnectionLifecycleLock {
+            wakeAwaitingModule.also { wakeAwaitingModule = null }?.takeIf { isCurrent(it) }
+        }
+        deferredWake?.let { command ->
             ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
-            carrier.requestWake()
+            carrier.requestWake(admission = admissionFor(command))
         }
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZbtCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e
@@ -3108,6 +3379,7 @@ class NativeAaHandshakeManager(
     }
     @SuppressLint("NewApi") // The route is gated by HctServiceObserver.available (API 21+).
     private fun startOverHctModule() {
+        if (!commManager.isCurrent(operation)) return
         notStartedReason = null
         aaListenersClosedForSession = false
         localRadioName = "HCT external Bluetooth module"
@@ -3129,6 +3401,7 @@ class NativeAaHandshakeManager(
         )
         lateinit var carrier: HctWppOwner.Client
         carrier = context.hctWppOwner.attach(
+            admission = effectAdmission,
             openingRequest = {
                 HctOpening.versionRequest(
                     WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context)),
@@ -3175,10 +3448,11 @@ class NativeAaHandshakeManager(
         )
         moduleCarrier = carrier
         isRunning = true
-        wakeAwaitingModule = false
+        wakeAwaitingModule = null
         reportHctNetworkReady()
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-HctCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e
@@ -3206,6 +3480,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverEsp32RelayModule() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3219,27 +3494,39 @@ class NativeAaHandshakeManager(
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
                 handleHandshake(link)
             },
-            isRunning = { isRunning },
+            isRunning = { isRunning && commManager.isCurrent(operation) },
             isFinishedForSession = { aaListenersClosedForSession },
             mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
             onPhoneEvidence = { resetHandshakeBackoff() },
             ensureLink = {
                 // Keep-alive only — must not re-arm HFP every poll tick.
                 // offerLiveGroup is throttled; armRelay alone keeps BLE without P2P thrash.
-                Esp32RelaySession.armRelay(context)
-                Esp32RelaySession.offerLiveGroup(context, force = false)
+                effectAdmission.run {
+                    Esp32RelaySession.armRelay(context)
+                    Esp32RelaySession.offerLiveGroup(context, force = false)
+                }
             },
-            sendToPhone = { bytes -> Esp32RelaySession.sendRfcomm(bytes) },
-            grantCredit = { extra -> Esp32RelaySession.grantCredit(extra) },
+            sendToPhone = { bytes ->
+                var sent = false
+                effectAdmission.run { sent = Esp32RelaySession.sendRfcomm(bytes) }
+                sent
+            },
+            grantCredit = { extra -> effectAdmission.run { Esp32RelaySession.grantCredit(extra) }; Unit },
         )
-        Esp32RelaySession.setFrameSink { frame -> carrier.onFrame(frame) }
-        Esp32RelaySession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
-        Esp32RelaySession.onGiveUp = { endAndroidAutoIfEsp32RelaySetting("link stayed down") }
-        moduleCarrier = carrier
-        // Always HFP_ON + AA_ENABLE for a Wi-Fi AA bring-up, even if BLE is already READY
-        // after a cancel (armRelay is a no-op then and would leave HFP off).
-        Esp32RelaySession.requestAaWake(context)
-        Esp32RelaySession.offerLiveGroup(context, force = true)
+        if (!effectAdmission.run {
+                moduleCarrier = carrier
+                Esp32RelaySession.setFrameSink { frame ->
+                    if (commManager.isCurrent(operation)) carrier.onFrame(frame)
+                }
+                Esp32RelaySession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
+                Esp32RelaySession.onGiveUp = { endAndroidAutoIfEsp32RelaySetting("link stayed down") }
+                // A fresh Wi-Fi start must wake HFP even when the BLE link survived a cancel.
+                Esp32RelaySession.requestAaWake(context)
+                Esp32RelaySession.offerLiveGroup(context, force = true)
+            }) {
+            carrier.close()
+            return
+        }
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Esp32RelayCarrier")) {
             try {
                 carrier.run()
@@ -3248,9 +3535,16 @@ class NativeAaHandshakeManager(
             } catch (e: Exception) {
                 AppLog.e("NativeAA: [ESP32] carrier stopped unexpectedly: ${e.message}", e)
             } finally {
-                Esp32RelaySession.setFrameSink(null)
-                Esp32RelaySession.setTransportErrorHandler(null)
-                Esp32RelaySession.onGiveUp = null
+                carrier.close()
+                commManager.withAppConnectionLifecycleLock {
+                    // Stop clears this owner before a replacement installs its callbacks.
+                    if (moduleCarrier === carrier) {
+                        moduleCarrier = null
+                        Esp32RelaySession.setFrameSink(null)
+                        Esp32RelaySession.setTransportErrorHandler(null)
+                        Esp32RelaySession.onGiveUp = null
+                    }
+                }
             }
         }
     }
@@ -3266,6 +3560,7 @@ class NativeAaHandshakeManager(
         AppLog.w("NativeAA: [ESP32] $reason — ending Android Auto (endAaOnDisconnect)")
         scope.launch(Dispatchers.Main.immediate) {
             commManager.disconnect(
+                operation = operation,
                 sendByeBye = true,
                 isUserExit = false,
                 honorKillOnDisconnect = false,
@@ -3274,6 +3569,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverBlinkModule() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3296,6 +3592,7 @@ class NativeAaHandshakeManager(
                 "module through ${BlinkAutoSerialChannel.PORT}, where the stock Car Link normally sits."
         )
         val carrier = BlinkAaCarrier(
+            admission = effectAdmission,
             serve = { link ->
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
                 handleHandshake(link)
@@ -3310,6 +3607,7 @@ class NativeAaHandshakeManager(
         moduleCarrier = carrier
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-BlinkCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e
@@ -3333,6 +3631,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun startOverZjSocket() {
+        if (!commManager.isCurrent(operation)) return
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
@@ -3354,6 +3653,7 @@ class NativeAaHandshakeManager(
                 "the handshake will connect to ${ZjSocketProbe.path()} directly."
         )
         val carrier = ZjSocketCarrier(
+            admission = effectAdmission,
             socketPath = ZjSocketProbe.path(),
             serve = { link ->
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
@@ -3369,9 +3669,10 @@ class NativeAaHandshakeManager(
         )
         moduleCarrier = carrier
         // A wake queued during the measurement needs no send and no pill claim on this route.
-        wakeAwaitingModule = false
+        wakeAwaitingModule = null
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZjSocketCarrier")) {
             try {
+                if (!commManager.isCurrent(operation)) { carrier.close(); return@launch }
                 carrier.run()
             } catch (e: CancellationException) {
                 throw e
@@ -3468,18 +3769,7 @@ class NativeAaHandshakeManager(
     }
 
     private suspend fun handleHandshake(link: HandshakeLink) = withContext(Dispatchers.IO) {
-        // The phone reached us. Recorded here rather than at either accept site so both the
-        // primary and the secondary-radio loops are covered by one statement.
-        everAcceptedAaConnection = true
-        acceptedAaConnectionThisArming = true
-        // The verdict's re-measure clock is about armings that never connected; this one did.
-        settings.nativeAaWakeArmingsWithoutSession = 0
-        // The poke count is deliberately not cleared here. It answers the stale-group watchdog's
-        // question, which is whether the network this group saved still reaches the phone, and an
-        // RFCOMM accept says nothing about the network. onSessionEstablished() clears it.
-        // The phone answered, so any stand-down clock is stale: the next one times its own wait.
-        handsFreeStandDownSince.clear()
-
+        if (!isCurrent(operation) || !isRunning) { link.close(); return@withContext }
         // The wake poke is deliberately left running here. It used to be cancelled on entry, on
         // the reasoning that a real AA_UUID connection means the poke has done its job and is now
         // just competing for radio time — but cancelling it closes the HFP/HSP socket, and a
@@ -3495,24 +3785,36 @@ class NativeAaHandshakeManager(
         // The listener stays open across the settling window, so the phone can reconnect over
         // Bluetooth while an earlier handoff is still settling. That reconnect means the earlier
         // one failed: retire it rather than serving both from the same manager state.
-        val previousLink = activeHandshakeLink
-        val previousJob = activeHandshakeJob
+        var previousLink: HandshakeLink? = null
+        var previousJob: Job? = null
         // Ownership is claimed *before* the previous session is torn down, not after: cancelling
         // it makes its finally block run on another thread at a moment we do not control, and the
         // only thing keeping that block off this handshake's state is the ifOwner fence. Take
         // ownership first and the fence is already closed when the old one unwinds.
-        activeHandshakeLink = link
-        activeHandshakeJob = coroutineContext[Job]
-        // Stamped after claiming ownership above, so a superseded handshake's cleanup — which
-        // only fires when it still owns activeHandshakeLink — can't wipe this one's stamp.
-        handshakeStartedAt = SystemClock.elapsedRealtime()
-        if (previousLink != null && previousLink !== link) {
+        val admitted = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(operation) || !isRunning) false else {
+                previousLink = activeHandshakeLink
+                previousJob = activeHandshakeJob
+                activeHandshakeLink = link
+                activeHandshakeJob = coroutineContext[Job]
+                handshakeStartedAt = SystemClock.elapsedRealtime()
+                handoffSettlingSince = 0L
+                // Both Android and OEM transports enter here. Only an admitted link resets the
+                // wake-damage clock and the hands-free stand-down, not the Wi-Fi join watchdog.
+                everAcceptedAaConnection = true
+                acceptedAaConnectionThisArming = true
+                settings.nativeAaWakeArmingsWithoutSession = 0
+                handsFreeStandDownSince.clear()
+                true
+            }
+        }
+        if (!admitted) { link.close(); return@withContext }
+        previousLink?.takeUnless { it === link }?.let { previous ->
             AppLog.i("NativeAA: A new handshake arrived while one was still settling — closing the previous session.")
-            handoffSettlingSince = 0L
             // Cancel *and* close, in that order: see activeHandshakeJob. Cancelling first means
             // the old coroutine cannot mistake the close for a phone-side drop and act on it.
             previousJob?.cancel()
-            try { previousLink.close() } catch (_: Exception) {}
+            try { previous.close() } catch (_: Exception) {}
         }
         // Whether this handshake put anything on the wire at all, and whether the phone answered
         // any of it. Together with abortedLocally they decide, once in the fenced finally below,
@@ -3704,12 +4006,21 @@ class NativeAaHandshakeManager(
                             // Not fed to the session: an abort here is ours, and counting it as a
                             // phone that never answered would spend the handshake backoff on it.
                             abortedLocally = true
-                            launcher.triggerWifiDirectRefresh()
+                            launcher.triggerWifiDirectRefresh(operation)
                             return
                         }
                         // Before the credentials, so the screen is lit by the time the phone's DHCP
                         // goes out: dark, this unit's WiFi can drop it, and the join then fails.
-                        joinScreenWake.begin(link, consecutiveJoinRefusals)
+                        val joined = commManager.withAppConnectionLifecycleLock {
+                            if (!isCurrent(operation) || !isRunning || activeHandshakeLink !== link) false else {
+                                joinScreenWake.begin(link, consecutiveJoinRefusals)
+                                true
+                            }
+                        }
+                        if (!joined) {
+                            abortedLocally = true
+                            return
+                        }
                         sendWifiSecurityResponse(
                             output, credSsid, credPsk, credBssid,
                             live!!.identity
@@ -3755,7 +4066,11 @@ class NativeAaHandshakeManager(
                         AppLog.i("NativeAA: WiFi session landed. Holding the Bluetooth channel for the session and answering the phone's pings, as a head unit does.")
                         joinScreenWake.end(link, "the session landed")
                         // A phone that projects had a place for this unit, whatever it said before.
-                        ConnectionIssues.clear(context, ConnectionIssue.PHONE_REFUSED_HANDS_FREE)
+                        effectAdmission.run {
+                            if (isRunning && activeHandshakeLink === link) {
+                                ConnectionIssues.clear(context, ConnectionIssue.PHONE_REFUSED_HANDS_FREE)
+                            }
+                        }
                         holdingSince = SystemClock.elapsedRealtime()
                         lastHoldSummaryAt = holdingSince
                         // apply_hfp: tell the ESP32 relay projection is up so it releases HFP and stops
@@ -3811,7 +4126,7 @@ class NativeAaHandshakeManager(
                         // Clear the settling stamp first: triggerPoke() refuses to start while a
                         // handoff is settling, which is the whole point of that guard.
                         handoffSettlingSince = 0L
-                        triggerPoke()
+                        triggerPoke(operation)
                     }
                 }
             }
@@ -3977,7 +4292,7 @@ class NativeAaHandshakeManager(
                 if (now - lastRefreshAt >= 10_000) {
                     lastRefreshAt = now
                     AppLog.w("NativeAA: Still waiting for credentials after ${waitedS}s. Requesting WiFi refresh...")
-                    launcher.triggerWifiDirectRefresh()
+                    launcher.triggerWifiDirectRefresh(operation)
                 } else if (now - lastProgressLogAt >= 5_000) {
                     lastProgressLogAt = now
                     AppLog.d("NativeAA: Still waiting... credentials=${credentials != null} (${waitedS}s)")
@@ -3992,7 +4307,7 @@ class NativeAaHandshakeManager(
 
             // The session landed before the credentials were needed: nothing is left to send.
             if (session.stage == WppStage.HOLDING) {
-                while (isRunning && isActive && !session.isTerminal()) tick(250)
+                while (commManager.isCurrent(operation) && isRunning && isActive && !session.isTerminal()) tick(250)
                 return@withContext
             }
 
@@ -4070,7 +4385,7 @@ class NativeAaHandshakeManager(
                         // because nobody is reading a log from the driver's seat.
                         ConnectionIssues.raise(context, ConnectionIssue.BSSID_UNAVAILABLE)
                         // Triggering a P2P refresh so the next attempt has a valid BSSID
-                        launcher.triggerWifiDirectRefresh()
+                        launcher.triggerWifiDirectRefresh(operation)
                         // Not fed to the session as CredentialsUnavailable: its failure reason
                         // would say the credentials never arrived, when in fact they arrived
                         // unusable, and the line above is the one the reporter needs to act on.
@@ -4144,7 +4459,7 @@ class NativeAaHandshakeManager(
             // not a grace period, since the phone needs however long it needs. Association has
             // been measured at 21 s on hardware where the 3 s close killed it dead. Wait for the
             // session, and where the phone reports its own progress, let it.
-            while (isRunning && isActive && !session.isTerminal() && !credentialsWentStale) {
+            while (commManager.isCurrent(operation) && isRunning && isActive && !session.isTerminal() && !credentialsWentStale) {
                 if (session.stage == WppStage.AWAIT_INFO_REQUEST) {
                     resendOpener(
                         SystemClock.elapsedRealtime(),
@@ -4219,13 +4534,14 @@ class NativeAaHandshakeManager(
      * @param timeoutMs how long to wait for the bind after asking.
      */
     suspend fun ensureWirelessServerListening(reason: String, timeoutMs: Long): Boolean {
+        if (!commManager.isCurrent(operation)) return false
         val sharedServices = launcher.manager.sharedServices
 
         if (sharedServices.wirelessServer?.isListening == true)
             return true
 
         AppLog.i("AapService: $reason found port 5288 unbound. Trying to start the wireless server.")
-        withContext(Dispatchers.Main.immediate) { sharedServices.startWirelessServer(launcher) }
+        withContext(Dispatchers.Main.immediate) { sharedServices.startWirelessServer(launcher, operation) }
 
         val deadline = SystemClock.elapsedRealtime() + timeoutMs
         while (SystemClock.elapsedRealtime() < deadline) {
@@ -4408,6 +4724,7 @@ class NativeAaHandshakeManager(
      * would be stale by the time a phone dialled in.
      */
     private fun startWppTcpServer() {
+        if (!commManager.isCurrent(operation)) return
         if (wppTcpServer != null) return
         val server = WppTcpServer(context, scope, object : WppTcpServer.Callbacks {
             override fun credentials(): NativeNetworkCredentials? = this@NativeAaHandshakeManager.credentials
@@ -4434,7 +4751,7 @@ class NativeAaHandshakeManager(
 
             override fun noteEndpointAdvertised(credentials: NativeNetworkCredentials) =
                 recordAdvertisedEndpoint(launcher.strategy, credentials)
-        })
+        }, operation, commManager)
         wppTcpServer = server
         server.start()
     }
@@ -4473,6 +4790,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun sendProtobuf(output: OutputStream, data: ByteArray, type: Int) {
+        if (!commManager.isCurrent(operation)) throw CancellationException("wireless arm withdrawn")
         output.write(WppFraming.encodeFrame(data, type))
         output.flush()
         // Not "successfully delivered": write() and flush() returned, nothing more. A stack that
@@ -4526,14 +4844,18 @@ class NativeAaHandshakeManager(
 
     fun stop() {
         hctStageOwner = null
-        isRunning = false
+        commManager.withAppConnectionLifecycleLock {
+            isRunning = false
+            measureGeneration++
+            pokeAttemptsInFlight = 0
+            pokeConnections.clear()
+        }
         notStartedReason = "the wireless mode was stopped"
         measuringDaemon = false
-        measureGeneration++
         enablingAndroidBluetooth = false
         bluetoothStartupJob?.cancel()
         bluetoothStartupJob = null
-        wakeAwaitingModule = false
+        wakeAwaitingModule = null
         standingInForHfp = false
         aaReopenJob?.cancel()
         aaReopenJob = null
@@ -4579,11 +4901,6 @@ class NativeAaHandshakeManager(
         // needs.
         handshakeStartedAt = 0L
         handoffSettlingSince = 0L
-        // Same reason, worse consequence: a poke stranded in the blocking socket.connect() outlives
-        // this manager, and isAttemptInFlight() answers both arms of the Bluetooth arrival path, so
-        // leaving it set makes the phone coming back do nothing at all.
-        pokeAttemptInFlight = false
-        pokeConnectingTo = null
         // The dead-link streak is evidence about one arming's pokes, and this stop ends it. Left
         // set, the next arming would spend its one cycle on a streak it never earned.
         deadLinkFailures.clear()
@@ -4594,7 +4911,9 @@ class NativeAaHandshakeManager(
         activeHandshakeJob?.cancel()
         activeHandshakeJob = null
         activeHandshakeLink = null
-        joinScreenWake.end(null, "the handshake servers stopped")
+        commManager.withAppConnectionLifecycleLock {
+            joinScreenWake.end(null, "the handshake servers stopped")
+        }
         // Only the per-attempt count resets: everAcceptedAaConnection is deliberately kept, so a
         // unit that has connected before is not warned just because the manager was re-armed.
         pokesSinceLastAccept = 0

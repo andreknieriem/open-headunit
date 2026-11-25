@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import android.content.Context
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.CommManager
 import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
@@ -46,6 +48,8 @@ class WppTcpServer(
     private val context: Context,
     private val scope: CoroutineScope,
     private val callbacks: Callbacks,
+    private val operation: ConnectionOperation,
+    private val commManager: CommManager,
     private val createServerSocket: () -> ServerSocket = { ServerSocket() },
     private val createTlsFactory: () -> SSLSocketFactory = { SslContextFactory.create(context).socketFactory },
     private val elapsedRealtime: () -> Long = { SystemClock.elapsedRealtime() },
@@ -141,13 +145,19 @@ class WppTcpServer(
     val listeningPort: Int?
         get() = if (running) serverSocket?.localPort?.takeIf { it > 0 } else null
 
-    @Synchronized fun start() {
-        if (running || !scope.isActive) return
-        val generation = ++runGeneration
-        running = true
-        acceptJob = scope.launch(Dispatchers.IO + CoroutineName("WppTcp-Accept")) {
+    fun start() {
+        val generation = commManager.withAppConnectionLifecycleLock {
+            synchronized(this) {
+                if (!commManager.isCurrent(operation) || running || !scope.isActive) null else {
+                    running = true
+                    ++runGeneration
+                }
+            }
+        } ?: return
+        val worker = scope.launch(Dispatchers.IO + CoroutineName("WppTcp-Accept")) {
             var ownedServer: ServerSocket? = null
             try {
+                if (!commManager.isCurrent(operation)) return@launch
                 val factory = createTlsFactory()
                 // Unbound first, then the option, then bind: ServerSocket(int) binds inside the
                 // constructor. holdOpen() keeps the control channel up all session, so this port is
@@ -155,12 +165,16 @@ class WppTcpServer(
                 // which listeningPort stayed null and the endpoint was withheld for good.
                 var bound: ServerSocket? = null
                 var attempt = 0
-                while (isCurrentRun(generation) && isActive && bound == null) {
+                while (commManager.isCurrent(operation) && isCurrentRun(generation) && isActive && bound == null) {
                     attempt++
                     var candidate: ServerSocket? = null
                     try {
                         candidate = createServerSocket()
                         candidate.reuseAddress = true
+                        if (!commManager.isCurrent(operation)) {
+                            candidate.close()
+                            return@launch
+                        }
                         candidate.bind(java.net.InetSocketAddress(PORT))
                         ownedServer = candidate
                         bound = candidate
@@ -175,15 +189,17 @@ class WppTcpServer(
                     AppLog.i("WppTcpServer: stopped before port $PORT could be bound.")
                     return@launch
                 }
-                val published = synchronized(this@WppTcpServer) {
-                    if (!isCurrentRun(generation) || !isActive) false else {
-                        serverSocket = server
-                        true
+                val published = commManager.withAppConnectionLifecycleLock {
+                    synchronized(this@WppTcpServer) {
+                        if (!commManager.isCurrent(operation) || !isCurrentRun(generation) || !isActive) false else {
+                            serverSocket = server
+                            true
+                        }
                     }
                 }
                 if (!published) return@launch
                 AppLog.i("WppTcpServer: listening for Android Auto on TCP $PORT")
-                while (isCurrentRun(generation) && isActive) {
+                while (commManager.isCurrent(operation) && isCurrentRun(generation) && isActive) {
                     val socket = try {
                         server.accept()
                     } catch (e: Exception) {
@@ -191,12 +207,14 @@ class WppTcpServer(
                         break
                     }
                     val peer = socket.inetAddress
-                    val admitted = synchronized(connections) {
-                        if (!isCurrentRun(generation) || connections.containsKey(peer) || connections.size >= MAX_CONTROL_PEERS) {
-                            false
-                        } else {
-                            connections[peer] = socket
-                            true
+                    val admitted = commManager.withAppConnectionLifecycleLock {
+                        synchronized(connections) {
+                            if (!commManager.isCurrent(operation) || !isCurrentRun(generation) ||
+                                connections.containsKey(peer) || connections.size >= MAX_CONTROL_PEERS
+                            ) false else {
+                                connections[peer] = socket
+                                true
+                            }
                         }
                     }
                     if (!admitted) {
@@ -227,22 +245,29 @@ class WppTcpServer(
                 }
             }
         }
+        val installed = synchronized(this) {
+            if (!isCurrentRun(generation)) false else { acceptJob = worker; true }
+        }
+        if (!installed) worker.cancel()
     }
 
     private fun isCurrentRun(generation: Long): Boolean = running && runGeneration == generation
 
-    @Synchronized fun stop() {
-        running = false
-        runGeneration++
-        try { serverSocket?.close() } catch (_: Exception) {}
-        serverSocket = null
-        acceptJob?.cancel()
-        acceptJob = null
-        val closing = synchronized(connections) {
-            connections.values.toList().also { connections.clear() }
+    fun stop() {
+        val retired = synchronized(this) {
+            running = false
+            runGeneration++
+            val listener = serverSocket.also { serverSocket = null }
+            val worker = acceptJob.also { acceptJob = null }
+            val peers = synchronized(connections) {
+                connections.values.toList().also { connections.clear() }
+            }
+            Triple(listener, worker, peers)
         }
-        // Cancelling a coroutine alone does not interrupt a blocking TLS read/handshake.
-        closing.forEach { try { it.close() } catch (_: Exception) {} }
+        retired.second?.cancel()
+        try { retired.first?.close() } catch (_: Exception) {}
+        // Only captured sockets are closed; no blocking socket operation holds either monitor.
+        retired.third.forEach { try { it.close() } catch (_: Exception) {} }
     }
 
     /**
@@ -260,12 +285,12 @@ class WppTcpServer(
         var readerJob: Job? = null
         var socket: SSLSocket? = null
         try {
-            if (!isCurrentRun(generation)) return@withContext
+            if (!commManager.isCurrent(operation) || !isCurrentRun(generation)) return@withContext
             val tls = WppTcpTls.clientSocket(factory, raw)
             socket = tls
             tls.soTimeout = TLS_HANDSHAKE_TIMEOUT_MS
             tls.startHandshake()
-            if (!isCurrentRun(generation)) return@withContext
+            if (!commManager.isCurrent(operation) || !isCurrentRun(generation)) return@withContext
             tls.soTimeout = 0
             AppLog.i(
                 "WppTcpServer: TLS handshake complete with ${tls.inetAddress?.hostAddress} " +
@@ -411,6 +436,7 @@ class WppTcpServer(
         }
 
         suspend fun runAction(action: WppAction, source: NativeAaHandshakeManager.ProtobufMessage?) {
+            if (!commManager.isCurrent(operation)) { abortReason = "wireless arm withdrawn"; return }
             when (action) {
                 WppAction.SendVersionRequest -> {
                     val snapshot = admittedNetworkOrAbort("Type 4") ?: return
@@ -502,7 +528,7 @@ class WppTcpServer(
             if (callbacks.credentials() != null) feed(WppEvent.CredentialsReady)
         }
 
-        while (isCurrentRun(generation) && !session.isTerminal() && abortReason == null) {
+        while (commManager.isCurrent(operation) && isCurrentRun(generation) && !session.isTerminal() && abortReason == null) {
             if (callbacks.projectionSessionUp()) {
                 feed(WppEvent.TcpSessionUp)
                 continue
@@ -581,7 +607,7 @@ class WppTcpServer(
     ) {
         AppLog.i("WppTcpServer: holding the control channel open for the session")
         var pings = 0
-        while (isCurrentRun(generation) && callbacks.projectionSessionUp()) {
+        while (commManager.isCurrent(operation) && isCurrentRun(generation) && callbacks.projectionSessionUp()) {
             val result = inbound.tryReceive()
             val msg = result.getOrNull()
             if (msg == null) {
@@ -616,6 +642,7 @@ class WppTcpServer(
     }
 
     private fun send(output: OutputStream, payload: ByteArray, type: Int) {
+        if (!commManager.isCurrent(operation)) throw kotlinx.coroutines.CancellationException("wireless arm withdrawn")
         output.write(WppFraming.encodeFrame(payload, type))
         output.flush()
         AppLog.i("WppTcpServer: [TX] wrote type $type (${payload.size} bytes)")

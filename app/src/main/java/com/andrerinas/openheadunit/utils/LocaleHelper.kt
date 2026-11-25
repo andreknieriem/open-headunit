@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.utils
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.BuildConfig
 import java.util.Locale
 
@@ -128,13 +129,7 @@ object LocaleHelper {
      */
     fun wrapContext(context: Context): Context {
         try {
-            val isLocked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                val userManager = context.getSystemService(Context.USER_SERVICE) as? android.os.UserManager
-                userManager?.isUserUnlocked == false
-            } else {
-                false
-            }
-            if (isLocked) {
+            if (!App.isUserUnlocked(context)) {
                 return context
             }
             val settings = Settings(context)

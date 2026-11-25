@@ -32,7 +32,9 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.protocol.messages.TouchEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
 import com.andrerinas.openheadunit.app.SurfaceActivity
+import com.andrerinas.openheadunit.app.AppUiEntry
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
 import com.andrerinas.openheadunit.input.GestureOutcomePolicy
@@ -313,10 +315,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val relaunchRecovery = com.andrerinas.openheadunit.decoder.video.SurfaceRecoveryState()
 
     /** The service revokes the retained WPP lease before publishing Disconnected. */
-    private fun requestProjectionExit() {
-        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_DISCONNECT
-        })
+    private fun requestProjectionExit(ticket: Long) {
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
+        ContextCompat.startForegroundService(this, AapService.operationIntent(this, ticket).setAction(AapService.ACTION_DISCONNECT))
     }
 
     /**
@@ -598,9 +599,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             ProjectionColdOpenPolicy.Action.LEAVE -> {
                 AppLog.i("AapProjectionActivity: opened with no session and none on its way, going back to the home screen.")
-                startActivity(Intent(this, MainActivity::class.java).apply {
+                startActivity(AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                })
+                }))
                 finish()
             }
         }
@@ -1119,11 +1120,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private val finishReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == "com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES") {
+            if (intent.action == AppExitPolicy.ACTION_FINISH_ACTIVITIES &&
+                commManager.ownsAppExit(intent.getLongExtra(AppExitPolicy.EXTRA_EXIT_OWNER, 0L))) {
                 AppLog.i("AapProjectionActivity: Received finish request. Closing.")
                 finish()
             }
         }
+    }
+
+    // The same check, run in the turn that accepts a Stop. See CommManager.addAppExitScreen.
+    private val closeForAppExit: (Long) -> Unit = { owner ->
+        finishReceiver.onReceive(this, Intent(AppExitPolicy.ACTION_FINISH_ACTIVITIES)
+            .putExtra(AppExitPolicy.EXTRA_EXIT_OWNER, owner))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1263,7 +1271,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                             // If not, onSurfaceChanged() will call startReading() when the surface
                             // becomes available.
                             if (isSurfaceSet) {
-                                commManager.startReading()
+                                commManager.captureReading()?.let { authority -> commManager.startReading(authority) }
                             }
                         }
                         is CommManager.ConnectionState.TransportStarted -> {
@@ -1280,8 +1288,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         }
 
-        ContextCompat.registerReceiver(this, finishReceiver, android.content.IntentFilter("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES"), ContextCompat.RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(this, finishReceiver, android.content.IntentFilter(AppExitPolicy.ACTION_FINISH_ACTIVITIES), ContextCompat.RECEIVER_NOT_EXPORTED)
         isFinishReceiverRegistered = true
+        commManager.addAppExitScreen(closeForAppExit)
 
         // Registered for the activity's whole life, not onResume/onPause: screen-off pauses it,
         // and screen-off is exactly the moment the input hold has to engage.
@@ -1367,7 +1376,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         setupCustomLoadingScreen()
 
         findViewById<Button>(R.id.disconnect_button)?.setOnClickListener {
-            requestProjectionExit()
+            requestProjectionExit(commManager.appConnectionTicket())
             finish()
         }
 
@@ -1988,6 +1997,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private fun showExitDialog() {
         // Its entries (stop, settings, background) are not for a locked unit.
         if (LockedInputPolicy.engaged) return
+        val openedTicket = commManager.appConnectionTicket()
         // Copy the live configuration: a blank one resets the font scale on API 17-23.
         val exitScale = settings.uiScaleExitDialogPercent / 100f
         val dialogContext = if (exitScale != 1f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -2039,11 +2049,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 val selected = options[which]
                 when (selected.titleResId) {
                     R.string.exit_dialog_stop -> {
-                        requestProjectionExit()
+                        requestProjectionExit(openedTicket)
                         finish()
                     }
                     R.string.exit_dialog_end_stay_armed -> {
-                        endSessionStayArmed()
+                        endSessionStayArmed(openedTicket)
                     }
                     R.string.exit_dialog_pip -> {
                         enterPiP()
@@ -2055,7 +2065,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                         showQuickSettings()
                     }
                     R.string.switch_driver -> {
-                        switchDriver()
+                        switchDriver(openedTicket)
                     }
                 }
             }
@@ -2090,21 +2100,19 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      * Ends the session and leaves the network up, so the phone's saved profile still names one that
      * exists. Said out loud, because a phone that reconnects on its own reads as the stop failing.
      */
-    private fun endSessionStayArmed() {
+    private fun endSessionStayArmed(ticket: Long) {
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
         AppLog.i("AapProjectionActivity: User ended the session and asked to stay ready")
-        val intent = Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_END_SESSION_STAY_ARMED
-        }
+        val intent = AapService.operationIntent(this, ticket).setAction(AapService.ACTION_END_SESSION_STAY_ARMED)
         ContextCompat.startForegroundService(this, intent)
         ToastUtils.showToast(this, R.string.exit_dialog_end_stay_armed_note, Toast.LENGTH_LONG, force = true)
         finish()
     }
 
-    private fun switchDriver() {
+    private fun switchDriver(ticket: Long) {
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
         AppLog.i("AapProjectionActivity: User requested switch driver")
-        val intent = Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_NATIVE_AA_SWITCH_DEVICE
-        }
+        val intent = AapService.operationIntent(this, ticket).setAction(AapService.ACTION_NATIVE_AA_SWITCH_DEVICE)
         ContextCompat.startForegroundService(this, intent)
         finish()
     }
@@ -2169,10 +2177,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // this app is the home app, it is named, so the projection goes behind our own home screen.
         val isHome = CarLauncherManager.isDefaultLauncher(this)
         val startMain = if (isHome) {
-            Intent(this, MainActivity::class.java).apply {
+            AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                 action = Intent.ACTION_MAIN
                 addCategory(Intent.CATEGORY_HOME)
-            }
+            })
         } else {
             Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
         }
@@ -2623,7 +2631,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 // AapService should have started the handshake already, but as a fallback
                 // (e.g. service restarted) kick it off here. The HandshakeComplete observer
                 // will call startReading() once the handshake finishes.
-                lifecycleScope.launch { commManager.startHandshake() }
+                commManager.captureHandshake()?.let { authority ->
+                    lifecycleScope.launch { commManager.startHandshake(authority) }
+                }
             }
             is CommManager.ConnectionState.StartingTransport -> {
                 // Handshake is in progress. The HandshakeComplete observer will call
@@ -2631,7 +2641,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             is CommManager.ConnectionState.HandshakeComplete -> {
                 // Handshake already done before surface was ready — start reading now.
-                lifecycleScope.launch { commManager.startReading() }
+                commManager.captureReading()?.let { authority ->
+                    lifecycleScope.launch { commManager.startReading(authority) }
+                }
             }
             is CommManager.ConnectionState.TransportStarted -> {
                 // Surface recreated while transport was already running; request a keyframe.
@@ -2986,6 +2998,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         unregisterAudioModeListener()
         if (isFinishReceiverRegistered) {
             unregisterReceiver(finishReceiver)
+            commManager.removeAppExitScreen(closeForAppExit)
             isFinishReceiverRegistered = false
         }
         if (isKeyEventReceiverRegistered) {
@@ -3062,9 +3075,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         fun returnToAppHome(context: Context) {
             try {
-                val mainIntent = Intent(context, MainActivity::class.java).apply {
+                val mainIntent = AppUiEntry.continuation(Intent(context, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                }
+                })
                 context.startActivity(mainIntent)
             } catch (e: Exception) {
                 AppLog.w("[AapProjectionActivity] returnToAppHome failed: ${e.message}")
@@ -3111,11 +3124,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 "reconnecting so Android Auto draws it $window."
         )
         shapeRedrawnFor = window
-        commManager.disconnect(
-            isUserExit = false,
-            honorKillOnDisconnect = false,
-            reason = CommManager.DisconnectReason.SETTINGS_RESTART,
-        )
+        // Only the session drawn in the old shape is redrawn; a later one is left alone.
+        commManager.currentConnectionAttempt()?.let { attempt ->
+            commManager.disconnectOwned(
+                attempt,
+                isUserExit = false,
+                honorKillOnDisconnect = false,
+                reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+            )
+        }
     }
 
     private fun applyOrientationSettings() {

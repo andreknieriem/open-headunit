@@ -11,7 +11,7 @@ class NearbyAdmissionTest {
 
     @Test fun retiredHandoffCannotReplaceNewConnectionAfterTeardownWait() = runBlocking {
         val guard = NearbyAttemptGuard()
-        val old = guard.begin("phone")
+        val old = guard.begin("phone", 0L)
         val admission = ConnectionAdmission { action -> guard.run(old, action = action) }
         val entered = CompletableDeferred<Unit>()
         val finish = CompletableDeferred<Unit>()
@@ -27,7 +27,7 @@ class NearbyAdmissionTest {
         }
         entered.await()
         guard.retire {}
-        guard.begin("phone")
+        guard.begin("phone", 0L)
         active = replacement
         finish.complete(Unit)
         assertFalse(handoff.await())

@@ -16,7 +16,7 @@ object TextDialogKeyPolicy {
     /**
      * True when this editor action should press OK. Most keyboards send Done. Hardware Enter sends
      * no action and a key event, which counts once, on key down. Some OEM keyboards send no action
-     * and no event at all (as DpiPickerView also allows), which counts too.
+     * and no event at all (as DpiLayoutPickerView also allows), which counts too.
      */
     fun isSubmit(actionId: Int, keyCode: Int?, keyAction: Int?): Boolean = when (actionId) {
         EditorInfo.IME_ACTION_DONE, EditorInfo.IME_ACTION_GO, EditorInfo.IME_ACTION_SEND -> true

@@ -44,13 +44,6 @@ object OnboardingDisplayPolicy {
         return Math.round(scaled).coerceAtLeast(MIN_DPI).coerceAtMost(cap)
     }
 
-    /** A size change moves the picker, unless the user has already set the DPI by hand. */
-    fun pickerDpiAfterSizeChange(recommended: Int, current: Int, pickerTouched: Boolean): Int =
-        if (pickerTouched) current else recommended
-
-    /** An untouched picker keeps what is stored: Automatic on a fresh install, a typed value on upgrade. */
-    fun dpiToSave(pickerDpi: Int, pickerTouched: Boolean, stored: Int): Int = if (pickerTouched) pickerDpi else stored
-
     /** The size the user picked last time, or the estimate when there is none. */
     fun initialPreset(stored: String?, estimated: DisplaySizePreset): DisplaySizePreset =
         DisplaySizePreset.values().firstOrNull { it.name == stored } ?: estimated

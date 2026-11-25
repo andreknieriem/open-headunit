@@ -188,23 +188,15 @@
     <string name="onb_dpi_small">เล็ก</string>
     <string name="onb_dpi_medium">ปานกลาง</string>
     <string name="onb_dpi_large">ใหญ่</string>
-    <string name="onb_dpi_huge">ใหญ่มาก</string>
     <string name="onb_appearance_more_hint">คุณสามารถค้นหาตัวเลือกโหมดมืดเพิ่มเติมได้ในการตั้งค่า</string>
     <string name="onb_automation_more_hint">คุณสามารถค้นหาตัวเลือกเพิ่มเติมในการตั้งค่าเชื่อมต่ออัตโนมัติและเริ่มต้นอัตโนมัติ</string>
     <string name="onb_dpi_help">DPI ที่สูงขึ้นจะทำให้ไอคอนและข้อความของ Android Auto ใหญ่ขึ้น จึงแสดงบนหน้าจอได้น้อยลง DPI ที่ต่ำลงจะทำให้มีขนาดเล็กลง จึงแสดงได้มากขึ้น จะมีผลเมื่อคุณเชื่อมต่อ Android Auto</string>
     <!-- %1$d recommended DPI value -->
-    <string name="onb_dpi_recommended">แนะนำสำหรับหน้าจอของคุณ: %1$d dpi</string>
     <string name="onb_change_later">คุณสามารถเปลี่ยนสิ่งนี้ได้ในภายหลังในการตั้งค่า</string>
-    <string name="dpi_automatic">อัตโนมัติ</string>
-    <string name="dpi_automatic_desc">ใช้ความหนาแน่นของอุปกรณ์</string>
-    <string name="dpi_widescreen_hint">ที่ %1$d DPI หรือต่ำกว่า Android Auto จะแสดงแผนที่พร้อมการ์ดสื่อข้างกัน และข้อความจะเล็กลง</string>
-    <string name="dpi_automatic_desc_canvas">ใช้ %1$d DPI สำหรับ %2$s โดยพื้นที่มีขนาด %3$dx%4$d dp</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">อัตโนมัติ: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, ส่งเป็น %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto ต้องการพื้นที่อย่างน้อย 748x450 dp จึงส่ง %1$d DPI เป็น %2$d</string>
-    <string name="dpi_clamped_note_portrait">ในแนวตั้ง Google Maps บน Android Auto จะไม่รับการสัมผัสบนพื้นที่ที่แคบกว่า 730 dp จึงส่ง %1$d DPI เป็น %2$d</string>
-    <string name="dpi_portrait_override_note">ส่ง %1$d DPI ตามที่เลือก ในแนวตั้ง Google Maps บน Android Auto อาจไม่รับการสัมผัสเมื่อเกิน %2$d DPI</string>
     <string name="dpi_floor_override_note">ส่ง %1$d DPI ตามที่เลือก เมื่อเกิน %2$d DPI พื้นที่จะเล็กกว่า 748x450 dp ที่ Android Auto ต้องการ และอาจแสดงเลย์เอาต์แบบลดขนาด</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
@@ -1642,10 +1634,6 @@
     <string name="copied_to_clipboard">คัดลอกลงในคลิปบอร์ดแล้ว</string>
 
     <!-- Extra keys -->
-    <string name="dpi_size_s">S</string>
-    <string name="dpi_size_m">M</string>
-    <string name="dpi_size_l">L</string>
-    <string name="dpi_size_xl">XL</string>
     <string name="github_issues_url">https://github.com/andreknieriem/open-headunit/issues</string>
     <string name="support_rules_english_title">All posts in English</string>
     <string name="support_rules_english_desc">โปรดเขียนปัญหาเป็นภาษาอังกฤษเสมอ เพราะเป็นภาษาเดียวที่ผู้ดูแลและผู้ช่วยส่วนใหญ่ใช้ร่วมกัน หากเขียนหลายภาษาในกระทู้เดียว จะสับสนวุ่นวายและไม่มีใครช่วยใครได้ ไม่มีใครตัดสินระดับภาษาอังกฤษหรือวิธีเขียนของคุณ จึงไม่ต้องกังวลเรื่องข้อผิดพลาด หากจำเป็น คุณใช้เครื่องมือแปลอย่าง Google Translate หรือ DeepL หรือ AI อย่าง ChatGPT หรือ Claude ช่วยเขียนและเกลาข้อความเป็นภาษาอังกฤษได้</string>
@@ -1775,6 +1763,15 @@
     <string name="onb_launcher_reopen_note">ตัวเลือก \"เปิดใหม่เมื่อเชื่อมต่ออีกครั้ง\" จะไม่มีผลขณะที่ Open Headunit เป็นแอปหน้าจอหลัก เพราะเครื่องจะกลับมาที่แอปนี้อยู่แล้ว และจะกลับมาทำงานเมื่อปิด Car Launcher</string>
     <string name="onb_summary_launcher_home">Launcher: Open Headunit เป็นแอปหน้าจอหลัก</string>
     <string name="onb_summary_launcher_registered">Launcher: ลงทะเบียนเป็นแอปหน้าจอหลักแล้ว</string>
+    <string name="dpi_pane_map_and_media">แผนที่และสื่อ</string>
+    <string name="dpi_pane_one_app">แอปเดียว</string>
+    <string name="dpi_pane_compact">กะทัดรัด</string>
+    <string name="dpi_pane_map_over_media">แผนที่เหนือสื่อ</string>
+    <string name="dpi_layout_step_title">1. เลย์เอาต์</string>
+    <string name="dpi_size_step_title">2. ขนาดข้อความและไอคอน</string>
+    <string name="dpi_expected_format">คาดว่า: %1$s</string>
+    <string name="dpi_edge_note">ขนาดใหญ่และอัตโนมัติอยู่ที่ขอบของเลย์เอาต์ หากโทรศัพท์ของคุณแสดงเลย์เอาต์อื่นตรงนั้น ให้เลือกปานกลาง</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">แตะค้างที่พื้นที่ว่าง</string>
     <string name="home_pages_hint_body">นี่คือวิธีเพิ่มหน้าสำหรับวิดเจ็ตของคุณ หรือลบหน้าออก</string>
     <string name="home_pages_hint_got_it">เข้าใจแล้ว</string>

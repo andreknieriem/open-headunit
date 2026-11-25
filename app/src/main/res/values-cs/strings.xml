@@ -1024,16 +1024,10 @@
     <string name="onb_automation_more_hint">Další možnosti najdete v nastavení automatického připojení a automatického spuštění.</string>
     <string name="onb_dpi_help">Vyšší DPI zvětší ikony a text Android Auto, takže se na obrazovku vejde méně. Nižší DPI je zmenší a vejde se více. Projeví se po připojení Android Auto.</string>
     <string name="onb_change_later">Toto můžete změnit později v Nastavení.</string>
-    <string name="dpi_automatic">Automaticky</string>
-    <string name="dpi_automatic_desc">Použít hustotu zařízení.</string>
-    <string name="dpi_widescreen_hint">Při %1$d DPI nebo méně zobrazí Android Auto mapu s kartou médií vedle ní a text se zmenší.</string>
-    <string name="dpi_automatic_desc_canvas">Použije %1$d DPI pro %2$s (plocha %3$dx%4$d dp).</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Automaticky: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, odesláno jako %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto vyžaduje plochu alespoň 748x450 dp, proto se místo %1$d DPI odešle %2$d.</string>
-    <string name="dpi_clamped_note_portrait">Na výšku Google Maps v Android Auto ignoruje dotyky na ploše užší než 730 dp, proto se místo %1$d DPI odešle %2$d.</string>
-    <string name="dpi_portrait_override_note">Odešle se %1$d DPI, jak je vybráno. Na výšku může Google Maps v Android Auto ignorovat dotyky nad %2$d DPI.</string>
     <string name="dpi_floor_override_note">Odešle se %1$d DPI, jak je vybráno. Nad %2$d DPI je plocha menší než 748x450 dp, které Android Auto vyžaduje, a může se zobrazit zjednodušené rozvržení.</string>
     <string name="onb_conn_usb_label">USB (nebo adaptér)</string>
     <string name="onb_connection_self_detail">Samostatný režim spouští Android Auto v tomto zařízení bez připojení telefonu.</string>
@@ -1049,7 +1043,6 @@
     <string name="resolution_use_anyway">Přesto použít</string>
     <string name="resolution_use_recommended">Použít doporučené</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Obrovská</string>
     <string name="onb_vehicle_title">Vaše auto</string>
     <string name="onb_vehicle_input_hint">Značka nebo název</string>
     <string name="onb_vehicle_help_aa">Tento název se odesílá do Android Auto. Zobrazuje se v historii připojení telefonu a na uvítací obrazovce Android Auto.</string>
@@ -1081,7 +1074,6 @@
     <string name="perm_write_settings_help">Umožňuje aplikaci automaticky zapnout hotspot pro bezdrátová připojení.</string>
     <string name="perm_storage_title">Úložiště</string>
     <string name="perm_storage_help">Potřebné pro zálohování a obnovu nastavení a pro výběr vlastního obrázku načítání.</string>
-    <string name="onb_dpi_recommended">Doporučeno pro vaši obrazovku: %1$d dpi</string>
     <string name="onb_ready_loading_intro">Ještě jedna věc: nyní můžete nastavit vlastní načítací obrazovku, která se zobrazí při připojování auta.</string>
     <string name="onb_ready_loading_button">Nastavit načítací obrazovku</string>
 
@@ -1723,6 +1715,15 @@
     <string name="onb_launcher_reopen_note">Volba Znovu otevřít při opětovném připojení neplatí, dokud je Open Headunit domovskou aplikací, protože se k ní jednotka vrací sama. Znovu začne fungovat, když spouštěč v autě vypnete.</string>
     <string name="onb_summary_launcher_home">Spouštěč: Open Headunit je domovská aplikace</string>
     <string name="onb_summary_launcher_registered">Spouštěč: zaregistrován jako domovská aplikace</string>
+    <string name="dpi_pane_map_and_media">Mapa a média</string>
+    <string name="dpi_pane_one_app">Jedna aplikace</string>
+    <string name="dpi_pane_compact">Kompaktní</string>
+    <string name="dpi_pane_map_over_media">Mapa nad médii</string>
+    <string name="dpi_layout_step_title">1. Rozvržení</string>
+    <string name="dpi_size_step_title">2. Velikost textu a ikon</string>
+    <string name="dpi_expected_format">Očekáváno: %1$s</string>
+    <string name="dpi_edge_note">Velká a Automaticky leží na hranici rozvržení. Pokud telefon zobrazí jiné rozvržení, zvolte Střední.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Podržte prst na prázdném místě</string>
     <string name="home_pages_hint_body">Takto přidáte stránku pro widgety, nebo ji odeberete.</string>
     <string name="home_pages_hint_got_it">Rozumím</string>

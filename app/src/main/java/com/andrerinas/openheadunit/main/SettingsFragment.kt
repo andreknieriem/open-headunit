@@ -3321,17 +3321,21 @@ class SettingsFragment : Fragment() {
             fit, ow, oh, res.width, res.height, pendingPixelAspectRatioE4 ?: settings.pixelAspectRatioE4
         )
         val d = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.decide(
-            stored, preset, vw, vh, par, settings.dpiFloorOverride, ow, oh
+            stored, preset, vw, vh, par, settings.dpiFloorOverride, ow, oh, settings.dpiAutoLayoutPane
         )
         val (sw, sh) = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.phoneCanvas(vw, vh, par)
         val cw = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.canvasDp(sw, d.announced)
         val ch = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.canvasDp(sh, d.announced)
-        return when {
-            res.width <= 0 -> if (stored == 0) getString(R.string.auto) else stored.toString()
+        val value = when {
+            res.width <= 0 -> return if (stored == 0) getString(R.string.auto) else stored.toString()
             stored == 0 -> getString(R.string.dpi_row_auto_format, d.announced, cw, ch)
             d.announced != stored -> getString(R.string.dpi_row_clamped_format, stored, d.announced, cw, ch)
             else -> getString(R.string.dpi_row_value_format, stored, cw, ch)
         }
+        val name = com.andrerinas.openheadunit.utils.DisplayLayoutPolicy.nameFor(
+            sw, sh, d.announced, com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.clampDpi(vw, vh, par)
+        ).let { com.andrerinas.openheadunit.view.DpiLayoutPickerView.describe(requireContext(), it) }
+        return if (name == null) value else getString(R.string.dpi_row_named_format, value, name)
     }
 
     private fun realPanelResolution(): Pair<Int, Int> {

@@ -188,29 +188,17 @@
     <string name="onb_dpi_small">Petit</string>
     <string name="onb_dpi_medium">Moyen</string>
     <string name="onb_dpi_large">Grand</string>
-    <string name="onb_dpi_huge">Très grand</string>
     <!-- Compact size abbreviations shown on the DPI preset buttons. Kept identical in every
          locale (globally recognized apparel sizing) so they never truncate. -->
-    <string name="dpi_size_s" translatable="false">S</string>
-    <string name="dpi_size_m" translatable="false">M</string>
-    <string name="dpi_size_l" translatable="false">L</string>
-    <string name="dpi_size_xl" translatable="false">XL</string>
     <string name="onb_appearance_more_hint">Vous trouverez d\'autres options du mode sombre dans les paramètres.</string>
     <string name="onb_automation_more_hint">Vous trouverez d\'autres options dans les paramètres d\'Auto-connexion et de Démarrage automatique.</string>
     <string name="onb_dpi_help">Un DPI plus élevé agrandit les icônes et le texte d\'Android Auto, affichant moins d\'éléments à l\'écran. Un DPI plus faible les réduit, affichant plus d\'éléments. Cela s\'applique lors de la connexion à Android Auto.</string>
     <!-- %1$d recommended DPI value -->
-    <string name="onb_dpi_recommended">Recommandé pour votre écran : %1$d dpi</string>
     <string name="onb_change_later">Vous pourrez modifier cela plus tard dans les paramètres.</string>
-    <string name="dpi_automatic">Automatique</string>
-    <string name="dpi_automatic_desc">Utiliser la densité de l\'appareil.</string>
-    <string name="dpi_widescreen_hint">À %1$d DPI ou moins, Android Auto affiche la carte avec une carte multimédia à côté, et le texte devient plus petit.</string>
-    <string name="dpi_automatic_desc_canvas">Utilise %1$d DPI pour %2$s, soit une zone de %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Automatique : %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, envoyé comme %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto exige une zone d\'au moins 748x450 dp. Les %1$d DPI sont donc envoyés comme %2$d.</string>
-    <string name="dpi_clamped_note_portrait">En mode portrait, Google Maps sur Android Auto ignore le toucher sur une zone de moins de 730 dp de large. Les %1$d DPI sont donc envoyés comme %2$d.</string>
-    <string name="dpi_portrait_override_note">Les %1$d DPI sont envoyés tels que choisis. En mode portrait, Google Maps sur Android Auto peut ignorer le toucher au-delà de %2$d DPI.</string>
     <string name="dpi_floor_override_note">Les %1$d DPI sont envoyés tels que choisis. Au-delà de %2$d DPI, la zone est plus petite que les 748x450 dp requis par Android Auto, et l\'affichage peut être réduit.</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
@@ -1768,6 +1756,15 @@
     <string name="onb_launcher_reopen_note">Rouvrir à la reconnexion ne s\'applique pas tant qu\'Open Headunit est l\'application d\'accueil, car l\'autoradio y revient déjà. L\'option refonctionne si vous désactivez le lanceur de voiture.</string>
     <string name="onb_summary_launcher_home">Lanceur : Open Headunit est l\'application d\'accueil</string>
     <string name="onb_summary_launcher_registered">Lanceur : enregistré comme application d\'accueil</string>
+    <string name="dpi_pane_map_and_media">Carte et multimédia</string>
+    <string name="dpi_pane_one_app">Une seule appli</string>
+    <string name="dpi_pane_compact">Compact</string>
+    <string name="dpi_pane_map_over_media">Carte au-dessus du multimédia</string>
+    <string name="dpi_layout_step_title">1. Disposition</string>
+    <string name="dpi_size_step_title">2. Taille du texte et des icônes</string>
+    <string name="dpi_expected_format">Attendu : %1$s</string>
+    <string name="dpi_edge_note">Grand et Automatique se situent à la limite de la disposition. Si votre téléphone affiche une autre disposition, choisissez Moyen.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Appuyez de manière prolongée sur un espace vide</string>
     <string name="home_pages_hint_body">C\'est ainsi que vous ajoutez une page pour vos widgets, ou en supprimez une.</string>
     <string name="home_pages_hint_got_it">J\'ai compris</string>

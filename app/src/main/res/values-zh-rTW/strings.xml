@@ -1020,16 +1020,10 @@
     <string name="onb_automation_more_hint">你可以在自動連線與自動啟動設定中找到更多選項。</string>
     <string name="onb_dpi_help">較高的 DPI 會讓 Android Auto 的圖示與文字變大，畫面能顯示的內容較少；較低的 DPI 會讓它們變小，能顯示更多。連線 Android Auto 時生效。</string>
     <string name="onb_change_later">你可以稍後在設定中變更。</string>
-    <string name="dpi_automatic">自動</string>
-    <string name="dpi_automatic_desc">使用裝置密度。</string>
-    <string name="dpi_widescreen_hint">%1$d DPI 以下時，Android Auto 會在地圖旁顯示媒體資訊卡，文字也會變小。</string>
-    <string name="dpi_automatic_desc_canvas">%2$s使用 %1$d DPI，畫布為 %3$dx%4$d dp。</string>
     <string name="dpi_row_value_format">%1$d（%2$dx%3$d dp）</string>
     <string name="dpi_row_auto_format">自動：%1$d（%2$dx%3$d dp）</string>
     <string name="dpi_row_clamped_format">%1$d，以 %2$d 傳送（%3$dx%4$d dp）</string>
     <string name="dpi_clamped_note">Android Auto 需要至少 748x450 dp 的畫布，因此 %1$d DPI 會以 %2$d 傳送。</string>
-    <string name="dpi_clamped_note_portrait">直向時，Android Auto 中的 Google Maps 會忽略寬度小於 730 dp 的畫布上的觸控，因此 %1$d DPI 會以 %2$d 傳送。</string>
-    <string name="dpi_portrait_override_note">%1$d DPI 會依所選值傳送。直向時，超過 %2$d DPI 後，Android Auto 中的 Google Maps 可能會忽略觸控。</string>
     <string name="dpi_floor_override_note">%1$d DPI 會依所選值傳送。超過 %2$d DPI 後，畫布會小於 Android Auto 所需的 748x450 dp，可能會顯示精簡版面配置。</string>
     <string name="onb_conn_usb_label">USB（或轉接器）</string>
     <string name="onb_connection_self_detail">本機模式會在這台裝置上執行 Android Auto，不需連接手機。</string>
@@ -1045,7 +1039,6 @@
     <string name="resolution_use_anyway">仍要使用</string>
     <string name="resolution_use_recommended">使用建議值</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">特大</string>
     <string name="onb_vehicle_title">你的車</string>
     <string name="onb_vehicle_input_hint">品牌或名稱</string>
     <string name="onb_vehicle_help_aa">這個名稱會傳送到 Android Auto，並顯示在手機的連線紀錄和 Android Auto 的歡迎畫面上。</string>
@@ -1077,7 +1070,6 @@
     <string name="perm_write_settings_help">讓應用程式自動開啟熱點以進行無線連線。</string>
     <string name="perm_storage_title">儲存空間</string>
     <string name="perm_storage_help">備份和還原設定，以及選擇自訂載入畫面圖片所需的權限。</string>
-    <string name="onb_dpi_recommended">你的螢幕建議值：%1$d dpi</string>
     <string name="onb_ready_loading_intro">還有一件事：您現在可以設定自訂載入畫面，在汽車連線時顯示。</string>
     <string name="onb_ready_loading_button">設定載入畫面</string>
 
@@ -1720,6 +1712,15 @@
     <string name="onb_launcher_reopen_note">當 Open Headunit 是主畫面應用程式時，「重新連線時重新開啟」不會生效，因為車機本來就會回到它。關閉車載啟動器後會重新生效。</string>
     <string name="onb_summary_launcher_home">啟動器：Open Headunit 是主畫面應用程式</string>
     <string name="onb_summary_launcher_registered">啟動器：已註冊為主畫面應用程式</string>
+    <string name="dpi_pane_map_and_media">地圖和媒體</string>
+    <string name="dpi_pane_one_app">單一應用程式</string>
+    <string name="dpi_pane_compact">精簡</string>
+    <string name="dpi_pane_map_over_media">地圖在媒體上方</string>
+    <string name="dpi_layout_step_title">1. 版面配置</string>
+    <string name="dpi_size_step_title">2. 文字和圖示大小</string>
+    <string name="dpi_expected_format">預期：%1$s</string>
+    <string name="dpi_edge_note">「大」和「自動」位於版面配置的邊界。如果手機在此顯示其他版面配置，請選擇「中」。</string>
+    <string name="dpi_row_named_format">%1$s，%2$s</string>
     <string name="home_pages_hint_title">按住空白處</string>
     <string name="home_pages_hint_body">這樣就能為小工具新增頁面，或移除頁面。</string>
     <string name="home_pages_hint_got_it">知道了</string>

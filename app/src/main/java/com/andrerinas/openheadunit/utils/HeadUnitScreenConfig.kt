@@ -127,6 +127,7 @@ object HeadUnitScreenConfig {
         val dpiPixelDensity: Int,
         val displaySizePreset: String?,
         val dpiFloorOverride: Boolean,
+        val dpiAutoLayout: String,
     )
 
     private var geometrySettings: GeometrySettings? = null
@@ -336,7 +337,7 @@ object HeadUnitScreenConfig {
         val anchor = ProjectionCanvasPolicy.anchor(choice.width, choice.height, left + right, top + bottom)
         val capturedSettings = GeometrySettings(
             settings.resolutionId, settings.pixelAspectRatioE4, settings.dpiPixelDensity,
-            settings.displaySizePreset, settings.dpiFloorOverride,
+            settings.displaySizePreset, settings.dpiFloorOverride, settings.dpiAutoLayout,
         )
         if (isInitialized && realScreenWidthPx == anchor.width && realScreenHeightPx == anchor.height &&
             lastSettingsHash == currentHash && systemInsetLeft == left && systemInsetTop == top &&
@@ -796,14 +797,15 @@ object HeadUnitScreenConfig {
     @Synchronized
     fun densityDecision(): AnnouncedDensityPolicy.Decision {
         val captured = geometrySettings
-            ?: return AnnouncedDensityPolicy.decide(0, SystemOptimizer.DisplaySizePreset.SMALL_7_8, 0, 0)
+            ?: return AnnouncedDensityPolicy.decide(0, SystemOptimizer.DisplaySizePreset.SMALL_7_8, 0, 0, autoLayout = null)
         val preset = OnboardingDisplayPolicy.initialPreset(
             captured.displaySizePreset, SystemOptimizer.DisplaySizePreset.SMALL_7_8
         )
         return AnnouncedDensityPolicy.decide(
             captured.dpiPixelDensity, preset,
             getNegotiatedWidth() - getWidthMargin(), getNegotiatedHeight() - getHeightMargin(),
-            getPixelAspectRatioE4(), captured.dpiFloorOverride, screenWidthPx, screenHeightPx
+            getPixelAspectRatioE4(), captured.dpiFloorOverride, screenWidthPx, screenHeightPx,
+            DisplayLayoutPolicy.Pane.fromStored(captured.dpiAutoLayout)
         )
     }
 
@@ -906,6 +908,7 @@ object HeadUnitScreenConfig {
         fullscreenMode = settings.fullscreenMode.value,
         videoFitMode = settings.videoFitMode.value,
         forcedScale = settings.forcedScale,
+        dpiAutoLayout = settings.dpiAutoLayout,
         // The effective orientation, not the panel. A ROM that counts a decoration on the wrong
         // axis moves the panel reading mid-connect, which discarded a good window measurement and
         // then fell back to that same reading; rotation is what has to invalidate, and this is it.

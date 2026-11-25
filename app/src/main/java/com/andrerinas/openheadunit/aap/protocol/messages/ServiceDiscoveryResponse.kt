@@ -111,6 +111,12 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
                         geometry.height - phoneHeightMargin,
                         geometry.pixelAspectRatioE4
                     ))
+                    AppLog.i("[ServiceDiscovery] Layout is: " + com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.describeLayout(
+                        densityDecision,
+                        geometry.width - phoneWidthMargin,
+                        geometry.height - phoneHeightMargin,
+                        geometry.pixelAspectRatioE4
+                    ))
                     AppLog.i("[ServiceDiscovery] PixelAspectRatioE4 is: ${geometry.pixelAspectRatioE4} (10000 = square)")
 
                     val announcedFrameRateType = when (announcedFps) {
@@ -136,10 +142,21 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
                         val margins = VideoFallbackPolicy.scaledMargins(
                             primarySize.first, primarySize.second, phoneWidthMargin, phoneHeightMargin, fallback
                         )
-                        val fallbackDensity = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.fallbackDensity(
-                            densityDecision.announced, primarySize.first, VideoFallbackPolicy.sizeOf(fallback).first
+                        val fallbackSize = VideoFallbackPolicy.sizeOf(fallback)
+                        val fallbackGuess = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.fallbackDensity(
+                            densityDecision.announced, primarySize.first, fallbackSize.first
+                        )
+                        val fallbackW = fallbackSize.first - margins.width
+                        val fallbackH = fallbackSize.second - margins.height
+                        val fallbackDensity = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.fallbackDensityKeepingLayout(
+                            densityDecision, fallbackGuess,
+                            geometry.width - phoneWidthMargin, geometry.height - phoneHeightMargin,
+                            fallbackW, fallbackH, geometry.pixelAspectRatioE4
                         )
                         AppLog.i("[ServiceDiscovery] Offering a $fallback fallback, margins ${margins.width}x${margins.height}, density $fallbackDensity")
+                        AppLog.i("[ServiceDiscovery] Fallback layout is: " + com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.describeLayout(
+                            densityDecision.copy(announced = fallbackDensity), fallbackW, fallbackH, geometry.pixelAspectRatioE4
+                        ))
                         mediaSinkServiceBuilder.addVideoConfigs(Control.Service.MediaSinkService.VideoConfiguration.newBuilder().apply {
                             codecResolution = fallback
                             frameRate = announcedFrameRateType

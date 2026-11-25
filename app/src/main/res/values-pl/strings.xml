@@ -1025,16 +1025,10 @@
     <string name="onb_automation_more_hint">Więcej opcji znajdziesz w ustawieniach automatycznego łączenia i automatycznego startu.</string>
     <string name="onb_dpi_help">Wyższy DPI powiększa ikony i tekst Android Auto, więc mieści się mniej na ekranie. Niższy DPI je pomniejsza i mieści się więcej. Zmiana działa po połączeniu Android Auto.</string>
     <string name="onb_change_later">Możesz to zmienić później w Ustawieniach.</string>
-    <string name="dpi_automatic">Automatycznie</string>
-    <string name="dpi_automatic_desc">Użyj gęstości urządzenia.</string>
-    <string name="dpi_widescreen_hint">Przy %1$d DPI lub mniej Android Auto pokazuje mapę z kartą multimediów obok, a tekst jest mniejszy.</string>
-    <string name="dpi_automatic_desc_canvas">Używa %1$d DPI dla %2$s, czyli obszaru %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Automatycznie: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, wysyłane jako %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto wymaga obszaru co najmniej 748x450 dp, dlatego %1$d DPI jest wysyłane jako %2$d.</string>
-    <string name="dpi_clamped_note_portrait">W orientacji pionowej Google Maps w Android Auto ignoruje dotyk na obszarze węższym niż 730 dp, dlatego %1$d DPI jest wysyłane jako %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI jest wysyłane zgodnie z wyborem. W orientacji pionowej Google Maps w Android Auto może ignorować dotyk powyżej %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI jest wysyłane zgodnie z wyborem. Powyżej %2$d DPI obszar jest mniejszy niż 748x450 dp wymagane przez Android Auto i może pojawić się zmniejszony układ.</string>
     <string name="onb_conn_usb_label">USB (lub adapter)</string>
     <string name="onb_connection_self_detail">Tryb samodzielny uruchamia Android Auto na tym urządzeniu bez telefonu.</string>
@@ -1050,7 +1044,6 @@
     <string name="resolution_use_anyway">Użyj mimo to</string>
     <string name="resolution_use_recommended">Użyj zalecanej</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Ogromny</string>
     <string name="onb_vehicle_title">Twój samochód</string>
     <string name="onb_vehicle_input_hint">Marka lub nazwa</string>
     <string name="onb_vehicle_help_aa">Ta nazwa jest wysyłana do Android Auto. Pojawia się w historii połączeń telefonu i na ekranie powitalnym Android Auto.</string>
@@ -1082,7 +1075,6 @@
     <string name="perm_write_settings_help">Umożliwia aplikacji automatyczne włączanie hotspotu dla połączeń bezprzewodowych.</string>
     <string name="perm_storage_title">Pamięć masowa</string>
     <string name="perm_storage_help">Potrzebne do tworzenia i przywracania kopii zapasowej ustawień oraz do wybrania niestandardowego obrazu ładowania.</string>
-    <string name="onb_dpi_recommended">Zalecane dla Twojego ekranu: %1$d dpi</string>
     <string name="onb_ready_loading_intro">Jeszcze jedno: możesz teraz ustawić niestandardowy ekran ładowania wyświetlany podczas łączenia samochodu.</string>
     <string name="onb_ready_loading_button">Skonfiguruj ekran ładowania</string>
 
@@ -1151,10 +1143,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="dpi_size_s">S</string>
-    <string name="dpi_size_m">M</string>
-    <string name="dpi_size_l">L</string>
-    <string name="dpi_size_xl">XL</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Proporcje pikseli</string>
     <string name="pixel_aspect_ratio_help">Zmień to tylko wtedy, gdy koła wyglądają na tym ekranie jak owale. Dzieje się tak, gdy piksele panelu nie są kwadratowe. 10000 oznacza kwadratowe piksele.</string>
@@ -1729,6 +1717,15 @@
     <string name="onb_launcher_reopen_note">Opcja Otwórz ponownie po reconnect nie działa, dopóki Open Headunit jest aplikacją główną, bo urządzenie i tak do niej wraca. Zadziała znowu po wyłączeniu launchera samochodowego.</string>
     <string name="onb_summary_launcher_home">Launcher: Open Headunit jest ekranem głównym</string>
     <string name="onb_summary_launcher_registered">Launcher: zarejestrowany jako ekran główny</string>
+    <string name="dpi_pane_map_and_media">Mapa i multimedia</string>
+    <string name="dpi_pane_one_app">Jedna aplikacja</string>
+    <string name="dpi_pane_compact">Kompaktowy</string>
+    <string name="dpi_pane_map_over_media">Mapa nad multimediami</string>
+    <string name="dpi_layout_step_title">1. Układ</string>
+    <string name="dpi_size_step_title">2. Rozmiar tekstu i ikon</string>
+    <string name="dpi_expected_format">Oczekiwane: %1$s</string>
+    <string name="dpi_edge_note">Duży i Automatycznie leżą na granicy układu. Jeśli telefon pokaże tam inny układ, wybierz Średni.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Przytrzymaj puste miejsce</string>
     <string name="home_pages_hint_body">Tak dodasz stronę na widżety albo ją usuniesz.</string>
     <string name="home_pages_hint_got_it">Rozumiem</string>

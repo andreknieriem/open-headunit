@@ -214,7 +214,7 @@ object SystemUI {
         private var observedPreferences: SharedPreferences? = null
         private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
-                null, "resolutionId", "dpi-pixel-density", "pixel-aspect-ratio-e4",
+                null, "resolutionId", "dpi-pixel-density", "dpi-auto-layout", "pixel-aspect-ratio-e4",
                 "inset-left", "inset-top", "inset-right", "inset-bottom",
                 "view-mode", Settings.KEY_SCREEN_ORIENTATION,
                 "fullscreen-mode", "start-in-fullscreen-mode",

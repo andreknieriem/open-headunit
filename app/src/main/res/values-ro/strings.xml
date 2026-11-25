@@ -1024,16 +1024,10 @@
     <string name="onb_automation_more_hint">Poți găsi mai multe opțiuni în setările de Conectare automată și Pornire automată.</string>
     <string name="onb_dpi_help">Un DPI mai mare mărește pictogramele și textul Android Auto, așa că încape mai puțin pe ecran. Un DPI mai mic le micșorează și încape mai mult. Se aplică la conectarea Android Auto.</string>
     <string name="onb_change_later">Poți schimba asta mai târziu în Setări.</string>
-    <string name="dpi_automatic">Automat</string>
-    <string name="dpi_automatic_desc">Folosește densitatea dispozitivului.</string>
-    <string name="dpi_widescreen_hint">La %1$d DPI sau mai puțin, Android Auto afișează harta cu un card media alături, iar textul devine mai mic.</string>
-    <string name="dpi_automatic_desc_canvas">Folosește %1$d DPI pentru %2$s, o suprafață de %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Automat: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, trimis ca %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto necesită o suprafață de cel puțin 748x450 dp, așa că %1$d DPI se trimite ca %2$d.</string>
-    <string name="dpi_clamped_note_portrait">În modul portret, Google Maps din Android Auto ignoră atingerea pe o suprafață mai îngustă de 730 dp, așa că %1$d DPI se trimite ca %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI se trimite așa cum a fost ales. În modul portret, Google Maps din Android Auto poate ignora atingerea peste %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI se trimite așa cum a fost ales. Peste %2$d DPI suprafața este mai mică decât cei 748x450 dp de care are nevoie Android Auto și poate apărea o aranjare redusă.</string>
     <string name="onb_conn_usb_label">USB (sau adaptor)</string>
     <string name="onb_connection_self_detail">Modul autonom rulează Android Auto pe acest dispozitiv fără a conecta un telefon.</string>
@@ -1049,7 +1043,6 @@
     <string name="resolution_use_anyway">Folosește oricum</string>
     <string name="resolution_use_recommended">Folosește recomandarea</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Uriaș</string>
     <string name="onb_vehicle_title">Mașina ta</string>
     <string name="onb_vehicle_input_hint">Marcă sau nume</string>
     <string name="onb_vehicle_help_aa">Acest nume este trimis către Android Auto. Apare în istoricul conexiunilor telefonului și pe ecranul de întâmpinare Android Auto.</string>
@@ -1147,7 +1140,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="onb_dpi_recommended">Recomandat pentru ecranul tău: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Raport de aspect al pixelilor</string>
     <string name="pixel_aspect_ratio_help">Modifică această setare doar dacă cercurile arată ca niște ovale pe acest ecran. Asta se întâmplă când pixelii panoului nu sunt pătrați. 10000 înseamnă pixeli pătrați.</string>
@@ -1720,6 +1712,15 @@
     <string name="onb_launcher_reopen_note">Redeschide la reconectare nu se aplică cât timp Open Headunit este aplicația principală, deoarece unitatea revine oricum la ea. Funcționează din nou dacă dezactivezi lansatorul auto.</string>
     <string name="onb_summary_launcher_home">Lansator: Open Headunit este ecranul principal</string>
     <string name="onb_summary_launcher_registered">Lansator: înregistrat ca ecran principal</string>
+    <string name="dpi_pane_map_and_media">Hartă și media</string>
+    <string name="dpi_pane_one_app">O aplicație</string>
+    <string name="dpi_pane_compact">Compact</string>
+    <string name="dpi_pane_map_over_media">Hartă peste media</string>
+    <string name="dpi_layout_step_title">1. Aspect</string>
+    <string name="dpi_size_step_title">2. Dimensiunea textului și a pictogramelor</string>
+    <string name="dpi_expected_format">Așteptat: %1$s</string>
+    <string name="dpi_edge_note">Mare și Automat se află la limita aspectului. Dacă telefonul dvs. afișează acolo alt aspect, alegeți Mediu.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Ține apăsat pe un spațiu gol</string>
     <string name="home_pages_hint_body">Așa adaugi o pagină pentru widgeturi sau elimini una.</string>
     <string name="home_pages_hint_got_it">Am înțeles</string>

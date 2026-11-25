@@ -1022,16 +1022,10 @@
     <string name="onb_automation_more_hint">Je vindt meer opties in de instellingen voor Automatisch verbinden en Automatisch starten.</string>
     <string name="onb_dpi_help">Een hogere DPI maakt de pictogrammen en tekst van Android Auto groter, waardoor er minder op het scherm past. Een lagere DPI maakt alles kleiner, waardoor er meer past. Dit wordt toegepast wanneer je Android Auto verbindt.</string>
     <string name="onb_change_later">Je kunt dit later wijzigen in Instellingen.</string>
-    <string name="dpi_automatic">Automatisch</string>
-    <string name="dpi_automatic_desc">Gebruik de dichtheid van het apparaat.</string>
-    <string name="dpi_widescreen_hint">Bij %1$d DPI of lager toont Android Auto de kaart met een mediakaart ernaast, en wordt de tekst kleiner.</string>
-    <string name="dpi_automatic_desc_canvas">Gebruikt %1$d DPI voor %2$s, een canvas van %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Automatisch: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, verzonden als %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto heeft een canvas van minstens 748x450 dp nodig, dus %1$d DPI wordt verzonden als %2$d.</string>
-    <string name="dpi_clamped_note_portrait">In staand formaat negeert Google Maps in Android Auto aanraking op een canvas smaller dan 730 dp, dus %1$d DPI wordt verzonden als %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI wordt verzonden zoals gekozen. In staand formaat kan Google Maps in Android Auto aanraking negeren boven %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI wordt verzonden zoals gekozen. Boven %2$d DPI is het canvas kleiner dan de 748x450 dp die Android Auto nodig heeft en kan een beperkte indeling verschijnen.</string>
     <string name="onb_conn_usb_label">USB (of adapter)</string>
     <string name="onb_connection_self_detail">De zelfstandige modus voert Android Auto uit op dit apparaat, zonder dat er een telefoon is verbonden.</string>
@@ -1047,7 +1041,6 @@
     <string name="resolution_use_anyway">Toch gebruiken</string>
     <string name="resolution_use_recommended">Aanbevolen optie gebruiken</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Enorm</string>
     <string name="onb_vehicle_title">Je auto</string>
     <string name="onb_vehicle_input_hint">Merk of naam</string>
     <string name="onb_vehicle_help_aa">Deze naam wordt naar Android Auto gestuurd. Hij verschijnt in de verbindingsgeschiedenis van je telefoon en op het welkomstscherm van Android Auto.</string>
@@ -1079,7 +1072,6 @@
     <string name="perm_write_settings_help">Laat de app de hotspot automatisch inschakelen voor draadloze verbindingen.</string>
     <string name="perm_storage_title">Opslagruimte</string>
     <string name="perm_storage_help">Nodig om een back-up van je instellingen te maken en te herstellen en om een aangepaste laadafbeelding te kiezen.</string>
-    <string name="onb_dpi_recommended">Aanbevolen voor je scherm: %1$d dpi</string>
     <string name="onb_ready_loading_intro">Nog één ding: je kunt nu een aangepast laadscherm instellen, dat wordt getoond terwijl de auto verbinding maakt.</string>
     <string name="onb_ready_loading_button">Een laadscherm instellen</string>
 
@@ -1150,10 +1142,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="dpi_size_s">S</string>
-    <string name="dpi_size_m">M</string>
-    <string name="dpi_size_l">L</string>
-    <string name="dpi_size_xl">XL</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Pixelverhouding</string>
     <string name="pixel_aspect_ratio_help">Wijzig dit alleen als cirkels op dit scherm als ovalen worden weergegeven. Dat gebeurt als de pixels van het paneel niet vierkant zijn. 10000 betekent vierkante pixels.</string>
@@ -1728,6 +1716,15 @@
     <string name="onb_launcher_reopen_note">Heropenen bij herverbinding geldt niet zolang Open Headunit de start-app is, omdat het apparaat er al naar terugkeert. Het werkt weer als je de auto-launcher uitzet.</string>
     <string name="onb_summary_launcher_home">Launcher: Open Headunit is het startscherm</string>
     <string name="onb_summary_launcher_registered">Launcher: geregistreerd als startscherm</string>
+    <string name="dpi_pane_map_and_media">Kaart en media</string>
+    <string name="dpi_pane_one_app">Eén app</string>
+    <string name="dpi_pane_compact">Compact</string>
+    <string name="dpi_pane_map_over_media">Kaart boven media</string>
+    <string name="dpi_layout_step_title">1. Indeling</string>
+    <string name="dpi_size_step_title">2. Tekst- en pictogramgrootte</string>
+    <string name="dpi_expected_format">Verwacht: %1$s</string>
+    <string name="dpi_edge_note">Groot en Automatisch liggen op de rand van de indeling. Toont je telefoon daar een andere indeling, kies dan Gemiddeld.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Houd een lege plek ingedrukt</string>
     <string name="home_pages_hint_body">Zo voeg je een pagina voor je widgets toe, of verwijder je er een.</string>
     <string name="home_pages_hint_got_it">Begrepen</string>

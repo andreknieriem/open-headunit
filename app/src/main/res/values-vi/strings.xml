@@ -1027,16 +1027,10 @@
     <string name="onb_automation_more_hint">Bạn có thể tìm thêm tùy chọn trong cài đặt Tự động kết nối và Tự động khởi động.</string>
     <string name="onb_dpi_help">DPI cao hơn làm cho biểu tượng và chữ của Android Auto lớn hơn, nên hiển thị được ít hơn. DPI thấp hơn làm chúng nhỏ lại và hiển thị được nhiều hơn. Áp dụng khi bạn kết nối Android Auto.</string>
     <string name="onb_change_later">Bạn có thể thay đổi điều này sau trong Cài đặt.</string>
-    <string name="dpi_automatic">Tự động</string>
-    <string name="dpi_automatic_desc">Dùng mật độ của thiết bị.</string>
-    <string name="dpi_widescreen_hint">Ở %1$d DPI trở xuống, Android Auto hiển thị bản đồ kèm thẻ nội dung nghe nhìn bên cạnh, và văn bản nhỏ hơn.</string>
-    <string name="dpi_automatic_desc_canvas">Dùng %1$d DPI cho %2$s, vùng hiển thị %3$dx%4$d dp.</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Tự động: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, gửi dưới dạng %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto cần vùng hiển thị tối thiểu 748x450 dp, nên %1$d DPI được gửi dưới dạng %2$d.</string>
-    <string name="dpi_clamped_note_portrait">Ở chế độ dọc, Google Maps trên Android Auto bỏ qua thao tác chạm trên vùng hiển thị hẹp hơn 730 dp, nên %1$d DPI được gửi dưới dạng %2$d.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI được gửi đúng như đã chọn. Ở chế độ dọc, Google Maps trên Android Auto có thể bỏ qua thao tác chạm khi trên %2$d DPI.</string>
     <string name="dpi_floor_override_note">%1$d DPI được gửi đúng như đã chọn. Trên %2$d DPI, vùng hiển thị nhỏ hơn 748x450 dp mà Android Auto cần, và có thể hiện bố cục thu gọn.</string>
     <string name="onb_conn_usb_label">USB (hoặc bộ chuyển đổi)</string>
     <string name="onb_connection_self_detail">Chế độ độc lập chạy Android Auto trên thiết bị này mà không cần kết nối điện thoại.</string>
@@ -1052,7 +1046,6 @@
     <string name="resolution_use_anyway">Vẫn dùng</string>
     <string name="resolution_use_recommended">Dùng khuyến nghị</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Cực lớn</string>
     <string name="onb_vehicle_title">Xe của bạn</string>
     <string name="onb_vehicle_input_hint">Hãng hoặc tên</string>
     <string name="onb_vehicle_help_aa">Tên này được gửi đến Android Auto. Nó hiển thị trong lịch sử kết nối của điện thoại và trên màn hình chào mừng của Android Auto.</string>
@@ -1151,7 +1144,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="onb_dpi_recommended">Đề xuất cho màn hình của bạn: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Tỷ lệ khung hình điểm ảnh</string>
     <string name="pixel_aspect_ratio_help">Chỉ thay đổi nếu hình tròn trông như hình bầu dục trên màn hình này. Điều đó xảy ra khi điểm ảnh của tấm nền không vuông. 10000 nghĩa là điểm ảnh vuông.</string>
@@ -1724,6 +1716,15 @@
     <string name="onb_launcher_reopen_note">Mở lại khi kết nối lại không áp dụng khi Open Headunit là ứng dụng màn hình chính, vì thiết bị đã tự quay lại ứng dụng này. Tùy chọn sẽ hoạt động lại nếu bạn tắt trình khởi chạy trên xe.</string>
     <string name="onb_summary_launcher_home">Trình khởi chạy: Open Headunit là màn hình chính</string>
     <string name="onb_summary_launcher_registered">Trình khởi chạy: đã đăng ký làm màn hình chính</string>
+    <string name="dpi_pane_map_and_media">Bản đồ và nội dung nghe nhìn</string>
+    <string name="dpi_pane_one_app">Một ứng dụng</string>
+    <string name="dpi_pane_compact">Thu gọn</string>
+    <string name="dpi_pane_map_over_media">Bản đồ trên nội dung nghe nhìn</string>
+    <string name="dpi_layout_step_title">1. Bố cục</string>
+    <string name="dpi_size_step_title">2. Cỡ văn bản và biểu tượng</string>
+    <string name="dpi_expected_format">Dự kiến: %1$s</string>
+    <string name="dpi_edge_note">Lớn và Tự động nằm ở ranh giới của bố cục. Nếu điện thoại của bạn hiển thị bố cục khác ở đó, hãy chọn Vừa.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Chạm và giữ vào chỗ trống</string>
     <string name="home_pages_hint_body">Đó là cách thêm trang cho tiện ích, hoặc xóa một trang.</string>
     <string name="home_pages_hint_got_it">Đã hiểu</string>

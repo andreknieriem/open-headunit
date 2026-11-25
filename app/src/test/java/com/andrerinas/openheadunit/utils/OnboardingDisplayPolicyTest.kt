@@ -74,16 +74,6 @@ class OnboardingDisplayPolicyTest {
     }
 
     @Test
-    fun `an untouched picker follows the size`() {
-        assertEquals(215, OnboardingDisplayPolicy.pickerDpiAfterSizeChange(recommended = 215, current = 160, pickerTouched = false))
-    }
-
-    @Test
-    fun `a picker the user moved keeps its value`() {
-        assertEquals(160, OnboardingDisplayPolicy.pickerDpiAfterSizeChange(recommended = 215, current = 160, pickerTouched = true))
-    }
-
-    @Test
     fun `a stored size wins over the estimate`() {
         assertEquals(
             DisplaySizePreset.STANDARD_9_10,
@@ -110,30 +100,13 @@ class OnboardingDisplayPolicyTest {
     }
 
     @Test
-    fun `an untouched picker keeps Automatic on a fresh install`() {
-        assertEquals(0, OnboardingDisplayPolicy.dpiToSave(150, false, stored = 0))
-    }
-
-    @Test
-    fun `an untouched picker keeps an upgrader's typed value`() {
-        assertEquals(300, OnboardingDisplayPolicy.dpiToSave(240, false, stored = 300))
-        assertEquals(171, OnboardingDisplayPolicy.dpiToSave(150, false, stored = 171))
-    }
-
-    @Test
-    fun `a moved picker saves its value`() {
-        assertEquals(103, OnboardingDisplayPolicy.dpiToSave(103, true, stored = 0))
-        assertEquals(150, OnboardingDisplayPolicy.dpiToSave(150, true, stored = 300))
-    }
-
-    @Test
     fun `Automatic at connect equals the wizard's recommendation`() {
         for (preset in DisplaySizePreset.values()) {
             for ((w, h) in listOf(800 to 480, 1280 to 720, 1920 to 1080)) {
                 assertEquals(
                     "$preset ${w}x$h",
                     OnboardingDisplayPolicy.recommendedDpi(preset, w, h, false),
-                    AnnouncedDensityPolicy.decide(0, preset, w, h).announced
+                    AnnouncedDensityPolicy.decide(0, preset, w, h, autoLayout = null).announced
                 )
             }
         }

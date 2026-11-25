@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.utils
 
+import com.andrerinas.openheadunit.utils.DisplayLayoutPolicy.Thresholds
 import com.andrerinas.openheadunit.utils.SystemOptimizer.DisplaySizePreset
 
 /**
@@ -10,13 +11,9 @@ object AnnouncedDensityPolicy {
 
     const val HUIG_MIN_WIDTH_DP = 748
     const val HUIG_MIN_HEIGHT_DP = 450
-    /** Android Auto uses its widescreen layout from a 1240 dp wide canvas. */
-    const val WIDESCREEN_MIN_WIDTH_DP = 1240
-    /** Below this width Android Auto uses its narrow portrait layout, where Google Maps takes no touch. */
-    const val PORTRAIT_MIN_WIDTH_DP = 730
     private const val FALLBACK_DPI = 160
 
-    enum class Reason { AS_STORED, AUTOMATIC, PANEL, WIDESCREEN_KEPT, WIDTH_FLOOR, HEIGHT_FLOOR, PORTRAIT, PORTRAIT_FLOOR, FLOOR_OVERRIDE }
+    enum class Reason { AS_STORED, AUTOMATIC, PANEL, WIDESCREEN_KEPT, WIDTH_FLOOR, HEIGHT_FLOOR, PORTRAIT, PORTRAIT_FLOOR, FLOOR_OVERRIDE, AUTO_LAYOUT }
 
     data class Decision(val announced: Int, val requested: Int, val reason: Reason)
 
@@ -24,21 +21,44 @@ object AnnouncedDensityPolicy {
     fun huigMaxDpi(w: Int, h: Int): Int = minOf(w * 160 / HUIG_MIN_WIDTH_DP, h * 160 / HUIG_MIN_HEIGHT_DP)
 
     /** The highest density that keeps a codec of this width at or above the widescreen breakpoint. */
-    fun widescreenMaxDpi(codecWidth: Int): Int =
-        if (codecWidth <= 0) 0 else codecWidth * 160 / WIDESCREEN_MIN_WIDTH_DP
+    fun widescreenMaxDpi(codecWidth: Int, t: Thresholds = Thresholds.DEFAULT): Int {
+        if (codecWidth <= 0) return 0
+        var d = codecWidth * 160 / t.widescreenW + 2
+        while (d > 0 && DisplayLayoutPolicy.dp(codecWidth, d) < t.widescreenW) d--
+        return d
+    }
 
-    /** For the canvas the phone lays out (stretched by the pixel aspect ratio); portrait or unknown gets 0. */
-    fun widescreenHintDpi(canvasWidth: Int, canvasHeight: Int): Int =
-        if (canvasWidth <= 0 || canvasHeight <= 0 || canvasHeight > canvasWidth) 0 else widescreenMaxDpi(canvasWidth)
+    /** The top of the WIDESCREEN run for the canvas the phone lays out; 0 when no density gives it. */
+    fun widescreenHintDpi(canvasWidth: Int, canvasHeight: Int, t: Thresholds = Thresholds.DEFAULT): Int {
+        if (canvasWidth <= 0 || canvasHeight <= 0) return 0
+        for (d in DisplayLayoutPolicy.SLIDER_MAX downTo 1) {
+            if (DisplayLayoutPolicy.layoutOf(canvasWidth, canvasHeight, d, t) == DisplayLayoutPolicy.Layout.WIDESCREEN) return d
+        }
+        return 0
+    }
 
     /** The highest density that keeps a portrait canvas this wide (phone pixels) out of the narrow layout. */
-    fun portraitMaxDpi(phoneWidth: Int): Int = maxOf(1, phoneWidth * 160 / PORTRAIT_MIN_WIDTH_DP)
+    fun portraitMaxDpi(phoneWidth: Int, t: Thresholds = Thresholds.DEFAULT): Int {
+        if (phoneWidth <= 0) return 1
+        var d = phoneWidth * 160 / (t.narrowW + 1) + 2
+        while (d > 1 && DisplayLayoutPolicy.dp(phoneWidth, d) <= t.narrowW) d--
+        return d
+    }
+
+    /**
+     * The highest density a picker or Automatic may use: the touch cap in portrait, the HUIG floor otherwise.
+     * Both read the canvas the phone lays out, so a stretched axis counts at its stretched size.
+     */
+    fun clampDpi(visibleW: Int, visibleH: Int, parE4: Int, t: Thresholds = Thresholds.DEFAULT): Int {
+        val (cw, ch) = phoneCanvas(visibleW, visibleH, parE4)
+        return if (visibleH > visibleW) portraitMaxDpi(cw, t) else huigMaxDpi(cw, ch)
+    }
 
     /** The canvas the phone lays out: it stretches the codec by the pixel aspect ratio and never shrinks it. */
     fun phoneCanvas(w: Int, h: Int, parE4: Int): Pair<Int, Int> = when {
         parE4 <= 0 || parE4 == ProjectionGeometryPolicy.SQUARE_PIXELS_E4 -> w to h
-        parE4 > ProjectionGeometryPolicy.SQUARE_PIXELS_E4 -> Math.round(w * parE4 / 10000f) to h
-        else -> w to Math.round(h * 10000f / parE4)
+        parE4 > ProjectionGeometryPolicy.SQUARE_PIXELS_E4 -> Math.round(w * (parE4 * 1.0E-4f)) to h
+        else -> w to Math.round(h / (parE4 * 1.0E-4f))
     }
 
     /** The pixel aspect ratio connect announces for this geometry, with HeadUnitScreenConfig's rules. */
@@ -60,7 +80,7 @@ object AnnouncedDensityPolicy {
         return Math.round(phoneCanvas(visibleW, visibleH, parE4).second * ppi / shownRows).toInt()
     }
 
-    fun canvasDp(px: Int, dpi: Int): Int = if (dpi <= 0) 0 else px * 160 / dpi
+    fun canvasDp(px: Int, dpi: Int): Int = if (dpi <= 0) 0 else DisplayLayoutPolicy.dp(px, dpi)
 
     /** The panel as the projection holds it: a settings screen can be held the other way round. */
     fun orientPanel(w: Int, h: Int, portrait: Boolean): Pair<Int, Int> = if ((h > w) == portrait) w to h else h to w
@@ -85,24 +105,26 @@ object AnnouncedDensityPolicy {
     fun decide(
         stored: Int, preset: DisplaySizePreset, visibleW: Int, visibleH: Int,
         parE4: Int = ProjectionGeometryPolicy.SQUARE_PIXELS_E4, floorOverride: Boolean = false,
-        panelW: Int = 0, panelH: Int = 0
+        panelW: Int = 0, panelH: Int = 0, autoLayout: DisplayLayoutPolicy.Pane?, t: Thresholds = Thresholds.DEFAULT
     ): Decision {
         if (visibleW <= 0 || visibleH <= 0) {
             return if (stored > 0) Decision(stored, stored, Reason.AS_STORED)
             else Decision(FALLBACK_DPI, 0, Reason.AUTOMATIC)
         }
+        if (stored <= 0 && autoLayout != null) {
+            val (cw, ch) = phoneCanvas(visibleW, visibleH, parE4)
+            val choice = DisplayLayoutPolicy.choices(cw, ch, clampDpi(visibleW, visibleH, parE4, t), t)
+                .firstOrNull { it.pane == autoLayout }
+            if (choice != null) return Decision(DisplayLayoutPolicy.autoDensity(choice), 0, Reason.AUTO_LAYOUT)
+        }
         if (visibleH > visibleW) {
-            val max = portraitMaxDpi(phoneCanvas(visibleW, visibleH, parE4).first)
+            val max = portraitMaxDpi(phoneCanvas(visibleW, visibleH, parE4).first, t)
             if (stored <= 0) {
                 val auto = OnboardingDisplayPolicy.recommendedDpi(preset, visibleW, visibleH, true)
                 return Decision(minOf(auto, max), 0, Reason.PORTRAIT)
             }
-            // The user's "Use anyway" lifts a floor for a stored value only, never for Automatic.
-            return when {
-                stored <= max -> Decision(stored, stored, Reason.PORTRAIT)
-                floorOverride -> Decision(stored, stored, Reason.FLOOR_OVERRIDE)
-                else -> Decision(max, stored, Reason.PORTRAIT_FLOOR)
-            }
+            // Above the cap Maps takes no touch, so "Use anyway" never lifts it in portrait.
+            return if (stored <= max) Decision(stored, stored, Reason.PORTRAIT) else Decision(max, stored, Reason.PORTRAIT_FLOOR)
         }
         if (stored <= 0) {
             // The codec-based value is too small on a dense panel, so Automatic never goes below the panel's own,
@@ -111,14 +133,16 @@ object AnnouncedDensityPolicy {
             val panel = minOf(panelDpi(preset, panelW, panelH, visibleW, visibleH, parE4), huigMaxDpi(visibleW, visibleH))
             if (panel <= codec) return Decision(codec, 0, Reason.AUTOMATIC)
             val (canvasW, canvasH) = phoneCanvas(visibleW, visibleH, parE4)
-            val wide = widescreenHintDpi(canvasW, canvasH)
+            val wide = widescreenHintDpi(canvasW, canvasH, t)
             return if (codec <= wide && panel > wide) Decision(wide, 0, Reason.WIDESCREEN_KEPT)
             else Decision(panel, 0, Reason.PANEL)
         }
-        val max = huigMaxDpi(visibleW, visibleH)
+        // The floor is in the phone's dp, so a size step the picker offers is never clamped on the wire.
+        val (canvasW, canvasH) = phoneCanvas(visibleW, visibleH, parE4)
+        val max = huigMaxDpi(canvasW, canvasH)
         if (stored <= max) return Decision(stored, stored, Reason.AS_STORED)
         if (floorOverride) return Decision(stored, stored, Reason.FLOOR_OVERRIDE)
-        val heightBound = visibleH * 160 / HUIG_MIN_HEIGHT_DP < visibleW * 160 / HUIG_MIN_WIDTH_DP
+        val heightBound = canvasH * 160 / HUIG_MIN_HEIGHT_DP < canvasW * 160 / HUIG_MIN_WIDTH_DP
         return Decision(max, stored, if (heightBound) Reason.HEIGHT_FLOOR else Reason.WIDTH_FLOOR)
     }
 
@@ -127,23 +151,50 @@ object AnnouncedDensityPolicy {
         if (primaryWidth <= 0) primaryDensity
         else Math.round(primaryDensity.toFloat() * fallbackWidth / primaryWidth)
 
+    /** The fallback's density, moved by up to 2 so its canvas lays out in the primary's layout. */
+    fun fallbackDensityKeepingLayout(
+        decision: Decision, guess: Int, primaryW: Int, primaryH: Int, fallbackW: Int, fallbackH: Int, parE4: Int,
+        t: Thresholds = Thresholds.DEFAULT
+    ): Int {
+        val (pcw, pch) = phoneCanvas(primaryW, primaryH, parE4)
+        val (fcw, fch) = phoneCanvas(fallbackW, fallbackH, parE4)
+        if (decision.announced <= 0 || pcw <= 0 || pch <= 0 || fcw <= 0 || fch <= 0) return guess
+        val target = DisplayLayoutPolicy.layoutOf(pcw, pch, decision.announced, t)
+        return DisplayLayoutPolicy.keepLayout(guess, target, fcw, fch, t)
+    }
+
+    private fun layoutName(decision: Decision, visibleW: Int, visibleH: Int, parE4: Int, t: Thresholds): String {
+        val (w, h) = phoneCanvas(visibleW, visibleH, parE4)
+        return DisplayLayoutPolicy.layoutOf(w, h, decision.announced, t).name
+    }
+
+    /** The `Layout is:` log text; the rig compares it with the phone's own layout line. */
+    fun describeLayout(
+        decision: Decision, visibleW: Int, visibleH: Int,
+        parE4: Int = ProjectionGeometryPolicy.SQUARE_PIXELS_E4, t: Thresholds = Thresholds.DEFAULT
+    ): String {
+        val (w, h) = phoneCanvas(visibleW, visibleH, parE4)
+        val layout = layoutName(decision, visibleW, visibleH, parE4, t)
+        return "$layout (expected from defaults, dp canvas ${canvasDp(w, decision.announced)}x${canvasDp(h, decision.announced)})"
+    }
+
     /** The `Density is:` log text; the rig greps these exact strings. */
     fun describe(
         decision: Decision, visibleW: Int, visibleH: Int,
-        parE4: Int = ProjectionGeometryPolicy.SQUARE_PIXELS_E4
+        parE4: Int = ProjectionGeometryPolicy.SQUARE_PIXELS_E4, t: Thresholds = Thresholds.DEFAULT
     ): String {
         val requested = if (decision.requested > 0) decision.requested.toString() else "automatic"
         val why = when (decision.reason) {
             Reason.AS_STORED -> "within the HUIG floor"
             Reason.AUTOMATIC -> "codec-based"
             Reason.PANEL -> "panel-based"
-            Reason.WIDESCREEN_KEPT -> "panel-based, held at the $WIDESCREEN_MIN_WIDTH_DP dp widescreen line"
+            Reason.WIDESCREEN_KEPT -> "panel-based, held at the ${t.widescreenW} dp widescreen line"
             Reason.WIDTH_FLOOR -> "clamped to the $HUIG_MIN_WIDTH_DP dp width floor"
             Reason.HEIGHT_FLOOR -> "clamped to the $HUIG_MIN_HEIGHT_DP dp height floor"
-            Reason.PORTRAIT -> "portrait, within the $PORTRAIT_MIN_WIDTH_DP dp width floor"
-            Reason.PORTRAIT_FLOOR -> "clamped to the $PORTRAIT_MIN_WIDTH_DP dp portrait width floor"
-            Reason.FLOOR_OVERRIDE -> if (visibleH > visibleW) "the $PORTRAIT_MIN_WIDTH_DP dp portrait width floor overridden"
-            else "the ${HUIG_MIN_WIDTH_DP}x$HUIG_MIN_HEIGHT_DP dp HUIG floor overridden"
+            Reason.PORTRAIT -> "portrait, within the ${t.narrowW} dp width floor"
+            Reason.PORTRAIT_FLOOR -> "clamped to the ${t.narrowW} dp portrait width floor"
+            Reason.FLOOR_OVERRIDE -> "the ${HUIG_MIN_WIDTH_DP}x$HUIG_MIN_HEIGHT_DP dp HUIG floor overridden"
+            Reason.AUTO_LAYOUT -> "top of the ${layoutName(decision, visibleW, visibleH, parE4, t)} layout"
         }
         val (w, h) = phoneCanvas(visibleW, visibleH, parE4)
         return "${decision.announced} (dp canvas ${canvasDp(w, decision.announced)}x" +

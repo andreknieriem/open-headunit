@@ -1019,16 +1019,10 @@
     <string name="onb_automation_more_hint">Daha fazla seçeneği Otomatik bağlanma ve Otomatik başlatma ayarlarında bulabilirsiniz.</string>
     <string name="onb_dpi_help">Daha yüksek DPI, Android Auto simgelerini ve metnini büyütür, böylece ekrana daha az sığar. Daha düşük DPI ise küçültür ve daha fazla sığar. Android Auto bağlandığında uygulanır.</string>
     <string name="onb_change_later">Bunu daha sonra Ayarlar bölümünden değiştirebilirsiniz.</string>
-    <string name="dpi_automatic">Otomatik</string>
-    <string name="dpi_automatic_desc">Cihaz yoğunluğunu kullan.</string>
-    <string name="dpi_widescreen_hint">%1$d DPI veya altında Android Auto haritayı yanında bir medya kartıyla gösterir ve metin küçülür.</string>
-    <string name="dpi_automatic_desc_canvas">%2$s için %1$d DPI kullanır (%3$dx%4$d dp alan).</string>
     <string name="dpi_row_value_format">%1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_auto_format">Otomatik: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, %2$d olarak gönderilir (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto en az 748x450 dp alan gerektirir, bu yüzden %1$d DPI değeri %2$d olarak gönderilir.</string>
-    <string name="dpi_clamped_note_portrait">Dikey modda Android Auto\'daki Google Maps, 730 dp\'den dar alanda dokunmayı yok sayar, bu yüzden %1$d DPI değeri %2$d olarak gönderilir.</string>
-    <string name="dpi_portrait_override_note">%1$d DPI değeri seçildiği gibi gönderilir. Dikey modda Android Auto\'daki Google Maps, %2$d DPI üzerinde dokunmayı yok sayabilir.</string>
     <string name="dpi_floor_override_note">%1$d DPI değeri seçildiği gibi gönderilir. %2$d DPI üzerinde alan, Android Auto\'nun gerektirdiği 748x450 dp\'den küçük olur ve düzen küçültülmüş görünebilir.</string>
     <string name="onb_conn_usb_label">USB (veya adaptör)</string>
     <string name="onb_connection_self_detail">Bağımsız mod, telefon bağlamadan Android Auto uygulamasını bu cihazda çalıştırır.</string>
@@ -1044,7 +1038,6 @@
     <string name="resolution_use_anyway">Yine de kullan</string>
     <string name="resolution_use_recommended">Önerileni kullan</string>
     <string name="dpi_input_hint">DPI</string>
-    <string name="onb_dpi_huge">Devasa</string>
     <string name="onb_vehicle_title">Aracınız</string>
     <string name="onb_vehicle_input_hint">Marka veya ad</string>
     <string name="onb_vehicle_help_aa">Bu ad Android Auto uygulamasına gönderilir. Telefonunuzun bağlantı geçmişinde ve Android Auto karşılama ekranında görünür.</string>
@@ -1144,7 +1137,6 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="onb_dpi_recommended">Ekranınız için önerilen: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Piksel en boy oranı</string>
     <string name="pixel_aspect_ratio_help">Bunu yalnızca bu ekranda daireler oval görünüyorsa değiştirin. Bu, panelin pikselleri kare olmadığında olur. 10000 kare piksel anlamına gelir.</string>
@@ -1717,6 +1709,15 @@
     <string name="onb_launcher_reopen_note">Open Headunit ana ekran uygulaması olduğu sürece \"Yeniden bağlantıda tekrar aç\" geçerli değildir, çünkü cihaz zaten ona döner. Araç Başlatıcısını kapatırsan yeniden çalışır.</string>
     <string name="onb_summary_launcher_home">Başlatıcı: Open Headunit ana ekran uygulamasıdır</string>
     <string name="onb_summary_launcher_registered">Başlatıcı: ana ekran uygulaması olarak kaydedildi</string>
+    <string name="dpi_pane_map_and_media">Harita ve medya</string>
+    <string name="dpi_pane_one_app">Tek uygulama</string>
+    <string name="dpi_pane_compact">Kompakt</string>
+    <string name="dpi_pane_map_over_media">Medya üzerinde harita</string>
+    <string name="dpi_layout_step_title">1. Düzen</string>
+    <string name="dpi_size_step_title">2. Metin ve simge boyutu</string>
+    <string name="dpi_expected_format">Beklenen: %1$s</string>
+    <string name="dpi_edge_note">Büyük ve Otomatik, düzenin sınırında yer alır. Telefonunuz orada başka bir düzen gösteriyorsa Orta\'yı seçin.</string>
+    <string name="dpi_row_named_format">%1$s, %2$s</string>
     <string name="home_pages_hint_title">Boş bir yere basılı tutun</string>
     <string name="home_pages_hint_body">Widget\'larınız için sayfa eklemek ya da kaldırmak böyle yapılır.</string>
     <string name="home_pages_hint_got_it">Anladım</string>

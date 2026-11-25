@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">Koppints a vetítéshez való visszatéréshez</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">balra</string>
     <string name="night_overlay_right">jobbra</string>
@@ -352,6 +353,9 @@
     <string name="move_down">Lefelé</string>
     <string name="video_codec">Videókódek</string>
     <string name="video_codec_help">Kiválasztja a telefon által küldött videóformátumot. Az Auto az alkalmazásra bízza a választást abból, amit a fejegység dekódolni tud. A H.265 azonos adatsebességnél élesebb képet ad. A H.264 minden dekóderen működik. Váltson, ha a kép akadozik vagy fekete marad. A választás a következő csatlakozástól érvényes.</string>
+    <string name="gal_compatibility_mode">Kompatibilitási mód (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Csak az eredeti protokollverziót kéri. A következő csatlakozáskor lép érvénybe.</string>
+    <string name="gal_compatibility_mode_help">Az alkalmazás a GAL 6.1 verziót kéri a telefontól. Ha a telefonon futó Android Auto régebbi verzióval válaszol, az alkalmazás az 1.6 verziót kéri. Ezek a verziók újabb hang-, videó- és megjelenítési funkciókat tesznek elérhetővé. Csak akkor kapcsolja be ezt a módot, ha a telefon csatlakozik, de utána nem működik megfelelően. Az alkalmazás ekkor a korábbi kiadásokhoz hasonlóan a GAL 1.2 verziót kéri, e funkciók nélkül. A GAL a kivetítési protokoll, nem az Android rendszer vagy az Android Auto alkalmazás verziója. A következő csatlakozáskor lép érvénybe.</string>
     <string name="fps_limit">FPS-korlát</string>
     <string name="fps_limit_help">A legmagasabb képkockasebesség, amelyet ez az egység kér az Android Autótól. A 60 simább mozgást ad, de több sávszélességet és dekóderteljesítményt igényel. Válassza a 30-at, ha a kép késik vagy akadozik. A következő csatlakozáskor lép érvénybe.</string>
     <string name="save">Mentés</string>
@@ -388,7 +392,7 @@
     <string name="attach_hw_dsp_equalizer_description">Egy üres hangszínszabályzó effektet csatol a hangmunkamenethez, hogy egyes fejegységeken kikényszerítse a hardveres DSP-útvonalat. Hagyja kikapcsolva, ha ViPER4Android / ViperFX-et használ, vagy ha a hang tompa a régebbi Android-verziókon.</string>
     <string name="attach_hw_dsp_equalizer_summary">Álegalizálót csatol, hogy egyes fejegységeken kikényszerítse a hardveres DSP-útválasztást.</string>
     <string name="audio_volume_offset">Hangerő-eltolás</string>
-    <string name="audio_volume_offset_help">Megadja az Android Auto három hangfolyamának hangerejét ezen az egységen: média, navigációs utasítások és rendszerhangok. Mindegyik 0% és 200% között állítható. A 100% azt jelenti, hogy a folyam úgy szól, ahogy a telefon küldi. Ezzel kiegyenlítheti a navigáció és a zene hangerejét.</string>
+    <string name="audio_volume_offset_help" formatted="false">Megadja az Android Auto három hangfolyamának hangerejét ezen az egységen: média, navigációs utasítások és rendszerhangok. Mindegyik 0% és 200% között állítható. A 100% azt jelenti, hogy a folyam úgy szól, ahogy a telefon küldi. Ezzel kiegyenlítheti a navigáció és a zene hangerejét.</string>
     <string name="mic_input_source">Mikrofon bemeneti forrása</string>
     <string name="mic_input_source_description">Válassza ki a mikrofon hangforrását.</string>
     <string name="mic_input_source_help">Kiválasztja azt az Android hangforrást, amelyről az alkalmazás rögzít. Az „Alapértelmezett” a rendszerre bízza a döntést. A „Mikrofon” nyers hangot rögzít. A „Hangfelismerő” és a „Hangkommunikáció” hozzáadja a rendszer zaj- és visszhangszűrőit. A „Bluetooth headset” Bluetooth-headseten keresztül rögzít. Módosítsa, ha a telefon nem hallja önt. Ha az Android Auto csatlakozik, a módosítás mentése leállítja a munkamenetet.</string>
@@ -1330,8 +1334,8 @@
     <string name="failed_aa_not_system">Sikertelen: Az Android Auto nincs rendszeralkalmazásként telepítve!</string>
     <string name="failed_aa_not_installed">Sikertelen: Az Android Auto nincs telepítve!</string>
     <string name="raise_projection_during_call">Maradás az Android Autóban hívások alatt</string>
-    <string name="raise_projection_during_call_description">Csak önálló módban. Visszahozza a vetítést a telefon hívásképernyője fölé, így a hívások az Android Auto felületén fogadhatók és fejezhetők be.</string>
-    <string name="raise_projection_during_call_summary">Csak Önálló módban. A kivetítést a telefon hívóképernyője fölött jeleníti meg.</string>
+    <string name="raise_projection_during_call_description">Önálló módban visszahozza a vetítést a telefon hívóképernyője fölé, így a hívások az Android Auto felületén fogadhatók és fejezhetők be. FYT fejegységeken kéri az egységet, hogy ne jelenítse meg saját hívássávját vagy hívóképernyőjét, amíg az Android Auto az előtérben van. Nem biztos, hogy minden egységen vagy firmware-verzión működik.</string>
+    <string name="raise_projection_during_call_summary">Önálló mód és FYT-egységek. Elrejti a hívóképernyőt. Nem mindenhol működik.</string>
     <string name="show_over_lock_screen">Megjelenítés a lezárási képernyőn</string>
     <string name="show_over_lock_screen_summary">A térkép és az útvonal zárolva is látható marad. Érintés és gombok nem működnek.</string>
     <string name="show_over_lock_screen_help">Az Android Auto képét a lezárási képernyő fölött mutatja, így a térkép és az útvonal feloldás nélkül is olvasható. Amíg ez az egység zárolva van, semmi sem jut el a telefonig: az érintéseket, a gombokat, a forgó vezérlőt és a hanggombot visszatartja, a térképet pedig előtérbe hozza. A Vissza gombbal feloldhatja PIN-kóddal, mintával vagy jelszóval; utána minden a szokásos módon működik. A telefonon futó zenét, hívásokat és hangasszisztenst ez nem érinti.</string>
@@ -1484,16 +1488,16 @@
     <string name="pref_enable_floating_button_help">Lebegő gombot jelenít meg a gyári indító és más alkalmazások fölött, hogy gyorsan visszatérhessen az Open Headunitba.</string>
     <string name="pref_floating_button_connection_status_title">Kapcsolat állapotjelző</string>
     <string name="pref_floating_button_connection_status_summary">Halványítja a gombot, amíg egy telefon csatlakozik.</string>
-    <string name="pref_floating_button_connection_status_help">Ha nincs telefon csatlakoztatva, a Kapcsolat nélküli átlátszatlanságot használja, csatlakoztatott telefonnál pedig a Lebegő gomb átlátszatlanságára halványul. 0%-nál a gomb rejtett, és átengedi az érintéseket.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Ha nincs telefon csatlakoztatva, a Kapcsolat nélküli átlátszatlanságot használja, csatlakoztatott telefonnál pedig a Lebegő gomb átlátszatlanságára halványul. 0%-nál a gomb rejtett, és átengedi az érintéseket.</string>
     <string name="pref_floating_button_size_title">Lebegő gomb mérete</string>
     <string name="pref_floating_button_size_help">A lebegő gomb mérete, 32 és 120 dp között. Egy nagyobb gombot vezetés közben könnyebb eltalálni.</string>
     <string name="pref_floating_button_opacity_title">Lebegő gomb átlátszatlansága</string>
     <string name="pref_floating_button_opacity_help">Mennyire áttetsző a lebegő gomb, 10% és 100% között. Bekapcsolt kapcsolatállapot-jelzőnél ez az érték csak akkor érvényes, ha telefon csatlakozik.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Kapcsolat nélküli átlátszatlanság</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Mennyire áttetsző a lebegő gomb, amíg nincs telefon csatlakoztatva. 0%-nál a gomb rejtett, és az érintések átmennek az alatta lévő képernyőre.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Mennyire áttetsző a lebegő gomb, amíg nincs telefon csatlakoztatva. 0%-nál a gomb rejtett, és az érintések átmennek az alatta lévő képernyőre.</string>
     <string name="pref_floating_button_x_title">Vízszintes pozíció (X)</string>
     <string name="pref_floating_button_y_title">Függőleges pozíció (Y)</string>
-    <string name="pref_floating_button_position_help">Hol van a lebegő gomb a képernyőn. Az X esetén a 0% a bal, a 100% a jobb szél. Az Y esetén a 0% a felső, a 100% az alsó szél. A gomb mindig teljesen a képernyőn marad.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Hol van a lebegő gomb a képernyőn. Az X esetén a 0% a bal, a 100% a jobb szél. Az Y esetén a 0% a felső, a 100% az alsó szél. A gomb mindig teljesen a képernyőn marad.</string>
     <string name="pref_aa_exit_action_title">Android Auto kilépési művelet</string>
     <string name="pref_aa_exit_action_summary">Az Android Auto alkalmazásfiókjában a Kilépés gombra koppintáskor végrehajtott művelet.</string>
     <string name="pref_aa_exit_action_help">Megadja, mi történjen, ha az Android Autóban a Kilépésre koppint. A „Vissza a gyári indítóhoz” az egység saját kezdőképernyőjét mutatja. A „Vissza az alkalmazás kezdőlapjára” ennek az alkalmazásnak a kezdőképernyőjét mutatja. Ennél a kettőnél a telefon csatlakozva marad. A „Munkamenet bontása” befejezi a munkamenetet. Ha ez az alkalmazás a jármű indítója, a „Vissza a gyári indítóhoz” úgy működik, mint a „Vissza az alkalmazás kezdőlapjára”.</string>

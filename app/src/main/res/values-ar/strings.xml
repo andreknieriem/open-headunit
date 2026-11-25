@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">اضغط للعودة إلى العرض</string>
     <string name="night_overlay_meters">%1$d م</string>
     <string name="night_overlay_kilometers">%1$.1f كم</string>
+    <string name="night_overlay_kilometers_whole">%1$d كم</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">يسارًا</string>
     <string name="night_overlay_right">يمينًا</string>
@@ -353,6 +354,9 @@
     <string name="auto_connecting_single_usb">جارٍ الاتصال تلقائيًا بجهاز USB…</string>
     <string name="video_codec">ترميز الفيديو</string>
     <string name="video_codec_help">يختار صيغة الفيديو التي يرسلها الهاتف. «تلقائي» يترك للتطبيق الاختيار مما تستطيع هذه الوحدة فك ترميزه. يمنح H.265 صورة أوضح بمعدل البيانات نفسه. يعمل H.264 على كل مفكّك ترميز. غيّره إذا تقطعت الصورة أو بقيت سوداء. يُطبَّق الاختيار من الاتصال التالي.</string>
+    <string name="gal_compatibility_mode">وضع التوافق (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">يطلب الإصدار الأصلي من البروتوكول فقط. يسري عند الاتصال التالي.</string>
+    <string name="gal_compatibility_mode_help">يطلب التطبيق من الهاتف GAL 6.1، ويطلب 1.6 إذا ردّ Android Auto على الهاتف بإصدار أقدم. تتيح هذه الإصدارات ميزات أحدث للصوت والفيديو والعرض. فعّل هذا الوضع فقط إذا اتصل الهاتف ثم ظهرت مشكلات في عمله. عندئذ يطلب التطبيق GAL 1.2 كما في إصداراته السابقة، دون تلك الميزات. GAL هو بروتوكول الإسقاط، وليس إصدار Android أو إصدار تطبيق Android Auto. يسري عند الاتصال التالي.</string>
     <string name="fps_limit">حد معدل الإطارات</string>
     <string name="fps_limit_help">أعلى معدل إطارات تطلبه هذه الوحدة من Android Auto. القيمة 60 تعطي حركة أكثر سلاسة لكنها تحتاج نطاقًا تردديًا وقدرة ترميز أكبر. اختر 30 إذا تأخرت الصورة أو تقطعت. يسري عند الاتصال التالي.</string>
     <string name="save">حفظ</string>
@@ -389,7 +393,7 @@
     <string name="attach_hw_dsp_equalizer_description">يربط تأثير معادل صوت وهمي بجلسة الصوت لفرض التوجيه عبر DSP للأجهزة في وحدات معينة. اتركه معطلاً إذا كنت تستخدم ViPER4Android / ViperFX أو إذا كان الصوت مكتوماً على إصدارات Android القديمة.</string>
     <string name="attach_hw_dsp_equalizer_summary">يرفق معادلًا صوتيًا وهميًا لفرض التوجيه عبر DSP العتاد على بعض الوحدات.</string>
     <string name="audio_volume_offset">تعويض مستوى الصوت</string>
-    <string name="audio_volume_offset_help">يحدد مستوى صوت ثلاثة مسارات صوتية من Android Auto على هذه الوحدة: الوسائط وإرشادات الملاحة وأصوات النظام. يتراوح كل منها من 0% إلى 200%. عند 100% يُشغَّل المسار كما يرسله الهاتف. استخدمه لموازنة صوت الملاحة مع الموسيقى.</string>
+    <string name="audio_volume_offset_help" formatted="false">يحدد مستوى صوت ثلاثة مسارات صوتية من Android Auto على هذه الوحدة: الوسائط وإرشادات الملاحة وأصوات النظام. يتراوح كل منها من 0% إلى 200%. عند 100% يُشغَّل المسار كما يرسله الهاتف. استخدمه لموازنة صوت الملاحة مع الموسيقى.</string>
     <string name="mic_input_source">مصدر إدخال الميكروفون</string>
     <string name="mic_input_source_description">اختر مصدر الصوت للميكروفون.</string>
     <string name="mic_input_source_help">يختار مصدر الصوت في Android الذي يسجل منه التطبيق. «افتراضي» يترك القرار للنظام. «ميكروفون» يسجل الصوت الخام. «التعرف على الصوت» و«الاتصال الصوتي» يضيفان مرشحات الضوضاء والصدى في النظام. «سماعة بلوتوث» تسجل عبر سماعة Bluetooth. غيّره إذا كان الهاتف لا يسمعك. إذا كان Android Auto متصلًا، فإن حفظ التغيير يوقف الجلسة.</string>
@@ -1330,8 +1334,8 @@
     <string name="failed_aa_not_system">فشل: أندرويد أوتو غير مثبت كتطبيق نظام!</string>
     <string name="failed_aa_not_installed">فشل: أندرويد أوتو غير مثبت!</string>
     <string name="raise_projection_during_call">البقاء في Android Auto أثناء المكالمات</string>
-    <string name="raise_projection_during_call_description">الوضع الذاتي فقط. يُعيد العرض فوق شاشة اتصال الهاتف بحيث يتم الرد على المكالمات وإنهاؤها من واجهة Android Auto.</string>
-    <string name="raise_projection_during_call_summary">للوضع الذاتي فقط. يعرض الإسقاط فوق شاشة المكالمة في الهاتف.</string>
+    <string name="raise_projection_during_call_description">في الوضع الذاتي، يُعيد العرض فوق شاشة اتصال الهاتف بحيث يتم الرد على المكالمات وإنهاؤها من واجهة Android Auto. وفي وحدات FYT الرئيسية، يطلب من الوحدة ألا تعرض شريط المكالمات أو شاشة المكالمات الخاصة بها أثناء ظهور Android Auto في الواجهة الأمامية. قد لا يعمل هذا على كل وحدة أو إصدار برنامج ثابت.</string>
+    <string name="raise_projection_during_call_summary">الوضع الذاتي وأجهزة FYT. يخفي شاشة المكالمة. قد لا يعمل على كل جهاز.</string>
     <string name="show_over_lock_screen">عرض فوق شاشة القفل</string>
     <string name="show_over_lock_screen_summary">تبقى الخريطة والاتجاهات ظاهرة أثناء القفل. اللمس والأزرار لا تعمل.</string>
     <string name="show_over_lock_screen_help">يعرض صورة Android Auto فوق شاشة القفل، لتتمكن من قراءة الخريطة والاتجاهات دون فتح القفل. أثناء قفل هذا الجهاز لا يصل أي شيء إلى الهاتف: يتم حجب اللمس والأزرار ووحدة التحكم الدوّارة وزر الصوت، وتُعرض الخريطة في المقدمة. اضغط رجوع لفتح القفل برمز PIN أو النمط أو كلمة المرور؛ بعد ذلك يعمل كل شيء كالمعتاد. لا تتأثر الموسيقى والمكالمات والمساعد الصوتي على الهاتف نفسه.</string>
@@ -1484,16 +1488,16 @@
     <string name="pref_enable_floating_button_help">عرض زر عائم فوق المشغل الأصلي والتطبيقات الأخرى للعودة سريعًا إلى Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">مؤشر حالة الاتصال</string>
     <string name="pref_floating_button_connection_status_summary">يُخفِت الزر أثناء اتصال هاتف.</string>
-    <string name="pref_floating_button_connection_status_help">يستخدم الشفافية عند عدم الاتصال حين لا يكون هاتف متصلاً، ويتلاشى إلى شفافية الزر العائم أثناء اتصال هاتف. عند 0% يكون الزر مخفيًا ويمرر اللمسات.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">يستخدم الشفافية عند عدم الاتصال حين لا يكون هاتف متصلاً، ويتلاشى إلى شفافية الزر العائم أثناء اتصال هاتف. عند 0% يكون الزر مخفيًا ويمرر اللمسات.</string>
     <string name="pref_floating_button_size_title">حجم الزر العائم</string>
     <string name="pref_floating_button_size_help">حجم الزر العائم، من 32 إلى 120 dp. الزر الأكبر أسهل في الضغط أثناء القيادة.</string>
     <string name="pref_floating_button_opacity_title">شفافية الزر العائم</string>
     <string name="pref_floating_button_opacity_help">مدى وضوح الزر العائم، من 10% إلى 100%. عند تشغيل مؤشر حالة الاتصال، تسري هذه القيمة فقط أثناء اتصال هاتف.</string>
     <string name="pref_floating_button_disconnected_opacity_title">الشفافية عند عدم الاتصال</string>
-    <string name="pref_floating_button_disconnected_opacity_help">مدى وضوح الزر العائم عندما لا يكون هناك هاتف متصل. عند 0% يكون الزر مخفيًا وتمر اللمسات إلى الشاشة تحته.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">مدى وضوح الزر العائم عندما لا يكون هناك هاتف متصل. عند 0% يكون الزر مخفيًا وتمر اللمسات إلى الشاشة تحته.</string>
     <string name="pref_floating_button_x_title">الموضع الأفقي (X)</string>
     <string name="pref_floating_button_y_title">الموضع الرأسي (Y)</string>
-    <string name="pref_floating_button_position_help">مكان الزر العائم على الشاشة. بالنسبة إلى X، 0% هو الحافة اليسرى و100% هو الحافة اليمنى. بالنسبة إلى Y، 0% هو الحافة العلوية و100% هو الحافة السفلية. يبقى الزر دائمًا كاملًا على الشاشة.</string>
+    <string name="pref_floating_button_position_help" formatted="false">مكان الزر العائم على الشاشة. بالنسبة إلى X، 0% هو الحافة اليسرى و100% هو الحافة اليمنى. بالنسبة إلى Y، 0% هو الحافة العلوية و100% هو الحافة السفلية. يبقى الزر دائمًا كاملًا على الشاشة.</string>
     <string name="pref_aa_exit_action_title">إجراء الخروج من Android Auto</string>
     <string name="pref_aa_exit_action_summary">الإجراء عند النقر على خروج داخل قائمة تطبيقات Android Auto.</string>
     <string name="pref_aa_exit_action_help">يحدد ما يحدث عند لمس «خروج» في Android Auto. «العودة إلى المشغل الأصلي» يعرض الشاشة الرئيسية للوحدة نفسها. «العودة إلى الصفحة الرئيسية للتطبيق» يعرض الشاشة الرئيسية لهذا التطبيق. مع هذين الخيارين يبقى الهاتف متصلًا. «قطع الاتصال» ينهي الجلسة. عندما يكون هذا التطبيق مشغّل السيارة، يعمل «العودة إلى المشغل الأصلي» مثل «العودة إلى الصفحة الرئيسية للتطبيق».</string>

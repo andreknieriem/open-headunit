@@ -22,6 +22,12 @@ internal class HandshakeFrameReader(
     private var scratch = ByteArray(4)
     private var readingBody = false
     private var encrypted = false
+    private var skipPending = false
+
+    /** The prefix was read before the request. Finish this envelope only to keep alignment. */
+    fun skipPendingFrame() {
+        skipPending = used != 0
+    }
 
     /** Only for abandoning stale input before our request; never reset a live exchange. */
     fun discardPendingFrame() {
@@ -29,6 +35,7 @@ internal class HandshakeFrameReader(
         used = 0
         readingBody = false
         encrypted = false
+        skipPending = false
     }
 
     /** Null means no complete frame yet; partial bytes survive the caller's retry deadline. */
@@ -76,7 +83,10 @@ internal class HandshakeFrameReader(
             frame = ByteArray(4)
             used = 0
             readingBody = false
-            if (encrypted) continue
+            if (encrypted || skipPending) {
+                skipPending = false
+                continue
+            }
             return complete
         }
         return null

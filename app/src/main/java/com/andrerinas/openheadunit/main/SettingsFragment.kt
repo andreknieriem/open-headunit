@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.main
 
+import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreen
+import com.andrerinas.openheadunit.connection.carkey.fyt.FytCallScreenPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
@@ -197,6 +199,7 @@ class SettingsFragment : Fragment() {
     private var pendingForceSoftware by pending::forceSoftware
     private var pendingSoftwareVideoDecoder by pending::softwareVideoDecoder
     private var pendingVideoCodec by pending::videoCodec
+    private var pendingGalCompatibilityMode by pending::galCompatibilityMode
     private var pendingFpsLimit by pending::fpsLimit
     private var pendingBluetoothAddress by pending::bluetoothAddress
     private var pendingBluetoothAnnounceSkip by pending::bluetoothAnnounceSkip
@@ -650,6 +653,7 @@ class SettingsFragment : Fragment() {
         pendingForceSoftware?.let { if (it != settings.forceSoftwareDecoding) settings.forceSoftwareDecoding = it }
         pendingSoftwareVideoDecoder?.let { if (it != settings.softwareVideoDecoder) settings.softwareVideoDecoder = it }
         pendingVideoCodec?.let { if (it != settings.videoCodec) settings.videoCodec = it }
+        pendingGalCompatibilityMode?.let { if (it != settings.galCompatibilityMode) settings.galCompatibilityMode = it }
         pendingFpsLimit?.let { if (it != settings.fpsLimit) settings.fpsLimit = it }
         pendingBluetoothAddress?.let { if (it != settings.bluetoothAddress) settings.bluetoothAddress = it }
         pendingBluetoothAnnounceSkip?.let {
@@ -830,6 +834,7 @@ class SettingsFragment : Fragment() {
         requiresRestart = pendingResolution != settings.resolutionId ||
                           pendingVideoFitMode != settings.videoFitMode ||
                           pendingVideoCodec != settings.videoCodec ||
+                          pendingGalCompatibilityMode != settings.galCompatibilityMode ||
                           pendingFpsLimit != settings.fpsLimit ||
                           pendingDpi != settings.dpiPixelDensity ||
                           pendingPixelAspectRatioE4 != settings.pixelAspectRatioE4 ||
@@ -859,6 +864,7 @@ class SettingsFragment : Fragment() {
         requiresServiceRestart = pendingResolution != settings.resolutionId ||
                           pendingVideoFitMode != settings.videoFitMode ||
                           pendingVideoCodec != settings.videoCodec ||
+                          pendingGalCompatibilityMode != settings.galCompatibilityMode ||
                           pendingFpsLimit != settings.fpsLimit ||
                           pendingDpi != settings.dpiPixelDensity ||
                           pendingPixelAspectRatioE4 != settings.pixelAspectRatioE4 ||
@@ -1780,6 +1786,21 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        // The protocol version the next connection requests; it restarts the service like the codec.
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "galCompatibilityMode",
+            nameResId = R.string.gal_compatibility_mode,
+            descriptionResId = R.string.gal_compatibility_mode_summary,
+            helpResId = R.string.gal_compatibility_mode_help,
+            isChecked = pendingGalCompatibilityMode ?: settings.galCompatibilityMode,
+            searchKeywords = "GAL protocol version 1.2 1.6 6.1 compatibility Android Auto",
+            onCheckedChanged = { isChecked ->
+                pendingGalCompatibilityMode = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "forceSoftwareDecoding",
             nameResId = R.string.force_software_decoding,
@@ -2185,9 +2206,9 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        // Self Mode is the only mode where the phone's call screen and the projection share a
-        // screen, so it is the only mode this can do anything in.
-        if (settings.showsSelf()) {
+        // A call screen shares the display with the projection in Self Mode, and on an FYT unit,
+        // whose own call bar draws over every mode.
+        if (FytCallScreenPolicy.showsSetting(settings.showsSelf(), FytCallScreen.isFytUnit(requireContext()))) {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "raiseProjectionDuringCall",
                 nameResId = R.string.raise_projection_during_call,

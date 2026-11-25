@@ -292,6 +292,7 @@
     <string name="night_overlay_dismiss">Toque para voltar à projeção</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">esquerda</string>
     <string name="night_overlay_right">direita</string>
@@ -680,6 +681,9 @@
     <string name="auto_connecting_single_usb">A ligar automaticamente ao dispositivo USB…</string>
     <string name="video_codec">Codec de vídeo</string>
     <string name="video_codec_help">Escolhe o formato de vídeo que o telemóvel envia. Auto deixa a aplicação escolher entre o que esta unidade consegue descodificar. O H.265 dá uma imagem mais nítida com o mesmo débito. O H.264 funciona em qualquer descodificador. Altere se a imagem bloquear ou ficar preta. A escolha aplica-se a partir da próxima ligação.</string>
+    <string name="gal_compatibility_mode">Modo de compatibilidade (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Pede apenas a versão original do protocolo. Aplica-se na ligação seguinte.</string>
+    <string name="gal_compatibility_mode_help">A aplicação pede GAL 6.1 ao telemóvel. Se o Android Auto no telemóvel responder com uma versão anterior, a aplicação pede a versão 1.6. Estas versões permitem utilizar funcionalidades de áudio, vídeo e visualização mais recentes. Ative este modo apenas se o telemóvel estabelecer ligação, mas depois não funcionar corretamente. Nesse caso, a aplicação pede GAL 1.2, como nas versões anteriores, sem essas funcionalidades. GAL é o protocolo de projeção, não a versão do Android nem da aplicação Android Auto. Aplica-se na ligação seguinte.</string>
     <string name="fps_limit">Limite de FPS</string>
     <string name="fps_limit_help">A taxa de imagens mais alta que esta unidade pede ao Android Auto. Com 60, o movimento é mais fluido, mas é preciso mais largura de banda e mais potência do descodificador. Escolha 30 se a imagem se atrasar ou engasgar. Aplica-se na ligação seguinte.</string>
     <string name="save">Guardar</string>
@@ -719,16 +723,16 @@
     <string name="pref_enable_floating_button_help">Apresenta um botão flutuante sobre o lançador de fábrica e outras aplicações para regressar rapidamente ao Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indicador de estado da ligação</string>
     <string name="pref_floating_button_connection_status_summary">Esbate o botão enquanto um telemóvel está ligado.</string>
-    <string name="pref_floating_button_connection_status_help">Usa a Opacidade sem ligação quando nenhum telemóvel está ligado e desvanece para a Opacidade do botão flutuante enquanto um telemóvel está ligado. A 0%, o botão fica oculto e deixa passar os toques.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Usa a Opacidade sem ligação quando nenhum telemóvel está ligado e desvanece para a Opacidade do botão flutuante enquanto um telemóvel está ligado. A 0%, o botão fica oculto e deixa passar os toques.</string>
     <string name="pref_floating_button_size_title">Tamanho do botão flutuante</string>
     <string name="pref_floating_button_size_help">O tamanho do botão flutuante, de 32 a 120 dp. Um botão maior é mais fácil de tocar enquanto conduz.</string>
     <string name="pref_floating_button_opacity_title">Opacidade do botão flutuante</string>
     <string name="pref_floating_button_opacity_help">Quão opaco o botão flutuante fica, de 10% a 100%. Com Indicador de estado da ligação ativado, este valor aplica-se só enquanto um telemóvel está ligado.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Opacidade sem ligação</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Quão opaco o botão flutuante fica enquanto nenhum telemóvel está ligado. Com 0%, o botão fica oculto e os toques passam para o ecrã por baixo dele.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Quão opaco o botão flutuante fica enquanto nenhum telemóvel está ligado. Com 0%, o botão fica oculto e os toques passam para o ecrã por baixo dele.</string>
     <string name="pref_floating_button_x_title">Posição horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posição vertical (Y)</string>
-    <string name="pref_floating_button_position_help">Onde o botão flutuante fica no ecrã. Em X, 0% é a margem esquerda e 100% é a margem direita. Em Y, 0% é a margem superior e 100% é a margem inferior. O botão fica sempre inteiro no ecrã.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Onde o botão flutuante fica no ecrã. Em X, 0% é a margem esquerda e 100% é a margem direita. Em Y, 0% é a margem superior e 100% é a margem inferior. O botão fica sempre inteiro no ecrã.</string>
     <string name="pref_aa_exit_action_title">Ação ao sair do Android Auto</string>
     <string name="pref_aa_exit_action_summary">Ação ao tocar em Sair dentro da gaveta de aplicações do Android Auto.</string>
     <string name="pref_aa_exit_action_help">Escolhe o que acontece ao tocar em Sair no Android Auto. Regressar ao lançador de fábrica mostra o ecrã inicial da própria unidade. Regressar ao ecrã inicial da aplicação mostra o ecrã inicial desta aplicação. Com estas duas, o telemóvel continua ligado. Desligar sessão termina a sessão. Quando esta aplicação é o lançador do carro, Regressar ao lançador de fábrica funciona como Regressar ao ecrã inicial da aplicação.</string>
@@ -834,7 +838,7 @@
     <string name="attach_hw_dsp_equalizer_description">Anexa um efeito de equalizador fictício à sessão de áudio para forçar o encaminhamento DSP por hardware em unidades específicas. Mantenha desativado se utilizar ViPER4Android / ViperFX ou se o som ficar abafado em versões mais antigas do Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Anexa um equalizador fictício para forçar o encaminhamento pelo DSP de hardware em algumas unidades.</string>
     <string name="audio_volume_offset">Compensação de volume de áudio</string>
-    <string name="audio_volume_offset_help">Define o volume de três fluxos de áudio do Android Auto nesta unidade: multimédia, indicações de navegação e sons do sistema. Cada um vai de 0% a 200%. Com 100%, o fluxo toca como o telemóvel o envia. Use para equilibrar a navegação e a música.</string>
+    <string name="audio_volume_offset_help" formatted="false">Define o volume de três fluxos de áudio do Android Auto nesta unidade: multimédia, indicações de navegação e sons do sistema. Cada um vai de 0% a 200%. Com 100%, o fluxo toca como o telemóvel o envia. Use para equilibrar a navegação e a música.</string>
     <string name="microphone_settings">Definições do microfone</string>
     <string name="use_head_unit_microphone">Microfone da unidade</string>
     <string name="use_head_unit_microphone_description">Ativado: o Android Auto ouve o microfone deste dispositivo. Desativado: este dispositivo nunca grava e o telemóvel utiliza o seu próprio microfone, ou um auricular ou intercomunicador emparelhado com o telemóvel, pelo que o assistente de voz continua a funcionar. Requer Android 11 ou posterior no telemóvel.</string>
@@ -1194,8 +1198,8 @@
     <string name="kill_on_disconnect_description">Fechar a aplicação automaticamente quando o Android Auto se desliga.</string>
     <string name="kill_on_disconnect_help">Fecha a app quando o Android Auto se desliga, para o dispositivo voltar aos seus próprios ecrãs. Ative se o dispositivo tiver de mostrar o seu próprio launcher depois de cada viagem. Não faz nada enquanto esta app for o launcher do automóvel. Se Reabrir ao religar, Iniciar no arranque ou Iniciar ao ligar o ecrã estiver ativado, a app avisa primeiro, porque essas opções precisam da app aberta.</string>
     <string name="raise_projection_during_call">Manter no Android Auto durante chamadas</string>
-    <string name="raise_projection_during_call_description">Apenas no Modo Próprio. Traz a projeção de volta sobre o ecrã de chamada do telemóvel, para atender e terminar as chamadas na interface do Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Só no Modo Próprio. Mostra a projeção sobre o ecrã de chamada do telemóvel.</string>
+    <string name="raise_projection_during_call_description">No Modo Próprio, traz a projeção de volta sobre o ecrã de chamada do telemóvel, para atender e terminar as chamadas na interface do Android Auto. Em unidades FYT, pede à unidade que não mostre a sua própria barra ou ecrã de chamada enquanto o Android Auto estiver em primeiro plano. Pode não funcionar em todas as unidades ou versões de firmware.</string>
+    <string name="raise_projection_during_call_summary">Modo Próprio e unidades FYT. Oculta o ecrã de chamada. Pode não funcionar.</string>
     <string name="show_over_lock_screen">Mostrar sobre o ecrã de bloqueio</string>
     <string name="show_over_lock_screen_summary">O mapa e as indicações continuam visíveis com bloqueio. Toques e botões não fazem nada.</string>
     <string name="show_over_lock_screen_help">Mostra a imagem do Android Auto sobre o ecrã de bloqueio, para ler o mapa e as indicações sem desbloquear. Enquanto esta unidade estiver bloqueada, nada chega ao telemóvel: toques, botões, o comando rotativo e o botão de voz são retidos, e o mapa é trazido para a frente. Prima Voltar para desbloquear com o seu PIN, padrão ou palavra-passe; depois tudo funciona normalmente. A música, as chamadas e o assistente de voz no próprio telemóvel não são afetados.</string>

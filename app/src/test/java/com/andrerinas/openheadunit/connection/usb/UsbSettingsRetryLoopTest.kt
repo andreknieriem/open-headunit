@@ -5,14 +5,14 @@ import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
 
 class UsbSettingsRetryLoopTest {
-    @Test fun `four physical open failures retain Save but an unrelated terminal stops the loop`() = runBlocking {
+    @Test fun `four physical open failures retain Save but an unrelated terminal stops the loop`() = runTest {
         mockStatic(android.os.SystemClock::class.java).use {
         mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {
             for (scenario in listOf("own", "unrelated", "gone", "reenumerated", "different-device", "normal-mode", "blacklisted", "expired")) {

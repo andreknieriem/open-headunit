@@ -1,6 +1,8 @@
 # Audio owner regression checks
 
-From the repository root, after the Gradle unit tests have populated the project's Kotlin compiler cache:
+From the repository root, run `./gradlew :app:testGithubDebugUnitTest` first. The runner
+uses its Kotlin compiler cache, generated Java protocol classes and the protobuf runtime
+version declared by the app; it does not substitute a separate media protocol model.
 
 ```sh
 python3 app/src/test/host-audio/run.py
@@ -40,6 +42,20 @@ using one quarter of that reserve with 1–4 ms bounds. Partial progress, errors
 and unknown heads restore the short retry path; admission remains nonblocking on API 21+
 and playback-head-checked on older devices. The adapter cases exercise these transitions
 on API 16..37. AAudio retains its callback-specific 1 ms retry behavior.
+
+GAL Start selects a format from the immutable service-discovery offer. Audio timestamps
+are correlated with accepted PCM and a measured playback head, not queued bytes or wall
+clock time. Codec replacement, dropped input, synthetic concealment and unattributable
+time-stretched output invalidate that correlation rather than inventing progress.
+Continuity is checked across the whole interval traversed by the playback head, including
+unknown spans skipped between observations; a valid endpoint alone cannot preserve an old clock.
+Adjacent chunks retain their original frame/time anchor, so integer sample-time rounding
+does not accumulate into a false discontinuity when mixer and codec block sizes differ.
+Real timestamp jumps and unknown output spans still invalidate the clock.
+The shared presentation controller prefers music, falls back to speech, and retires its
+clock with the media generation. AAudio without a reliable playback position cannot
+provide an A/V clock. These are receiver policies; emulator checks do not establish
+acoustic lip-sync or physical display latency.
 
 Artifacts go under the ignored `build/host-audio` directory. The script uses the existing Gradle
 compiler cache and does not download or execute a separately supplied compiler.

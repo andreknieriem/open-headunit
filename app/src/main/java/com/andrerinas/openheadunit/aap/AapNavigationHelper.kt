@@ -266,13 +266,7 @@ class AapNavigationHelper(
         }
     }
 
-    private fun formatDistance(meters: Int): String {
-        return if (meters < 1000) {
-            context.getString(R.string.night_overlay_meters, meters)
-        } else {
-            context.getString(R.string.night_overlay_kilometers, meters / 1000.0)
-        }
-    }
+    private fun formatDistance(meters: Int): String = NightOverlayDistance.format(context, meters)
 
     private fun extractRouteNumber(currentRoad: String, nextRoad: String): String? {
         val roadText = listOf(currentRoad, nextRoad)

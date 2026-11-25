@@ -291,6 +291,7 @@
     <string name="night_overlay_dismiss">Ketuk untuk kembali ke proyeksi</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">kiri</string>
     <string name="night_overlay_right">kanan</string>
@@ -679,6 +680,9 @@
     <string name="auto_connecting_single_usb">Menghubungkan otomatis ke perangkat USB…</string>
     <string name="video_codec">Kodek Video</string>
     <string name="video_codec_help">Memilih format video yang dikirim ponsel. Auto membiarkan aplikasi memilih dari yang bisa didekode unit ini. H.265 memberi gambar lebih tajam pada laju data yang sama. H.264 berfungsi di semua dekoder. Ubah jika gambar tersendat atau tetap hitam. Pilihan berlaku mulai koneksi berikutnya.</string>
+    <string name="gal_compatibility_mode">Mode kompatibilitas (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Hanya meminta versi awal protokol. Berlaku pada koneksi berikutnya.</string>
+    <string name="gal_compatibility_mode_help">Aplikasi meminta GAL 6.1 dari ponsel. Jika Android Auto di ponsel merespons dengan versi yang lebih lama, aplikasi meminta 1.6. Versi-versi tersebut mendukung fitur audio, video, dan tampilan yang lebih baru. Aktifkan mode ini hanya jika ponsel tersambung tetapi kemudian tidak berfungsi dengan semestinya. Aplikasi akan meminta GAL 1.2 seperti pada rilis sebelumnya, tanpa fitur-fitur tersebut. GAL adalah protokol proyeksi, bukan versi Android atau versi aplikasi Android Auto. Berlaku pada koneksi berikutnya.</string>
     <string name="fps_limit">Batas FPS</string>
     <string name="fps_limit_help">Frame rate tertinggi yang diminta unit ini dari Android Auto. Dengan 60, gerakan lebih mulus, tetapi butuh lebih banyak bandwidth dan daya decoder. Pilih 30 jika gambar tertinggal atau tersendat. Berlaku pada koneksi berikutnya.</string>
     <string name="save">Simpan</string>
@@ -718,16 +722,16 @@
     <string name="pref_enable_floating_button_help">Menampilkan tombol melayang di atas peluncur OEM dan aplikasi lain untuk kembali ke Open Headunit dengan cepat.</string>
     <string name="pref_floating_button_connection_status_title">Indikator Status Koneksi</string>
     <string name="pref_floating_button_connection_status_summary">Meredupkan tombol selama ponsel terhubung.</string>
-    <string name="pref_floating_button_connection_status_help">Memakai Opasitas Terputus saat tidak ada ponsel yang terhubung, lalu memudar ke Opasitas Tombol Melayang saat ponsel terhubung. Pada 0%, tombol disembunyikan dan meneruskan ketukan.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Memakai Opasitas Terputus saat tidak ada ponsel yang terhubung, lalu memudar ke Opasitas Tombol Melayang saat ponsel terhubung. Pada 0%, tombol disembunyikan dan meneruskan ketukan.</string>
     <string name="pref_floating_button_size_title">Ukuran Tombol Melayang</string>
     <string name="pref_floating_button_size_help">Ukuran tombol melayang, dari 32 hingga 120 dp. Tombol yang lebih besar lebih mudah diketuk saat mengemudi.</string>
     <string name="pref_floating_button_opacity_title">Opasitas Tombol Melayang</string>
     <string name="pref_floating_button_opacity_help">Seberapa pekat tombol melayang, dari 10% hingga 100%. Jika Indikator Status Koneksi aktif, nilai ini hanya berlaku saat ponsel tersambung.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Opasitas Terputus</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Seberapa pekat tombol melayang saat tidak ada ponsel yang tersambung. Pada 0%, tombol tersembunyi dan ketukan menembus ke layar di bawahnya.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Seberapa pekat tombol melayang saat tidak ada ponsel yang tersambung. Pada 0%, tombol tersembunyi dan ketukan menembus ke layar di bawahnya.</string>
     <string name="pref_floating_button_x_title">Posisi Horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posisi Vertikal (Y)</string>
-    <string name="pref_floating_button_position_help">Letak tombol melayang di layar. Untuk X, 0% adalah tepi kiri dan 100% tepi kanan. Untuk Y, 0% adalah tepi atas dan 100% tepi bawah. Tombol selalu tetap utuh di dalam layar.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Letak tombol melayang di layar. Untuk X, 0% adalah tepi kiri dan 100% tepi kanan. Untuk Y, 0% adalah tepi atas dan 100% tepi bawah. Tombol selalu tetap utuh di dalam layar.</string>
     <string name="pref_aa_exit_action_title">Tindakan Keluar Android Auto</string>
     <string name="pref_aa_exit_action_summary">Tindakan saat mengetuk Keluar di dalam laci aplikasi Android Auto.</string>
     <string name="pref_aa_exit_action_help">Memilih apa yang terjadi saat Anda mengetuk Keluar di Android Auto. Kembali ke Peluncur OEM menampilkan layar utama unit ini sendiri. Kembali ke Beranda Aplikasi menampilkan layar utama aplikasi ini. Dengan dua opsi ini, ponsel tetap tersambung. Putuskan Sesi mengakhiri sesi. Jika aplikasi ini adalah launcher mobil, Kembali ke Peluncur OEM bekerja seperti Kembali ke Beranda Aplikasi.</string>
@@ -833,7 +837,7 @@
     <string name="attach_hw_dsp_equalizer_description">Menambahkan efek Equalizer tiruan ke sesi audio untuk memaksa perutean DSP perangkat keras pada head unit tertentu. Biarkan nonaktif jika Anda memakai ViPER4Android / ViperFX atau jika suara teredam pada Android versi lama.</string>
     <string name="attach_hw_dsp_equalizer_summary">Memasang Equalizer palsu untuk memaksa perutean DSP perangkat keras di beberapa unit.</string>
     <string name="audio_volume_offset">Offset Volume Audio</string>
-    <string name="audio_volume_offset_help">Mengatur volume tiga aliran audio Android Auto di unit ini: media, panduan navigasi, dan bunyi sistem. Masing-masing berkisar 0% hingga 200%. Pada 100%, aliran diputar seperti yang dikirim ponsel. Gunakan untuk menyeimbangkan navigasi dan musik.</string>
+    <string name="audio_volume_offset_help" formatted="false">Mengatur volume tiga aliran audio Android Auto di unit ini: media, panduan navigasi, dan bunyi sistem. Masing-masing berkisar 0% hingga 200%. Pada 100%, aliran diputar seperti yang dikirim ponsel. Gunakan untuk menyeimbangkan navigasi dan musik.</string>
     <string name="microphone_settings">Pengaturan Mikrofon</string>
     <string name="use_head_unit_microphone">Mikrofon head unit</string>
     <string name="use_head_unit_microphone_description">Aktif: Android Auto mendengar mikrofon perangkat ini. Nonaktif: perangkat ini tidak pernah merekam, dan ponsel memakai mikrofonnya sendiri, atau headset/interkom yang dipasangkan ke ponsel, sehingga asisten suara tetap berfungsi. Memerlukan Android 11 atau lebih baru di ponsel.</string>
@@ -1194,8 +1198,8 @@
     <string name="kill_on_disconnect_description">Tutup aplikasi secara otomatis saat koneksi Android Auto terputus.</string>
     <string name="kill_on_disconnect_help">Menutup aplikasi saat Android Auto terputus, sehingga unit kembali ke layar bawaannya. Aktifkan jika unit harus menampilkan launcher-nya sendiri setelah setiap perjalanan. Tidak berpengaruh selama aplikasi ini menjadi launcher mobil. Jika Buka kembali saat terhubung ulang, Mulai saat boot, atau Mulai saat layar menyala aktif, aplikasi memperingatkan Anda dulu, karena opsi itu membutuhkan aplikasi tetap terbuka.</string>
     <string name="raise_projection_during_call">Tetap di Android Auto selama panggilan</string>
-    <string name="raise_projection_during_call_description">Khusus Mode Mandiri. Membawa proyeksi kembali ke atas layar panggilan ponsel sehingga panggilan dijawab dan diakhiri dalam antarmuka Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Hanya untuk Mode Mandiri. Menampilkan proyeksi di atas layar panggilan ponsel.</string>
+    <string name="raise_projection_during_call_description">Di Mode Mandiri, membawa proyeksi kembali ke atas layar panggilan ponsel sehingga panggilan dijawab dan diakhiri dalam antarmuka Android Auto. Pada unit FYT, meminta unit tidak menampilkan bilah atau layar panggilannya sendiri saat Android Auto berada di depan. Mungkin tidak berfungsi di semua unit atau versi firmware.</string>
+    <string name="raise_projection_during_call_summary">Mode Mandiri dan unit FYT. Sembunyikan layar panggilan. Belum tentu berfungsi.</string>
     <string name="show_over_lock_screen">Tampilkan di atas layar kunci</string>
     <string name="show_over_lock_screen_summary">Peta dan petunjuk arah tetap terlihat saat terkunci. Sentuhan dan tombol tidak berfungsi.</string>
     <string name="show_over_lock_screen_help">Menampilkan gambar Android Auto di atas layar kunci, sehingga peta dan petunjuk arah dapat dibaca tanpa membuka kunci. Selama unit ini terkunci, tidak ada yang diteruskan ke ponsel: sentuhan, tombol, pengontrol putar, dan tombol suara ditahan, dan peta dibawa ke depan. Tekan Kembali untuk membuka kunci dengan PIN, pola, atau sandi; setelah itu semuanya berfungsi seperti biasa. Musik, panggilan, dan asisten suara di ponsel itu sendiri tidak terpengaruh.</string>

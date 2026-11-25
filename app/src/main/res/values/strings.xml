@@ -316,6 +316,7 @@
     <string name="night_overlay_dismiss">Tap to return to projection</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">left</string>
     <string name="night_overlay_right">right</string>
@@ -708,6 +709,9 @@
     <string name="auto_connecting_single_usb">Auto-connecting to USB device…</string>
     <string name="video_codec">Video Codec</string>
     <string name="video_codec_help">Chooses the video format the phone sends. Auto lets the app pick from what this unit can decode. H.265 gives a sharper picture at the same data rate. H.264 works on every decoder. Change it when the picture stutters or stays black. The choice applies from the next connection.</string>
+    <string name="gal_compatibility_mode">Compatibility mode (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Request only the original protocol version. Applies at the next connection.</string>
+    <string name="gal_compatibility_mode_help">The app asks the phone for GAL 6.1, and for 1.6 when the phone\'s Android Auto answers with an older version. Those versions enable newer audio, video and display features. Turn this on only if a phone connects but then misbehaves: the app then requests GAL 1.2, as earlier releases did, without those features. GAL is the projection protocol, not the Android or Android Auto app version. Applies at the next connection.</string>
     <string name="fps_limit">FPS Limit</string>
     <string name="fps_limit_help">The highest frame rate this unit asks Android Auto for. 60 gives smoother motion, but needs more bandwidth and decoder power. Choose 30 if the picture lags or stutters. Applies at the next connection.</string>
     <string name="save">Save</string>
@@ -747,16 +751,16 @@
     <string name="pref_enable_floating_button_help">Displays a floating button over the OEM launcher and other apps to quickly return to Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Connection Status Indicator</string>
     <string name="pref_floating_button_connection_status_summary">Fade the button while a phone is connected.</string>
-    <string name="pref_floating_button_connection_status_help">Uses Disconnected Opacity when no phone is connected, and fades to Floating Button Opacity while a phone is connected. At 0% the button is hidden and lets taps through.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Uses Disconnected Opacity when no phone is connected, and fades to Floating Button Opacity while a phone is connected. At 0% the button is hidden and lets taps through.</string>
     <string name="pref_floating_button_size_title">Floating Button Size</string>
     <string name="pref_floating_button_size_help">The size of the floating button, from 32 to 120 dp. A larger button is easier to hit while you drive.</string>
     <string name="pref_floating_button_opacity_title">Floating Button Opacity</string>
     <string name="pref_floating_button_opacity_help">How solid the floating button looks, from 10% to 100%. With Connection Status Indicator on, this value applies only while a phone is connected.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Disconnected Opacity</string>
-    <string name="pref_floating_button_disconnected_opacity_help">How solid the floating button looks while no phone is connected. At 0%, the button is hidden and taps go through to the screen below it.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">How solid the floating button looks while no phone is connected. At 0%, the button is hidden and taps go through to the screen below it.</string>
     <string name="pref_floating_button_x_title">Horizontal Position (X)</string>
     <string name="pref_floating_button_y_title">Vertical Position (Y)</string>
-    <string name="pref_floating_button_position_help">Where the floating button sits on the screen. For X, 0% is the left edge and 100% is the right edge. For Y, 0% is the top edge and 100% is the bottom edge. The button always stays fully on the screen.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Where the floating button sits on the screen. For X, 0% is the left edge and 100% is the right edge. For Y, 0% is the top edge and 100% is the bottom edge. The button always stays fully on the screen.</string>
     <string name="pref_aa_exit_action_title">Android Auto Exit Action</string>
     <string name="pref_aa_exit_action_summary">Action when tapping Exit inside the Android Auto app drawer.</string>
     <string name="pref_aa_exit_action_help">Chooses what happens when you tap Exit in Android Auto. Return to OEM Launcher shows this unit\'s own home screen. Return to App Home shows this app\'s home screen. With these two, the phone stays connected. Disconnect Session ends the session. When this app is the car launcher, Return to OEM Launcher acts as Return to App Home.</string>
@@ -926,7 +930,7 @@
     <string name="attach_hw_dsp_equalizer_description">Attaches a dummy Equalizer effect to the audio session to force hardware DSP routing on specific headunits. Keep disabled if using ViPER4Android / ViperFX or if sound is muffled on older Android versions.</string>
     <string name="attach_hw_dsp_equalizer_summary">Attach a dummy Equalizer to force hardware DSP routing on some units.</string>
     <string name="audio_volume_offset">Audio Volume Offset</string>
-    <string name="audio_volume_offset_help">Sets the loudness of three Android Auto sound streams on this unit: media, navigation guidance and system sounds. Each goes from 0% to 200%. 100% plays a stream as the phone sends it. Use it to balance navigation against music.</string>
+    <string name="audio_volume_offset_help" formatted="false">Sets the loudness of three Android Auto sound streams on this unit: media, navigation guidance and system sounds. Each goes from 0% to 200%. 100% plays a stream as the phone sends it. Use it to balance navigation against music.</string>
     <string name="microphone_settings">Microphone Settings</string>
     <string name="use_head_unit_microphone">Head unit microphone</string>
     <string name="use_head_unit_microphone_description">On: Android Auto hears this device\'s microphone. Off: this device never records and the phone uses its own microphone, or a headset or intercom paired to the phone, so the voice assistant still works. Needs Android 11 or newer on the phone.</string>
@@ -1301,8 +1305,8 @@
     <string name="kill_on_disconnect_description">Automatically close the app when Android Auto disconnects.</string>
     <string name="kill_on_disconnect_help">Closes the app when Android Auto disconnects, so the unit goes back to its own screens. Turn it on if the unit must show its own launcher after each drive. It does nothing while this app is the car launcher. If Reopen on reconnection, Start on boot or Start on screen on is on, the app warns you first, because those want the app open.</string>
     <string name="raise_projection_during_call">Stay in Android Auto during calls</string>
-    <string name="raise_projection_during_call_description">Self Mode only. Brings the projection back over the phone\'s call screen so calls are answered and ended in the Android Auto interface.</string>
-    <string name="raise_projection_during_call_summary">Self Mode only. Show the projection over the phone\'s call screen.</string>
+    <string name="raise_projection_during_call_description">In Self Mode, brings the projection back over the phone\'s call screen so calls are answered and ended in the Android Auto interface. On FYT head units, asks the unit not to show its own call bar or call screen while Android Auto is in front. This may not work on every unit or firmware version.</string>
+    <string name="raise_projection_during_call_summary">Self Mode and FYT units. Hides the call screen. May not work on every unit.</string>
     <string name="show_over_lock_screen">Show over lock screen</string>
     <string name="show_over_lock_screen_summary">Map and directions stay visible while locked. Touches and keys do nothing.</string>
     <string name="show_over_lock_screen_help">Shows the Android Auto picture over the lock screen, so the map and directions can be read without unlocking. While this unit is locked, nothing reaches the phone: touches, keys, the rotary controller and the voice key are held back, and the map is brought to the front. Press Back to unlock with your PIN, pattern or password; after that everything works as usual. Music, calls and the voice assistant on the phone itself are not affected.</string>

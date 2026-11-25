@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">Klepnutím se vraťte do projekce</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">vlevo</string>
     <string name="night_overlay_right">vpravo</string>
@@ -353,6 +354,9 @@
     <string name="auto_connecting_single_usb">Automatické připojování k USB zařízení…</string>
     <string name="video_codec">Video kodek</string>
     <string name="video_codec_help">Vybírá formát videa, který telefon posílá. Auto nechá aplikaci vybrat z toho, co toto autorádio umí dekódovat. H.265 dává ostřejší obraz při stejné datové rychlosti. H.264 funguje na každém dekodéru. Změňte ho, když obraz sekává nebo zůstává černý. Volba platí od dalšího připojení.</string>
+    <string name="gal_compatibility_mode">Režim kompatibility (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Vyžádá pouze původní verzi protokolu. Platí od dalšího připojení.</string>
+    <string name="gal_compatibility_mode_help">Aplikace od telefonu žádá GAL 6.1. Pokud Android Auto v telefonu odpoví starší verzí, aplikace požádá o 1.6. Tyto verze umožňují novější funkce zvuku, videa a zobrazení. Tento režim zapněte, jen když se telefon připojí, ale pak nefunguje správně. Aplikace pak stejně jako v dřívějších vydáních požádá o GAL 1.2, bez těchto funkcí. GAL je protokol projekce, nikoli verze systému Android nebo aplikace Android Auto. Platí od dalšího připojení.</string>
     <string name="fps_limit">Limit FPS</string>
     <string name="fps_limit_help">Nejvyšší snímková frekvence, kterou tato jednotka od Android Auto žádá. 60 dává plynulejší pohyb, ale potřebuje větší šířku pásma a výkon dekodéru. Pokud obraz zaostává nebo sekává, zvolte 30. Platí od dalšího připojení.</string>
     <string name="save">Uložit</string>
@@ -389,7 +393,7 @@
     <string name="attach_hw_dsp_equalizer_description">Připojí k relaci zvuku virtuální ekvalizér pro vynucení směrování přes HW DSP na specifických autorádiích. Ponechte vypnuté, pokud používáte ViPER4Android / ViperFX nebo pokud je zvuk na starších verzích Androidu tlumený.</string>
     <string name="attach_hw_dsp_equalizer_summary">Připojí fiktivní ekvalizér, který na některých autorádiích vynutí směrování přes hardwarový DSP.</string>
     <string name="audio_volume_offset">Posun hlasitosti</string>
-    <string name="audio_volume_offset_help">Nastavuje hlasitost tří zvukových proudů Android Auto na této jednotce: médií, navigačních pokynů a systémových zvuků. Každý má rozsah od 0 % do 200 %. Při 100 % se proud přehrává tak, jak ho posílá telefon. Použijte to k vyvážení navigace a hudby.</string>
+    <string name="audio_volume_offset_help" formatted="false">Nastavuje hlasitost tří zvukových proudů Android Auto na této jednotce: médií, navigačních pokynů a systémových zvuků. Každý má rozsah od 0 % do 200 %. Při 100 % se proud přehrává tak, jak ho posílá telefon. Použijte to k vyvážení navigace a hudby.</string>
     <string name="mic_input_source">Zdroj vstupu mikrofonu</string>
     <string name="mic_input_source_description">Vyberte zdroj zvuku pro mikrofon.</string>
     <string name="mic_input_source_help">Vybírá zdroj zvuku Androidu, ze kterého aplikace nahrává. „Výchozí“ nechá rozhodnout systém. „Mikrofon“ nahrává surový zvuk. „Rozpoznávání hlasu“ a „Hlasová komunikace“ přidávají systémové filtry šumu a ozvěny. „Bluetooth náhlavní souprava“ nahrává přes náhlavní soupravu Bluetooth. Změňte to, pokud vás telefon neslyší. Pokud je Android Auto připojeno, uložení změny ukončí relaci.</string>
@@ -1330,8 +1334,8 @@
     <string name="failed_aa_not_system">Selhalo: Android Auto není nainstalováno jako systémová aplikace!</string>
     <string name="failed_aa_not_installed">Selhalo: Android Auto není nainstalováno!</string>
     <string name="raise_projection_during_call">Zůstat v Android Auto během hovorů</string>
-    <string name="raise_projection_during_call_description">Pouze samostatný režim. Vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Jen samostatný režim. Zobrazí projekci nad obrazovkou hovoru v telefonu.</string>
+    <string name="raise_projection_during_call_description">V samostatném režimu vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto. U jednotek FYT požádá jednotku, aby nezobrazovala vlastní lištu ani obrazovku hovoru, když je Android Auto v popředí. Nemusí fungovat na každé jednotce ani verzi firmwaru.</string>
+    <string name="raise_projection_during_call_summary">Samostatný režim a jednotky FYT. Skryje obrazovku hovoru. Nemusí fungovat všude.</string>
     <string name="show_over_lock_screen">Zobrazit na zamykací obrazovce</string>
     <string name="show_over_lock_screen_summary">Mapa a navigace zůstanou viditelné i při zamčení. Dotyky a tlačítka nefungují.</string>
     <string name="show_over_lock_screen_help">Zobrazí obraz Android Auto přes zamykací obrazovku, takže mapu a navigaci lze číst bez odemčení. Dokud je tato jednotka zamčená, do telefonu nic nedorazí: dotyky, tlačítka, otočný ovladač i hlasové tlačítko jsou blokovány a do popředí se přesune mapa. Stiskem Zpět jednotku odemknete pomocí PIN, gesta nebo hesla; poté vše funguje jako obvykle. Hudba, hovory a hlasový asistent v samotném telefonu nejsou ovlivněny.</string>
@@ -1484,16 +1488,16 @@
     <string name="pref_enable_floating_button_help">Zobrazí plovoucí tlačítko nad OEM spouštěčem a jinými aplikacemi pro rychlý návrat do Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indikátor stavu připojení</string>
     <string name="pref_floating_button_connection_status_summary">Ztlumí tlačítko, dokud je připojen telefon.</string>
-    <string name="pref_floating_button_connection_status_help">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu přejde na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu přejde na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
     <string name="pref_floating_button_size_title">Velikost plovoucího tlačítka</string>
     <string name="pref_floating_button_size_help">Velikost plovoucího tlačítka, od 32 do 120 dp. Větší tlačítko se při řízení snáze trefí.</string>
     <string name="pref_floating_button_opacity_title">Neprůhlednost plovoucího tlačítka</string>
     <string name="pref_floating_button_opacity_help">Jak nepropustně plovoucí tlačítko vypadá, od 10 % do 100 %. Při zapnutém indikátoru stavu připojení platí tato hodnota jen tehdy, když je telefon připojen.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Neprůhlednost při odpojení</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Jak nepropustně plovoucí tlačítko vypadá, dokud není připojen žádný telefon. Při 0 % je tlačítko skryté a klepnutí projdou na obrazovku pod ním.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Jak nepropustně plovoucí tlačítko vypadá, dokud není připojen žádný telefon. Při 0 % je tlačítko skryté a klepnutí projdou na obrazovku pod ním.</string>
     <string name="pref_floating_button_x_title">Vodorovná pozice (X)</string>
     <string name="pref_floating_button_y_title">Svislá pozice (Y)</string>
-    <string name="pref_floating_button_position_help">Kde na obrazovce plovoucí tlačítko leží. U X je 0 % levý okraj a 100 % pravý okraj. U Y je 0 % horní okraj a 100 % dolní okraj. Tlačítko vždy zůstane celé na obrazovce.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Kde na obrazovce plovoucí tlačítko leží. U X je 0 % levý okraj a 100 % pravý okraj. U Y je 0 % horní okraj a 100 % dolní okraj. Tlačítko vždy zůstane celé na obrazovce.</string>
     <string name="pref_aa_exit_action_title">Akce při ukončení Android Auto</string>
     <string name="pref_aa_exit_action_summary">Akce po klepnutí na Ukončit v nabídce aplikací Android Auto.</string>
     <string name="pref_aa_exit_action_help">Určuje, co se stane po klepnutí na Ukončit v Android Auto. „Návrat do OEM spouštěče“ zobrazí vlastní domovskou obrazovku této jednotky. „Zpět na úvod aplikace“ zobrazí domovskou obrazovku této aplikace. U těchto dvou zůstane telefon připojen. „Odpojit relaci“ ukončí relaci. Pokud je tato aplikace launcherem vozidla, „Návrat do OEM spouštěče“ funguje jako „Zpět na úvod aplikace“.</string>

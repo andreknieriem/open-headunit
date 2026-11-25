@@ -438,6 +438,12 @@ class UsbDeferredRecheckTest {
         }
     }
 
+    /** No re-enumeration comes, so the 5 s detach wait runs on this clock, not the wall clock. */
+    private fun fastRecoveryClock(f: Fixture) {
+        val clock = java.util.concurrent.atomic.AtomicLong(0)
+        doAnswer { clock.addAndGet(1000) }.`when`(f.launcher).recoveryNowMs()
+    }
+
     private fun identifyRecovery(f: Fixture, serial: (android.hardware.usb.UsbDevice) -> String? = { "target" }) {
         doAnswer { call ->
             val d = call.getArgument<android.hardware.usb.UsbDevice>(0)
@@ -710,6 +716,7 @@ class UsbDeferredRecheckTest {
 
     @Test fun aRecoveryStepFreesTheSlotWhenItEnds() = fixture { f ->
         val bus = RecoveryBus(f)
+        fastRecoveryClock(f)
         stubRetry(f, bus)
         switching(bus, issued = false).use {
             settled(f, endHandshake(f, bus))
@@ -720,6 +727,7 @@ class UsbDeferredRecheckTest {
 
     @Test fun aScanQueuedDuringARecoveryStepReplaysOnce() = fixture { f ->
         val bus = RecoveryBus(f)
+        fastRecoveryClock(f)
         val inRetry = java.util.concurrent.CountDownLatch(1)
         val release = java.util.concurrent.CountDownLatch(1)
         stubRetry(f, bus) {
@@ -739,6 +747,7 @@ class UsbDeferredRecheckTest {
 
     @Test fun detachAfterRetryDispatchInvalidatesAdmissionAndPreservesAttachReplay() = fixture { f ->
         val bus = RecoveryBus(f)
+        fastRecoveryClock(f)
         stubRetry(f, bus)
         val inRetry = java.util.concurrent.CountDownLatch(1)
         val release = java.util.concurrent.CountDownLatch(1)
@@ -768,6 +777,7 @@ class UsbDeferredRecheckTest {
 
     @Test fun aRecoveryRetryTakesNoSecondAttempt() = fixture { f ->
         val bus = RecoveryBus(f)
+        fastRecoveryClock(f)
         stubRetry(f, bus)
         switching(bus, issued = false).use {
             settled(f, endHandshake(f, bus))
@@ -822,6 +832,7 @@ class UsbDeferredRecheckTest {
 
     @Test fun anotherAccessoriesDetachDoesNotInvalidateTheRecoveryTarget() = fixture { f ->
         val bus = RecoveryBus(f)
+        fastRecoveryClock(f)
         stubRetry(f, bus)
         switching(bus, issued = false, duringRequest = {
             UsbLauncherListener(f.launcher).onUsbDetach(bus.fresh)
@@ -848,6 +859,7 @@ class UsbDeferredRecheckTest {
 
     @Test fun unchangedRecoveryOpensTheCurrentDeviceObjectRatherThanTheCapturedOne() = fixture { f ->
         val bus = RecoveryBus(f)
+        fastRecoveryClock(f)
         val name = bus.stale.deviceName
         `when`(bus.fresh.deviceName).thenReturn(name)
         runBlocking { doAnswer { Unit }.`when`(f.comm).reconnectUsb(eqValue(bus.fresh), anyValue(), anyValue(), anyValue()) }
@@ -866,6 +878,7 @@ class UsbDeferredRecheckTest {
 
     @Test fun disappearanceAtFinalLookupDoesNotScanForAnotherAccessory() = fixture { f ->
         val bus = RecoveryBus(f)
+        fastRecoveryClock(f)
         stubRetry(f, bus)
         AppLog.LOGGER = object : AppLog.Logger {
             override fun println(priority: Int, tag: String, msg: String) {

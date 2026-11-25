@@ -280,11 +280,10 @@ class Settings(private val context: Context) {
         }
 
     /**
-     * In Self Mode, put the projection back on top when a call covers it.
+     * Keep a call screen off the projection: Android Auto's own call UI is already on it.
      *
-     * Android Auto's own call UI is already on the projected surface, so the phone's call screen
-     * only hides it. Self Mode only: anywhere else the call screen is on the phone, not on the
-     * head unit.
+     * In Self Mode the projection comes back over the phone's call screen. On an FYT unit, in
+     * every mode, the unit is asked not to draw its own call bar or page.
      */
     var raiseProjectionDuringCall: Boolean
         get() = prefs.getBoolean("raise-projection-during-call", true)
@@ -1012,10 +1011,14 @@ class Settings(private val context: Context) {
             val ip = prefs.getString("soft-ap-last-ip", null) ?: return null
             val digest = prefs.getString("soft-ap-last-psk-digest", null) ?: return null
             val boot = prefs.getInt("soft-ap-ip-boot", -1).takeIf { it >= 0 }
-            return SoftApAddressRecord(ip, digest, boot, prefs.getBoolean("soft-ap-ip-spanned-boot", false))
+            return SoftApAddressRecord(
+                ip, digest, boot, prefs.getBoolean("soft-ap-ip-spanned-boot", false),
+                bssid = prefs.getString("soft-ap-ip-bssid", null),
+            )
         }
         set(value) {
             prefs.edit()
+                .putString("soft-ap-ip-bssid", value?.bssid)
                 .putString("soft-ap-last-ip", value?.ip)
                 .putString("soft-ap-last-psk-digest", value?.passphraseDigest)
                 .putInt("soft-ap-ip-boot", value?.bootCount ?: -1)
@@ -1261,6 +1264,11 @@ class Settings(private val context: Context) {
     var videoCodec: String
         get() = prefs.getString("video-codec", "Auto")!!
         set(value) { prefs.edit().putString("video-codec", value).apply() }
+
+    /** Requests only GAL 1.2, as releases before negotiation did. Applies at the next connection. */
+    var galCompatibilityMode: Boolean
+        get() = prefs.getBoolean("gal-compatibility-mode", false)
+        set(value) { prefs.edit().putBoolean("gal-compatibility-mode", value).apply() }
 
     var fpsLimit: Int
         get() = prefs.getInt("fps-limit", 60)

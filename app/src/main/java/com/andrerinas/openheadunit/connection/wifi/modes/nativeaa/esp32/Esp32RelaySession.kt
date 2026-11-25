@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import androidx.annotation.ChecksSdkIntAtLeast
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.utils.AppLog
 
@@ -150,6 +151,7 @@ object Esp32RelaySession {
         client?.sendCredit(extra)
     }
 
+    @ChecksSdkIntAtLeast(api = MIN_SDK)
     fun isSupported(): Boolean = Build.VERSION.SDK_INT >= MIN_SDK
 
     fun hasSavedEsp32Relay(context: Context): Boolean =
@@ -157,6 +159,8 @@ object Esp32RelaySession {
 
     /** Saved BLE address only when the master switch is on. */
     private fun activeEsp32RelayAddress(app: Context): String? {
+        // A settings backup can carry the relay to a unit below MIN_SDK.
+        if (!isSupported()) return null
         val store = Esp32RelayStore(app)
         if (!store.enabled) return null
         return store.deviceAddress
@@ -254,7 +258,7 @@ object Esp32RelaySession {
         address: String,
         info: Esp32RelayProtocol.DisplayInfo,
     ) {
-        esp32RelayClient(app).prepare(
+        esp32RelayClient(app)?.prepare(
             address,
             info.copy(generation = System.currentTimeMillis() / 1000L),
             restartProjection = true,
@@ -397,7 +401,7 @@ object Esp32RelaySession {
         val address = activeEsp32RelayAddress(app) ?: return
         AppLog.i("ESP32 relay: sending Wi-Fi snapshot ${info.ssid} ${info.ipAddress}:${info.port} to $address" +
             if (dial) "" else " without a new start")
-        esp32RelayClient(app).prepare(
+        esp32RelayClient(app)?.prepare(
             address,
             info.copy(generation = System.currentTimeMillis() / 1000L),
             restartProjection = dial,
@@ -432,7 +436,7 @@ object Esp32RelaySession {
         pairingActive = true
         publish(Status(Phase.CONNECTING))
         AppLog.i("ESP32 relay: opening new-phone pairing window on $address")
-        esp32RelayClient(app).allowPhonePairing(address) { result ->
+        esp32RelayClient(app)?.allowPhonePairing(address) { result ->
             if (result.isSuccess) {
                 publish(Status(Phase.PAIRING, address))
             } else {
@@ -646,7 +650,8 @@ object Esp32RelaySession {
         main.post { syncWatchdogLocked() }
     }
 
-    private fun esp32RelayClient(app: Context): Esp32RelayClient {
+    private fun esp32RelayClient(app: Context): Esp32RelayClient? {
+        if (!isSupported()) return null
         val active = client ?: Esp32RelayClient(app).also { client = it }
         active.onLinkLost = { noteLinkLost() }
         active.onFrame = ::dispatchFrame

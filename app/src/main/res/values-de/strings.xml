@@ -77,6 +77,7 @@
     <string name="night_overlay_dismiss">Tippen, um zur Projektion zurückzukehren</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">links</string>
     <string name="night_overlay_right">rechts</string>
@@ -425,6 +426,9 @@
     <string name="auto_connecting_single_usb">Verbindung zum USB-Gerät wird hergestellt…</string>
     <string name="video_codec">Video-Codec</string>
     <string name="video_codec_help">Legt das Videoformat fest, das das Smartphone sendet. Auto wählt aus dem, was dieses Gerät dekodieren kann. H.265 liefert bei gleicher Datenrate ein schärferes Bild. H.264 läuft auf jedem Decoder. Ändere es, wenn das Bild ruckelt oder schwarz bleibt. Die Wahl gilt ab der nächsten Verbindung.</string>
+    <string name="gal_compatibility_mode">Kompatibilitätsmodus (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Fordert nur die ursprüngliche Protokollversion an. Gilt ab der nächsten Verbindung.</string>
+    <string name="gal_compatibility_mode_help">Die App fordert beim Smartphone GAL 6.1 an. Wenn Android Auto auf dem Smartphone mit einer älteren Version antwortet, fordert die App 1.6 an. Diese Versionen ermöglichen neuere Funktionen für Ton, Video und Anzeige. Schalte diesen Modus nur ein, wenn das Smartphone eine Verbindung herstellt, danach aber nicht richtig funktioniert. Die App fordert dann wie in früheren Versionen GAL 1.2 an, ohne diese Funktionen. GAL ist das Projektionsprotokoll, nicht die Version von Android oder der Android Auto-App. Gilt ab der nächsten Verbindung.</string>
     <string name="fps_limit">FPS-Limit</string>
     <string name="fps_limit_help">Die höchste Bildrate, die dieses Gerät bei Android Auto anfordert. 60 ergibt flüssigere Bewegung, braucht aber mehr Bandbreite und Decoder-Leistung. Wähle 30, wenn das Bild hängt oder ruckelt. Gilt ab der nächsten Verbindung.</string>
     <string name="save">Speichern</string>
@@ -463,7 +467,7 @@
     <string name="attach_hw_dsp_equalizer_description">Hängt einen Dummy-Equalizer-Effekt an die Audiositzung an, um auf bestimmten Headunits das Hardware-DSP-Routing zu erzwingen. Deaktiviert lassen, wenn du ViPER4Android / ViperFX nutzt oder der Ton auf älteren Android-Versionen dumpf klingt.</string>
     <string name="attach_hw_dsp_equalizer_summary">Einen Dummy-Equalizer einhängen, um auf manchen Geräten das Hardware-DSP-Routing zu erzwingen.</string>
     <string name="audio_volume_offset">Lautstärke-Offset</string>
-    <string name="audio_volume_offset_help">Legt die Lautstärke von drei Audiostreams von Android Auto auf diesem Gerät fest: Medien, Navigationsansagen und Systemtöne. Jeder reicht von 0 % bis 200 %. Bei 100 % wird ein Stream so abgespielt, wie ihn das Smartphone sendet. Damit gleichst du Navigation und Musik aufeinander ab.</string>
+    <string name="audio_volume_offset_help" formatted="false">Legt die Lautstärke von drei Audiostreams von Android Auto auf diesem Gerät fest: Medien, Navigationsansagen und Systemtöne. Jeder reicht von 0 % bis 200 %. Bei 100 % wird ein Stream so abgespielt, wie ihn das Smartphone sendet. Damit gleichst du Navigation und Musik aufeinander ab.</string>
     <string name="microphone_settings">Mikrofoneinstellungen</string>
     <string name="use_head_unit_microphone">Headunit-Mikrofon</string>
     <string name="use_head_unit_microphone_description">Ein: Android Auto hört das Mikrofon dieses Geräts. Aus: Dieses Gerät nimmt nie auf. Das Smartphone verwendet sein eigenes Mikrofon oder ein mit ihm gekoppeltes Headset bzw. eine Gegensprechanlage, sodass der Sprachassistent weiter funktioniert. Erfordert Android 11 oder neuer auf dem Smartphone.</string>
@@ -1329,8 +1333,8 @@
     <string name="failed_aa_not_system">Fehlgeschlagen: Android Auto ist nicht als System-App installiert!</string>
     <string name="failed_aa_not_installed">Fehlgeschlagen: Android Auto ist nicht installiert!</string>
     <string name="raise_projection_during_call">Während Anrufen in Android Auto bleiben</string>
-    <string name="raise_projection_during_call_description">Nur im Self Mode. Holt die Projektion wieder über den Anrufbildschirm des Smartphones, damit Anrufe in der Android-Auto-Oberfläche angenommen und beendet werden.</string>
-    <string name="raise_projection_during_call_summary">Nur im Self Mode. Die Projektion über dem Anrufbildschirm des Smartphones zeigen.</string>
+    <string name="raise_projection_during_call_description">Im Self Mode holt die Projektion wieder über den Anrufbildschirm des Smartphones, damit Anrufe in der Android-Auto-Oberfläche angenommen und beendet werden. Auf FYT-Geräten fordert die App das Gerät auf, die eigene Anrufleiste und den eigenen Anrufbildschirm nicht anzuzeigen, solange Android Auto im Vordergrund ist. Das funktioniert nicht auf jedem Gerät oder mit jeder Firmware-Version.</string>
+    <string name="raise_projection_during_call_summary">Self Mode und FYT-Geräte. Blendet den Anrufbildschirm aus. Nicht immer möglich.</string>
     <string name="show_over_lock_screen">Über dem Sperrbildschirm anzeigen</string>
     <string name="show_over_lock_screen_summary">Karte und Route bleiben gesperrt sichtbar. Berührungen und Tasten wirken nicht.</string>
     <string name="show_over_lock_screen_help">Zeigt das Android-Auto-Bild über dem Sperrbildschirm, damit Karte und Routenführung ohne Entsperren lesbar sind. Solange dieses Gerät gesperrt ist, erreicht nichts das Smartphone: Berührungen, Tasten, der Drehregler und die Sprachtaste werden zurückgehalten, und die Karte wird in den Vordergrund geholt. Mit Zurück entsperren Sie per PIN, Muster oder Passwort; danach funktioniert alles wie gewohnt. Musik, Anrufe und der Sprachassistent auf dem Smartphone selbst sind nicht betroffen.</string>
@@ -1510,16 +1514,16 @@
     <string name="pref_enable_floating_button_help">Zeigt einen schwebenden Button über dem OEM-Launcher und anderen Apps an, um schnell zu Open Headunit zurückzukehren.</string>
     <string name="pref_floating_button_connection_status_title">Verbindungsstatus-Anzeige</string>
     <string name="pref_floating_button_connection_status_summary">Button abblenden, solange ein Smartphone verbunden ist.</string>
-    <string name="pref_floating_button_connection_status_help">Nutzt Deckkraft bei Trennung, wenn kein Smartphone verbunden ist, und blendet bei verbundenem Smartphone auf Deckkraft des schwebenden Buttons ab. Bei 0 % ist der Button ausgeblendet und lässt Berührungen durch.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Nutzt Deckkraft bei Trennung, wenn kein Smartphone verbunden ist, und blendet bei verbundenem Smartphone auf Deckkraft des schwebenden Buttons ab. Bei 0 % ist der Button ausgeblendet und lässt Berührungen durch.</string>
     <string name="pref_floating_button_size_title">Größe des schwebenden Buttons</string>
     <string name="pref_floating_button_size_help">Die Größe der schwebenden Schaltfläche, von 32 bis 120 dp. Eine größere Schaltfläche trifft man beim Fahren leichter.</string>
     <string name="pref_floating_button_opacity_title">Deckkraft des schwebenden Buttons</string>
     <string name="pref_floating_button_opacity_help">Wie deckend die schwebende Schaltfläche aussieht, von 10 % bis 100 %. Ist die Verbindungsstatus-Anzeige an, gilt dieser Wert nur, solange ein Smartphone verbunden ist.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Deckkraft bei Trennung</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Wie deckend die schwebende Schaltfläche aussieht, solange kein Smartphone verbunden ist. Bei 0 % ist die Schaltfläche verborgen, und Tipps gehen auf den Bildschirm darunter durch.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Wie deckend die schwebende Schaltfläche aussieht, solange kein Smartphone verbunden ist. Bei 0 % ist die Schaltfläche verborgen, und Tipps gehen auf den Bildschirm darunter durch.</string>
     <string name="pref_floating_button_x_title">Horizontale Position (X)</string>
     <string name="pref_floating_button_y_title">Vertikale Position (Y)</string>
-    <string name="pref_floating_button_position_help">Wo die schwebende Schaltfläche auf dem Bildschirm sitzt. Bei X ist 0 % der linke Rand und 100 % der rechte Rand. Bei Y ist 0 % der obere Rand und 100 % der untere Rand. Die Schaltfläche bleibt immer ganz auf dem Bildschirm.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Wo die schwebende Schaltfläche auf dem Bildschirm sitzt. Bei X ist 0 % der linke Rand und 100 % der rechte Rand. Bei Y ist 0 % der obere Rand und 100 % der untere Rand. Die Schaltfläche bleibt immer ganz auf dem Bildschirm.</string>
     <string name="pref_aa_exit_action_title">Aktion beim Beenden von Android Auto</string>
     <string name="pref_aa_exit_action_summary">Aktion beim Antippen von „Beenden“ in der App-Übersicht von Android Auto.</string>
     <string name="pref_aa_exit_action_help">Legt fest, was passiert, wenn du in Android Auto auf „Beenden“ tippst. „Zurück zum OEM-Launcher“ zeigt den eigenen Startbildschirm dieses Geräts. „Zurück zum App-Hauptmenü“ zeigt die Startseite dieser App. Bei diesen beiden bleibt das Smartphone verbunden. „Verbindung trennen“ beendet die Sitzung. Ist diese App der Fahrzeug-Launcher, wirkt „Zurück zum OEM-Launcher“ wie „Zurück zum App-Hauptmenü“.</string>

@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">Dotknij, aby wrócić do projekcji</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">lewo</string>
     <string name="night_overlay_right">prawo</string>
@@ -353,6 +354,9 @@
     <string name="auto_connecting_single_usb">Automatyczne łączenie z urządzeniem USB…</string>
     <string name="video_codec">Kodek wideo</string>
     <string name="video_codec_help">Wybiera format wideo wysyłany przez telefon. Auto pozwala aplikacji wybrać spośród tego, co ta stacja potrafi zdekodować. H.265 daje ostrzejszy obraz przy tej samej przepływności. H.264 działa na każdym dekoderze. Zmień go, gdy obraz się zacina lub pozostaje czarny. Wybór obowiązuje od następnego połączenia.</string>
+    <string name="gal_compatibility_mode">Tryb zgodności (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Żąda tylko pierwotnej wersji protokołu. Działa od następnego połączenia.</string>
+    <string name="gal_compatibility_mode_help">Aplikacja żąda od telefonu wersji GAL 6.1. Jeśli Android Auto na telefonie odpowie starszą wersją, aplikacja zażąda wersji 1.6. Te wersje udostępniają nowsze funkcje dźwięku, wideo i wyświetlania. Włącz ten tryb tylko wtedy, gdy telefon nawiązuje połączenie, ale potem nie działa prawidłowo. Aplikacja żąda wtedy wersji GAL 1.2, tak jak w poprzednich wydaniach, bez tych funkcji. GAL to protokół projekcji, a nie wersja systemu Android ani aplikacji Android Auto. Działa od następnego połączenia.</string>
     <string name="fps_limit">Limit FPS</string>
     <string name="fps_limit_help">Najwyższa liczba klatek na sekundę, o którą ta stacja prosi Android Auto. Przy 60 ruch jest płynniejszy, ale potrzeba więcej przepustowości i mocy dekodera. Wybierz 30, jeśli obraz się opóźnia lub zacina. Działa od następnego połączenia.</string>
     <string name="save">Zapisz</string>
@@ -389,7 +393,7 @@
     <string name="attach_hw_dsp_equalizer_description">Dodaje neutralny korektor do sesji audio, aby wymusić sprzętowe przetwarzanie DSP w wybranych stacjach. Pozostaw wyłączone, jeśli korzystasz z ViPER4Android / ViperFX lub jeśli dźwięk w starszych wersjach Androida jest przytłumiony.</string>
     <string name="attach_hw_dsp_equalizer_summary">Dołącza atrapę korektora, aby wymusić routing przez sprzętowy DSP na niektórych stacjach.</string>
     <string name="audio_volume_offset">Korekta głośności dźwięku</string>
-    <string name="audio_volume_offset_help">Ustawia głośność trzech strumieni dźwięku Android Auto na tej stacji: multimediów, wskazówek nawigacji i dźwięków systemowych. Każdy ma zakres od 0% do 200%. Przy 100% strumień gra tak, jak wysyła go telefon. Użyj tego, aby wyrównać głośność nawigacji i muzyki.</string>
+    <string name="audio_volume_offset_help" formatted="false">Ustawia głośność trzech strumieni dźwięku Android Auto na tej stacji: multimediów, wskazówek nawigacji i dźwięków systemowych. Każdy ma zakres od 0% do 200%. Przy 100% strumień gra tak, jak wysyła go telefon. Użyj tego, aby wyrównać głośność nawigacji i muzyki.</string>
     <string name="mic_input_source">Źródło wejściowe mikrofonu</string>
     <string name="mic_input_source_description">Wybierz źródło dźwięku dla mikrofonu.</string>
     <string name="mic_input_source_help">Wybiera źródło dźwięku Android, z którego nagrywa aplikacja. Domyślne pozwala wybrać systemowi. Mikrofon nagrywa surowy dźwięk. Rozpoznawanie głosu i Komunikacja głosowa dodają systemowe filtry szumu i echa. Zestaw słuchawki Bluetooth nagrywa przez zestaw Bluetooth. Zmień to, jeśli telefon cię nie słyszy. Gdy Android Auto jest połączony, zapisanie zmiany kończy sesję.</string>
@@ -1335,8 +1339,8 @@
     <string name="failed_aa_not_system">Błąd: Android Auto nie jest zainstalowane jako aplikacja systemowa!</string>
     <string name="failed_aa_not_installed">Błąd: Android Auto nie jest zainstalowane!</string>
     <string name="raise_projection_during_call">Pozostań w Android Auto podczas połączeń</string>
-    <string name="raise_projection_during_call_description">Tylko Self Mode. Przywraca projekcję nad ekran połączenia telefonu, dzięki czemu połączenia odbiera się i kończy w interfejsie Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Tylko w trybie samodzielnym. Pokazuje projekcję nad ekranem połączenia telefonu.</string>
+    <string name="raise_projection_during_call_description">W trybie samodzielnym przywraca projekcję nad ekran połączenia telefonu, dzięki czemu połączenia odbiera się i kończy w interfejsie Android Auto. Na urządzeniach FYT prosi urządzenie, aby nie pokazywało własnego paska ani ekranu połączenia, gdy Android Auto jest na wierzchu. Może nie działać na każdym urządzeniu ani w każdej wersji firmware\'u.</string>
+    <string name="raise_projection_during_call_summary">Tryb samodzielny i urządzenia FYT. Ukrywa ekran połączenia. Może nie działać.</string>
     <string name="show_over_lock_screen">Pokaż na ekranie blokady</string>
     <string name="show_over_lock_screen_summary">Mapa i wskazówki są widoczne po zablokowaniu. Dotyk i przyciski nie działają.</string>
     <string name="show_over_lock_screen_help">Wyświetla obraz Android Auto nad ekranem blokady, dzięki czemu mapę i wskazówki można czytać bez odblokowywania. Dopóki to urządzenie jest zablokowane, nic nie trafia do telefonu: dotyk, przyciski, pokrętło i przycisk głosowy są wstrzymywane, a mapa jest przenoszona na pierwszy plan. Naciśnij Wstecz, aby odblokować kodem PIN, wzorem lub hasłem; potem wszystko działa jak zwykle. Muzyka, połączenia i asystent głosowy na samym telefonie nie są objęte tą zmianą.</string>
@@ -1490,16 +1494,16 @@
     <string name="pref_enable_floating_button_help">Wyświetla pływający przycisk nad launcherem OEM i innymi aplikacjami, aby szybko wrócić do Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Wskaźnik stanu połączenia</string>
     <string name="pref_floating_button_connection_status_summary">Przygasza przycisk, gdy telefon jest połączony.</string>
-    <string name="pref_floating_button_connection_status_help">Gdy żaden telefon nie jest połączony, używa przezroczystości po rozłączeniu, a po połączeniu telefonu przechodzi płynnie do przezroczystości pływającego przycisku. Przy 0% przycisk jest ukryty i przepuszcza dotknięcia.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Gdy żaden telefon nie jest połączony, używa przezroczystości po rozłączeniu, a po połączeniu telefonu przechodzi płynnie do przezroczystości pływającego przycisku. Przy 0% przycisk jest ukryty i przepuszcza dotknięcia.</string>
     <string name="pref_floating_button_size_title">Rozmiar pływającego przycisku</string>
     <string name="pref_floating_button_size_help">Rozmiar pływającego przycisku, od 32 do 120 dp. Większy przycisk łatwiej trafić podczas jazdy.</string>
     <string name="pref_floating_button_opacity_title">Przezroczystość pływającego przycisku</string>
     <string name="pref_floating_button_opacity_help">Jak wyraźny jest pływający przycisk, od 10% do 100%. Gdy Wskaźnik stanu połączenia jest włączony, ta wartość obowiązuje tylko przy połączonym telefonie.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Przezroczystość po rozłączeniu</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Jak wyraźny jest pływający przycisk, gdy żaden telefon nie jest połączony. Przy 0% przycisk jest ukryty, a dotknięcia trafiają w ekran pod nim.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Jak wyraźny jest pływający przycisk, gdy żaden telefon nie jest połączony. Przy 0% przycisk jest ukryty, a dotknięcia trafiają w ekran pod nim.</string>
     <string name="pref_floating_button_x_title">Pozycja pozioma (X)</string>
     <string name="pref_floating_button_y_title">Pozycja pionowa (Y)</string>
-    <string name="pref_floating_button_position_help">Gdzie na ekranie znajduje się pływający przycisk. Dla X 0% to lewa krawędź, a 100% to prawa krawędź. Dla Y 0% to górna krawędź, a 100% to dolna krawędź. Przycisk zawsze mieści się w całości na ekranie.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Gdzie na ekranie znajduje się pływający przycisk. Dla X 0% to lewa krawędź, a 100% to prawa krawędź. Dla Y 0% to górna krawędź, a 100% to dolna krawędź. Przycisk zawsze mieści się w całości na ekranie.</string>
     <string name="pref_aa_exit_action_title">Działanie przy wyjściu z Android Auto</string>
     <string name="pref_aa_exit_action_summary">Działanie po dotknięciu Wyjdź w menu aplikacji Android Auto.</string>
     <string name="pref_aa_exit_action_help">Określa, co się dzieje po dotknięciu Wyjdź w Android Auto. Powrót do launchera OEM pokazuje własny ekran główny stacji. Powrót do ekranu głównego aplikacji pokazuje ekran główny tej aplikacji. Przy tych dwóch telefon pozostaje połączony. Rozłącz sesję kończy sesję. Gdy ta aplikacja jest launcherem auta, Powrót do launchera OEM działa jak Powrót do ekranu głównego aplikacji.</string>

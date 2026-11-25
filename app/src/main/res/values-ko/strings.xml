@@ -79,6 +79,7 @@
     <string name="night_overlay_dismiss">탭하여 프로젝션으로 돌아가기</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">왼쪽</string>
     <string name="night_overlay_right">오른쪽</string>
@@ -400,6 +401,9 @@
     <string name="auto_connecting_single_usb">USB 기기에 자동으로 연결 중…</string>
     <string name="video_codec">영상 코덱</string>
     <string name="video_codec_help">휴대전화가 보내는 영상 형식을 선택합니다. 자동은 이 기기가 디코딩할 수 있는 형식 중에서 앱이 고릅니다. H.265는 같은 데이터 전송률에서 더 선명합니다. H.264는 모든 디코더에서 작동합니다. 화면이 끊기거나 검게 유지되면 변경하세요. 선택은 다음 연결부터 적용됩니다.</string>
+    <string name="gal_compatibility_mode">호환 모드 (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">프로토콜의 최초 버전만 요청합니다. 다음 연결부터 적용됩니다.</string>
+    <string name="gal_compatibility_mode_help">앱은 휴대전화에 GAL 6.1을 요청합니다. 휴대전화의 Android Auto가 이전 버전으로 응답하면 1.6을 요청합니다. 이 버전에서는 더 새로운 오디오, 영상, 디스플레이 기능을 사용할 수 있습니다. 휴대전화가 연결되지만 연결 후 제대로 작동하지 않을 때만 이 모드를 켜세요. 이 모드를 켜면 앱은 예전 릴리스와 마찬가지로 GAL 1.2를 요청하며, 이러한 기능은 사용할 수 없습니다. GAL은 프로젝션 프로토콜이며 Android나 Android Auto 앱의 버전과는 다릅니다. 다음 연결부터 적용됩니다.</string>
     <string name="fps_limit">FPS 제한</string>
     <string name="fps_limit_help">이 기기가 Android Auto에 요청하는 최대 프레임 속도입니다. 60은 움직임이 더 부드럽지만 대역폭과 디코더 성능이 더 필요합니다. 화면이 지연되거나 끊기면 30을 선택하세요. 다음 연결부터 적용됩니다.</string>
     <string name="save">저장</string>
@@ -439,7 +443,7 @@
     <string name="attach_hw_dsp_equalizer_description">오디오 세션에 더미 Equalizer 효과를 연결하여 특정 헤드유닛에서 하드웨어 DSP 라우팅을 강제합니다. ViPER4Android / ViperFX를 사용 중이거나 이전 Android 버전에서 소리가 먹먹하게 들리면 사용 중지 상태로 유지하세요.</string>
     <string name="attach_hw_dsp_equalizer_summary">일부 기기에서 하드웨어 DSP 라우팅을 강제하려고 가짜 이퀄라이저를 연결합니다.</string>
     <string name="audio_volume_offset">오디오 음량 보정</string>
-    <string name="audio_volume_offset_help">이 기기에서 Android Auto의 오디오 스트림 3가지(미디어, 내비게이션 안내, 시스템 소리)의 음량을 정합니다. 각각 0%에서 200%까지 설정할 수 있습니다. 100%는 휴대전화가 보낸 음량 그대로 재생합니다. 내비게이션과 음악의 음량 균형을 맞출 때 사용하세요.</string>
+    <string name="audio_volume_offset_help" formatted="false">이 기기에서 Android Auto의 오디오 스트림 3가지(미디어, 내비게이션 안내, 시스템 소리)의 음량을 정합니다. 각각 0%에서 200%까지 설정할 수 있습니다. 100%는 휴대전화가 보낸 음량 그대로 재생합니다. 내비게이션과 음악의 음량 균형을 맞출 때 사용하세요.</string>
     <string name="microphone_settings">마이크 설정</string>
     <string name="use_head_unit_microphone">헤드유닛 마이크</string>
     <string name="use_head_unit_microphone_description">켜짐: Android Auto가 이 기기의 마이크를 사용합니다. 꺼짐: 이 기기는 녹음하지 않으며 휴대전화가 자체 마이크나 휴대전화에 페어링된 헤드셋 또는 인터콤을 사용하므로 음성 어시스턴트는 계속 작동합니다. 휴대전화에 Android 11 이상이 필요합니다.</string>
@@ -1323,8 +1327,8 @@
     <string name="failed_aa_not_system">실패: Android Auto가 시스템 앱으로 설치되어 있지 않습니다!</string>
     <string name="failed_aa_not_installed">실패: Android Auto가 설치되어 있지 않습니다!</string>
     <string name="raise_projection_during_call">통화 중에도 Android Auto 유지</string>
-    <string name="raise_projection_during_call_description">단독 모드에서만 사용할 수 있습니다. 휴대전화의 통화 화면 위에 Android Auto 화면을 다시 표시하여 Android Auto에서 통화를 받고 끊을 수 있게 합니다.</string>
-    <string name="raise_projection_during_call_summary">단독 모드 전용입니다. 휴대전화의 통화 화면 위에 투사 화면을 표시합니다.</string>
+    <string name="raise_projection_during_call_description">단독 모드에서는 휴대전화의 통화 화면 위에 Android Auto 화면을 다시 표시하여 Android Auto에서 통화를 받고 끊을 수 있게 합니다. FYT 헤드유닛에서는 Android Auto가 앞에 있는 동안 기기 자체의 통화 바와 통화 화면을 표시하지 않도록 기기에 요청합니다. 일부 기기나 펌웨어 버전에서는 작동하지 않을 수 있습니다.</string>
+    <string name="raise_projection_during_call_summary">단독 모드 및 FYT 기기. 통화 화면을 숨깁니다. 일부 기기에서는 작동하지 않을 수 있습니다.</string>
     <string name="show_over_lock_screen">잠금 화면 위에 표시</string>
     <string name="show_over_lock_screen_summary">잠겨 있어도 지도와 길 안내가 보입니다. 터치와 버튼은 작동하지 않습니다.</string>
     <string name="show_over_lock_screen_help">Android Auto 화면을 잠금 화면 위에 표시하여 잠금을 해제하지 않고도 지도와 길 안내를 볼 수 있습니다. 이 기기가 잠겨 있는 동안에는 휴대전화로 아무것도 전달되지 않습니다. 터치, 버튼, 로터리 컨트롤러, 음성 버튼이 차단되고 지도가 앞으로 표시됩니다. 뒤로를 누르면 PIN, 패턴 또는 비밀번호로 잠금을 해제할 수 있으며, 그 후에는 평소처럼 작동합니다. 휴대전화 자체의 음악, 통화, 음성 비서에는 영향이 없습니다.</string>
@@ -1478,16 +1482,16 @@
     <string name="pref_enable_floating_button_help">순정 런처와 다른 앱 위에 플로팅 버튼을 표시합니다. 버튼을 누르면 Open Headunit으로 빠르게 돌아갈 수 있습니다.</string>
     <string name="pref_floating_button_connection_status_title">연결 상태 표시</string>
     <string name="pref_floating_button_connection_status_summary">휴대전화가 연결되어 있는 동안 버튼을 흐리게 합니다.</string>
-    <string name="pref_floating_button_connection_status_help">휴대전화가 연결되지 않으면 \"연결되지 않았을 때 불투명도\"를 적용하고, 연결되어 있으면 \"플로팅 버튼 불투명도\"로 서서히 전환합니다. 불투명도가 0%이면 버튼이 숨겨지고 아래 화면을 탭할 수 있습니다.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">휴대전화가 연결되지 않으면 \"연결되지 않았을 때 불투명도\"를 적용하고, 연결되어 있으면 \"플로팅 버튼 불투명도\"로 서서히 전환합니다. 불투명도가 0%이면 버튼이 숨겨지고 아래 화면을 탭할 수 있습니다.</string>
     <string name="pref_floating_button_size_title">플로팅 버튼 크기</string>
     <string name="pref_floating_button_size_help">플로팅 버튼의 크기를 32dp에서 120dp 사이로 정합니다. 버튼이 클수록 운전 중에 누르기 쉽습니다.</string>
     <string name="pref_floating_button_opacity_title">플로팅 버튼 불투명도</string>
     <string name="pref_floating_button_opacity_help">플로팅 버튼이 얼마나 진하게 보일지 10%에서 100% 사이로 정합니다. 연결 상태 표시를 사용 설정하면 이 값은 휴대전화가 연결된 동안에만 적용됩니다.</string>
     <string name="pref_floating_button_disconnected_opacity_title">연결되지 않았을 때 불투명도</string>
-    <string name="pref_floating_button_disconnected_opacity_help">휴대전화가 연결되지 않았을 때 플로팅 버튼이 얼마나 진하게 보일지 정합니다. 0%이면 버튼이 숨겨지고 탭은 아래 화면에 전달됩니다.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">휴대전화가 연결되지 않았을 때 플로팅 버튼이 얼마나 진하게 보일지 정합니다. 0%이면 버튼이 숨겨지고 탭은 아래 화면에 전달됩니다.</string>
     <string name="pref_floating_button_x_title">수평 위치(X)</string>
     <string name="pref_floating_button_y_title">수직 위치(Y)</string>
-    <string name="pref_floating_button_position_help">화면에서 플로팅 버튼이 놓이는 위치입니다. X에서 0%는 왼쪽 가장자리, 100%는 오른쪽 가장자리입니다. Y에서 0%는 위쪽 가장자리, 100%는 아래쪽 가장자리입니다. 버튼은 항상 화면 안에 완전히 표시됩니다.</string>
+    <string name="pref_floating_button_position_help" formatted="false">화면에서 플로팅 버튼이 놓이는 위치입니다. X에서 0%는 왼쪽 가장자리, 100%는 오른쪽 가장자리입니다. Y에서 0%는 위쪽 가장자리, 100%는 아래쪽 가장자리입니다. 버튼은 항상 화면 안에 완전히 표시됩니다.</string>
     <string name="pref_aa_exit_action_title">Android Auto 종료 시 동작</string>
     <string name="pref_aa_exit_action_summary">Android Auto 앱 서랍에서 종료를 탭했을 때의 동작을 설정합니다.</string>
     <string name="pref_aa_exit_action_help">Android Auto에서 종료를 탭했을 때의 동작을 선택합니다. 순정 런처로 돌아가기는 이 기기의 기본 홈 화면을 표시합니다. 앱 홈 화면으로 돌아가기는 이 앱의 홈 화면을 표시합니다. 이 두 가지는 휴대전화가 계속 연결된 상태로 유지됩니다. Android Auto 연결 종료는 세션을 끝냅니다. 이 앱이 차량 런처이면 순정 런처로 돌아가기가 앱 홈 화면으로 돌아가기처럼 동작합니다.</string>

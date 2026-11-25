@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">დააჭირეთ პროექციაში დასაბრუნებლად</string>
     <string name="night_overlay_meters">%1$d მ</string>
     <string name="night_overlay_kilometers">%1$.1f კმ</string>
+    <string name="night_overlay_kilometers_whole">%1$d კმ</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">მარცხნივ</string>
     <string name="night_overlay_right">მარჯვნივ</string>
@@ -388,6 +389,9 @@
     <string name="auto_connecting_single_usb">მიმდინარეობს ავტო-კავშირი USB მოწყობილობასთან…</string>
     <string name="video_codec">ვიდეო კოდეკი</string>
     <string name="video_codec_help">ირჩევს ვიდეოფორმატს, რომელსაც ტელეფონი გამოგზავნის. „ავტო“ რეჟიმში აპი ირჩევს იმ ფორმატებიდან, რომლებსაც ეს მოწყობილობა დეკოდირებს. H.265 იგივე მონაცემთა სიჩქარით უფრო მკაფიო გამოსახულებას იძლევა. H.264 მუშაობს ნებისმიერ დეკოდერზე. შეცვალეთ, თუ გამოსახულება ეჩხირება ან შავი რჩება. არჩევანი მოქმედებს შემდეგი კავშირიდან.</string>
+    <string name="gal_compatibility_mode">თავსებადობის რეჟიმი (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">ითხოვს პროტოკოლის მხოლოდ თავდაპირველ ვერსიას. მოქმედებს შემდეგი კავშირისას.</string>
+    <string name="gal_compatibility_mode_help">აპი ტელეფონს სთხოვს GAL 6.1 ვერსიას. თუ ტელეფონში გაშვებული Android Auto უფრო ძველი ვერსიით უპასუხებს, აპი 1.6 ვერსიას მოითხოვს. ეს ვერსიები აუდიოს, ვიდეოსა და გამოსახვის უფრო ახალ ფუნქციებს უზრუნველყოფს. ჩართეთ ეს რეჟიმი მხოლოდ მაშინ, თუ ტელეფონი დაუკავშირდა მოწყობილობას, მაგრამ ამის შემდეგ გამართულად არ მუშაობს. ამ შემთხვევაში აპი, როგორც ადრინდელ გამოშვებებში, ითხოვს GAL 1.2 ვერსიას ამ ფუნქციების გარეშე. GAL პროექციის პროტოკოლია და არა Android სისტემის ან Android Auto აპის ვერსია. მოქმედებს შემდეგი კავშირისას.</string>
     <string name="fps_limit">FPS ლიმიტი</string>
     <string name="fps_limit_help">უმაღლესი კადრების სიხშირე, რომელსაც ეს მოწყობილობა Android Auto-ს სთხოვს. 60-ზე მოძრაობა უფრო გლუვია, მაგრამ მეტი გამტარუნარიანობა და დეკოდერის სიმძლავრე სჭირდება. აირჩიეთ 30, თუ გამოსახულება ჩამორჩება ან იჭედება. მოქმედებს შემდეგი კავშირისას.</string>
     <string name="save">შენახვა</string>
@@ -425,7 +429,7 @@
     <string name="attach_hw_dsp_equalizer_description">ამატებს ფიქტიურ ეკვალაიზერის ეფექტს აუდიო სესიას აპარატურული DSP მარშრუტიზაციის იძულებით ჩართვისთვის. დატოვეთ გამორთული თუ იყენებთ ViPER4Android / ViperFX-ს ან თუ ხმა დახშულია ძველ Android ვერსიებზე.</string>
     <string name="attach_hw_dsp_equalizer_summary">აერთებს ყალბ ეკვალაიზერს, რათა ზოგ მოწყობილობაზე აპარატურული DSP-ით მარშრუტიზაცია აიძულოს.</string>
     <string name="audio_volume_offset">აუდიოს ხმის დონის კორექტირება</string>
-    <string name="audio_volume_offset_help">ადგენს Android Auto-ს სამი ხმოვანი ნაკადის ხმას ამ მოწყობილობაზე: მედია, ნავიგაციის მითითებები და სისტემური ხმები. თითოეული 0%-დან 200%-მდეა. 100%-ზე ნაკადი ისე უკრავს, როგორც ტელეფონი აგზავნის. გამოიყენეთ ნავიგაციისა და მუსიკის დასაბალანსებლად.</string>
+    <string name="audio_volume_offset_help" formatted="false">ადგენს Android Auto-ს სამი ხმოვანი ნაკადის ხმას ამ მოწყობილობაზე: მედია, ნავიგაციის მითითებები და სისტემური ხმები. თითოეული 0%-დან 200%-მდეა. 100%-ზე ნაკადი ისე უკრავს, როგორც ტელეფონი აგზავნის. გამოიყენეთ ნავიგაციისა და მუსიკის დასაბალანსებლად.</string>
     <string name="microphone_settings">მიკროფონის პარამეტრები</string>
     <string name="use_head_unit_microphone">მაგნიტოლას მიკროფონი</string>
     <string name="use_head_unit_microphone_description">ჩართული: Android Auto ისმენს ამ მოწყობილობის მიკროფონს. გამორთული: ეს მოწყობილობა არასოდეს იწერს და ტელეფონი იყენებს საკუთარ მიკროფონს, ან ტელეფონთან დაწყვილებულ ყურსასმენს ან ინტერკომს, ასე რომ ხმოვანი ასისტენტი კვლავ მუშაობს. ტელეფონზე საჭიროა Android 11 ან უფრო ახალი.</string>
@@ -1315,8 +1319,8 @@
     <string name="failed_aa_not_system">ვერ მოხერხდა: Android Auto არ არის დაინსტალირებული როგორც სისტემური აპი!</string>
     <string name="failed_aa_not_installed">ვერ მოხერხდა: Android Auto არ არის დაინსტალირებული!</string>
     <string name="raise_projection_during_call">ზარების დროს Android Auto-ში დარჩენა</string>
-    <string name="raise_projection_during_call_description">მხოლოდ ავტონომიური რეჟიმი. აბრუნებს პროექციას ტელეფონის ზარის ეკრანის ზემოთ, ასე რომ ზარებზე პასუხი და დასრულება Android Auto-ს ინტერფეისში ხდება.</string>
-    <string name="raise_projection_during_call_summary">მხოლოდ ავტონომიური რეჟიმისთვის. აჩვენებს პროექციას ტელეფონის ზარის ეკრანის ზემოდან.</string>
+    <string name="raise_projection_during_call_description">ავტონომიურ რეჟიმში აბრუნებს პროექციას ტელეფონის ზარის ეკრანის ზემოთ, ასე რომ ზარებზე პასუხი და დასრულება Android Auto-ს ინტერფეისში ხდება. FYT ერთეულებზე სთხოვს ერთეულს, არ აჩვენოს საკუთარი ზარის ზოლი ან ზარის ეკრანი, სანამ Android Auto წინა პლანზეა. შეიძლება ყველა ერთეულზე ან firmware-ის ვერსიაზე არ იმუშაოს.</string>
+    <string name="raise_projection_during_call_summary">ავტონომიური რეჟიმი და FYT. მალავს ზარის ეკრანს. შეიძლება არ იმუშაოს ყველგან.</string>
     <string name="show_over_lock_screen">ჩაკეტილ ეკრანზე ჩვენება</string>
     <string name="show_over_lock_screen_summary">რუკა და მიმართულებები ჩაკეტვისას ჩანს. შეხება და ღილაკები არ მუშაობს.</string>
     <string name="show_over_lock_screen_help">Android Auto-ს გამოსახულებას აჩვენებს ჩაკეტილი ეკრანის ზემოთ, რათა რუკა და მიმართულებები განბლოკვის გარეშე წაიკითხოთ. სანამ ეს მოწყობილობა ჩაკეტილია, ტელეფონამდე არაფერი აღწევს: შეხებები, ღილაკები, მბრუნავი კონტროლერი და ხმის ღილაკი შეჩერებულია, ხოლო რუკა წინა პლანზე გადმოდის. განსაბლოკად PIN-კოდით, ნიმუშით ან პაროლით დააჭირეთ „უკან“-ს; ამის შემდეგ ყველაფერი ჩვეულებრივად მუშაობს. ტელეფონზე მუსიკას, ზარებსა და ხმოვან ასისტენტს ეს არ ეხება.</string>
@@ -1470,16 +1474,16 @@
     <string name="pref_enable_floating_button_help">აჩვენებს მცურავ ღილაკს სისტემურ ლაუნჩერსა და აპებზე Open Headunit-ში სწრაფად დასაბრუნებლად.</string>
     <string name="pref_floating_button_connection_status_title">კავშირის სტატუსის ინდიკატორი</string>
     <string name="pref_floating_button_connection_status_summary">ამცირებს ღილაკის გამოკვეთილობას, სანამ ტელეფონი დაკავშირებულია.</string>
-    <string name="pref_floating_button_connection_status_help">ტელეფონის არარსებობისას იყენებს გათიშულის გამჭვირვალობას, ხოლო ტელეფონის დაკავშირებისას ქრება მცურავი ღილაკის გამჭვირვალობამდე. 0%-ზე ღილაკი დამალულია და შეხებებს გაატარებს.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">ტელეფონის არარსებობისას იყენებს გათიშულის გამჭვირვალობას, ხოლო ტელეფონის დაკავშირებისას ქრება მცურავი ღილაკის გამჭვირვალობამდე. 0%-ზე ღილაკი დამალულია და შეხებებს გაატარებს.</string>
     <string name="pref_floating_button_size_title">მცურავი ღილაკის ზომა</string>
     <string name="pref_floating_button_size_help">მოლივლივე ღილაკის ზომა, 32-დან 120 dp-მდე. უფრო დიდ ღილაკს მართვისას უფრო ადვილად შეეხებით.</string>
     <string name="pref_floating_button_opacity_title">მცურავი ღილაკის გამჭვირვალობა</string>
     <string name="pref_floating_button_opacity_help">რამდენად მკვრივია მოლივლივე ღილაკი, 10%-დან 100%-მდე. თუ „კავშირის სტატუსის ინდიკატორი“ ჩართულია, ეს მნიშვნელობა მხოლოდ მაშინ მოქმედებს, როცა ტელეფონი დაკავშირებულია.</string>
     <string name="pref_floating_button_disconnected_opacity_title">გათიშულის გამჭვირვალობა</string>
-    <string name="pref_floating_button_disconnected_opacity_help">რამდენად მკვრივია მოლივლივე ღილაკი, როცა ტელეფონი დაკავშირებული არ არის. 0%-ზე ღილაკი დამალულია და შეხება ქვედა ეკრანზე გადადის.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">რამდენად მკვრივია მოლივლივე ღილაკი, როცა ტელეფონი დაკავშირებული არ არის. 0%-ზე ღილაკი დამალულია და შეხება ქვედა ეკრანზე გადადის.</string>
     <string name="pref_floating_button_x_title">ჰორიზონტალური პოზიცია (X)</string>
     <string name="pref_floating_button_y_title">ვერტიკალური პოზიცია (Y)</string>
-    <string name="pref_floating_button_position_help">სად მდებარეობს მოლივლივე ღილაკი ეკრანზე. X-ისთვის 0% მარცხენა კიდეა, 100% — მარჯვენა კიდე. Y-ისთვის 0% ზედა კიდეა, 100% — ქვედა კიდე. ღილაკი ყოველთვის მთლიანად ეკრანზე რჩება.</string>
+    <string name="pref_floating_button_position_help" formatted="false">სად მდებარეობს მოლივლივე ღილაკი ეკრანზე. X-ისთვის 0% მარცხენა კიდეა, 100% — მარჯვენა კიდე. Y-ისთვის 0% ზედა კიდეა, 100% — ქვედა კიდე. ღილაკი ყოველთვის მთლიანად ეკრანზე რჩება.</string>
     <string name="pref_aa_exit_action_title">Android Auto-დან გასვლის მოქმედება</string>
     <string name="pref_aa_exit_action_summary">მოქმედება Android Auto-ს მენიუში გასვლაზე დაჭერისას.</string>
     <string name="pref_aa_exit_action_help">ირჩევს, რა მოხდეს, როცა Android Auto-ში „გასვლას“ შეეხებით. „სისტემურ ლაუნჩერზე დაბრუნება“ აჩვენებს ამ მოწყობილობის საკუთარ მთავარ ეკრანს. „აპლიკაციის მთავარზე დაბრუნება“ აჩვენებს ამ აპის მთავარ ეკრანს. ამ ორით ტელეფონი დაკავშირებული რჩება. „სესიის კავშირის გაწყვეტა“ სესიას ასრულებს. როცა ეს აპი ავტომობილის ლაუნჩერია, „სისტემურ ლაუნჩერზე დაბრუნება“ „აპლიკაციის მთავარზე დაბრუნების“ მსგავსად მუშაობს.</string>

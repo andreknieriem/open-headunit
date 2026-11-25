@@ -12,6 +12,12 @@ data class SoftApAddressRecord(
     val passphraseDigest: String,
     val bootCount: Int?,
     val spannedBoot: Boolean,
+    /**
+     * The access point's BSSID the restart proof was earned on, or null where none is tracked (a
+     * WiFi Direct group grades its own). Android's stock Wi-Fi HAL gives an access point one random
+     * address per boot, so it repeats at every bring-up inside a boot and moves at the next one.
+     */
+    val bssid: String? = null,
 )
 
 /** The access point an endpoint went out on: everything the phone stored and will insist on. */
@@ -26,7 +32,9 @@ data class SoftApAdvertisedEndpoint(
  * The half of an access point's or WiFi Direct group's identity that a name and BSSID do not cover.
  *
  * The phone dials the address it was given, and tethering picks a random one per boot since R, so
- * the address has to repeat across a restart before an endpoint is safe. It only ever demotes.
+ * the address has to repeat across a restart before an endpoint is safe. The same holds for an
+ * access point's BSSID where the Wi-Fi HAL randomises it per boot (Android 10's default): the
+ * restart proof belongs to the BSSID it was earned on. It only ever demotes.
  */
 object SoftApEndpointStabilityPolicy {
 
@@ -55,6 +63,7 @@ object SoftApEndpointStabilityPolicy {
         previous: SoftApAddressRecord?,
         readNotCreated: Boolean = false,
         network: String = "access point",
+        bssid: String? = null,
     ): Verdict {
         if (ip.isBlank()) {
             return Verdict(demote(identity, GroupIdentityStability.UNPROVEN), null, "no address could be read for the $network")
@@ -63,21 +72,39 @@ object SoftApEndpointStabilityPolicy {
         if (previous == null) {
             return Verdict(
                 demote(identity, GroupIdentityStability.UNPROVEN),
-                SoftApAddressRecord(ip, digest, bootCount, spannedBoot = false),
+                SoftApAddressRecord(ip, digest, bootCount, spannedBoot = false, bssid = bssid),
                 "first reading of the $network's address at $ip; it has to come back after a restart",
+            )
+        }
+        if (bssid != null && previous.bssid != null && !previous.bssid.equals(bssid, ignoreCase = true)) {
+            // The name-and-BSSID verdict compares bring-ups, and inside one boot a per-boot BSSID
+            // repeats. Starting the restart proof again keeps that repeat from grading stable.
+            return Verdict(
+                demote(identity, GroupIdentityStability.CHANGED),
+                SoftApAddressRecord(ip, digest, bootCount, spannedBoot = false, bssid = bssid),
+                "the $network came back with a new BSSID ($bssid, was ${previous.bssid}), and the phone would keep the old one",
             )
         }
         if (previous.ip != ip || previous.passphraseDigest != digest) {
             val moved = if (previous.ip != ip) "its address moved from ${previous.ip} to $ip" else "its password changed"
             return Verdict(
                 demote(identity, GroupIdentityStability.CHANGED),
-                SoftApAddressRecord(ip, digest, bootCount, spannedBoot = false),
+                SoftApAddressRecord(ip, digest, bootCount, spannedBoot = false, bssid = bssid),
                 "the $network came back but $moved, and the phone would keep the old one",
             )
         }
         val spanned = previous.spannedBoot || (!readNotCreated &&
             (bootCount == null || previous.bootCount == null || bootCount != previous.bootCount))
-        val record = previous.copy(spannedBoot = spanned)
+        // A record from before the BSSID was tracked earned its proof on an unknown BSSID: start it again on
+        // this one. A stable access point pays one more restart; a per-boot one never gets a free pass.
+        val adopts = bssid != null && previous.bssid == null
+        val record = previous.copy(spannedBoot = spanned && !adopts, bssid = bssid ?: previous.bssid)
+        if (adopts && identity == GroupIdentityStability.STABLE) {
+            return Verdict(
+                GroupIdentityStability.UNPROVEN, record.copy(bootCount = bootCount),
+                "the $network's BSSID $bssid is tracked from now on; it has to come back after a restart",
+            )
+        }
         if (!spanned && identity == GroupIdentityStability.STABLE) {
             return Verdict(
                 GroupIdentityStability.UNPROVEN, record,

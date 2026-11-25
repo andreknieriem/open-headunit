@@ -256,6 +256,7 @@ class WifiLauncherNative : WifiLauncher {
         verdict.remember?.let { settings.softApLastGroup = it }
         val address = SoftApEndpointStabilityPolicy.grade(
             verdict.stability, ip, psk, bootCount(), settings.softApAddressRecord,
+            bssid = bssid.takeIf { MacAddressPolicy.isUsable(it) },
         )
         address.remember?.let { settings.softApAddressRecord = it }
         if (verdict.remember != null) settings.softApLastIdentityVerdict = address.stability

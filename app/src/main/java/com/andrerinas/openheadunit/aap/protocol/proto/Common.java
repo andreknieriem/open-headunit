@@ -523,8 +523,12 @@ public final class Common {
 
     /**
      * <pre>
-     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-     * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+     * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+     * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+     * makes the phone record with its own microphone. The phone stamps the type it has stored for
+     * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+     * type gets through.
      * </pre>
      *
      * <code>optional int32 vehicle_type = 9;</code>
@@ -533,8 +537,12 @@ public final class Common {
     boolean hasVehicleType();
     /**
      * <pre>
-     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-     * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+     * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+     * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+     * makes the phone record with its own microphone. The phone stamps the type it has stored for
+     * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+     * type gets through.
      * </pre>
      *
      * <code>optional int32 vehicle_type = 9;</code>
@@ -989,8 +997,12 @@ public final class Common {
     private int vehicleType_ = 0;
     /**
      * <pre>
-     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-     * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+     * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+     * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+     * makes the phone record with its own microphone. The phone stamps the type it has stored for
+     * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+     * type gets through.
      * </pre>
      *
      * <code>optional int32 vehicle_type = 9;</code>
@@ -1002,8 +1014,12 @@ public final class Common {
     }
     /**
      * <pre>
-     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-     * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+     * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+     * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+     * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+     * makes the phone record with its own microphone. The phone stamps the type it has stored for
+     * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+     * type gets through.
      * </pre>
      *
      * <code>optional int32 vehicle_type = 9;</code>
@@ -2237,8 +2253,12 @@ public final class Common {
       private int vehicleType_ ;
       /**
        * <pre>
-       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-       * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+       * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+       * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+       * makes the phone record with its own microphone. The phone stamps the type it has stored for
+       * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+       * type gets through.
        * </pre>
        *
        * <code>optional int32 vehicle_type = 9;</code>
@@ -2250,8 +2270,12 @@ public final class Common {
       }
       /**
        * <pre>
-       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-       * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+       * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+       * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+       * makes the phone record with its own microphone. The phone stamps the type it has stored for
+       * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+       * type gets through.
        * </pre>
        *
        * <code>optional int32 vehicle_type = 9;</code>
@@ -2263,8 +2287,12 @@ public final class Common {
       }
       /**
        * <pre>
-       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-       * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+       * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+       * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+       * makes the phone record with its own microphone. The phone stamps the type it has stored for
+       * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+       * type gets through.
        * </pre>
        *
        * <code>optional int32 vehicle_type = 9;</code>
@@ -2280,8 +2308,12 @@ public final class Common {
       }
       /**
        * <pre>
-       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. Unset reads
-       * as unspecified, and only a motorcycle makes the phone record with its own microphone.
+       * Android Auto's vehicle type: 0 unspecified, 1 car, 2 truck, 3 motorcycle. An unset field
+       * reads as a car, measured, and the phone's own fallback can only ever guess car or truck from
+       * the model string, so this field is the only way to claim a motorcycle. Only a motorcycle
+       * makes the phone record with its own microphone. The phone stamps the type it has stored for
+       * this head unit over whatever arrives here, so see VehicleIdentityPolicy for how a changed
+       * type gets through.
        * </pre>
        *
        * <code>optional int32 vehicle_type = 9;</code>

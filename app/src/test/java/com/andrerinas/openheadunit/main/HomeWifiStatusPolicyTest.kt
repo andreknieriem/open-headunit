@@ -146,4 +146,13 @@ class HomeWifiStatusPolicyTest {
         assertEquals(4, HomeWifiStatusPolicy.barsFor(75))
         assertEquals(4, HomeWifiStatusPolicy.barsFor(100))
     }
+
+    @Test
+    fun `the frequency is never read below API 21`() {
+        var reads = 0
+        assertNull(HomeWifiStatusPolicy.frequencyMhz(17) { reads++; 2412 })
+        assertNull(HomeWifiStatusPolicy.frequencyMhz(20) { reads++; 2412 })
+        assertEquals(0, reads)
+        assertEquals(5180, HomeWifiStatusPolicy.frequencyMhz(21) { 5180 })
+    }
 }

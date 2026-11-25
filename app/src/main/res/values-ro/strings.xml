@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">Atinge pentru a reveni la proiecție</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">stânga</string>
     <string name="night_overlay_right">dreapta</string>
@@ -379,6 +380,9 @@
     <string name="auto_connecting_single_usb">Se conectează automat la USB…</string>
     <string name="video_codec">Codec video</string>
     <string name="video_codec_help">Alege formatul video trimis de telefon. Auto lasă aplicația să aleagă dintre ce poate decoda această unitate. H.265 dă o imagine mai clară la același debit. H.264 merge pe orice decodor. Schimbă-l dacă imaginea se blochează sau rămâne neagră. Alegerea se aplică de la următoarea conectare.</string>
+    <string name="gal_compatibility_mode">Mod de compatibilitate (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Cere doar versiunea inițială a protocolului. Se aplică la următoarea conexiune.</string>
+    <string name="gal_compatibility_mode_help">Aplicația cere telefonului GAL 6.1. Dacă Android Auto de pe telefon răspunde cu o versiune mai veche, aplicația cere versiunea 1.6. Aceste versiuni permit funcții audio, video și de afișare mai noi. Activează acest mod doar dacă telefonul se conectează, dar apoi nu funcționează corect. În acest caz, aplicația cere GAL 1.2, ca în versiunile anterioare, fără aceste funcții. GAL este protocolul de proiecție, nu versiunea sistemului Android și nici versiunea aplicației Android Auto. Se aplică la următoarea conexiune.</string>
     <string name="fps_limit">Limită FPS</string>
     <string name="fps_limit_help">Cea mai mare rată de cadre pe care această unitate o cere de la Android Auto. 60 oferă mișcare mai fluidă, dar cere mai multă lățime de bandă și putere de decodare. Alege 30 dacă imaginea întârzie sau sacadează. Se aplică la următoarea conexiune.</string>
     <string name="save">Salvează</string>
@@ -415,7 +419,7 @@
     <string name="attach_hw_dsp_equalizer_description">Atașează un efect de egalizator fictiv la sesiunea audio pentru a forța direcționarea prin DSP hardware pe anumite unități auto. Lasă dezactivat dacă folosești ViPER4Android / ViperFX sau dacă sunetul este înfundat pe versiuni vechi de Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Atașează un egalizator fals pentru a forța rutarea prin DSP hardware pe unele unități.</string>
     <string name="audio_volume_offset">Ajustare volum audio</string>
-    <string name="audio_volume_offset_help">Stabilește volumul a trei fluxuri audio Android Auto pe această unitate: media, ghidarea de navigație și sunetele de sistem. Fiecare merge de la 0% la 200%. La 100%, fluxul se redă așa cum îl trimite telefonul. Folosește-l pentru a echilibra navigarea față de muzică.</string>
+    <string name="audio_volume_offset_help" formatted="false">Stabilește volumul a trei fluxuri audio Android Auto pe această unitate: media, ghidarea de navigație și sunetele de sistem. Fiecare merge de la 0% la 200%. La 100%, fluxul se redă așa cum îl trimite telefonul. Folosește-l pentru a echilibra navigarea față de muzică.</string>
     <string name="mic_input_source">Sursa microfonului</string>
     <string name="mic_input_source_description">Alege de unde își ia microfonul sunetul.</string>
     <string name="mic_input_source_help">Alege sursa audio Android din care înregistrează aplicația. Implicit lasă sistemul să decidă. Microfon înregistrează sunetul brut. Recunoaștere vocală și Comunicații vocale adaugă filtrele proprii ale sistemului pentru zgomot și ecou. Cască Bluetooth înregistrează prin căștile Bluetooth. Schimbă sursa dacă telefonul nu te aude. Dacă Android Auto este conectat, salvarea unei modificări oprește sesiunea.</string>
@@ -1326,8 +1330,8 @@
     <string name="failed_aa_not_system">Eșec: Android Auto nu este instalat ca aplicație de sistem!</string>
     <string name="failed_aa_not_installed">Eșec: Android Auto nu este instalat!</string>
     <string name="raise_projection_during_call">Rămâi în Android Auto în timpul apelurilor</string>
-    <string name="raise_projection_during_call_description">Doar Mod Self. Readuce proiecția peste ecranul de apel al telefonului, astfel încât să răspunzi la apeluri și să le închizi din interfața Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Doar în modul autonom. Afișează proiecția peste ecranul de apel al telefonului.</string>
+    <string name="raise_projection_during_call_description">În modul autonom, readuce proiecția peste ecranul de apel al telefonului, astfel încât să răspunzi la apeluri și să le închizi din interfața Android Auto. Pe unitățile FYT, cere unității să nu afișeze propria bară sau propriul ecran de apel cât timp Android Auto este în prim-plan. Poate să nu funcționeze pe toate unitățile sau versiunile de firmware.</string>
+    <string name="raise_projection_during_call_summary">Mod autonom și unități FYT. Ascunde ecranul de apel. Poate să nu meargă.</string>
     <string name="show_over_lock_screen">Afișează peste ecranul de blocare</string>
     <string name="show_over_lock_screen_summary">Harta și indicațiile rămân vizibile când e blocat. Atingerile și butoanele nu fac nimic.</string>
     <string name="show_over_lock_screen_help">Afișează imaginea Android Auto peste ecranul de blocare, astfel încât harta și indicațiile pot fi citite fără deblocare. Cât timp această unitate este blocată, nimic nu ajunge la telefon: atingerile, butoanele, controlerul rotativ și butonul de voce sunt reținute, iar harta este adusă în prim-plan. Apăsați Înapoi pentru a debloca cu PIN-ul, modelul sau parola; după aceea totul funcționează ca de obicei. Muzica, apelurile și asistentul vocal de pe telefonul însuși nu sunt afectate.</string>
@@ -1481,16 +1485,16 @@
     <string name="pref_enable_floating_button_help">Afișează un buton plutitor peste lansatorul OEM și alte aplicații pentru a reveni rapid la Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indicator stare conexiune</string>
     <string name="pref_floating_button_connection_status_summary">Estompează butonul cât timp un telefon este conectat.</string>
-    <string name="pref_floating_button_connection_status_help">Folosește Opacitate deconectat când niciun telefon nu este conectat și se estompează la Opacitate buton plutitor cât timp un telefon este conectat. La 0%, butonul este ascuns și lasă atingerile să treacă.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Folosește Opacitate deconectat când niciun telefon nu este conectat și se estompează la Opacitate buton plutitor cât timp un telefon este conectat. La 0%, butonul este ascuns și lasă atingerile să treacă.</string>
     <string name="pref_floating_button_size_title">Dimensiune buton plutitor</string>
     <string name="pref_floating_button_size_help">Dimensiunea butonului flotant, de la 32 la 120 dp. Un buton mai mare este mai ușor de atins în timp ce conduci.</string>
     <string name="pref_floating_button_opacity_title">Opacitate buton plutitor</string>
     <string name="pref_floating_button_opacity_help">Cât de vizibil este butonul flotant, de la 10% la 100%. Cu Indicator stare conexiune activat, această valoare se aplică doar cât timp un telefon este conectat.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Opacitate deconectat</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Cât de vizibil este butonul flotant cât timp niciun telefon nu este conectat. La 0%, butonul este ascuns, iar atingerile trec prin el către ecranul de dedesubt.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Cât de vizibil este butonul flotant cât timp niciun telefon nu este conectat. La 0%, butonul este ascuns, iar atingerile trec prin el către ecranul de dedesubt.</string>
     <string name="pref_floating_button_x_title">Poziție orizontală (X)</string>
     <string name="pref_floating_button_y_title">Poziție verticală (Y)</string>
-    <string name="pref_floating_button_position_help">Locul butonului flotant pe ecran. Pentru X, 0% este marginea stângă și 100% este marginea dreaptă. Pentru Y, 0% este marginea de sus și 100% este marginea de jos. Butonul rămâne mereu complet pe ecran.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Locul butonului flotant pe ecran. Pentru X, 0% este marginea stângă și 100% este marginea dreaptă. Pentru Y, 0% este marginea de sus și 100% este marginea de jos. Butonul rămâne mereu complet pe ecran.</string>
     <string name="pref_aa_exit_action_title">Acțiune la ieșirea din Android Auto</string>
     <string name="pref_aa_exit_action_summary">Acțiune la apăsarea pe Ieșire din meniul Android Auto.</string>
     <string name="pref_aa_exit_action_help">Alege ce se întâmplă când atingi Ieșire în Android Auto. Revenire la lansatorul OEM arată ecranul principal al unității. Revenire la ecranul principal al aplicației arată ecranul principal al acestei aplicații. Cu aceste două, telefonul rămâne conectat. Deconectează sesiunea încheie sesiunea. Când această aplicație este launcherul mașinii, Revenire la lansatorul OEM acționează ca Revenire la ecranul principal al aplicației.</string>

@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">タップして投影に戻る</string>
     <string name="night_overlay_meters">%1$d m</string>
     <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_kilometers_whole">%1$d km</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">左</string>
     <string name="night_overlay_right">右</string>
@@ -384,6 +385,9 @@
     <string name="auto_connecting_single_usb">USBデバイスに自動接続しています…</string>
     <string name="video_codec">ビデオコーデック</string>
     <string name="video_codec_help">スマートフォンが送信する映像形式を選びます。自動では、この機器がデコードできる形式からアプリが選びます。H.265 は同じデータレートでより鮮明です。H.264 はどのデコーダーでも動作します。映像がカクつく、または黒いままのときに変更してください。選択は次回の接続から有効です。</string>
+    <string name="gal_compatibility_mode">互換モード (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">プロトコルの初期バージョンのみを要求します。次の接続から反映されます。</string>
+    <string name="gal_compatibility_mode_help">アプリはスマートフォンに GAL 6.1 を要求します。スマートフォンの Android Auto が古いバージョンで応答した場合は、1.6 を要求します。これらのバージョンでは、より新しい音声、映像、表示の機能を利用できます。スマートフォンは接続できるものの、その後の動作に問題がある場合にのみ、このモードをオンにしてください。オンにすると、以前のリリースと同じように GAL 1.2 を要求し、これらの機能は利用できません。GAL は画面投影用のプロトコルであり、Android や Android Auto アプリのバージョンとは異なります。次の接続から反映されます。</string>
     <string name="fps_limit">FPS 制限</string>
     <string name="fps_limit_help">この機器が Android Auto に要求する最大フレームレートです。60 にすると動きは滑らかになりますが、帯域とデコーダーの処理能力がより必要です。映像が遅れたりカクついたりする場合は 30 を選んでください。次の接続から反映されます。</string>
     <string name="save">保存</string>
@@ -421,7 +425,7 @@
     <string name="attach_hw_dsp_equalizer_description">オーディオセッションにダミーのイコライザーエフェクトをアタッチし、一部のヘッドユニットでハードウェアDSPルーティングを強制します。ViPER4Android / ViperFXを使用している場合や、古いAndroidで音声がこもる場合は無効にしてください。</string>
     <string name="attach_hw_dsp_equalizer_summary">一部の機器でハードウェア DSP 経由を強制するため、ダミーのイコライザーを接続します。</string>
     <string name="audio_volume_offset">音量オフセット</string>
-    <string name="audio_volume_offset_help">この機器での Android Auto の 3 つの音声ストリーム（メディア、ナビ案内、システム音）の音量を設定します。それぞれ 0% から 200% の範囲です。100% ではスマートフォンから送られたままの音量で再生します。ナビと音楽の音量バランスを整えるときに使います。</string>
+    <string name="audio_volume_offset_help" formatted="false">この機器での Android Auto の 3 つの音声ストリーム（メディア、ナビ案内、システム音）の音量を設定します。それぞれ 0% から 200% の範囲です。100% ではスマートフォンから送られたままの音量で再生します。ナビと音楽の音量バランスを整えるときに使います。</string>
     <string name="mic_input_source">マイク入力ソース</string>
     <string name="mic_input_source_description">マイクの音声ソースを選択します。</string>
     <string name="mic_input_source_help">アプリが録音に使う Android の音声ソースを選びます。「デフォルト」はシステムが決めます。「内蔵マイク」は生の音を録音します。「音声認識」と「ボイスコミュニケーション」は、システムのノイズとエコーのフィルターを加えます。「Bluetoothヘッドセット」は Bluetooth ヘッドセットで録音します。スマートフォンに声が届かない場合に変更してください。Android Auto の接続中に変更を保存すると、セッションが終了します。</string>
@@ -1332,8 +1336,8 @@
     <string name="failed_aa_not_system">失敗: Android Auto がシステムアプリとしてインストールされていません！</string>
     <string name="failed_aa_not_installed">失敗: Android Auto がインストールされていません！</string>
     <string name="raise_projection_during_call">通話中もAndroid Autoを表示したままにする</string>
-    <string name="raise_projection_during_call_description">セルフモード専用。スマートフォンの通話画面の上にAndroid Autoの画面を再び表示し、通話の応答と終了をAndroid Autoの画面で行えるようにします。</string>
-    <string name="raise_projection_during_call_summary">セルフモード専用。スマートフォンの通話画面の上に投影を表示します。</string>
+    <string name="raise_projection_during_call_description">セルフモードでは、スマートフォンの通話画面の上にAndroid Autoの画面を再び表示し、通話の応答と終了をAndroid Autoの画面で行えるようにします。FYTヘッドユニットでは、Android Autoが前面にある間、本体の通話バーや通話画面を表示しないよう本体に要求します。一部の機器やファームウェアのバージョンでは動作しない場合があります。</string>
+    <string name="raise_projection_during_call_summary">セルフモードとFYT機器。通話画面を隠します。一部の機器では動作しない場合があります。</string>
     <string name="show_over_lock_screen">ロック画面の上に表示</string>
     <string name="show_over_lock_screen_summary">ロック中も地図とルート案内が表示されます。タッチとボタンは無効です。</string>
     <string name="show_over_lock_screen_help">Android Auto の画面をロック画面の上に表示し、ロックを解除せずに地図とルート案内を確認できます。このユニットがロックされている間は、スマートフォンに何も送られません。タッチ、ボタン、ロータリーコントローラー、音声ボタンは保留され、地図が前面に表示されます。「戻る」を押すと PIN、パターン、パスワードでロックを解除でき、その後は通常どおり動作します。スマートフォン本体の音楽、通話、音声アシスタントには影響しません。</string>
@@ -1487,16 +1491,16 @@
     <string name="pref_enable_floating_button_help">純正ランチャーや他のアプリの上にフローティングボタンを表示し、Open Headunitに素早く戻れるようにします。</string>
     <string name="pref_floating_button_connection_status_title">接続状態インジケーター</string>
     <string name="pref_floating_button_connection_status_summary">スマートフォンの接続中はボタンを薄くします。</string>
-    <string name="pref_floating_button_connection_status_help">スマートフォンが接続されていないときは「未接続時の不透明度」を使い、接続中は「フローティングボタンの不透明度」まで薄くなります。0%ではボタンは非表示になり、タップを通過させます。</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">スマートフォンが接続されていないときは「未接続時の不透明度」を使い、接続中は「フローティングボタンの不透明度」まで薄くなります。0%ではボタンは非表示になり、タップを通過させます。</string>
     <string name="pref_floating_button_size_title">フローティングボタンのサイズ</string>
     <string name="pref_floating_button_size_help">フローティングボタンの大きさを 32 dp から 120 dp で設定します。大きいボタンのほうが、運転中にタップしやすくなります。</string>
     <string name="pref_floating_button_opacity_title">フローティングボタンの不透明度</string>
     <string name="pref_floating_button_opacity_help">フローティングボタンの濃さを 10% から 100% で設定します。「接続状態インジケーター」がオンのときは、この値はスマートフォンの接続中のみ適用されます。</string>
     <string name="pref_floating_button_disconnected_opacity_title">未接続時の不透明度</string>
-    <string name="pref_floating_button_disconnected_opacity_help">スマートフォンが接続されていないときの、フローティングボタンの濃さです。0% ではボタンが非表示になり、タップは下の画面に届きます。</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">スマートフォンが接続されていないときの、フローティングボタンの濃さです。0% ではボタンが非表示になり、タップは下の画面に届きます。</string>
     <string name="pref_floating_button_x_title">水平位置 (X)</string>
     <string name="pref_floating_button_y_title">垂直位置 (Y)</string>
-    <string name="pref_floating_button_position_help">画面上のフローティングボタンの位置です。X では、0% が左端、100% が右端です。Y では、0% が上端、100% が下端です。ボタンは常に画面内に収まります。</string>
+    <string name="pref_floating_button_position_help" formatted="false">画面上のフローティングボタンの位置です。X では、0% が左端、100% が右端です。Y では、0% が上端、100% が下端です。ボタンは常に画面内に収まります。</string>
     <string name="pref_aa_exit_action_title">Android Auto 終了時の動作</string>
     <string name="pref_aa_exit_action_summary">Android Autoのアプリ一覧で「終了」をタップしたときの動作。</string>
     <string name="pref_aa_exit_action_help">Android Auto で「終了」をタップしたときの動作を選びます。「純正ランチャーに戻る」は、この機器のホーム画面を表示します。「アプリのホーム画面に戻る」は、このアプリのホーム画面を表示します。この 2 つではスマートフォンは接続されたままです。「セッションの接続を解除」はセッションを終了します。このアプリが車のランチャーの場合、「純正ランチャーに戻る」は「アプリのホーム画面に戻る」と同じ動作になります。</string>

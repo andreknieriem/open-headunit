@@ -6,6 +6,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import com.andrerinas.openheadunit.aap.GalVersionPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.Dispatchers
@@ -38,13 +39,16 @@ class SocketProjectionConnection(
     // Regular WirelessServer-accepted sockets (Hotspot/WiFi Direct/Headunit Server) and
     // manual-IP connections are NOT single-message and need those handshake safeguards.
     private var singleMessage: Boolean = false
+    private var inbound = false
 
     init {
         transport = Socket()
     }
 
-    constructor(socket: Socket, context: Context) : this(socket.inetAddress.hostAddress ?: "", socket.port, context) {
+    constructor(socket: Socket, context: Context, inbound: Boolean = true) :
+        this(socket.inetAddress.hostAddress ?: "", socket.port, context) {
         this.transport = socket
+        this.inbound = inbound
         this.singleMessage = socket is NearbySocket
         // Pre-connected sockets (like NearbySocket) need their streams initialized immediately
         // because connect() might not be called or might be bypassed.
@@ -61,12 +65,26 @@ class SocketProjectionConnection(
     override val type = ProjectionConnection.Type.WIFI
 
     override val isConnected: Boolean
-        get() = transport.isConnected && !transportBroken
+        get() = transport.isConnected && !transport.isClosed && !transportBroken
 
     // Nearby exposes a synthetic loopback address for a remote phone. Retain the route on
     // this connection object so a later attempted endpoint cannot change session ownership.
     internal val isLoopbackPeer: Boolean
         get() = !singleMessage && !LoopbackBindPolicy.needsNetworkBinding(ip)
+
+    internal fun galVersionPeer(): GalVersionPolicy.Peer.Tcp? {
+        // Nearby uses a synthetic address, and loopback may be a shared proxy rather than a peer.
+        if (singleMessage) return null
+        val local = transport.localAddress ?: return null
+        val remote = transport.inetAddress ?: return null
+        if (local.isAnyLocalAddress || remote.isAnyLocalAddress ||
+            local.isLoopbackAddress || remote.isLoopbackAddress) return null
+        val servicePort = if (inbound) transport.localPort else transport.port
+        if (servicePort <= 0) return null
+        // Inet6Address.equals ignores the zone; identical link-local addresses on two
+        // interfaces must not share a refusal hint. The numeric address retains the scope.
+        return GalVersionPolicy.Peer.Tcp(local.hostAddress, remote.hostAddress, servicePort, inbound)
+    }
 
     override val isSingleMessage: Boolean
         get() = singleMessage

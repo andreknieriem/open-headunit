@@ -75,6 +75,7 @@
     <string name="night_overlay_dismiss">Нажмите, чтобы вернуться к проекции</string>
     <string name="night_overlay_meters">%1$d м</string>
     <string name="night_overlay_kilometers">%1$.1f км</string>
+    <string name="night_overlay_kilometers_whole">%1$d км</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">налево</string>
     <string name="night_overlay_right">направо</string>
@@ -357,6 +358,9 @@
     <string name="auto_connecting_single_usb">Автоподключение к USB-устройству…</string>
     <string name="video_codec">Видеокодек</string>
     <string name="video_codec_help">Выбирает формат видео, который отправляет телефон. «Авто» позволяет приложению выбрать из того, что это устройство умеет декодировать. H.265 даёт более чёткую картинку при том же битрейте. H.264 работает на любом декодере. Смените формат, если картинка тормозит или остаётся чёрной. Выбор действует со следующего подключения.</string>
+    <string name="gal_compatibility_mode">Режим совместимости (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">Запрашивает только исходную версию протокола. Применяется при следующем подключении.</string>
+    <string name="gal_compatibility_mode_help">Приложение запрашивает у телефона GAL 6.1. Если Android Auto на телефоне отвечает более старой версией, приложение запрашивает 1.6. Эти версии поддерживают более новые функции звука, видео и отображения. Включайте этот режим только в том случае, если телефон подключается, но затем работает некорректно. В этом режиме приложение запрашивает GAL 1.2, как в предыдущих выпусках, без этих функций. GAL — это протокол проекции, а не версия Android или приложения Android Auto. Применяется при следующем подключении.</string>
     <string name="fps_limit">Ограничение FPS</string>
     <string name="fps_limit_help">Максимальная частота кадров, которую это устройство запрашивает у Android Auto. 60 даёт более плавное движение, но требует большей пропускной способности и мощности декодера. Выберите 30, если изображение отстаёт или дёргается. Применяется при следующем подключении.</string>
     <string name="save">Сохранить</string>
@@ -393,7 +397,7 @@
     <string name="attach_hw_dsp_equalizer_description">Подключает виртуальный эффект эквалайзера к аудиосеансу для принудительной маршрутизации через аппаратный DSP на некоторых головных устройствах. Оставьте выключенным, если используете ViPER4Android / ViperFX или если звук глухой на старых версиях Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Подключает фиктивный эквалайзер, чтобы на некоторых устройствах принудительно включить маршрутизацию через аппаратный DSP.</string>
     <string name="audio_volume_offset">Смещение громкости</string>
-    <string name="audio_volume_offset_help">Задаёт громкость трёх аудиопотоков Android Auto на этом устройстве: медиа, голосовых подсказок навигации и системных звуков. Каждый можно настроить от 0% до 200%. При 100% поток звучит так, как его отправляет телефон. Используйте это, чтобы уравновесить навигацию и музыку.</string>
+    <string name="audio_volume_offset_help" formatted="false">Задаёт громкость трёх аудиопотоков Android Auto на этом устройстве: медиа, голосовых подсказок навигации и системных звуков. Каждый можно настроить от 0% до 200%. При 100% поток звучит так, как его отправляет телефон. Используйте это, чтобы уравновесить навигацию и музыку.</string>
     <string name="mic_input_source">Источник микрофона</string>
     <string name="mic_input_source_description">Выберите источник звука для микрофона.</string>
     <string name="mic_input_source_help">Выбирает аудиоисточник Android, с которого записывает приложение. «По умолчанию» оставляет выбор системе. «Микрофон» записывает необработанный звук. «Распознавание речи» и «Голосовая связь» добавляют системные фильтры шума и эха. «Bluetooth-гарнитура» записывает через Bluetooth-гарнитуру. Измените источник, если телефон вас не слышит. Если Android Auto подключён, сохранение изменения останавливает сеанс.</string>
@@ -1327,8 +1331,8 @@ Open Headunit предоставляется «как есть» без каки
     <string name="failed_aa_not_system">Ошибка: Android Auto не установлен как системное приложение!</string>
     <string name="failed_aa_not_installed">Ошибка: Android Auto не установлен!</string>
     <string name="raise_projection_during_call">Оставаться в Android Auto во время звонков</string>
-    <string name="raise_projection_during_call_description">Только в автономном режиме. Возвращает проекцию поверх экрана вызова на телефоне, чтобы отвечать на звонки и завершать их в интерфейсе Android Auto.</string>
-    <string name="raise_projection_during_call_summary">Только в автономном режиме. Показывает проекцию поверх экрана звонка на телефоне.</string>
+    <string name="raise_projection_during_call_description">В автономном режиме возвращает проекцию поверх экрана вызова на телефоне, чтобы отвечать на звонки и завершать их в интерфейсе Android Auto. На устройствах FYT просит устройство не показывать собственную панель и экран вызова, пока Android Auto на переднем плане. Может работать не на всех устройствах и версиях прошивки.</string>
+    <string name="raise_projection_during_call_summary">Автономный режим и устройства FYT. Скрывает экран звонка. Может не работать.</string>
     <string name="show_over_lock_screen">Показывать поверх экрана блокировки</string>
     <string name="show_over_lock_screen_summary">Карта и маршрут видны и при блокировке. Касания и кнопки не действуют.</string>
     <string name="show_over_lock_screen_help">Показывает изображение Android Auto поверх экрана блокировки, чтобы карту и маршрут можно было видеть без разблокировки. Пока это устройство заблокировано, на телефон ничего не передаётся: касания, кнопки, поворотный контроллер и кнопка голоса задерживаются, а карта выводится на передний план. Нажмите «Назад», чтобы разблокировать с помощью PIN-кода, графического ключа или пароля; после этого всё работает как обычно. Музыка, звонки и голосовой помощник на самом телефоне не затрагиваются.</string>
@@ -1482,16 +1486,16 @@ Open Headunit предоставляется «как есть» без каки
     <string name="pref_enable_floating_button_help">Отображает плавающую кнопку поверх штатного лаунчера и других приложений для быстрого возврата в Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Индикатор состояния подключения</string>
     <string name="pref_floating_button_connection_status_summary">Делает кнопку бледнее, пока подключён телефон.</string>
-    <string name="pref_floating_button_connection_status_help">Использует прозрачность при отключении, когда телефон не подключён, и плавно меняет её на прозрачность плавающей кнопки, пока телефон подключён. При 0% кнопка скрыта и пропускает касания.</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">Использует прозрачность при отключении, когда телефон не подключён, и плавно меняет её на прозрачность плавающей кнопки, пока телефон подключён. При 0% кнопка скрыта и пропускает касания.</string>
     <string name="pref_floating_button_size_title">Размер плавающей кнопки</string>
     <string name="pref_floating_button_size_help">Размер плавающей кнопки, от 32 до 120 dp. Большую кнопку проще нажимать за рулём.</string>
     <string name="pref_floating_button_opacity_title">Прозрачность плавающей кнопки</string>
     <string name="pref_floating_button_opacity_help">Насколько заметна плавающая кнопка, от 10% до 100%. Если включён «Индикатор состояния подключения», это значение действует только пока телефон подключён.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Прозрачность при отключении</string>
-    <string name="pref_floating_button_disconnected_opacity_help">Насколько заметна плавающая кнопка, пока телефон не подключён. При 0% кнопка скрыта, и касания проходят сквозь неё к экрану под ней.</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">Насколько заметна плавающая кнопка, пока телефон не подключён. При 0% кнопка скрыта, и касания проходят сквозь неё к экрану под ней.</string>
     <string name="pref_floating_button_x_title">Горизонтальное положение (X)</string>
     <string name="pref_floating_button_y_title">Вертикальное положение (Y)</string>
-    <string name="pref_floating_button_position_help">Где на экране находится плавающая кнопка. Для X 0% означает левый край, 100% правый. Для Y 0% означает верхний край, 100% нижний. Кнопка всегда остаётся на экране целиком.</string>
+    <string name="pref_floating_button_position_help" formatted="false">Где на экране находится плавающая кнопка. Для X 0% означает левый край, 100% правый. Для Y 0% означает верхний край, 100% нижний. Кнопка всегда остаётся на экране целиком.</string>
     <string name="pref_aa_exit_action_title">Действие при выходе из Android Auto</string>
     <string name="pref_aa_exit_action_summary">Действие при нажатии «Выход» в списке приложений Android Auto.</string>
     <string name="pref_aa_exit_action_help">Выбирает, что происходит при нажатии «Выход» в Android Auto. «Возврат к штатному лаунчеру» показывает собственный главный экран устройства. «Возврат на главный экран приложения» показывает главный экран этого приложения. В этих двух случаях телефон остаётся подключённым. «Отключить сеанс» завершает сеанс. Если это приложение служит лаунчером автомобиля, «Возврат к штатному лаунчеру» работает как «Возврат на главный экран приложения».</string>

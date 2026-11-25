@@ -48,6 +48,9 @@ public:
         if (callback == nullptr) return;
         jclass callbackClass = env->GetObjectClass(decoderCallback);
         onOutputSizeMethod = env->GetMethodID(callbackClass, "onNativeOutputSize", "(II)V");
+        if (!env->ExceptionCheck()) {
+            onBeforeRenderMethod = env->GetMethodID(callbackClass, "onNativeBeforeRender", "(J)Z");
+        }
         if (useYuvCallback && !env->ExceptionCheck()) {
             onYuvFrameMethod = env->GetMethodID(
                 callbackClass,
@@ -55,7 +58,7 @@ public:
                 "(IILjava/nio/ByteBuffer;ILjava/nio/ByteBuffer;ILjava/nio/ByteBuffer;I)Z");
         }
         env->DeleteLocalRef(callbackClass);
-        if (env->ExceptionCheck() || onOutputSizeMethod == nullptr ||
+        if (env->ExceptionCheck() || onOutputSizeMethod == nullptr || onBeforeRenderMethod == nullptr ||
             (useYuvCallback && onYuvFrameMethod == nullptr)) {
             env->ExceptionClear();
             LOGE("Video output callback methods not found");
@@ -198,6 +201,20 @@ private:
             }
             const int width = frame->width > 0 ? frame->width : codecContext->width;
             const int height = frame->height > 0 ? frame->height : codecContext->height;
+            // Presentation admission never changes FFmpeg's decoded reference state. This
+            // callback runs on the dedicated software worker, not the socket/ACK owner.
+            // A true result is a final output-epoch reservation. Retirement does not revoke
+            // this in-flight native operation; no presentation-policy lock crosses JNI.
+            const jboolean present = env->CallBooleanMethod(callback, onBeforeRenderMethod,
+                                                            static_cast<jlong>(frame->pts));
+            if (env->ExceptionCheck()) {
+                av_frame_unref(frame);
+                return -6;
+            }
+            if (present != JNI_TRUE) {
+                av_frame_unref(frame);
+                continue;
+            }
             if (!renderFrame(env, width, height)) {
                 av_frame_unref(frame);
                 return -6;
@@ -360,6 +377,9 @@ private:
             outputFrame = yuvFrame;
         }
 
+        // These direct buffers borrow AVFrame/conversion storage, not Java-owned memory.
+        // The callback must finish/cancel all readers before returning: receiveFrames unrefs
+        // frame immediately afterward and the next decode can overwrite conversion storage.
         jobject yBuffer = env->NewDirectByteBuffer(outputFrame->data[0], outputFrame->linesize[0] * height);
         jobject uBuffer = env->NewDirectByteBuffer(outputFrame->data[1], outputFrame->linesize[1] * (height / 2));
         jobject vBuffer = env->NewDirectByteBuffer(outputFrame->data[2], outputFrame->linesize[2] * (height / 2));
@@ -445,6 +465,7 @@ private:
     jobject callback = nullptr;
     jmethodID onYuvFrameMethod = nullptr;
     jmethodID onOutputSizeMethod = nullptr;
+    jmethodID onBeforeRenderMethod = nullptr;
     int reportedWidth = 0;
     int reportedHeight = 0;
     AVCodecContext* codecContext = nullptr;

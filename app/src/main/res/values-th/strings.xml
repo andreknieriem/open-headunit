@@ -291,6 +291,7 @@
     <string name="night_overlay_dismiss">แตะเพื่อกลับไปยังการฉาย</string>
     <string name="night_overlay_meters">%1$d ม.</string>
     <string name="night_overlay_kilometers">%1$.1f กม.</string>
+    <string name="night_overlay_kilometers_whole">%1$d กม.</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">ซ้าย</string>
     <string name="night_overlay_right">ขวา</string>
@@ -679,6 +680,9 @@
     <string name="auto_connecting_single_usb">กำลังเชื่อมต่อกับอุปกรณ์ USB อัตโนมัติ…</string>
     <string name="video_codec">ตัวแปลงสัญญาณวิดีโอ (Codec)</string>
     <string name="video_codec_help">เลือกรูปแบบวิดีโอที่โทรศัพท์ส่งมา อัตโนมัติให้แอปเลือกจากรูปแบบที่เครื่องนี้ถอดรหัสได้ H.265 ให้ภาพคมชัดกว่าที่อัตราข้อมูลเท่ากัน H.264 ใช้ได้กับตัวถอดรหัสทุกตัว เปลี่ยนเมื่อภาพกระตุกหรือเป็นสีดำ ตัวเลือกจะมีผลตั้งแต่การเชื่อมต่อครั้งถัดไป</string>
+    <string name="gal_compatibility_mode">โหมดความเข้ากันได้ (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">ขอใช้เฉพาะโปรโตคอลเวอร์ชันดั้งเดิม มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
+    <string name="gal_compatibility_mode_help">แอปขอใช้ GAL 6.1 จากโทรศัพท์ หาก Android Auto บนโทรศัพท์ตอบกลับด้วยเวอร์ชันเก่ากว่า แอปจะขอใช้ 1.6 โปรโตคอลทั้งสองเวอร์ชันนี้รองรับฟีเจอร์ใหม่กว่าด้านเสียง วิดีโอ และการแสดงผล เปิดโหมดนี้เฉพาะเมื่อโทรศัพท์เชื่อมต่อได้แต่ทำงานผิดปกติหลังจากนั้น เมื่อเปิดโหมดนี้ แอปจะขอใช้ GAL 1.2 เหมือนในแอปรุ่นก่อน จึงใช้ฟีเจอร์เหล่านั้นไม่ได้ GAL คือโปรโตคอลสำหรับฉายภาพ ไม่ใช่เวอร์ชันของ Android หรือของแอป Android Auto มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="fps_limit">ขีดจำกัด FPS</string>
     <string name="fps_limit_help">อัตราเฟรมสูงสุดที่อุปกรณ์นี้ขอจาก Android Auto ค่า 60 ให้การเคลื่อนไหวลื่นกว่า แต่ใช้แบนด์วิดท์และกำลังถอดรหัสมากกว่า เลือก 30 หากภาพหน่วงหรือกระตุก มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="save">บันทึก</string>
@@ -718,16 +722,16 @@
     <string name="pref_enable_floating_button_help">แสดงปุ่มลอยทับลอนเชอร์เดิมและแอปอื่นๆ เพื่อกลับสู่ Open Headunit ได้อย่างรวดเร็ว</string>
     <string name="pref_floating_button_connection_status_title">ตัวบ่งชี้สถานะการเชื่อมต่อ</string>
     <string name="pref_floating_button_connection_status_summary">ทำให้ปุ่มจางลงขณะที่เชื่อมต่อโทรศัพท์</string>
-    <string name="pref_floating_button_connection_status_help">ใช้ความทึบเมื่อไม่ได้เชื่อมต่อ เมื่อไม่มีโทรศัพท์เชื่อมต่อ และค่อยๆ จางเป็นความทึบของปุ่มลอยขณะที่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อนและปล่อยให้การแตะผ่านไป</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">ใช้ความทึบเมื่อไม่ได้เชื่อมต่อ เมื่อไม่มีโทรศัพท์เชื่อมต่อ และค่อยๆ จางเป็นความทึบของปุ่มลอยขณะที่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อนและปล่อยให้การแตะผ่านไป</string>
     <string name="pref_floating_button_size_title">ขนาดปุ่มลอย</string>
     <string name="pref_floating_button_size_help">ขนาดของปุ่มลอย ตั้งแต่ 32 ถึง 120 dp ปุ่มที่ใหญ่กว่าแตะได้ง่ายกว่าขณะขับรถ</string>
     <string name="pref_floating_button_opacity_title">ความทึบของปุ่มลอย</string>
     <string name="pref_floating_button_opacity_help">ความชัดของปุ่มลอย ตั้งแต่ 10% ถึง 100% เมื่อเปิดตัวบ่งชี้สถานะการเชื่อมต่อ ค่านี้ใช้เฉพาะขณะที่มีโทรศัพท์เชื่อมต่ออยู่</string>
     <string name="pref_floating_button_disconnected_opacity_title">ความทึบเมื่อไม่ได้เชื่อมต่อ</string>
-    <string name="pref_floating_button_disconnected_opacity_help">ความชัดของปุ่มลอยขณะที่ไม่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อน และการแตะจะทะลุไปยังหน้าจอด้านล่าง</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">ความชัดของปุ่มลอยขณะที่ไม่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อน และการแตะจะทะลุไปยังหน้าจอด้านล่าง</string>
     <string name="pref_floating_button_x_title">ตำแหน่งแนวนอน (X)</string>
     <string name="pref_floating_button_y_title">ตำแหน่งแนวตั้ง (Y)</string>
-    <string name="pref_floating_button_position_help">ตำแหน่งของปุ่มลอยบนหน้าจอ สำหรับ X ค่า 0% คือขอบซ้าย และ 100% คือขอบขวา สำหรับ Y ค่า 0% คือขอบบน และ 100% คือขอบล่าง ปุ่มจะอยู่ในหน้าจอทั้งปุ่มเสมอ</string>
+    <string name="pref_floating_button_position_help" formatted="false">ตำแหน่งของปุ่มลอยบนหน้าจอ สำหรับ X ค่า 0% คือขอบซ้าย และ 100% คือขอบขวา สำหรับ Y ค่า 0% คือขอบบน และ 100% คือขอบล่าง ปุ่มจะอยู่ในหน้าจอทั้งปุ่มเสมอ</string>
     <string name="pref_aa_exit_action_title">การกระทำเมื่อออกจาก Android Auto</string>
     <string name="pref_aa_exit_action_summary">การกระทำเมื่อแตะ ออก ภายในหน้ารวมแอปของ Android Auto</string>
     <string name="pref_aa_exit_action_help">เลือกสิ่งที่เกิดขึ้นเมื่อคุณแตะออกใน Android Auto กลับสู่ลอนเชอร์ติดรถ จะแสดงหน้าจอหลักของอุปกรณ์เอง กลับสู่หน้าแรกของแอปจะแสดงหน้าจอหลักของแอปนี้ ทั้งสองแบบโทรศัพท์ยังคงเชื่อมต่ออยู่ ยกเลิกการเชื่อมต่อเซสชันจะจบเซสชัน เมื่อแอปนี้เป็นตัวเปิดแอปของรถ กลับสู่ลอนเชอร์ติดรถ จะทำงานเหมือนกลับสู่หน้าแรกของแอป</string>
@@ -833,7 +837,7 @@
     <string name="attach_hw_dsp_equalizer_description">แนบเอฟเฟกต์อีควอไลเซอร์จำลองกับเซสชันเสียงเพื่อบังคับให้ส่งเสียงผ่าน DSP ฮาร์ดแวร์บนเฮดยูนิตบางรุ่น ควรปิดไว้หากใช้ ViPER4Android / ViperFX หรือเสียงอู้อี้บน Android รุ่นเก่า</string>
     <string name="attach_hw_dsp_equalizer_summary">เชื่อมอีควอไลเซอร์ปลอมเพื่อบังคับการส่งผ่าน DSP ฮาร์ดแวร์บนบางเครื่อง</string>
     <string name="audio_volume_offset">การชดเชยระดับเสียง</string>
-    <string name="audio_volume_offset_help">กำหนดความดังของสตรีมเสียง Android Auto สามแบบบนอุปกรณ์นี้ ได้แก่ มีเดีย เสียงนำทาง และเสียงระบบ แต่ละแบบปรับได้ตั้งแต่ 0% ถึง 200% ที่ 100% จะเล่นสตรีมตามที่โทรศัพท์ส่งมา ใช้เพื่อปรับสมดุลระหว่างเสียงนำทางกับเพลง</string>
+    <string name="audio_volume_offset_help" formatted="false">กำหนดความดังของสตรีมเสียง Android Auto สามแบบบนอุปกรณ์นี้ ได้แก่ มีเดีย เสียงนำทาง และเสียงระบบ แต่ละแบบปรับได้ตั้งแต่ 0% ถึง 200% ที่ 100% จะเล่นสตรีมตามที่โทรศัพท์ส่งมา ใช้เพื่อปรับสมดุลระหว่างเสียงนำทางกับเพลง</string>
     <string name="microphone_settings">การตั้งค่าไมโครโฟน</string>
     <string name="use_head_unit_microphone">ไมโครโฟนของเฮดยูนิต</string>
     <string name="use_head_unit_microphone_description">เปิด: Android Auto ได้ยินเสียงจากไมโครโฟนของอุปกรณ์นี้ ปิด: อุปกรณ์นี้จะไม่บันทึกเสียงเลย และโทรศัพท์จะใช้ไมโครโฟนของตัวเอง หรือชุดหูฟังหรืออินเตอร์คอมที่จับคู่กับโทรศัพท์ ผู้ช่วยเสียงจึงยังใช้งานได้ ต้องใช้ Android 11 ขึ้นไปบนโทรศัพท์</string>
@@ -1194,8 +1198,8 @@
     <string name="kill_on_disconnect_description">ปิดแอปโดยอัตโนมัติเมื่อ Android Auto ยกเลิกการเชื่อมต่อ</string>
     <string name="kill_on_disconnect_help">ปิดแอปเมื่อ Android Auto ตัดการเชื่อมต่อ เพื่อให้เครื่องกลับไปที่หน้าจอของตัวเอง เปิดใช้เมื่อต้องการให้เครื่องแสดงตัวเรียกใช้งานของตัวเองหลังการเดินทางทุกครั้ง ไม่มีผลขณะที่แอปนี้เป็นตัวเรียกใช้งานของรถ หากเปิด “เปิดใหม่เมื่อเชื่อมต่ออีกครั้ง” “เริ่มเมื่อเปิดเครื่อง” หรือ “เริ่มเมื่อเปิดหน้าจอ” อยู่ แอปจะเตือนก่อน เพราะตัวเลือกเหล่านั้นต้องการให้แอปเปิดอยู่</string>
     <string name="raise_projection_during_call">อยู่ใน Android Auto ระหว่างการโทร</string>
-    <string name="raise_projection_during_call_description">เฉพาะโหมดตนเองเท่านั้น นำภาพฉายกลับมาแสดงทับหน้าจอการโทรของโทรศัพท์ เพื่อให้รับสายและวางสายได้ในหน้าจอ Android Auto</string>
-    <string name="raise_projection_during_call_summary">เฉพาะโหมดตนเอง แสดงการฉายภาพทับหน้าจอสายเรียกเข้าของโทรศัพท์</string>
+    <string name="raise_projection_during_call_description">ในโหมดตนเอง นำภาพฉายกลับมาแสดงทับหน้าจอการโทรของโทรศัพท์ เพื่อให้รับสายและวางสายได้ในหน้าจอ Android Auto บนเครื่อง FYT จะขอให้เครื่องไม่แสดงแถบสายหรือหน้าจอสายของตัวเองขณะที่ Android Auto อยู่ด้านหน้า อาจใช้ไม่ได้กับทุกเครื่องหรือทุกเวอร์ชันเฟิร์มแวร์</string>
+    <string name="raise_projection_during_call_summary">โหมดตนเองและเครื่อง FYT ซ่อนหน้าจอสาย อาจใช้ไม่ได้กับทุกเครื่อง</string>
     <string name="show_over_lock_screen">แสดงบนหน้าจอล็อก</string>
     <string name="show_over_lock_screen_summary">แผนที่และเส้นทางยังแสดงอยู่ขณะล็อก การแตะและปุ่มจะไม่ทำงาน</string>
     <string name="show_over_lock_screen_help">แสดงภาพ Android Auto บนหน้าจอล็อก เพื่อให้อ่านแผนที่และเส้นทางได้โดยไม่ต้องปลดล็อก ขณะที่อุปกรณ์นี้ล็อกอยู่ จะไม่มีสิ่งใดถูกส่งไปยังโทรศัพท์ การแตะ ปุ่ม ตัวควบคุมแบบหมุน และปุ่มเสียงจะถูกระงับไว้ และแผนที่จะถูกนำขึ้นมาด้านหน้า กดย้อนกลับเพื่อปลดล็อกด้วย PIN รูปแบบ หรือรหัสผ่าน หลังจากนั้นทุกอย่างจะทำงานตามปกติ เพลง การโทร และผู้ช่วยเสียงบนตัวโทรศัพท์เองจะไม่ได้รับผลกระทบ</string>

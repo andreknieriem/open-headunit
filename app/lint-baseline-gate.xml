@@ -1,0 +1,2011 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        showAutoStartOfferBanner(connectedMac, cands.deviceFor(connectedMac)?.name ?: connectedMac)"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AapProjectionActivity.kt"
+            line="964"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        val hardwareName = device.name ?: &quot;Unknown Device&quot;"
+        errorLine2="                           ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/BluetoothDevicePicker.kt"
+            line="25"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            val alias = device.alias"
+        errorLine2="                        ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/BluetoothDevicePicker.kt"
+            line="27"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                adapter.getProfileConnectionState(profile)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/BluetoothHelper.kt"
+            line="159"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                adapter.getProfileConnectionState(profile)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/BluetoothHelper.kt"
+            line="218"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        try { device.bluetoothClass?.deviceClass ?: 0 } catch (e: Exception) { 0 }"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/BluetoothHelper.kt"
+            line="423"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            &quot;adapter.address&quot; to try { adapter?.address } catch (e: Exception) { null },"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/BluetoothHelper.kt"
+            line="540"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Missing permissions required by BluetoothAdapter.getAddress: android.permission.LOCAL_MAC_ADDRESS"
+        errorLine1="            &quot;adapter.address&quot; to try { adapter?.address } catch (e: Exception) { null },"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/BluetoothHelper.kt"
+            line="540"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            name to try { resolved.getProfileConnectionState(profile) } catch (e: Exception) { null }"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/BluetoothLinkMonitor.kt"
+            line="66"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Missing permissions required by LocationManager.removeUpdates: 1..22;android.permission.ACCESS_COARSE_LOCATION or 1..22;android.permission.ACCESS_FINE_LOCATION"
+        errorLine1="        locationManager.removeUpdates(this)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/location/GpsLocation.kt"
+            line="164"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="    override val peerName: String? get() = runCatching { socket.remoteDevice?.name }.getOrNull()"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/HandshakeLink.kt"
+            line="91"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Missing permissions required by LocationManager.removeUpdates: 1..22;android.permission.ACCESS_COARSE_LOCATION or 1..22;android.permission.ACCESS_FINE_LOCATION"
+        errorLine1="        (context?.getSystemService(Context.LOCATION_SERVICE) as? LocationManager)?.removeUpdates(listener)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="762"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            val devName = targetDev?.name ?: autoTargetMac"
+        errorLine2="                          ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="2696"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                nameView.text = device.name ?: &quot;Unknown Device&quot;"
+        errorLine2="                                ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="2778"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                nameView.text = device.name ?: &quot;Unknown Device&quot;"
+        errorLine2="                                ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="2778"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        val targetName = autoTargetDevice?.name ?: autoTargetMac ?: &quot;&quot;"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="2921"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            audioRecord = AudioRecord(source, captureRateHz, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, micBufferSize)"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/audio/MicRecorder.kt"
+            line="410"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                                AppLog.i(&quot;NativeAA: Connection accepted from ${socket.remoteDevice.name} ($remoteAddress) on local radio [$radioName]&quot;)"
+        errorLine2="                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1184"
+            column="80"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                                AppLog.i(&quot;NativeAA: Connection accepted (secondary radio &apos;$serviceName&apos; [$radioName]) from ${socket.remoteDevice.name} ($remoteAddress)&quot;)"
+        errorLine2="                                                                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1186"
+            column="126"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        val radioName = try { extra.name ?: &quot;?&quot; } catch (e: Exception) { &quot;?&quot; }"
+        errorLine2="                              ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1466"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            adapter.listenUsingInsecureRfcommWithServiceRecord(&quot;AndroidAuto&quot;, AA_UUID)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1526"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            adapter.listenUsingRfcommWithServiceRecord(&quot;AndroidAuto&quot;, AA_UUID)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1528"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                return adapter.listenUsingRfcommWithServiceRecord(&quot;Hands-Free Unit&quot;, HFP_UUID)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1542"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        AppLog.i(&quot;NativeAA: HFP connection accepted from ${device.name ?: &quot;unnamed&quot;} (${device.address}) &quot; +"
+        errorLine2="                                                           ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1602"
+            column="60"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            device.bondState"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1727"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        val named = dropped.joinToString { mac -> &quot;${chosen[mac]?.name ?: &quot;unnamed&quot;} ($mac)&quot; }"
+        errorLine2="                                                     ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1783"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        val message = &quot;NativeAA: Not poking ${device.name ?: &quot;unnamed&quot;} (${device.address}) — $why&quot;"
+        errorLine2="                                              ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1807"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            &quot;NativeAA: waking ${device.name ?: &quot;unnamed&quot;} (${device.address}) despite the hands-free &quot; +"
+        errorLine2="                                ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="1852"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                    AppLog.i(&quot;NativeAA: another poke has been connecting to ${device.name} for &quot; +"
+        errorLine2="                                                                              ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2159"
+            column="79"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                        AppLog.i(&quot;NativeAA: another poke is already connecting to ${device.name} — &quot; +"
+        errorLine2="                                                                                    ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2165"
+            column="85"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            &quot;NativeAA: not waking ${device.name} — &quot; +"
+        errorLine2="                                    ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2176"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                            &quot;${device.name ?: &quot;unnamed&quot;} (${device.address}) over &quot; +"
+        errorLine2="                               ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2264"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            AppLog.i(&quot;NativeAA: poking ${device.name ?: &quot;unnamed&quot;} (${device.address}) &quot; +"
+        errorLine2="                                         ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2290"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            AppLog.w(&quot;NativeAA: Not poking ${device.name ?: &quot;unnamed&quot;} (${device.address}) — it is not &quot; +"
+        errorLine2="                                             ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2298"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                    AppLog.i(&quot;NativeAA: Calling socket.connect() for ${device.name} via $profile ($uuid)...&quot;)"
+        errorLine2="                                                                       ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2314"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                    AppLog.i(&quot;NativeAA: Successfully poked ${device.name} via $profile. Holding ${holdMs}ms...&quot;)"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2326"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                    AppLog.i(&quot;NativeAA: Poke via $profile to ${device.name ?: &quot;unnamed&quot;} (${device.address}) failed: ${e.message}&quot;)"
+        errorLine2="                                                               ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2342"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                &quot;NativeAA: the hands-free connection to ${device.name ?: &quot;unnamed&quot;} &quot; +"
+        errorLine2="                                                          ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeAaHandshakeManager.kt"
+            line="2420"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            val bonded = adapter?.bondedDevices"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/self/launchers/SelfLauncherBTDiscovery.kt"
+            line="24"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Missing permissions required by BluetoothAdapter.getAddress: android.permission.LOCAL_MAC_ADDRESS"
+        errorLine1="            val selfAddr: String? = try { adapter?.address } catch (se: SecurityException) { null }"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/self/launchers/SelfLauncherBTDiscovery.kt"
+            line="32"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        wm.configuredNetworks?.firstOrNull { it.networkId == networkId }?.status"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/direct/StationStandDown.kt"
+            line="85"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                manager.requestDeviceInfo(channel) { device ->"
+        errorLine2="                ^">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/direct/WifiDirectCompat.kt"
+            line="77"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="                        channel?.let { ch -> manager?.requestGroupInfo(ch, this) }"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/direct/WifiDirectManager.kt"
+            line="1777"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="            mgr.requestGroupInfo(ch, this@WifiDirectManager)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/direct/WifiDirectManager.kt"
+            line="2925"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 19 (current min is 16): `android.media.AudioManager#AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE`"
+        errorLine1="                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE to &quot;AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE&quot;,"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AapControl.kt"
+            line="457"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 26 (current min is 16): `android.media.AudioManager#AUDIOFOCUS_NONE`"
+        errorLine1="                AudioManager.AUDIOFOCUS_NONE to &quot;AUDIOFOCUS_NONE&quot;"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AapControl.kt"
+            line="462"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 24 (current min is 16): `android.content.pm.PackageManager#FEATURE_PICTURE_IN_PICTURE`"
+        errorLine1="            AppLog.i(&quot;PiP: this unit does not declare ${PackageManager.FEATURE_PICTURE_IN_PICTURE}&quot;)"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AapProjectionActivity.kt"
+            line="2077"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 30 (current min is 16): `android.content.pm.ServiceInfo#FOREGROUND_SERVICE_TYPE_MICROPHONE`"
+        errorLine1="        val claimed = mask and ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE != 0"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AapService.kt"
+            line="1176"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 24 (current min is 16): `android.content.Intent#ACTION_LOCKED_BOOT_COMPLETED`"
+        errorLine1="            addAction(Intent.ACTION_LOCKED_BOOT_COMPLETED)"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AapService.kt"
+            line="2470"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 24 (current min is 16): `android.content.Intent#ACTION_USER_UNLOCKED`"
+        errorLine1="                this, userUnlockedReceiver, IntentFilter(Intent.ACTION_USER_UNLOCKED),"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/App.kt"
+            line="92"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 31 (current min is 16): `android.Manifest.permission#BLUETOOTH_CONNECT`"
+        errorLine1="                Manifest.permission.BLUETOOTH_CONNECT,"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/AppPermissions.kt"
+            line="87"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 31 (current min is 16): `android.Manifest.permission#BLUETOOTH_SCAN`"
+        errorLine1="                Manifest.permission.BLUETOOTH_SCAN,"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/AppPermissions.kt"
+            line="88"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 31 (current min is 16): `android.Manifest.permission#BLUETOOTH_ADVERTISE`"
+        errorLine1="                Manifest.permission.BLUETOOTH_ADVERTISE,"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/AppPermissions.kt"
+            line="89"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 33 (current min is 16): `android.Manifest.permission#NEARBY_WIFI_DEVICES`"
+        errorLine1="                Manifest.permission.NEARBY_WIFI_DEVICES,"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/AppPermissions.kt"
+            line="90"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 33 (current min is 16): `android.Manifest.permission#POST_NOTIFICATIONS`"
+        errorLine1="            permissions = listOf(Manifest.permission.POST_NOTIFICATIONS),"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/AppPermissions.kt"
+            line="99"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_OVERLAY_PERMISSION`"
+        errorLine1="                                android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/AutoStartFragment.kt"
+            line="248"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_OVERLAY_PERMISSION`"
+        errorLine1="                                startActivity(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION))"
+        errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/AutoStartFragment.kt"
+            line="254"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_OVERLAY_PERMISSION`"
+        errorLine1="                android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/AutoStartFragment.kt"
+            line="590"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_OVERLAY_PERMISSION`"
+        errorLine1="                startActivity(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION))"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/AutoStartFragment.kt"
+            line="595"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 24 (current min is 16): `android.content.Intent#ACTION_LOCKED_BOOT_COMPLETED`"
+        errorLine1="            Intent.ACTION_LOCKED_BOOT_COMPLETED,"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/app/BootCompleteReceiver.kt"
+            line="100"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 24 (current min is 16): `android.content.Intent#ACTION_USER_UNLOCKED`"
+        errorLine1="            Intent.ACTION_USER_UNLOCKED,"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/app/BootCompleteReceiver.kt"
+            line="101"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 21 (current min is 16): `android.provider.Settings#ACTION_HOME_SETTINGS`"
+        errorLine1="            val homeSettingsIntent = Intent(Settings.ACTION_HOME_SETTINGS).apply {"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/CarLauncherManager.kt"
+            line="143"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 19 (current min is 16): `android.media.MediaCodecInfo.CodecCapabilities#FEATURE_AdaptivePlayback`"
+        errorLine1="                caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_AdaptivePlayback)"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/DecoderCapabilityReport.kt"
+            line="126"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 29 (current min is 16): `android.content.pm.ServiceInfo#FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE`"
+        errorLine1="        return ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/app/ForegroundServiceTypePolicy.kt"
+            line="31"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 29 (current min is 16): `android.content.pm.ServiceInfo#FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK`"
+        errorLine1="            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/app/ForegroundServiceTypePolicy.kt"
+            line="32"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 30 (current min is 16): `android.content.pm.ServiceInfo#FOREGROUND_SERVICE_TYPE_MICROPHONE`"
+        errorLine1="        return base or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/app/ForegroundServiceTypePolicy.kt"
+            line="48"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 24 (current min is 16): `android.provider.Settings.Global#BOOT_COUNT`"
+        errorLine1="        context.contentResolver, android.provider.Settings.Global.BOOT_COUNT, -1)"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="30"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 17 (current min is 16): `android.provider.Settings.Global#ADB_ENABLED`"
+        errorLine1="            android.provider.Settings.Global.getInt(context.contentResolver, android.provider.Settings.Global.ADB_ENABLED, 0) +"
+        errorLine2="                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="35"
+            column="78"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_OVERLAY_PERMISSION`"
+        errorLine1="                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1938"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 19 (current min is 16): `android.view.View#SYSTEM_UI_FLAG_IMMERSIVE_STICKY`"
+        errorLine1="                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/NetworkListFragment.kt"
+            line="146"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 21 (current min is 16): `android.media.AudioTrack#WRITE_NON_BLOCKING`"
+        errorLine1="        val written = track.write(bytes, size * 2, AudioTrack.WRITE_NON_BLOCKING)"
+        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmOutput.kt"
+            line="176"
+            column="52"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_OVERLAY_PERMISSION`"
+        errorLine1="                    specialLauncher.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri()))"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/PermissionRowBinder.kt"
+            line="91"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_OVERLAY_PERMISSION`"
+        errorLine1="                        specialLauncher.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/PermissionRowBinder.kt"
+            line="94"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_WRITE_SETTINGS`"
+        errorLine1="                    specialLauncher.launch(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, packageUri()))"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/PermissionRowBinder.kt"
+            line="102"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_WRITE_SETTINGS`"
+        errorLine1="                        specialLauncher.launch(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS))"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/PermissionRowBinder.kt"
+            line="105"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 19 (current min is 16): `android.content.Intent#EXTRA_MIME_TYPES`"
+        errorLine1="            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(&quot;image/*&quot;))"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/PickImageContract.kt"
+            line="13"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 19 (current min is 16): `android.content.Intent#EXTRA_MIME_TYPES`"
+        errorLine1="            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/PickMediaContract.kt"
+            line="13"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_WRITE_SETTINGS`"
+        errorLine1="                    val intent = Intent(SystemSettings.ACTION_MANAGE_WRITE_SETTINGS).apply {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/SettingsFragment.kt"
+            line="3819"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_WRITE_SETTINGS`"
+        errorLine1="                        startActivity(Intent(SystemSettings.ACTION_MANAGE_WRITE_SETTINGS))"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/SettingsFragment.kt"
+            line="3825"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_WRITE_SETTINGS`"
+        errorLine1="                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/SettingsFragment.kt"
+            line="4100"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 16): `android.provider.Settings#ACTION_MANAGE_WRITE_SETTINGS`"
+        errorLine1="                        startActivity(Intent(android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS))"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/SettingsFragment.kt"
+            line="4106"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 18 (current min is 16): `android.media.MediaCodecInfo.CodecCapabilities#COLOR_FormatSurface`"
+        errorLine1="            format.setInteger(MediaFormat.KEY_COLOR_FORMAT, android.media.MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)"
+        errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/VideoDecoder.kt"
+            line="1683"
+            column="61"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 24 (current min is 16): `android.provider.Settings.Global#BOOT_COUNT`"
+        errorLine1="    private fun boot() = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, -1)"
+        errorLine2="                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanControl.kt"
+            line="270"
+            column="74"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 17 (current min is 16): `android.provider.Settings.Global#ADB_ENABLED`"
+        errorLine1="        val usbDebugging = Settings.Global.getInt(requireContext().contentResolver, Settings.Global.ADB_ENABLED, 0) != 0"
+        errorLine2="                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanSettingsFragment.kt"
+            line="285"
+            column="85"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `HctWppOwner`"
+        errorLine1="        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner(this)"
+        errorLine2="                                                                       ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AapService.kt"
+            line="169"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.app.Activity#isDestroyed`"
+        errorLine1="        { activity.isDestroyed },"
+        errorLine2="                   ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/ActivityState.kt"
+            line="24"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 31 (current min is 16): `stop`"
+        errorLine1="        (handle as? Session)?.stop()"
+        errorLine2="                              ~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/aap/AudioModeWatcher.kt"
+            line="31"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.media.MediaCodecInfo.CodecCapabilities#getVideoCapabilities`"
+        errorLine1="        val video = caps.videoCapabilities ?: return null"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/DecoderCapabilityReport.kt"
+            line="102"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.media.MediaCodecInfo.VideoCapabilities#isSizeSupported`"
+        errorLine1="            sizeSupported = runCatching { video.isSizeSupported(width, height) }.getOrDefault(false),"
+        errorLine2="                                                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/DecoderCapabilityReport.kt"
+            line="110"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.media.MediaCodecInfo.VideoCapabilities#areSizeAndRateSupported`"
+        errorLine1="                video.areSizeAndRateSupported(width, height, rate.toDouble())"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/DecoderCapabilityReport.kt"
+            line="112"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 19 (current min is 16): `android.media.MediaCodecInfo.CodecCapabilities#isFeatureSupported`"
+        errorLine1="                caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_AdaptivePlayback)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/DecoderCapabilityReport.kt"
+            line="126"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.media.MediaCodecInfo.VideoCapabilities#getSupportedWidths`"
+        errorLine1="            supportedWidths = runCatching { video.supportedWidths.toString() }.getOrDefault(&quot;?&quot;),"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/DecoderCapabilityReport.kt"
+            line="128"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.media.MediaCodecInfo.VideoCapabilities#getSupportedHeights`"
+        errorLine1="            supportedHeights = runCatching { video.supportedHeights.toString() }.getOrDefault(&quot;?&quot;),"
+        errorLine2="                                                   ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/DecoderCapabilityReport.kt"
+            line="129"
+            column="52"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.view.Display#getRealMetrics`"
+        errorLine1="                (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealMetrics(m)"
+        errorLine2="                                                                                                   ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/view/DpiPreviewView.kt"
+            line="152"
+            column="100"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.view.Display#getRealMetrics`"
+        errorLine1="                (requireContext().getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealMetrics(m)"
+        errorLine2="                                                                                                            ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/DpiSettingsFragment.kt"
+            line="246"
+            column="109"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.os.SystemClock#elapsedRealtimeNanos`"
+        errorLine1="        val result = nativeDecode(handle, buffer, offset, size, SystemClock.elapsedRealtimeNanos() / 1000L)"
+        errorLine2="                                                                            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/decoder/video/FfmpegVideoDecoder.kt"
+            line="60"
+            column="77"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile()`"
+        errorLine1="    private val file = AtomicFile(File(context.noBackupFilesDir, &quot;fyt-adb-port.json&quot;))"
+        errorLine2="                       ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="27"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.content.Context#getNoBackupFilesDir`"
+        errorLine1="    private val file = AtomicFile(File(context.noBackupFilesDir, &quot;fyt-adb-port.json&quot;))"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="27"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#getBaseFile`"
+        errorLine1="    fun exists() = synchronized(lock) { file.baseFile.exists() }"
+        errorLine2="                                             ~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="34"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#openRead`"
+        errorLine1="        val obj = JSONObject(file.openRead().bufferedReader().use { it.readText() })"
+        errorLine2="                                  ~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="37"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#startWrite`"
+        errorLine1="        val stream = file.startWrite()"
+        errorLine2="                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="46"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#finishWrite`"
+        errorLine1="            file.finishWrite(stream)"
+        errorLine2="                 ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="51"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#failWrite`"
+        errorLine1="        } catch (e: Exception) { file.failWrite(stream); throw e }"
+        errorLine2="                                      ~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="52"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#delete`"
+        errorLine1="    fun clear() = synchronized(lock) { file.delete() }"
+        errorLine2="                                            ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytAdbPortJournal.kt"
+            line="54"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.provider.Settings.Global#getInt`"
+        errorLine1="    private fun boot(context: Context) = android.provider.Settings.Global.getInt("
+        errorLine2="                                                                          ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="29"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.provider.Settings.Global#getInt`"
+        errorLine1="            android.provider.Settings.Global.getInt(context.contentResolver, android.provider.Settings.Global.ADB_ENABLED, 0) +"
+        errorLine2="                                             ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="35"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 17 (current min is 16): `android.os.UserManager`"
+        errorLine1="            context.getSystemService(UserManager::class.java).isUserUnlocked,"
+        errorLine2="                                     ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="65"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.content.Context#getNoBackupFilesDir`"
+        errorLine1="            check(File(app.noBackupFilesDir, &quot;shizuku-adb-private&quot;).isFile &amp;&amp;"
+        errorLine2="                           ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="124"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.content.Context#getNoBackupFilesDir`"
+        errorLine1="                File(app.noBackupFilesDir, &quot;shizuku-adb-public&quot;).isFile) { &quot;Use FYT setup once to prepare ADB authorization&quot; }"
+        errorLine2="                         ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="125"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.provider.Settings.Global#getInt`"
+        errorLine1="        val targetDaemon = if (record.stopRequested || android.provider.Settings.Global.getInt(context.contentResolver,"
+        errorLine2="                                                                                        ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="252"
+            column="89"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.content.Context#getNoBackupFilesDir`"
+        errorLine1="                    val privateKey = File(context.noBackupFilesDir, &quot;shizuku-adb-private&quot;)"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="314"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.content.Context#getNoBackupFilesDir`"
+        errorLine1="                    val publicKey = File(context.noBackupFilesDir, &quot;shizuku-adb-public&quot;)"
+        errorLine2="                                                 ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/FytShizukuStarter.kt"
+            line="315"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.view.Display#getRealSize`"
+        errorLine1="            display.getRealSize(size)"
+        errorLine2="                    ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/utils/HeadUnitScreenConfig.kt"
+            line="281"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.net.wifi.WifiInfo#getFrequency`"
+        errorLine1="            frequencyMhz = HomeWifiStatusPolicy.frequencyMhz(Build.VERSION.SDK_INT) { info?.frequency },"
+        errorLine2="                                                                                            ~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeWifiStatus.kt"
+            line="214"
+            column="93"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 19 (current min is 16): `java.net.InetAddress#getLoopbackAddress`"
+        errorLine1="    override fun getInetAddress(): InetAddress = InetAddress.getLoopbackAddress()"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/helper/NearbySocket.kt"
+            line="78"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 19 (current min is 16): `OpenDocument`"
+        errorLine1="    private val restoreSettingsLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->"
+        errorLine2="                                                                                            ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/OnboardingActivity.kt"
+            line="134"
+            column="93"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile()`"
+        errorLine1="    private val file = AtomicFile(File(context.noBackupFilesDir, &quot;wifi-scan-lease.json&quot;))"
+        errorLine2="                       ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="10"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 21 (current min is 16): `android.content.Context#getNoBackupFilesDir`"
+        errorLine1="    private val file = AtomicFile(File(context.noBackupFilesDir, &quot;wifi-scan-lease.json&quot;))"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="10"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#getBaseFile`"
+        errorLine1="        if (!file.baseFile.exists()) return null"
+        errorLine2="                  ~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="14"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#openRead`"
+        errorLine1="        val obj = JSONObject(file.openRead().bufferedReader().use { it.readText() })"
+        errorLine2="                                  ~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="15"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#startWrite`"
+        errorLine1="        val stream = file.startWrite()"
+        errorLine2="                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="28"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#finishWrite`"
+        errorLine1="            file.finishWrite(stream)"
+        errorLine2="                 ~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="32"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#failWrite`"
+        errorLine1="        } catch (e: Exception) { file.failWrite(stream); throw e }"
+        errorLine2="                                      ~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="33"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#delete`"
+        errorLine1="    @Synchronized fun clear() = file.delete()"
+        errorLine2="                                     ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="35"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.util.AtomicFile#getBaseFile`"
+        errorLine1="    @Synchronized fun exists() = file.baseFile.exists()"
+        errorLine2="                                      ~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlJournal.kt"
+            line="36"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 19 (current min is 16): `CreateDocument`"
+        errorLine1="        ActivityResultContracts.CreateDocument(SettingsBackupManager.MIME_TYPE)"
+        errorLine2="                                ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/SettingsFragment.kt"
+            line="369"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 19 (current min is 16): `OpenDocument`"
+        errorLine1="    private val importSettingsLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->"
+        errorLine2="                                                                                           ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/SettingsFragment.kt"
+            line="374"
+            column="92"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.view.Display#getRealMetrics`"
+        errorLine1="                    .defaultDisplay.getRealMetrics(m)"
+        errorLine2="                                    ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/SettingsFragment.kt"
+            line="3306"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.provider.Settings.Global#getInt`"
+        errorLine1="    private fun boot() = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, -1)"
+        errorLine2="                                         ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanControl.kt"
+            line="270"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.provider.Settings.Global#getInt`"
+        errorLine1="        if (Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) == 0 &amp;&amp;"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanControl.kt"
+            line="395"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 18 (current min is 16): `android.net.wifi.WifiManager#isScanAlwaysAvailable`"
+        errorLine1="            wifi.isScanAlwaysAvailable) {"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanControl.kt"
+            line="396"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.provider.Settings.Global#getInt`"
+        errorLine1="        val usbDebugging = Settings.Global.getInt(requireContext().contentResolver, Settings.Global.ADB_ENABLED, 0) != 0"
+        errorLine2="                                           ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanSettingsFragment.kt"
+            line="285"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 16): `java.util.concurrent.CompletableFuture()`"
+        errorLine1="            val result = CompletableFuture&lt;Boolean>()"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="30"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 16): `java.util.concurrent.CompletableFuture#complete`"
+        errorLine1="            wifi.queryAutojoinGlobal({ it.run() }) { result.complete(it) }"
+        errorLine2="                                                            ~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="31"
+            column="61"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 16): `java.util.concurrent.CompletableFuture#get`"
+        errorLine1="            if (result.get(4, TimeUnit.SECONDS)) 1 else 0"
+        errorLine2="                       ~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="32"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 16): `android.content.Context#checkSelfPermission`"
+        errorLine1="            check(shell.checkSelfPermission(&quot;android.permission.NETWORK_SETTINGS&quot;) =="
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="36"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 16): `android.content.Context#checkSelfPermission`"
+        errorLine1="            check(shell.checkSelfPermission(&quot;android.permission.CONNECTIVITY_INTERNAL&quot;) =="
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="42"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 17 (current min is 16): `android.provider.Settings.Global#getInt`"
+        errorLine1="                android.provider.Settings.Global.getInt(shell.contentResolver, &quot;wifi_scan_always_enabled&quot;, 0)"
+        errorLine2="                                                 ~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="52"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Exception requires API level 19 (current min is 16): `java.lang.ReflectiveOperationException`"
+        errorLine1="    } catch (error: ReflectiveOperationException) {"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="66"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Implicit cast from `ReflectiveOperationException` to `Throwable` requires API level 19 (current min is 16)"
+        errorLine1="        throw IllegalStateException(&quot;Wi-Fi connectivity control is unavailable&quot;, error)"
+        errorLine2="                                                                                 ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="67"
+            column="82"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Exception requires API level 19 (current min is 16): `java.lang.ReflectiveOperationException`"
+        errorLine1="                } catch (error: ReflectiveOperationException) {"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/WifiScanUserService.kt"
+            line="98"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Using theme references in XML drawables requires API level 21 (current min is 16)"
+        errorLine1="    android:tint=&quot;?android:attr/textColorSecondary&quot;>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/ic_search.xml"
+            line="6"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`android:windowTranslucentNavigation` requires API level 19 (current min is 16)"
+        errorLine1="        &lt;item name=&quot;android:windowTranslucentNavigation&quot;>false&lt;/item>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="8"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`android:windowTranslucentStatus` requires API level 19 (current min is 16)"
+        errorLine1="        &lt;item name=&quot;android:windowTranslucentStatus&quot;>false&lt;/item>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="9"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`android:colorAccent` requires API level 21 (current min is 16)"
+        errorLine1="        &lt;item name=&quot;android:colorAccent&quot;>@color/brand_primary&lt;/item>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="13"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`android:statusBarColor` requires API level 21 (current min is 16)"
+        errorLine1="        &lt;item name=&quot;android:statusBarColor&quot;>@color/splash_background&lt;/item>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="41"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`android:navigationBarColor` requires API level 21 (current min is 16)"
+        errorLine1="        &lt;item name=&quot;android:navigationBarColor&quot;>@color/splash_background&lt;/item>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="42"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`android:colorAccent` requires API level 21 (current min is 16)"
+        errorLine1="        &lt;item name=&quot;android:colorAccent&quot;>@color/brand_primary&lt;/item>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="54"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`android:backgroundTint` requires API level 21 (current min is 16)"
+        errorLine1="        &lt;item name=&quot;android:backgroundTint&quot;>@color/brand_primary&lt;/item>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="66"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-ar/strings.xml"
+            line="1705"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-cs/strings.xml"
+            line="1704"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-de/strings.xml"
+            line="1712"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-es/strings.xml"
+            line="1711"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-fr/strings.xml"
+            line="1749"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-hi/strings.xml"
+            line="1750"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-hu/strings.xml"
+            line="1704"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-in/strings.xml"
+            line="1752"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-it/strings.xml"
+            line="1707"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-ja/strings.xml"
+            line="1707"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-ka/strings.xml"
+            line="1690"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-ko/strings.xml"
+            line="1742"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-nl/strings.xml"
+            line="1709"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-pl/strings.xml"
+            line="1710"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-ro/strings.xml"
+            line="1701"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-ru/strings.xml"
+            line="1702"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-th/strings.xml"
+            line="1756"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-tr/strings.xml"
+            line="1698"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-uk/strings.xml"
+            line="1706"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-vi/strings.xml"
+            line="1705"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-zh-rCN/strings.xml"
+            line="1701"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values-zh-rTW/strings.xml"
+            line="1701"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+    <issue
+        id="StringFormatMatches"
+        message="Wrong argument type for formatting argument &apos;#1&apos; in `home_page_position`: conversion is &apos;`d`&apos;, received `String` (argument #2 in method call)"
+        errorLine1="                contentDescription = getString(R.string.home_page_position, i + 1, count)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/andrerinas/openheadunit/main/HomeFragment.kt"
+            line="1157"
+            column="77"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1855"
+            column="5"
+            message="Conflicting argument declaration here"/>
+    </issue>
+
+</issues>

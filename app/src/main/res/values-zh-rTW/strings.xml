@@ -74,6 +74,7 @@
     <string name="night_overlay_dismiss">點一下返回投影</string>
     <string name="night_overlay_meters">%1$d 公尺</string>
     <string name="night_overlay_kilometers">%1$.1f 公里</string>
+    <string name="night_overlay_kilometers_whole">%1$d 公里</string>
     <string name="night_overlay_navigation">%1$s · %2$s</string>
     <string name="night_overlay_left">左</string>
     <string name="night_overlay_right">右</string>
@@ -352,6 +353,9 @@
     <string name="auto_connecting_single_usb">正在自動連線至 USB 裝置…</string>
     <string name="video_codec">視訊編碼</string>
     <string name="video_codec_help">選擇手機傳送的影片格式。「自動」由應用程式從本車機可解碼的格式中選擇。H.265 在相同位元率下畫面較清晰。H.264 適用於所有解碼器。畫面卡頓或一直是黑的時候再變更。所選格式會從下次連線起生效。</string>
+    <string name="gal_compatibility_mode">相容模式 (GAL 1.2)</string>
+    <string name="gal_compatibility_mode_summary">只要求使用最初的通訊協定版本。下次連線時生效。</string>
+    <string name="gal_compatibility_mode_help">應用程式會向手機要求使用 GAL 6.1。如果手機上的 Android Auto 回覆的版本較舊，應用程式就會要求使用 1.6。這兩個版本支援較新的音訊、影片和顯示功能。只有在手機可以連線、但連線後運作不正常時，才開啟此模式。開啟後，應用程式會和先前版本一樣要求使用 GAL 1.2，並且無法使用上述功能。GAL 是投影通訊協定，不是 Android 系統或 Android Auto 應用程式的版本。下次連線時生效。</string>
     <string name="fps_limit">FPS 限制</string>
     <string name="fps_limit_help">本裝置向 Android Auto 要求的最高影格速率。60 的動態更流暢，但需要更多頻寬和解碼能力。如果畫面延遲或卡頓，請選擇 30。下次連線時生效。</string>
     <string name="save">儲存</string>
@@ -388,7 +392,7 @@
     <string name="attach_hw_dsp_equalizer_description">在音訊工作階段附加一個虛設的等化器效果，以在特定車機上強制進行硬體 DSP 路由。如果使用 ViPER4Android / ViperFX，或在舊版 Android 上聲音沉悶，請保持停用。</string>
     <string name="attach_hw_dsp_equalizer_summary">掛接一個虛擬等化器，在部分裝置上強制使用硬體 DSP 路由。</string>
     <string name="audio_volume_offset">音訊音量偏移</string>
-    <string name="audio_volume_offset_help">設定本裝置上三種 Android Auto 音訊串流的音量：媒體、導航語音和系統音效。每種範圍為 0% 到 200%。100% 會依手機傳送的原樣播放。可用來平衡導航和音樂的音量。</string>
+    <string name="audio_volume_offset_help" formatted="false">設定本裝置上三種 Android Auto 音訊串流的音量：媒體、導航語音和系統音效。每種範圍為 0% 到 200%。100% 會依手機傳送的原樣播放。可用來平衡導航和音樂的音量。</string>
     <string name="mic_input_source">麥克風輸入來源</string>
     <string name="mic_input_source_description">選擇麥克風的音訊來源。</string>
     <string name="mic_input_source_help">選擇應用程式錄音所用的 Android 音訊來源。「預設」由系統決定。「麥克風」錄製原始聲音。「語音辨識」和「語音通訊」會加入系統內建的降噪和回音過濾。「藍牙耳機」透過藍牙耳機錄音。如果手機聽不到您的聲音，請變更。如果 Android Auto 已連線，儲存變更會停止工作階段。</string>
@@ -1326,8 +1330,8 @@
     <string name="failed_aa_not_system">失敗：Android Auto 未作為系統應用程式安裝！</string>
     <string name="failed_aa_not_installed">失敗：未安裝 Android Auto！</string>
     <string name="raise_projection_during_call">通話期間停留在 Android Auto</string>
-    <string name="raise_projection_during_call_description">僅限本機模式。將投影畫面帶回手機通話畫面上方，讓你在 Android Auto 介面中接聽及結束通話。</string>
-    <string name="raise_projection_during_call_summary">僅限本機模式。在手機的通話畫面上方顯示投影。</string>
+    <string name="raise_projection_during_call_description">在本機模式下，將投影畫面帶回手機通話畫面上方，讓你在 Android Auto 介面中接聽及結束通話。在 FYT 主機上，會要求裝置在 Android Auto 位於前景時，不顯示自己的通話列和通話畫面。部分裝置或韌體版本可能無法使用。</string>
+    <string name="raise_projection_during_call_summary">本機模式和 FYT 裝置。隱藏通話畫面。部分裝置可能無法使用。</string>
     <string name="show_over_lock_screen">在螢幕鎖定畫面上顯示</string>
     <string name="show_over_lock_screen_summary">鎖定時仍顯示地圖和路線指引。觸控和按鍵無效。</string>
     <string name="show_over_lock_screen_help">在螢幕鎖定畫面上方顯示 Android Auto 畫面，不必解鎖就能查看地圖和路線指引。此裝置鎖定期間，不會有任何操作傳到手機：觸控、按鍵、旋鈕控制器和語音鍵都會被擋下，並將地圖切換到前景。按「返回」即可用 PIN 碼、圖案或密碼解鎖；之後一切照常運作。手機本身的音樂、通話和語音助理不受影響。</string>
@@ -1481,16 +1485,16 @@
     <string name="pref_enable_floating_button_help">在原廠啟動器及其他應用程式上方顯示浮動按鈕，以便快速返回 Open Headunit。</string>
     <string name="pref_floating_button_connection_status_title">連線狀態指示</string>
     <string name="pref_floating_button_connection_status_summary">手機連線期間讓按鈕變淡。</string>
-    <string name="pref_floating_button_connection_status_help">未連線手機時使用「未連線時不透明度」，手機連線後漸變為「浮動按鈕不透明度」。為0%時，按鈕會隱藏並讓觸控穿透。</string>
+    <string name="pref_floating_button_connection_status_help" formatted="false">未連線手機時使用「未連線時不透明度」，手機連線後漸變為「浮動按鈕不透明度」。為0%時，按鈕會隱藏並讓觸控穿透。</string>
     <string name="pref_floating_button_size_title">浮動按鈕大小</string>
     <string name="pref_floating_button_size_help">浮動按鈕的大小，範圍為 32 到 120 dp。按鈕越大，駕駛時越容易輕觸。</string>
     <string name="pref_floating_button_opacity_title">浮動按鈕不透明度</string>
     <string name="pref_floating_button_opacity_help">浮動按鈕的清晰程度，範圍為 10% 到 100%。開啟「連線狀態指示」後，這個值只在手機已連線時生效。</string>
     <string name="pref_floating_button_disconnected_opacity_title">未連線時不透明度</string>
-    <string name="pref_floating_button_disconnected_opacity_help">未連線手機時浮動按鈕的清晰程度。設為 0% 時按鈕會隱藏，輕觸會穿過按鈕作用於下方的畫面。</string>
+    <string name="pref_floating_button_disconnected_opacity_help" formatted="false">未連線手機時浮動按鈕的清晰程度。設為 0% 時按鈕會隱藏，輕觸會穿過按鈕作用於下方的畫面。</string>
     <string name="pref_floating_button_x_title">水平位置 (X)</string>
     <string name="pref_floating_button_y_title">垂直位置 (Y)</string>
-    <string name="pref_floating_button_position_help">浮動按鈕在螢幕上的位置。對於 X，0% 為左邊緣，100% 為右邊緣。對於 Y，0% 為上邊緣，100% 為下邊緣。按鈕一律完整顯示在螢幕內。</string>
+    <string name="pref_floating_button_position_help" formatted="false">浮動按鈕在螢幕上的位置。對於 X，0% 為左邊緣，100% 為右邊緣。對於 Y，0% 為上邊緣，100% 為下邊緣。按鈕一律完整顯示在螢幕內。</string>
     <string name="pref_aa_exit_action_title">離開 Android Auto 的動作</string>
     <string name="pref_aa_exit_action_summary">在 Android Auto 應用程式選單點選「離開」時執行的動作。</string>
     <string name="pref_aa_exit_action_help">選擇在 Android Auto 中輕觸「結束」時的行為。「返回原廠主畫面」會顯示本裝置自己的主畫面。「返回應用程式主頁」會顯示本應用程式的主畫面。這兩項都會讓手機保持連線。「中斷連線」會結束工作階段。當本應用程式是車輛啟動器時，「返回原廠主畫面」的效果與「返回應用程式主頁」相同。</string>

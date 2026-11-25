@@ -727,7 +727,7 @@ class CommManager(
                     _disconnectJob?.join()
                     synchronized(transportLifecycleLock) { terminal = _connectionState.value }
                 },
-                create = { SocketProjectionConnection(socket, context) },
+                create = { SocketProjectionConnection(socket, context, inbound = restartEndpoint == null) },
                 open = { candidate ->
                     if (!candidate.connect()) throw java.io.IOException("Cannot open Nearby tunnel streams")
                 },
@@ -810,7 +810,7 @@ class CommManager(
         }
         try {
             previous?.disconnect()
-            conn = SocketProjectionConnection(socket, context)
+            conn = SocketProjectionConnection(socket, context, inbound = restartEndpoint == null)
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
                 if (connectionAttempt !== attempt || disconnectRequested) false
@@ -1072,7 +1072,7 @@ class CommManager(
                 }
                 val usb = conn is AbstractUsbProjectionConnection
                 // Held locally: startHandshake can retire itself and clear the published owner.
-                val shook = transport.startHandshake(conn)
+                val shook = transport.startHandshake(conn, usbIdentity)
                 if (_connection !== conn || (shook && _transport !== transport)) return@withContext
                 if (shook) {
                     val live = withLiveTransport(transport, ConnectionState.StartingTransport) {
@@ -1523,16 +1523,20 @@ class CommManager(
     }
 
     fun sendUpdateUiConfigRequest(left: Int, top: Int, right: Int, bottom: Int) {
-        val request = com.andrerinas.openheadunit.aap.protocol.messages.UpdateUiConfigRequest(left, top, right, bottom)
+        val owner = _transport ?: return
+        if (_connectionState.value != ConnectionState.TransportStarted) return
+        val display = owner.galContract?.display ?: return
+        val request = com.andrerinas.openheadunit.aap.protocol.messages.UpdateUiConfigRequest(
+            display.margins(left, top, right, bottom))
         AppLog.i("[UI_DEBUG_FIX] TX UpdateUiConfigRequest: L=$left T=$top R=$right B=$bottom")
-        send(request)
+        owner.send(request)
         // The trailing gain-only notification does *not* bring a keyframe forward, whatever this
         // comment used to claim. Dropped-frame-keyframe round 4 fired sixteen of these config
         // requests on a live stream: the phone acknowledged every one and its keyframe cadence never
         // moved off its fixed ~69s period. Kept because it costs one message and nothing has measured
         // the surface-mismatch path this serves without it.
         if (!projectionVideoFocusSuppressed) {
-            send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
+            owner.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
         }
     }
 

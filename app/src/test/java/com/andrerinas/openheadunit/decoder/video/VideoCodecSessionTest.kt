@@ -16,6 +16,7 @@ import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -29,6 +30,10 @@ class VideoCodecSessionTest {
         val surface = mock(Surface::class.java)
         val errors = mutableListOf<String>()
         private val software = forceSoftware
+        private val softwareCompletion = AtomicReference<CountDownLatch?>()
+        private val softwareFailure = AtomicReference<Throwable?>()
+        var timedFeedOffers = 0
+            private set
 
         init {
             val context = mock(Context::class.java)
@@ -46,8 +51,17 @@ class VideoCodecSessionTest {
             clearInvocations(surface)
         }
 
-        fun decode(packet: ByteArray, announced: CodecType) =
+        fun decode(packet: ByteArray, announced: CodecType) {
+            val completion = if (decoder.usingBundledSoftwareVideo) CountDownLatch(1) else null
+            softwareCompletion.set(completion)
             decoder.decode(packet, 0, packet.size, software, announced)
+            // A restart may have retired the software owner instead of queueing this packet.
+            if (completion != null && decoder.usingBundledSoftwareVideo) {
+                val completed = completion.await(3, TimeUnit.SECONDS)
+                softwareFailure.get()?.let { throw AssertionError("software worker failed", it) }
+                assertTrue("software worker did not finish frame publication", completed)
+            }
+        }
 
         fun beginPinnedSession(type: CodecType, packet: ByteArray) {
             decode(packet, type)
@@ -63,7 +77,7 @@ class VideoCodecSessionTest {
         }
 
 
-        fun bundledOutput(vararg results: Int): FfmpegVideoDecoder {
+        fun bundledOutput(vararg results: Int, fullAtFirstOffer: Boolean = false): FfmpegVideoDecoder {
             // Script only the native decode boundary. Session publication, watchdog evidence and
             // recovery below still run through VideoDecoder.decode(), not private render helpers.
             val owner = mockStatic(android.util.Log::class.java).use { logs ->
@@ -71,9 +85,46 @@ class VideoCodecSessionTest {
                     .thenReturn("native library unavailable on the host JVM")
                 mock(FfmpegVideoDecoder::class.java)
             }
-            `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt()))
+            `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong()))
                 .thenReturn(results.first(), *results.drop(1).toTypedArray())
             setOwner("softwareVideoDecoder", owner)
+            val timing = GalVideoOutputTiming(null, 0)
+            // Entering the next poll proves the preceding frame's publication AND event dispatch
+            // finished. Native decode completion alone is too early for state/listener assertions.
+            val queue = object : ArrayBlockingQueue<Any>(16) {
+                private var hadFrame = false
+                override fun offer(frame: Any): Boolean = !fullAtFirstOffer && super.offer(frame)
+                override fun offer(frame: Any, timeout: Long, unit: TimeUnit): Boolean {
+                    timedFeedOffers++
+                    return super.offer(frame, timeout, unit)
+                }
+
+                override fun poll(timeout: Long, unit: TimeUnit): Any? {
+                    if (hadFrame) {
+                        hadFrame = false
+                        softwareCompletion.getAndSet(null)?.countDown()
+                    }
+                    return super.poll(timeout, unit).also { hadFrame = it != null }
+                }
+            }
+            val generation = VideoDecoder::class.java.getDeclaredField("decoderGeneration")
+                .apply { isAccessible = true }.getLong(decoder)
+            val loop = VideoDecoder::class.java.getDeclaredMethod(
+                "softwareFeedThreadLoop", FfmpegVideoDecoder::class.java, GalVideoOutputTiming::class.java,
+                Long::class.javaPrimitiveType, ArrayBlockingQueue::class.java
+            ).apply { isAccessible = true }
+            val worker = Thread {
+                try { loop.invoke(decoder, owner, timing, generation, queue) }
+                catch (t: Throwable) {
+                    softwareFailure.set(t.cause ?: t)
+                    softwareCompletion.getAndSet(null)?.countDown()
+                }
+            }
+            setOwner("outputTiming", timing)
+            setOwner("frameQueue", queue)
+            setOwner("running", true)
+            setOwner("feedThread", worker)
+            worker.start()
             return owner
         }
         fun startInputOwner(owner: MediaCodec) {
@@ -164,6 +215,31 @@ class VideoCodecSessionTest {
                 body()
             }
         } finally { setSdk(oldSdk) }
+    }
+
+    @Test fun `untimed bundled playback waits for queue credit instead of dropping the frame`() {
+        Fixture(preference = CodecType.H264, forceSoftware = true).use { f ->
+            f.beginPinnedSession(CodecType.H264, slice(CodecType.H264))
+            val backend = f.bundledOutput(1, fullAtFirstOffer = true)
+            f.decode(slice(CodecType.H264), CodecType.H264)
+            assertTrue(f.timedFeedOffers > 0)
+            verify(backend).decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong())
+        }
+    }
+
+    @Test fun `selected dimensions replace initial fallback and survive decoder recovery`() {
+        Fixture(preference = CodecType.H264).use { f ->
+            assertTrue(f.decoder.selectFormat(1280, 720, 30))
+            f.decode(slice(CodecType.H264), CodecType.H264)
+            assertEquals(VideoSize(1280, 720), f.decoder.videoSize)
+            assertFalse(f.decoder.selectFormat(0, 480, 30))
+            assertFalse(f.decoder.selectFormat(800, 480, 0))
+            assertEquals(1280, f.decoder.videoSize.width)
+            assertTrue(f.decoder.selectFormat(800, 480, 60))
+            f.decoder.stop("restart: format retention")
+            f.decode(slice(CodecType.H264), CodecType.H264)
+            assertEquals(VideoSize(800, 480), f.decoder.videoSize)
+        }
     }
 
     @Test fun `ambiguous slices obey announcement despite opposite preference and hardware inventory`() {

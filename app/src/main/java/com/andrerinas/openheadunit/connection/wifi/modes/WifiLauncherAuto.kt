@@ -25,7 +25,7 @@ class WifiLauncherAuto(
 
     override fun hasLocalDiscovery() = true
 
-    override fun start(noInfoToasts: Boolean) {
+    override fun start(noInfoToasts: Boolean, ticket: Long) {
         // Auto discovery for standard server mode via NSD/mDNS
         // #startDiscovery(oneShot = false) handled by SharedServices
         ConnectionStageTracker.report(ConnectionStage.SEARCHING)

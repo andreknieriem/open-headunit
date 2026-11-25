@@ -31,6 +31,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.ConnectionIssue
 import com.andrerinas.openheadunit.utils.ConnectionIssues
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -77,7 +78,9 @@ class WifiLauncherNative : WifiLauncher {
 
     override fun hasLocalDiscovery() = false
 
-    override fun start(noInfoToasts: Boolean) {
+    // [ticket] is not threaded into the Native machinery's own loops: they are this launcher's,
+    // admitted by setActive under that ticket and retired by stop() when Stop commits.
+    override fun start(noInfoToasts: Boolean, ticket: Long) {
         val wifiDirect = manager.sharedServices.wifiDirectManager
 
         handshakeManager = NativeAaHandshakeManager(service, this, service.serviceScope)
@@ -419,6 +422,11 @@ class WifiLauncherNative : WifiLauncher {
      * Called by NativeAaHandshakeManager if it's waiting for credentials that haven't arrived yet.
      */
     fun triggerWifiDirectRefresh() {
+        if (Looper.myLooper() !== Looper.getMainLooper()) {
+            service.serviceScope.launch(Dispatchers.Main.immediate) { triggerWifiDirectRefresh() }
+            return
+        }
+        if (manager.active !== this) return
         if (this.strategy == NativeStrategy.HOTSPOT) {
             AppLog.i("AapService: Access point refresh requested.")
             softApCredentialsProvider?.refresh()

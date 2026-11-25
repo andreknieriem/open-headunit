@@ -39,7 +39,11 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        fun checkAndStart(context: Context) {
+        /**
+         * [carried] is the scan of the input that asked, when it is a relay (the service's own
+         * start); a broadcast is the input itself and mints its scan here, on its own turn.
+         */
+        fun checkAndStart(context: Context, carried: com.andrerinas.openheadunit.connection.UsbRecheck? = null) {
             // Read settings from device-protected storage for maximum reliability
             if (!Settings.isAutoStartOnWifiEnabled(context)) return
             val targetSsid = Settings.getAutoStartWifiSsid(context).removeSurrounding("\"")
@@ -76,8 +80,9 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                     return
                 }
 
-                // Start the service
-                val serviceIntent = Intent(context, AapService::class.java)
+                // Start the service: the default start scans USB, under this input's scan.
+                val recheck = carried ?: App.provide(context).commManager.usbRecheckNow()
+                val serviceIntent = AapService.usbCheckIntent(context, recheck, action = null)
                 try {
                     ContextCompat.startForegroundService(context, serviceIntent)
                 } catch (e: Exception) {
@@ -99,7 +104,7 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                 // and prevents opening/locking the system notification shade on Android 6/7 head units.
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                     try {
-                        context.startActivity(launchIntent)
+                        context.startActivity(AppUiEntry.continuation(Intent(launchIntent)))
                         AppLog.i("WifiAutoStartReceiver: Direct startActivity succeeded (API ${Build.VERSION.SDK_INT} < 29).")
                         return
                     } catch (e: Exception) {
@@ -108,10 +113,11 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                 }
 
                 // Android 10+ (API 29+): FullScreenIntent notification fallback for OS background restrictions
-                val pendingIntent = PendingIntent.getActivity(
-                    context, 0, launchIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-                )
+                val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+                val pendingIntent = PendingIntent.getActivity(context, 0, launchIntent, piFlags)
+                val fullScreenIntent = PendingIntent.getActivity(context, 203,
+                    AppUiEntry.continuation(Intent(launchIntent)), piFlags)
 
                 val notification = NotificationCompat.Builder(context, App.bootStartChannel)
                     .setSmallIcon(R.drawable.ic_stat_aa)
@@ -120,7 +126,7 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setCategory(NotificationCompat.CATEGORY_EVENT)
                     .setAutoCancel(true)
-                    .setFullScreenIntent(pendingIntent, true)
+                    .setFullScreenIntent(fullScreenIntent, true)
                     .setContentIntent(pendingIntent)
                     .build()
 

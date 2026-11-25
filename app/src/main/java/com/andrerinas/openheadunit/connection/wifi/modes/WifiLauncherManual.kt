@@ -24,7 +24,7 @@ class WifiLauncherManual(
 
     override fun hasLocalDiscovery() = false
 
-    override fun start(noInfoToasts: Boolean) {
+    override fun start(noInfoToasts: Boolean, ticket: Long) {
     }
 
     override fun stop(seq: WifiLauncherStopSequence) {

@@ -33,6 +33,7 @@ class DuplicateDisconnectTest {
         field(manager, "transportLifecycleLock", Any())
         field(manager, "_scope", cleanupScope)
         field(manager, "settings", mock(Settings::class.java))
+        field(manager, "appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
         var callbacks = 0
         var lastPlaying: Boolean? = true
         var wasPlaying = false
@@ -78,6 +79,7 @@ class DuplicateDisconnectTest {
         val cleanupScope = CoroutineScope(SupervisorJob() + io)
         field(manager, "_scope", cleanupScope)
         field(manager, "settings", mock(Settings::class.java))
+        field(manager, "appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
         val pool = Executors.newFixedThreadPool(4)
         try {
             val start = CountDownLatch(1)

@@ -5,44 +5,34 @@ Run the Gradle unit tests first to populate the existing Kotlin compiler depende
 """
 from pathlib import Path
 import subprocess
+import json
 import os
 import re
+import sys
 
 base = Path(__file__).resolve().parent
-repo = base.parents[3]
+repo = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else base.parents[3]
 audio_base = base.parent / "host-audio"
 if not (audio_base / "sources.txt").exists():
     print("Audio/connection integration is available when the playback PR is also present.")
     raise SystemExit(0)
-cache = Path.home() / ".gradle/caches/modules-2/files-2.1"
-
-
-def jar(group, artifact, version="*"):
-    matches = sorted(path for path in (cache / group / artifact).glob(version + "/*/*.jar")
-                     if path.name == artifact + "-" + path.parent.parent.name + ".jar")
-    if not matches:
-        raise SystemExit("Missing cached compiler dependency; run :app:testGithubDebugUnitTest first")
-    return matches[0]
-
-
-# The build's Kotlin version, so the jars are the ones Gradle already cached.
-kotlin = re.search(r"kotlin-gradle-plugin:([0-9.]+)", (repo / "build.gradle.kts").read_text()).group(1)
-stdlib = jar("org.jetbrains.kotlin", "kotlin-stdlib", kotlin)
-annotations = jar("org.jetbrains", "annotations", "13.0")
-coroutines = jar("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0")
+# Use the lifecycle runner's exact compiler and keep implementation jars off the
+# fixture's compile/runtime classpath.
+toolchain = json.loads((repo / "build/host-connection/toolchain.json").read_text())
+compiler = [entry["path"] for entry in toolchain["jars"]]
+cache = Path(os.environ.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))) / "caches/modules-2/files-2.1"
 protobuf_version = re.search(r"protobuf-java:([0-9.]+)", (repo / "app/build.gradle.kts").read_text()).group(1)
-protobuf = jar("com.google.protobuf", "protobuf-java", protobuf_version)
+protobuf = next(iter(sorted((cache / "com.google.protobuf" / "protobuf-java" / protobuf_version)
+                            .glob(f"*/protobuf-java-{protobuf_version}.jar"))), None)
 protocol_classes = repo / "app/build/intermediates/javac/githubDebug/compileGithubDebugJavaWithJavac/classes"
-if not (protocol_classes / "com/andrerinas/openheadunit/aap/protocol/proto/Media.class").is_file():
-    raise SystemExit("Missing compiled protocol classes; run :app:testGithubDebugUnitTest first")
-compiler = [jar("org.jetbrains.kotlin", "kotlin-compiler-embeddable", kotlin), stdlib,
-            jar("org.jetbrains.kotlin", "kotlin-reflect", "1.6.10"),
-            jar("org.jetbrains.kotlin", "kotlin-script-runtime", kotlin), coroutines, annotations]
+if protobuf is None or not (protocol_classes / "com/andrerinas/openheadunit/aap/protocol/proto/Media.class").is_file():
+    raise SystemExit("Missing compiled GAL protocol classes or protobuf runtime; run :app:testGithubDebugUnitTest first")
 sources = [repo / line for line in (audio_base / "sources.txt").read_text().splitlines() if line]
 # observeConnectionState owns scan-control activation. Compile its real route policy and
 # strategy enum; only the Android launcher and Shizuku side effects are doubled below.
 sources += [repo / "app/src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlPolicy.kt",
             repo / "app/src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeStrategy.kt"]
+sources.append(repo / "app/src/main/java/com/andrerinas/openheadunit/connection/AppExitPolicy.kt")
 overrides = {p.name for p in (base / "audio-stubs").glob("*.kt")}
 sources += [p for p in sorted((audio_base / "stubs").glob("*.kt")) if p.name not in overrides]
 sources += sorted((base / "audio-stubs").glob("*.kt"))
@@ -72,17 +62,24 @@ transport = (repo / "app/src/main/java/com/andrerinas/openheadunit/aap/AapTransp
 
 lifecycle_fixture = output / "LifecycleFixture.kt"
 lifecycle = (base / "LifecycleFixture.kt").read_text()
+exit_members = comm[comm.index("    private val appExitPolicy"):comm.index("    // The first disconnect chooses app-exit policy")]
+exit_members = exit_members.replace(
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate",
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
+lifecycle = lifecycle.replace("// PRODUCTION APP_EXIT\n", exit_members)
 for marker, declaration, source in [
     ("PUBLICATION", "val transport = synchronized(transportLifecycleLock)", comm),
     ("APPLY", "fun applyAudioSettings()", comm),
     ("ADVANCE", "private inline fun withLiveTransport(", comm),
     ("DISCONNECT", "fun disconnect(", comm),
+    ("RECORD_TERMINAL", "private fun recordTerminal(", comm),
+    ("ATTEMPT", "internal class Attempt(", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
     ("END_CAUSE", "enum class EndCause", comm),
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
     ("REACHED_SSL", "private fun reachedSsl()", comm),
     ("QUIT", "private fun transportedQuited(", comm),
-    ("MANAGER_FOCUS_SUPPRESSION", "fun setProjectionVideoFocusSuppressed(", comm),
+    ("MANAGER_FOCUS_SUPPRESSION", "private fun setProjectionVideoFocusSuppressed(", comm),
     ("TRANSPORT_FOCUS_SUPPRESSION", "internal fun setProjectionVideoFocusSuppressed(", transport),
     ("OBSERVER", "private fun observeConnectionState()", service),
     ("XYAUTO", "private fun refreshXyAutoMediaPolicy(", service),
@@ -108,7 +105,7 @@ sources.append(raise_policy)
 entrypoint = output / "IntegrationMain.kt"
 entrypoint.write_text("package com.andrerinas.openheadunit.decoder.audio\nfun main() { audioLifecycleBoundaryRegression() }\n")
 sources.append(entrypoint)
-classpath = os.pathsep.join(map(str, [stdlib, annotations, coroutines, protobuf, protocol_classes]))
+classpath = os.pathsep.join(map(str, [*toolchain["runtime_jars"], protobuf, protocol_classes]))
 
 subprocess.run(["java", "-cp", os.pathsep.join(map(str, compiler)),
                 "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", "-nowarn",

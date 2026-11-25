@@ -1,5 +1,5 @@
 # Changelog
-### 4.1.0-beta1
+### 4.1.0-beta2
 - Fix legacy Android Auto Wi-Fi Direct bring-up, thanks to @luansagan-cell
 - Fix(usb): match AAWireless adapters idling as 18D1:4EE1, thaknks to @PashaKagan
 - Allow embedding the projection activity, thanks to @codepdbh
@@ -10,6 +10,8 @@
 - Feat(home): move All Apps button to sidebar in launcher mode
 - Display: reconnect in the remembered shape, and redraw instead of stretching when the screen turns, thanks to @tamer1an
 - Feat(wifi): Headunit Server asks which network the phone and the unit share. On the phone's hotspot the search waits for the unit to join it, Connect over WiFi scans for the hotspot first, and the main card shows the WiFi network, band and signal; an optional automatic scan helps a slow unit join. The main button becomes a pill led by an icon
+- Feat(wifi): implement staged wireless connection recovery
+- NativeAA: cycle the unit's radio when pokes at a dead link keep failing, thanks to @benzntech
 
 ### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar

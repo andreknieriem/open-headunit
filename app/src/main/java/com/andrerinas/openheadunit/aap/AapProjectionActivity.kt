@@ -266,9 +266,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             maybeRecoverWarmRelaunch()
             val lastFrame = videoDecoder.lastFrameRenderedMs
             if (lastFrame == 0L) {
-                // First frame hasn't arrived yet — handled by the starting overlay. If the phone is
-                // streaming video but nothing draws, offer to switch renderer (issue #767).
-                maybeOfferRendererConfirm()
+                // First frame hasn't arrived yet — handled by the starting overlay.
                 watchdogHandler.postDelayed(this, ProjectionWatchdogPolicy.WATCHDOG_TICK_MS)
                 return
             }
@@ -768,12 +766,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var autoStartOfferResolved = false
     private var autoStartOfferTimer: CountDownTimer? = null
     private var rendererConfirmResolved = false
-    private var projectionStartMs = 0L
-    private val rendererConfirmNoFrameMs = 6000L
-    // "Phone still streaming" window for the offer. Kept comfortably above the 2s watchdog interval
-    // so a burst of keyframes (~every 2s on the AA logo) doesn't fall outside the window and hide
-    // the offer for a genuinely connected phone.
-    private val rendererConfirmPhoneAliveMs = 4000L
+    private val rendererBannerAutoDismissMs = 10_000L
+    private val rendererBannerDismissRunnable = Runnable {
+        rendererConfirmResolved = true
+        dismissRendererConfirmBanner()
+    }
 
     private fun maybeRecoverFromDisplayStall() {
         if (!::projectionView.isInitialized) return
@@ -862,27 +859,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         recreateProjectionView()
     }
 
-    /** Offer the renderer confirmation when the phone is actively streaming video but nothing has
-     * been drawn for a while (the broken-renderer case that cannot be detected automatically). */
-    private fun maybeOfferRendererConfirm() {
-        if (rendererConfirmResolved || rendererBanner != null) return
-        if (videoDecoder.lastFrameRenderedMs > 0L) return
-        val input = videoDecoder.lastInputBytesReceivedMs
-        if (input <= 0L) return
-        val now = SystemClock.elapsedRealtime()
-        if (now - input > rendererConfirmPhoneAliveMs) return
-        if (projectionStartMs == 0L || now - projectionStartMs < rendererConfirmNoFrameMs) return
-        showRendererConfirmBanner("the phone is streaming and nothing has drawn")
-    }
-
     /**
      * A dismissible bottom bar: "Do you see the screen?" with Yes / Switch renderer.
+     * Shown only after an explicit renderer change or fallback, and auto-dismissed after
+     * [rendererBannerAutoDismissMs] so it never stays stuck on screen (#1324).
      *
-     * @param reason which of the four situations armed it, for the log. They are four different
-     *   things - a terminal fallback that is also black, a phone streaming into a blank screen, a
-     *   renderer just switched, and the setup wizard asking for confirmation - and they used to
-     *   produce one indistinguishable line. A round saw the banner with `pendingRendererConfirm`
-     *   persisted false and had to reason out which path had armed it.
+     * @param reason which situation armed it, for the log.
      */
     private fun showRendererConfirmBanner(reason: String) {
         runOnUiThread {
@@ -935,14 +917,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
             // One-shot: offering the escape once is enough. Clearing the flag here (not only on
             // "Yes") stops the banner from re-appearing on every future session if the user drives
-            // off without tapping. A genuinely broken renderer still re-offers via the no-frame path.
+            // off without tapping. Auto-dismiss after 10 s so it never blocks the bottom bar (#1324).
             settings.pendingRendererConfirm = false
+            bar.postDelayed(rendererBannerDismissRunnable, rendererBannerAutoDismissMs)
         }
     }
 
     private fun dismissRendererConfirmBanner() {
         runOnUiThread {
-            rendererBanner?.let { (it.parent as? FrameLayout)?.removeView(it) }
+            rendererBanner?.let {
+                it.removeCallbacks(rendererBannerDismissRunnable)
+                (it.parent as? FrameLayout)?.removeView(it)
+            }
             rendererBanner = null
         }
     }
@@ -3193,8 +3179,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
 
         projectionView.addCallback(this)
-        // Baseline for the "no frame drawn while streaming" renderer check (issue #767).
-        projectionStartMs = SystemClock.elapsedRealtime()
         placeDimmer()
         performanceOverlay.bringToFront()
         nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()

@@ -2,6 +2,7 @@ package lifecycle
 
 import android.os.SystemClock
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.*
 import java.net.Socket
 
 private fun networkComm() = CommManager().apply {
@@ -40,6 +41,7 @@ class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDisc
     val main = QueuedDispatcher()
     var stationIpv4: String? = null
     private val PROBE_LOCK = Any()
+    private val PROBE_MUTEX = Mutex()
     private var inFlightScan: Job? = null
     private var scanJob: Job? = null
     // NETWORK_SCAN_GENERATION

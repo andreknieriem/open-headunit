@@ -15,8 +15,15 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 class SettingsRestartAdmissionTest {
     // The arbiter's default clock is Android's SystemClock, which plain JVM tests do not provide.
     private val clock = ConnectionArbiter.clock
-    @Before fun prepare() { ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L } }
-    @After fun restore() { ConnectionArbiter.reset(); ConnectionArbiter.clock = clock }
+    private lateinit var androidClock: org.mockito.MockedStatic<android.os.SystemClock>
+    @Before fun prepare() {
+        androidClock = mockStatic(android.os.SystemClock::class.java)
+        ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L }
+    }
+    @After fun restore() {
+        androidClock.close()
+        ConnectionArbiter.reset(); ConnectionArbiter.clock = clock
+    }
 
     private fun set(manager: CommManager, name: String, value: Any?) =
         CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
@@ -167,7 +174,7 @@ class SettingsRestartAdmissionTest {
         set(manager, "_connectionState", flow)
         set(manager, "transportLifecycleLock", Any())
         set(manager, "_disconnectJob", retirement)
-        val context = mock(android.content.Context::class.java)
+        val context = mock(android.content.Context::class.java).withUsbInputPreferencesForTest()
         val usb = mock(android.hardware.usb.UsbManager::class.java)
         val device = mock(android.hardware.usb.UsbDevice::class.java)
         `when`(context.getSystemService(android.content.Context.USB_SERVICE)).thenReturn(usb)

@@ -259,10 +259,10 @@ object UsbEffectsMain {
         var oldCalls = 0
         var newCalls = 0
         try {
-            val old = checkNotNull(UsbAttachSwitch.launchManual(oldScope, c, "A", io,
+            val old = checkNotNull(UsbAttachSwitch.launchManual(oldScope, c, "A", c.usbRecheckNow(), io,
                 switch = { oldCalls++; true }, onOutcome = {}))
             oldMain.drain() // A is admitted and waiting to enter IO.
-            val current = checkNotNull(UsbAttachSwitch.launchManual(newScope, c, "B", io,
+            val current = checkNotNull(UsbAttachSwitch.launchManual(newScope, c, "B", c.usbRecheckNow(), io,
                 switch = { newCalls++; true }, onOutcome = {}))
             check(UsbSwitchClaim.isLive())
             old.cancel()

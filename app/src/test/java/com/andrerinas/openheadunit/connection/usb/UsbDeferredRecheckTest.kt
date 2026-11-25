@@ -8,6 +8,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
@@ -39,6 +40,7 @@ class UsbDeferredRecheckTest {
         val states = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
         val settings = mock(Settings::class.java)
         val usb = mock(UsbManager::class.java)
+        val packageManager = mock(android.content.pm.PackageManager::class.java)
         val launcher: UsbLauncherManager
         var now = 0L
         init {
@@ -47,13 +49,15 @@ class UsbDeferredRecheckTest {
             `when`(service.serviceScope).thenReturn(scope)
             `when`(service.applicationContext).thenReturn(app)
             `when`(service.getSystemService(Context.USB_SERVICE)).thenReturn(usb)
-            `when`(service.packageManager).thenReturn(mock(android.content.pm.PackageManager::class.java))
+            `when`(service.packageManager).thenReturn(packageManager)
             `when`(service.getSharedPreferences(anyString(), anyInt())).thenReturn(mock(android.content.SharedPreferences::class.java))
+            service.withUsbInputPreferencesForTest()
             `when`(usb.deviceList).thenReturn(hashMapOf())
             `when`(settings.allowedDevices).thenReturn(emptySet())
             App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }.set(app, lazyOf(component))
             `when`(component.commManager).thenReturn(comm)
             `when`(component.settings).thenReturn(settings)
+            field("context", service)
             field("_connectionState", states)
             field("connectionState", states)
             field("transportLifecycleLock", Any())
@@ -84,9 +88,9 @@ class UsbDeferredRecheckTest {
         fun check(force: Boolean = true, manual: Boolean = false, saved: ConnectionState.Disconnected? = null) =
             launcher.checkAlreadyConnected(force, manual, saved, recheck = recheck())
         fun assertScans(count: Int) {
-            // The diagnostic and selection read the current bus. No cached UsbDevice is replayed.
-            verify(service, times(count)).getSystemService(Context.USB_SERVICE)
-            verify(usb, times(count * 2)).deviceList
+            // A full scan diagnoses host support exactly once. Presence-only hold observations
+            // may read the bus during a deferred input, without selecting or opening a device.
+            verify(packageManager, times(count)).hasSystemFeature(android.content.pm.PackageManager.FEATURE_USB_HOST)
         }
     }
 

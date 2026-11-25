@@ -111,7 +111,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         val c = CommManager()
         val io = QueuedDispatcher()
         val socket = Socket()
-        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = false)
         c.cleanups()
         c.ingressIo(io)
         val effects = RecordingClaims(c)
@@ -188,7 +188,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         val releaseV = CountDownLatch(1)
         val errors = ConcurrentLinkedQueue<Throwable>()
         var candidateV: ProjectionConnection? = null
-        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = false)
         c.cleanups()
         c.ingressIo(oldIo)
         val effects = RecordingClaims(c)
@@ -607,7 +607,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         val c = CommManager()
         val io = QueuedDispatcher()
         try {
-            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false) // The previous session's cleanup is queued.
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = false) // The previous session's cleanup is queued.
             c.ingressIo(io)
             val requestA = launch(start = CoroutineStart.UNDISPATCHED) { c.connectUsbRequest(ConnectionPriorityPolicy.Tier.USB) }
             io.drain()

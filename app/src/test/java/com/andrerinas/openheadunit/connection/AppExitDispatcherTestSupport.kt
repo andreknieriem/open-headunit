@@ -1,11 +1,7 @@
 package com.andrerinas.openheadunit.connection
 
-import android.content.Context
-import com.andrerinas.openheadunit.BuildConfig
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 /** Ordinary policy fixtures execute inline; scheduling regressions supply a queued dispatcher. */
 internal fun CommManager.withAppExitDispatcherForTest(
@@ -23,13 +19,10 @@ internal fun CommManager.withAppExitDispatcherForTest(
             if (get(manager) == null) set(manager, initial)
         }
     }
-    // CALLS_REAL_METHODS bypasses the constructor, but Stop still sends a package-scoped broadcast.
+    // Real Exit now persists USB suppression before teardown, even without a live connection.
     CommManager::class.java.getDeclaredField("context").apply {
         isAccessible = true
-        if (get(manager) == null) {
-            val context = mock<Context>()
-            whenever(context.packageName).thenReturn(BuildConfig.APPLICATION_ID)
-            set(manager, context)
-        }
+        if (get(manager) == null) set(manager,
+            org.mockito.Mockito.mock(android.content.Context::class.java).withUsbInputPreferencesForTest())
     }
 }

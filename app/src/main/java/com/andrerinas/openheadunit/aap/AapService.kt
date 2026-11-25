@@ -2865,6 +2865,10 @@ class AapService : Service() {
                 if (externalPowerEndedWireless) {
                     AppLog.i("AapService: external-power disconnect: power is back; re-arming the wireless bring-up.")
                     startWirelessForSettings(input.ticket)
+                } else if (UsbReceiver.isUserStopped(this)) {
+                    // Power coming back lifts the power-loss end's own cancel. It is not a human
+                    // input, so a USB Stop the user committed stays held.
+                    AppLog.i("AapService: external-power disconnect: power is back, but a USB Stop holds; not checking USB.")
                 } else {
                     AppLog.i("AapService: external-power disconnect: power is back; checking USB again.")
                     usbLauncherManager.checkOnRequest(userRequested = true, recheck = input)
@@ -4854,12 +4858,14 @@ class AapService : Service() {
 
         /** Accept once at the synchronous internal producer, never again at service delivery. */
         @androidx.annotation.MainThread
-        fun stopIntent(context: Context, ticket: Long): Intent? {
+        fun stopIntent(context: Context, ticket: Long, holdUsb: Boolean = true): Intent? {
             val component = App.provide(context)
             // The manager checks the original epoch atomically with accepting Stop; its external
             // group cleanup runs after it releases the lifecycle monitor.
+            // Configuration Save/import keeps the same Stop/teardown protocol, but must not
+            // turn its restart into a persistent user USB hold. The producer decides here.
             val request = component.commManager.requestExplicitAppExit(ticket,
-                component.settings.killOnDisconnect && component.commManager.isConnected) ?: return null
+                component.settings.killOnDisconnect && component.commManager.isConnected, holdUsb) ?: return null
             return acceptedStopIntent(context, request.id)
         }
 
@@ -4872,8 +4878,15 @@ class AapService : Service() {
             Intent(context, AapService::class.java).setAction(ACTION_STOP_SERVICE)
                 .putExtra(EXTRA_STOP_OWNER, owner)
 
-        internal fun entryIntent(context: Context, owner: Long): Intent =
-            Intent(context, AapService::class.java).putExtra(EXTRA_RUN_OWNER, owner)
+        /**
+         * Relays an already accepted Run owner; the service rechecks it at delivery.
+         * [usbScan], when present, is the original owed scan carried with that entry.
+         * It retains that scan's ticket and epoch; delivery is not a fresh USB input.
+         */
+        internal fun entryIntent(context: Context, owner: Long, usbScan: UsbRecheck? = null): Intent =
+            (if (usbScan == null) Intent(context, AapService::class.java)
+             else usbCheckIntent(context, usbScan, userRequested = true))
+                .putExtra(EXTRA_RUN_OWNER, owner)
 
         /** Preserve the original logical input through delivery, without recapturing after Stop. */
         internal fun operationIntent(context: Context, ticket: Long): Intent =

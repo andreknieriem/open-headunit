@@ -67,6 +67,7 @@ class SettingsRetryOwnershipTest {
             val states = MutableStateFlow(state)
             fun field(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
                 .apply { isAccessible = true }.set(manager, value)
+            field("context", mock(android.content.Context::class.java).withUsbInputPreferencesForTest())
             field("transportLifecycleLock", Any())
             field("_connectionState", states)
             field("connectionState", states)
@@ -76,7 +77,9 @@ class SettingsRetryOwnershipTest {
             field("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
             field("physicalConnectionReached", true)
             field("usbSaveOwner", save)
-            manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = isUserExit, honorKillOnDisconnect = false, settingsRetryOwner = explicit)
+            mockStatic(android.os.SystemClock::class.java).use {
+                manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = isUserExit, honorKillOnDisconnect = false, settingsRetryOwner = explicit)
+            }
             return states.value as CommManager.ConnectionState.Disconnected
         } finally { AppLog.LOGGER = savedLog }
     }

@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.usb
 
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
@@ -27,6 +28,8 @@ internal object UsbAttachSwitch {
 
     /**
      * Exactly one of [request] (with its [commManager]) or [lockedClaim] is the switch's authority.
+     * A locked claim predates every Stop ticket, so [stopCommitted] (the durable USB Stop, readable
+     * before unlock) revokes it when the user unlocks and stops while the switch is in flight.
      * [switch] performs the blocking USB work; no lock is held across it.
      */
     fun run(
@@ -34,11 +37,12 @@ internal object UsbAttachSwitch {
         request: CommManager.ConnectionRequest?,
         lockedClaim: ConnectionArbiter.Claim?,
         what: String,
+        stopCommitted: () -> Boolean = { false },
         switch: (ConnectionAdmission) -> Boolean,
     ): Outcome {
         val admission = ConnectionAdmission { effect ->
             if (request != null) commManager?.runIfValid(request, effect) == true
-            else lockedClaim != null && ConnectionArbiter.runIfHeld(lockedClaim, effect)
+            else lockedClaim != null && !stopCommitted() && ConnectionArbiter.runIfHeld(lockedClaim, effect)
         }
         return try {
             if (!admission.run {}) {
@@ -70,12 +74,13 @@ internal object UsbAttachSwitch {
         scope: CoroutineScope,
         commManager: CommManager,
         what: String,
+        recheck: UsbRecheck,
         io: CoroutineDispatcher = Dispatchers.IO,
         switch: (ConnectionAdmission) -> Boolean,
         onOutcome: (Outcome) -> Unit,
     ): Job? {
         val request = commManager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USER, "USB switch of $what",
-            save = null, recheck = commManager.usbRecheckNow()) ?: return null
+            save = null, recheck = recheck) ?: return null
         if (!UsbSwitchClaim.stake(request.claim)) {
             commManager.endRequest(request)
             return null

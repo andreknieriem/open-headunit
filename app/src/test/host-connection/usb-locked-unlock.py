@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Run the real locked attach prefix, App unlocked initializer and boot receiver on the JVM.
 
-The attach extraction stops immediately before the AOA-switch body (a platform effect). The
-accessory permission/locked-return branches and all pending-input/boot decisions are unchanged.
-Pass an unchanged production tree to obtain the failing-before assertions; no old-source adapters
-or replacement guards are used. Android storage, USB and service starts are recording boundaries.
+The attach extraction runs the production decision and its HAND_OFF branch, stopping before
+AOA switch admission. Locked attach does not request permission or mint a service relay; the
+boot receiver delivers one eligible relay after unlock. Android storage, USB and service
+starts are recording boundaries.
 """
 from pathlib import Path
 import hashlib, json, os, re, subprocess, sys
@@ -60,6 +60,7 @@ class AppComponent(state: State) { val suExecutor = SUExecutor(); val commManage
 class SUExecutor { fun register() {} }
 class CommManager(val state: State) {
     class ConnectionState { class TransportStarted }
+    val isConnected=false
     val connectionState = StateValue(Any())
     fun usbRecheckNow(): UsbRecheck { check(state.unlocked); state.minted++; return UsbRecheck(state.ticket) }
 }
@@ -68,7 +69,16 @@ data class UsbRecheck(val ticket: Long)
 ''')
 attach = (base / 'app/UsbAttachedActivity.kt').read_text()
 create = member(attach, 'override fun onCreate(savedInstanceState: Bundle?)')
-create = create[:create.index('        val deviceCompat = UsbDeviceCompat(device)')] + '\n    }'
+create = create[:create.index('        val usbManager = UsbDeviceCompat.usbManager(this)')] + '''
+        state.switches++
+    }'''
+handoff = member(attach, 'private fun handOffToService()')
+launch = member(attach, 'private fun launchForAutoStart(')
+for path in ['connection/usb/UsbAttachActivityPolicy.kt', 'connection/usb/UsbAttachPolicy.kt',
+             'connection/usb/UsbPlugInPolicy.kt']:
+    source = (base / path).read_bytes()
+    hashes[path] = hashlib.sha256(source).hexdigest()
+    (out / Path(path).name).write_bytes(source)
 (out / 'UsbAttachedActivity.kt').write_text('''package com.andrerinas.openheadunit.app
 import android.content.*
 import android.os.*
@@ -80,8 +90,8 @@ import com.andrerinas.openheadunit.utils.*
 import com.andrerinas.openheadunit.connection.usb.*
 class UsbAttachedActivity(state: State) : Activity(state) {
     private fun resolveUsbDevice(intent: Intent?) = state.devices.values.firstOrNull()
-    private fun handOffToService() { error("unexpected settings handoff") }
-''' + create + '''
+    private fun openHome(source: String) {}
+''' + create + '\n' + handoff + '\n' + launch + '''
 }
 object AutoConnectHoldPolicy { fun raisesUi(visible:Boolean,cancelled:Boolean)=true }
 object SettingsActivity { val isVisible=false }
@@ -92,7 +102,8 @@ import android.hardware.usb.*
 class State {
     var unlocked=false; var ticket=11L; var boot=101; var componentReads=0; var credentialReads=0
     var minted=0; var permissionRequests=0; var permitted=true; var blacklisted=false
-    var foregroundStartAllowed=false; var rejectedStarts=0
+    var switches=0
+    var foregroundStartAllowed=false; var rejectedStarts=0; var lockedStarts=0
     var beforeBlacklist:(()->Unit)?=null
     val prefs=mutableMapOf<String,SharedPreferences>(); val devices=hashMapOf<String,UsbDevice>()
     val starts=mutableListOf<Intent>(); lateinit var app: App
@@ -110,7 +121,7 @@ open class Context(val state:State, private val deviceProtected:Boolean=false) {
     companion object { const val MODE_PRIVATE=0 }
 }
 open class Activity(state:State):Context(state) {
-    val intent=Intent("usb-attached")
+    val intent=Intent(UsbManager.ACTION_USB_DEVICE_ATTACHED)
     open fun onCreate(savedInstanceState:android.os.Bundle?){}
     fun finish(){}
 }
@@ -120,12 +131,15 @@ class SharedPreferences {
     val values=mutableMapOf<String,Any?>()
     fun contains(key:String)=values.containsKey(key)
     fun getInt(key:String,default:Int)=values[key] as? Int ?: default
+    fun getLong(key:String,default:Long)=values[key] as? Long ?: default
     fun getBoolean(key:String,default:Boolean)=values[key] as? Boolean ?: default
     fun getString(key:String,default:String?)=values[key] as? String ?: default
     fun getStringSet(key:String,default:Set<String>?)=values[key] as? Set<String> ?: default
     fun edit()=Editor(this)
     class Editor(val prefs:SharedPreferences) {
         fun putInt(key:String,value:Int)=apply {prefs.values[key]=value}
+        fun putLong(key:String,value:Long)=apply {prefs.values[key]=value}
+        fun clear()=apply {prefs.values.clear()}
         fun putBoolean(key:String,value:Boolean)=apply {prefs.values[key]=value}
         fun putString(key:String,value:String)=apply {prefs.values[key]=value}
         fun putStringSet(key:String,value:Set<String>)=apply {prefs.values[key]=value}
@@ -153,7 +167,8 @@ boot = boot.replace('        val action = intent.action',
                     '        val context = requireNotNull(context)\n        val intent = requireNotNull(intent)\n        val action = intent.action')
 (out / 'BootCompleteReceiver.kt').write_text(boot)
 (out / 'Os.kt').write_text('''package android.os
-object Build { object VERSION { var SDK_INT=35 }; object VERSION_CODES { const val N=24 } }
+object Build { object VERSION { var SDK_INT=35 }; object VERSION_CODES { const val LOLLIPOP=21; const val N=24 } }
+object SystemClock {var now=1000L;fun elapsedRealtime()=now}
 class Bundle
 ''')
 (out / 'AndroidSettings.kt').write_text('''package android.provider
@@ -165,7 +180,10 @@ object Settings { object Global {
 (out / 'ContextCompat.kt').write_text('''package androidx.core.content
 object ContextCompat {
     fun startForegroundService(context:android.content.Context,intent:android.content.Intent) {
-        check(context.state.unlocked) { "Service started before unlock" }
+        if(!context.state.unlocked) {
+            context.state.lockedStarts++
+            error("Service started before unlock")
+        }
         if(!context.state.foregroundStartAllowed) {
             context.state.rejectedStarts++
             throw IllegalStateException("USER_UNLOCKED has no foreground-service exemption")
@@ -185,25 +203,41 @@ import android.content.*
 import com.andrerinas.openheadunit.UsbRecheck
 class AapService {
     fun usbCancelledByUser()=false
+    fun uncleanSessionEndAgoMs():Long?=null
     companion object {
         var instance:AapService?=null
         const val ACTION_CHECK_USB="check-usb"
-        fun usbCheckIntent(context:Context,recheck:UsbRecheck,action:String?=ACTION_CHECK_USB)=Intent(action).apply { ticket=recheck.ticket }
+        fun usbCheckIntent(context:Context,recheck:UsbRecheck,action:String?=ACTION_CHECK_USB,plugIn:Boolean=false)=Intent(action).apply { ticket=recheck.ticket }
     }
 }
 ''')
 (out / 'Usb.kt').write_text('''package android.hardware.usb
-class UsbDevice(val accessory:Boolean=true) {val vendorId=0x18d1;val productId=if(accessory)0x2d00 else 0x4ee7;val deviceName="fixture"}
+class UsbDevice(val accessory:Boolean=true) {
+    val vendorId=0x18d1;val productId=if(accessory)0x2d00 else 0x4ee7;val deviceName="fixture"
+    val productName:String?=null;val manufacturerName:String?=null
+}
 class UsbManager(private val state:android.content.State) {
     val deviceList get()=state.devices
     fun hasPermission(device:UsbDevice)=state.permitted
     fun requestPermission(device:UsbDevice,intent:Any){state.permissionRequests++}
+    companion object {const val ACTION_USB_DEVICE_ATTACHED="device-attached"}
 }
 ''')
+usb_receiver_source = (base / 'connection/usb/UsbReceiver.kt').read_text()
+hold_source = ''
+if 'internal fun allowsAutomaticInput(' in usb_receiver_source:
+    hold_source = usb_receiver_source.split('    companion object {', 1)[1].split('        const val ACTION_USB_DEVICE_PERMISSION', 1)[0]
+    hashes['USB hold companion'] = hashlib.sha256(hold_source.encode()).hexdigest()
 (out / 'UsbCompat.kt').write_text('''package com.andrerinas.openheadunit.connection.usb
 import android.content.Context
 import android.hardware.usb.*
+import android.content.SharedPreferences
+import android.os.Build
+import android.os.SystemClock
+object UsbPermissionAsks {fun stampAttach(deviceName:String){}}
+object UsbSwitchClaim {fun isLive()=false}
 class UsbDeviceCompat(device:UsbDevice) {
+    val uniqueName=device.deviceName
     companion object {
         fun usbManager(context:Context):UsbManager?=UsbManager(context.state)
         fun isAndroidDevice(device:UsbDevice)=true
@@ -211,12 +245,13 @@ class UsbDeviceCompat(device:UsbDevice) {
         fun isConnectable(context:Context,device:UsbDevice)=!context.state.blacklisted
     }
 }
-object UsbReceiver {fun createPermissionPendingIntent(context:Context,recheck:Any?)=Any()}
-''')
+object UsbReceiver {fun createPermissionPendingIntent(context:Context,recheck:Any?)=Any()
+''' + hold_source + '}\n')
 settings = (base / 'utils/Settings.kt').read_text()
 settings_members = '\n'.join(member(settings, name) for name in [
     'fun isAutoStartOnBootEnabled(', 'fun isAutoStartOnScreenOnEnabled(',
     'fun isAutoStartOnUsbEnabled(', 'fun isAutoStartOnWifiEnabled(',
+    'fun isUsbConnectOnPlugInEnabled(', 'fun syncUsbConnectOnPlugInToDeviceStorage(',
     'fun syncAutoStartOnBootToDeviceStorage(', 'fun syncAutoStartOnUsbToDeviceStorage(',
     'fun syncAutoStartOnWifiToDeviceStorage(', 'fun syncAutoStartWifiSsidToDeviceStorage(',
     'fun syncAutoStartBtMacsToDeviceStorage(', 'fun syncUsbBlacklistToDeviceStorage(',
@@ -224,10 +259,15 @@ settings_members = '\n'.join(member(settings, name) for name in [
 (out / 'Settings.kt').write_text('''package com.andrerinas.openheadunit.utils
 import android.content.*
 import android.os.Build
+import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.usb.UsbPlugInPolicy
 class Settings(private val context:Context) {
     private val prefs get()=context.getSharedPreferences(PREFS_NAME,0)
     val autoStartOnBoot get()=prefs.getBoolean("auto-start-on-boot",false)
     val autoStartOnUsb get()=prefs.getBoolean("auto-start-on-usb",false)
+    val usbConnectOnPlugIn get()=prefs.getBoolean(KEY_USB_CONNECT_ON_PLUG_IN,UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
+    val allowedDevices get()=emptySet<String>()
+    fun isConnectingDevice(device:UsbDeviceCompat)=device.uniqueName in allowedDevices
     val autoStartOnWifi get()=false
     val autoStartWifiSsid get()=""
     val autoStartBluetoothDeviceMacs get()=emptySet<String>()
@@ -239,6 +279,7 @@ class Settings(private val context:Context) {
         private const val KEY_AUTO_START_ON_BOOT="auto-start-on-boot"
         private const val KEY_AUTO_START_ON_SCREEN_ON="auto-start-on-screen-on"
         private const val KEY_AUTO_START_ON_USB="auto-start-on-usb"
+        private const val KEY_USB_CONNECT_ON_PLUG_IN="usb-connect-on-plug-in"
         private const val KEY_AUTO_START_ON_WIFI="auto-start-on-wifi"
         private const val KEY_AUTO_START_WIFI_SSID="auto-start-wifi-ssid"
         private const val KEY_AUTO_START_BT_MACS="auto-start-bt-macs"
@@ -255,23 +296,28 @@ object AppThemeManager {fun reapply(context:Context,settings:Settings){} }
 object OemAppManager {fun runAutoKillIfEnabled(context:Context){} }
 ''')
 (out / 'BootLoopPolicy.kt').write_text((base / 'app/BootLoopPolicy.kt').read_text())
-(out / 'Probe.kt').write_text('''package lockedunlock
+probe = '''package lockedunlock
 import android.content.*
 import android.hardware.usb.*
 import com.andrerinas.openheadunit.*
+import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.app.*
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 
-private fun fixture(usb:Boolean=true,boot:Boolean=false):State = State().also { s ->
+private fun fixture(usb:Boolean=true,boot:Boolean=false,connectOnPlugIn:Boolean=true):State = State().also { s ->
     val app=s.process(false)
     app.createDeviceProtectedStorageContext().getSharedPreferences("settings_device_protected",0).edit()
-        .putBoolean("auto-start-on-usb",usb).putBoolean("auto-start-on-boot",boot).apply()
+        .putBoolean("auto-start-on-usb",usb).putBoolean("auto-start-on-boot",boot)
+        .putBoolean("usb-connect-on-plug-in",connectOnPlugIn).apply()
     s.prefs["ce:settings"]=SharedPreferences().apply { values["auto-start-on-boot"]=boot }
 }
+private fun State.hasPendingUsb()=prefs["dp:usb-unlock"]?.contains("pending-boot")==true
 private fun State.attach(accessory:Boolean=true,permitted:Boolean=true) {
     this.permitted=permitted;devices["phone"]=UsbDevice(accessory)
     UsbAttachedActivity(this).onCreate(null)
-    check(starts.isEmpty()) { "locked attach started a service" }
+    check(starts.isEmpty() && lockedStarts==0) { "locked attach started a service" }
+    check(permissionRequests==0) { "locked attach requested USB permission" }
     check(componentReads==0 && credentialReads==0 && minted==0) { "locked attach accessed CE or minted app authority" }
 }
 private fun State.unlock(replaced:Boolean=false) {
@@ -282,8 +328,9 @@ private fun State.bootComplete() {
     foregroundStartAllowed=true
     try {BootCompleteReceiver().onReceive(app,Intent(Intent.ACTION_BOOT_COMPLETED))} finally {foregroundStartAllowed=false}
 }
-private fun State.assertScan(message:String,expectedTicket:Long=47L) {
+private fun State.assertScan(message:String,expectedTicket:Long=47L,expectedAction:String?=AapService.ACTION_CHECK_USB) {
     check(starts.size==1) { "$message: expected 1 USB scan, got ${starts.size}" }
+    check(starts.single().action==expectedAction) { "$message: wrong unlock relay action" }
     check(rejectedStarts==0) { "USER_UNLOCKED attempted a non-exempt foreground service start" }
     check(minted==1 && starts.single().ticket==expectedTicket) { "unlock must mint exactly its current authority" }
 }
@@ -291,7 +338,9 @@ fun main() {
     var failed=0;var passed=0
     fun test(name:String,block:()->Unit) {try {block();passed++;println("PASS $name")}catch(t:Throwable){failed++;println("FAIL $name: ${t.message}")}}
     test("locked normal then accessory connects at first unlock") {
-        val s=fixture();s.attach(false);s.attach();s.unlock();s.bootComplete();s.assertScan("First unlock after locked AOA switch")
+        val s=fixture();s.attach(false)
+        check(s.switches==1 && s.hasPendingUsb()) { "eligible normal attach must reach AOA and record pending USB" }
+        s.attach();s.unlock();s.bootComplete();s.assertScan("First unlock after locked AOA switch")
         s.bootComplete();s.assertScan("BOOT_COMPLETED duplicated the unlock scan")
     }
     test("unlock during locked attach does not lose the pending input") {
@@ -308,15 +357,18 @@ fun main() {
         s.process(true).coldUnlockedStart();s.bootComplete();s.assertScan("Process replacement duplicated the scan")
     }
     test("unlock USB and boot startup share one scan") {
-        val s=fixture(boot=true);s.attach();s.unlock();s.bootComplete();s.assertScan("Unlock with boot auto-start")
+        val s=fixture(boot=true);s.attach();s.unlock();s.bootComplete()
+        s.assertScan("Unlock with boot auto-start",expectedAction=null)
         check(s.starts.single().extras[BootCompleteReceiver.EXTRA_BOOT_START]==true) { "boot startup lost its marker" }
         s.bootComplete();s.process(true).coldUnlockedStart();s.bootComplete()
-        s.assertScan("Boot auto-start duplicated the unlock scan")
+        s.assertScan("Boot auto-start duplicated the unlock scan",expectedAction=null)
         check(Settings.getBootLoopStrikes(s.app)==1) { "one boot counted more than one strike" }
     }
-    test("locked permission reply can wait for unlock without CE access") {
-        val s=fixture();s.attach(permitted=false);check(s.permissionRequests==1)
-        s.permitted=true;s.unlock();s.bootComplete();s.assertScan("Granted accessory at first unlock")
+    test("locked accessory without permission hands off only after unlock") {
+        val s=fixture();s.attach(permitted=false)
+        check(s.switches==0 && s.hasPendingUsb()) { "locked HAND_OFF must defer rather than switch" }
+        s.unlock();s.bootComplete();s.assertScan("Accessory permission handoff after unlock")
+        s.bootComplete();s.assertScan("BOOT_COMPLETED duplicated the permission handoff")
     }
     test("unlock preparation survives another process replacement before boot delivery") {
         val s=fixture();s.attach();s.unlock()
@@ -325,13 +377,29 @@ fun main() {
         s.assertScan("Replacement after unlock preparation",expectedTicket=71L)
     }
     test("USB auto-start off does not resume locked accessory") {
-        val s=fixture(usb=false);s.attach();s.unlock();s.bootComplete()
+        val s=fixture(usb=false);s.attach()
+        check(!s.hasPendingUsb()) { "disabled USB auto-start recorded a pending scan" }
+        s.unlock();s.bootComplete()
         check(s.starts.isEmpty() && s.minted==0) { "disabled USB auto-start enqueued a scan" }
     }
     test("USB auto-start disabled before unlock withdraws pending input") {
         val s=fixture();s.attach()
         s.app.createDeviceProtectedStorageContext().getSharedPreferences("settings_device_protected",0).edit().putBoolean("auto-start-on-usb",false).apply()
         s.unlock();s.bootComplete();check(s.starts.isEmpty() && s.minted==0) { "disabled pending USB input was resumed" }
+    }
+    test("Connect when plugged in off does not resume locked USB") {
+        val s=fixture(connectOnPlugIn=false);s.attach(false);s.attach(permitted=false)
+        check(s.switches==0 && !s.hasPendingUsb()) { "disabled Connect when plugged in switched or recorded a pending scan" }
+        s.unlock();s.bootComplete()
+        check(s.starts.isEmpty() && s.minted==0) { "disabled Connect when plugged in enqueued a scan" }
+    }
+    test("Connect when plugged in disabled before unlock withdraws pending input") {
+        val s=fixture();s.attach(permitted=false)
+        check(s.hasPendingUsb()) { "eligible locked attach did not record pending USB" }
+        Settings.syncUsbConnectOnPlugInToDeviceStorage(s.app,false)
+        s.prefs.getValue("ce:settings").edit().putBoolean("auto-start-on-usb",true).apply()
+        s.unlock();s.bootComplete()
+        check(s.starts.isEmpty() && s.minted==0) { "pending USB resumed after Connect when plugged in was disabled" }
     }
     test("phone gone before unlock does not start USB") {
         val s=fixture();s.attach();s.devices.clear();s.unlock();s.bootComplete()
@@ -345,10 +413,31 @@ fun main() {
         val s=fixture();s.attach();s.boot++;s.unlock(true);s.bootComplete()
         check(s.starts.isEmpty() && s.minted==0) { "earlier boot USB input was replayed" }
     }
+    // USB_HOLD_CONTROLS
     println("RESULT locked USB unlock: $passed passed, $failed failed")
     check(failed==0) { "$failed locked USB unlock regressions failed" }
 }
-''')
+'''
+if hold_source:
+    probe = probe.replace('// USB_HOLD_CONTROLS', '''test("pending unlock preserves persisted Stop in surviving and replacement processes") {
+        for(replaced in listOf(false,true)) {
+            val s=fixture();s.attach()
+            check(UsbReceiver.allowsAutomaticInput(s.app))
+            UsbReceiver.holdAfterUserStop(s.app,UsbReceiver.bootCount(s.app))
+            s.unlock(replaced);s.bootComplete()
+            check(s.starts.isEmpty() && s.minted==0) { "unlock bypassed the persisted USB Stop (replaced=$replaced)" }
+            check(UsbReceiver.isUserStopped(s.app)) { "unlock released the persisted USB Stop" }
+        }
+    }
+    test("held locked attach records no pending unlock input") {
+        val s=fixture();s.devices["phone"]=UsbDevice()
+        check(UsbReceiver.allowsAutomaticInput(s.app))
+        UsbReceiver.holdAfterUserStop(s.app,UsbReceiver.bootCount(s.app));s.attach()
+        check(!s.hasPendingUsb()) { "held attach recorded a new unlock obligation" }
+        s.unlock();s.bootComplete()
+        check(s.starts.isEmpty() && s.minted==0) { "held attach resumed at unlock" }
+    }''')
+(out / 'Probe.kt').write_text(probe)
 (out / 'extracted-method-sha256.json').write_text(json.dumps(hashes, indent=2))
 cache = Path(os.environ.get('GRADLE_USER_HOME', str(Path.home() / '.gradle'))) / 'caches/modules-2/files-2.1'
 

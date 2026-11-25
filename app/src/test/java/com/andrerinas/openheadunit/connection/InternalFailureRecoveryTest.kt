@@ -71,8 +71,8 @@ class InternalFailureRecoveryTest {
                         if (throws) throw IOException("open failed") else false
                     } }
                 }.use {
-                    if (accepted) f.manager.connect(mock(Socket::class.java))
-                    else f.manager.connect("127.0.0.1", 5277)
+                    if (accepted) f.manager.connect(mock(Socket::class.java), ticket = f.manager.appConnectionTicket())
+                    else f.manager.connect("127.0.0.1", 5277, ticket = f.manager.appConnectionTicket())
                     f.assertRecoverable()
                 }
             }
@@ -108,11 +108,12 @@ class InternalFailureRecoveryTest {
         Fixture().use { f ->
             val transport = mock(AapTransport::class.java)
             f.field("_transport", transport)
+            connectIp(f, opens = true)
             f.states.value = ConnectionState.HandshakeComplete
             // A failure while acquiring startup audio resources reaches the same protected catch
             // as startReading(). It must not mark this transport as a deliberate user exit.
             `when`(transport.aapAudio).thenAnswer { throw IllegalStateException("audio startup failed") }
-            f.manager.startReading()
+            f.manager.startReading(checkNotNull(f.manager.captureReading()))
             f.assertRecoverable()
             verify(transport, never()).wasUserExit = true
         }
@@ -150,7 +151,7 @@ class InternalFailureRecoveryTest {
             runBlocking { `when`(connection.connect()).thenReturn(opens) }
             `when`(connection.isLoopbackPeer).thenReturn(loopback)
         }.use {
-            f.manager.connect("127.0.0.1", 5277, tier)
+            f.manager.connect("127.0.0.1", 5277, tier, ticket = f.manager.appConnectionTicket())
         }
     }
 

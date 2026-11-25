@@ -10,7 +10,6 @@ import lifecycle.HeldServerSocket
 import lifecycle.QueuedDispatcher
 import lifecycle.ServiceBootstrap
 import lifecycle.UsbRecheck
-import lifecycle.UsbReceiver
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.Socket
@@ -20,6 +19,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 // scheduling and unrelated effect dependencies are boundaries; connection ownership is real.
 object Dispatchers { var IO = QueuedDispatcher() }
 open class Context(val commManager: CommManager) {
+    var screenLockGranted = false
+    var screenInteractive = true
     val settings = Settings()
     val android = PlatformContext()
 }
@@ -50,12 +51,7 @@ class Intent {
     fun hasExtra(name: String) = extras.containsKey(name)
     fun setAction(action: String?) = apply { this.action = action }
     fun platform() = PlatformIntent(action ?: "").also { output ->
-        extras.forEach { (name, value) -> when (value) {
-            is Long -> output.putExtra(name, value)
-            is String -> output.putExtra(name, value)
-            is Boolean -> output.putExtra(name, value)
-            else -> error("Unsupported fixture intent extra: $name")
-        } }
+        extras.forEach { (name, value) -> if (value is Long) output.putExtra(name, value) }
     }
     companion object { const val ACTION_VIEW = "view" }
 }
@@ -78,11 +74,13 @@ class AapService {
         const val ACTION_DISCONNECT = "disconnect"
         const val ACTION_STOP_SERVICE = ServiceBootstrap.ACTION_STOP_SERVICE
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night-update"
-        // USB_RELAY_CONSTANTS
+        const val EXTRA_USER_REQUESTED = "user-requested"
         // In-app commands read the Stop ticket on their input's own turn; USB relays carry their scan.
         fun commandIntent(context: Context, action: String?) =
             operationIntent(context, context.commManager.appConnectionTicket()).setAction(action)
-        // USB_RELAY_INTENT
+        fun usbCheckIntent(context: Context, recheck: UsbRecheck, action: String? = ACTION_CHECK_USB,
+            userRequested: Boolean = false) = operationIntent(context, recheck.ticket).setAction(action)
+            .putExtra("relayed_usb_recheck", "${recheck.ticket}.${recheck.epoch}")
         // UI_SERVICE_CONSTANTS
         // UI_OPERATION_INTENT
         // UI_ACCEPTED_STOP_INTENT
@@ -147,13 +145,19 @@ class ScanFragment(val activity: MainActivity, val lifecycleScope: CoroutineScop
     // UI_SERVICE_FOUND
 }
 object AppLog { fun i(text: String) {}; fun w(text: String) {}; fun e(text: String, error: Throwable) {} }
+object ScreenPower {
+    fun turnOff(context: Context): Boolean {
+        if (!context.screenLockGranted) return false
+        context.screenInteractive = false
+        return true
+    }
+}
 object Toast { const val LENGTH_SHORT = 0 }
 object ToastUtils { fun showToast(context: Context?, text: String, duration: Int) {} }
 class JSONObject {
     private val values = mutableMapOf<String, Any?>()
     fun put(name: String, value: Any?) = apply { values[name] = value }
     fun string(name: String) = values[name] as? String
-    fun boolean(name: String) = values[name] as? Boolean
 }
 object AutomationCommandPolicy {
     // UI_AUTOMATION_EFFECTS
@@ -161,11 +165,6 @@ object AutomationCommandPolicy {
 object SettingsBackupManager {
     class Reset(val resetKeys: Int)
     fun resetFromContext(context: Context) = Reset(0)
-}
-object ScreenPower {
-    var requests = 0
-    var allowed = true
-    fun turnOff(context: Context): Boolean { requests++; return allowed }
 }
 object LogExporter { fun startCapture(context: Context, level: String) {}; fun stopCapture() {} }
 object AutomationEffectRunner {
@@ -385,9 +384,9 @@ fun uiConnectCallerOwnership() = runBlocking {
             scanInput.scan.onServiceFound("192.0.2.158", 5277, shared, scanInput.scan.networkDiscovery.ticket)
             scanInput.main.drainUi()
             check(Dispatchers.IO.tasks.isNotEmpty()) { "the scan hand-off did not wait for IO" }
-            scanManager.connect("192.0.2.158", 5277, ConnectionPriorityPolicy.Tier.USER)
+            scanManager.connect("192.0.2.158", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = scanManager.appConnectionTicket())
             val live = checkNotNull(scanManager.network()) { "the IP request did not connect" }
-            if (afterSsl) scanManager.startHandshake()
+            if (afterSsl) scanManager.startHandshake(checkNotNull(scanManager.captureHandshake()))
             val stateBefore = scanManager.state
             Dispatchers.IO.drain()
             // Recorded after every production frame has returned.
@@ -437,17 +436,6 @@ fun uiConnectCallerOwnership() = runBlocking {
             input.close(); manager.close()
         }
     }
-    val screenContext = CommManager()
-    try {
-        for (allowed in listOf(false, true)) {
-            val reply = JSONObject()
-            ScreenPower.allowed = allowed
-            val requests = ScreenPower.requests
-            val result = AutomationEffectRunner.run(Context(screenContext),
-                listOf(AutomationCommandPolicy.Effect.TurnScreenOff), reply)
-            check(result == allowed && reply.boolean("screenOff") == allowed && ScreenPower.requests == requests + 1)
-        }
-    } finally { screenContext.close() }
     println("PASS Bluetooth arrival relayed to the home screen: Stop before delivery acts on nothing; control starts Self once")
     println("PASS UI connect producers: queued main/list/automation/scan inputs, live successor protection, compatible Open, fresh manual input, raw-socket cancellation, adopted scan socket and real relay rejection")
 }

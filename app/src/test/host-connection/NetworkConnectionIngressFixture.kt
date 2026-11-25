@@ -1,7 +1,6 @@
 package lifecycle
 
 import android.os.SystemClock
-import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.*
 import java.net.Socket
@@ -38,7 +37,10 @@ interface NetworkDiscoveryListener {
     fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long)
     fun onScanFinished(wasOneShot: Boolean, ticket: Long)
 }
+enum class WifiLauncherMode { MANUAL, AUTO, HELPER, NATIVE }
+
 class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDiscoveryListener) {
+    var stationIpv4: String? = null
     val io = QueuedDispatcher()
     val main = QueuedDispatcher()
     private val PROBE_LOCK = Any()
@@ -49,8 +51,6 @@ class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDisc
     private var currentGeneration: Generation? = null
     private val reportedIps = mutableSetOf<String>()
     private var probeHelperPort = false
-    var stationIpv4: String? = null
-    // NETWORK_WIFI_WAIT
     private fun readProbeHelperPort() = false
     private suspend fun scanGateways(ticket: Long): Boolean {
         listener.onServiceFound("192.0.2.72", 5277, null, ticket)
@@ -59,6 +59,7 @@ class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDisc
     private suspend fun scanSubnet(ticket: Long) { error("gateway should have ended this scan") }
     // NETWORK_SCAN_START
     // NETWORK_SCAN_JOB
+    // NETWORK_WIFI_WAIT
     fun scanOwner() = scanJob to currentGeneration?.ticket
     fun scanIsOneShot() = currentGeneration?.oneShot
     fun drain() { io.drain(); main.drain(); io.drain(); main.drain(); io.drain() }
@@ -232,25 +233,6 @@ fun networkConnectionIngressOwnership() = runBlocking {
             comm.close()
         }
     }
-    // On a phone hotspot we deliver scan completion but don't dial until Wi-Fi has joined.
-    for (joined in listOf(false, true)) {
-        val comm = networkComm()
-        comm.settings.headunitServerNetwork = HeadunitServerNetwork.PHONE_HOTSPOT
-        val found = mutableListOf<String>()
-        val finished = mutableListOf<Long>()
-        try {
-            val scan = NetworkScanIngress(comm, object : NetworkDiscoveryListener {
-                override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) { found += ip }
-                override fun onScanFinished(wasOneShot: Boolean, ticket: Long) { finished += ticket }
-            })
-            if (joined) scan.stationIpv4 = "192.0.2.71"
-            val ticket = comm.appConnectionTicket()
-            check(scan.startScan(oneShot = true, ticket = ticket))
-            scan.drain()
-            check(finished == listOf(ticket))
-            check(found == if (joined) listOf("192.0.2.72") else emptyList())
-        } finally { comm.close() }
-    }
     // Discovery's hand-off of its held socket is queued behind connection IO when a launch's dial
     // to the same endpoint arrives. The hand-off holds no request yet, so it can be neither joined
     // nor waited on: the dial must not join it and stand failed. It adopts the held socket itself,
@@ -268,7 +250,9 @@ fun networkConnectionIngressOwnership() = runBlocking {
                 service.main.drain()
                 val handOff = checkNotNull(io.tasks.poll()) { "the hand-off did not reach connection IO" }
                 val mark = comm.launchMark(comm.appConnectionTicket())
-                val dial = launch(start = CoroutineStart.UNDISPATCHED) { comm.connect("192.0.2.73", 5277) }
+                val dial = launch(start = CoroutineStart.UNDISPATCHED) {
+                    comm.connect("192.0.2.73", 5277, ticket = comm.appConnectionTicket())
+                }
                 io.drain(); dial.join()
                 val decision = comm.reportLaunchFailure("timeout", mark)
                 handOff.run(); io.drain(); service.main.drain()

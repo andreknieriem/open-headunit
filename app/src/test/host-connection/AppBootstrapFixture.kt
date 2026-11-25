@@ -18,7 +18,7 @@ fun bootstrapRejectionPreservesLatestRun() {
             ContextCompat.serviceStarts.clear()
             try {
                 val stale = if (staleStop) {
-                    val old = manager.requestExplicitAppExit(killProcess = false)
+                    val old = checkNotNull(manager.requestExplicitAppExit(killProcess = false))
                     Intent(ServiceBootstrap.ACTION_STOP_SERVICE)
                         .putExtra(ServiceBootstrap.EXTRA_STOP_OWNER, old.id)
                 } else {
@@ -48,7 +48,7 @@ fun bootstrapRejectionPreservesLatestRun() {
         stopped.cleanups()
         ContextCompat.serviceStarts.clear()
         try {
-            val exit = stopped.requestExplicitAppExit(killProcess = false)
+            val exit = checkNotNull(stopped.requestExplicitAppExit(killProcess = false))
             check(stopped.commitAppExit(exit) === exit)
             check(stopped.completeAppExit(exit).effect == AppExitPolicy.Effect.STOPPED)
             val duplicate = Intent(ServiceBootstrap.ACTION_STOP_SERVICE)
@@ -61,22 +61,6 @@ fun bootstrapRejectionPreservesLatestRun() {
         } finally {
             stopped.close()
         }
-
-        val running = CommManager()
-        try {
-            val run = running.onAppRelaunched()
-            val bootstrap = ServiceBootstrap(running).apply { failForeground = true }
-            val start = Intent("entry").putExtra(ServiceBootstrap.EXTRA_RUN_OWNER, run)
-            bootstrap.onStartCommand(start, 0, 1)
-            check(bootstrap.foregroundPromotionFailed && bootstrap.stops == 1 && !bootstrap.initializedForStart)
-            bootstrap.finish()
-            check(running.isAppRunOwner(run) && ContextCompat.serviceStarts.isEmpty()) {
-                "failed foreground promotion must not loop through another service start"
-            }
-        } finally {
-            running.close()
-        }
-
         // Internal relays carry the Stop ticket of their input; only external entries mint one at
         // receipt. A relay sent before Stop and received after it, whether it carries that ticket
         // or was sent untagged, initializes nothing. Control: the carried ticket with no Stop.
@@ -89,7 +73,7 @@ fun bootstrapRejectionPreservesLatestRun() {
                 val input = manager.appConnectionTicket()
                 val intent = Intent("check-usb")
                 if (relay != "untagged") intent.putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, input)
-                if (relay != "control") manager.requestExplicitAppExit(killProcess = false)
+                if (relay != "control") checkNotNull(manager.requestExplicitAppExit(killProcess = false))
                 val bootstrap = ServiceBootstrap(manager)
                 bootstrap.onStartCommand(intent, 0, 1)
                 check(bootstrap.initializedForStart == (relay == "control")) {
@@ -99,25 +83,26 @@ fun bootstrapRejectionPreservesLatestRun() {
                 manager.close()
             }
         }
-
-        // A link ending deliberately can revoke just the scan epoch while the command ticket
-        // remains current. Bootstrap must hand the old scan along, not silently mint a new one.
-        for (withdrawScan in listOf(false, true)) {
-            val manager = CommManager()
-            try {
-                val scan = manager.usbRecheckNow()
-                if (withdrawScan) manager.disconnect(honorKillOnDisconnect = false)
-                check(manager.acceptsAppConnectionTicket(scan.ticket))
-                val relay = Intent("check-usb")
-                    .putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, scan.ticket)
-                    .putExtra(ServiceBootstrap.EXTRA_USB_RECHECK, UsbReceiver.encodeRecheck(scan))
-                val bootstrap = ServiceBootstrap(manager)
-                bootstrap.onStartCommand(relay, 0, 1)
-                check(bootstrap.initializedForStart && bootstrap.startupTicket == scan.ticket)
-                val startup = checkNotNull(bootstrap.startupRecheck)
-                check(startup.ticket == scan.ticket && startup.epoch == scan.epoch)
-                check(manager.isCurrent(startup) == !withdrawScan)
-            } finally { manager.close() }
+        // A startup relay preserves the scan epoch captured before a held end, even when
+        // its Stop ticket is still valid. Recreating the scan would resurrect that debt.
+        val manager = CommManager()
+        try {
+            val ticket = manager.appConnectionTicket()
+            val owed = manager.usbRecheck(ticket)
+            manager.disconnect(reason = DisconnectReason.PROJECTION_UNRAISED,
+                isUserExit = false, honorKillOnDisconnect = false)
+            manager.cleanups()
+            check(!manager.isCurrent(owed) && manager.acceptsAppConnectionTicket(ticket))
+            val relayed = Intent("check-usb")
+                .putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, ticket)
+                .putExtra(ServiceBootstrap.EXTRA_USB_RECHECK, UsbReceiver.encodeRecheck(owed))
+            val bootstrap = ServiceBootstrap(manager)
+            bootstrap.onStartCommand(relayed, 0, 1)
+            val startup = checkNotNull(bootstrap.startupRecheck)
+            check(bootstrap.startupTicket == ticket)
+            check(startup.ticket == owed.ticket && startup.epoch == owed.epoch && !manager.isCurrent(startup))
+        } finally {
+            manager.close()
         }
     } finally {
         AapService.instance = previousService

@@ -2014,7 +2014,7 @@ class HomeFragment : Fragment() {
                     val usbMode = UsbAccessoryMode(usbManager)
                     val useLibusb = App.provide(requireContext()).settings.useLibusb
                     UsbAttachSwitch.launchManual(viewLifecycleOwner.lifecycleScope, commManager, device.uniqueName,
-                        switch = { usbMode.connectAndSwitch(device.wrappedDevice, useLibusb) }) { outcome ->
+                        switch = { admission -> usbMode.connectAndSwitch(device.wrappedDevice, useLibusb, admission) }) { outcome ->
                         context?.let { ctx ->
                             when (outcome) {
                                 // Whatever revoked it owns the stage and its feedback now.

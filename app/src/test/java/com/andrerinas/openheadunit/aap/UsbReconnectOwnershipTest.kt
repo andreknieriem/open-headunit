@@ -84,13 +84,13 @@ class UsbReconnectOwnershipTest {
                         val allowed = outcome in listOf("connecting", "error", "wireless-retry")
                         assertEquals("$outcome observed=$observed", if (allowed) 1 else 0, checks)
                         // Retire locally without entering unrelated transport cleanup.
-                        set("connectionAttempt", CommManager.Attempt())
+                        set("connectionAttempt", CommManager.Attempt(org.mockito.Mockito.mock(CommManager.ConnectionRequest::class.java)))
                         false
                     }
                 }
             }.use {
                 // The actual public request: admission, acceptance and publication before the open.
-                try { manager.connect("127.0.0.1", 5277) } finally { scope.cancel(); main.drain() }
+                try { manager.connect("127.0.0.1", 5277, ticket = manager.appConnectionTicket()) } finally { scope.cancel(); main.drain() }
             }
         }
     }

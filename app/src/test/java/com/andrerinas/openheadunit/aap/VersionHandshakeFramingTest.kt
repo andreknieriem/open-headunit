@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.aap
 
 import android.os.SystemClock
 import android.content.Context
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.LibusbProjectionConnection
@@ -18,6 +19,7 @@ import org.mockito.kotlin.any
 
 /** Exercise the transport entry point, including the handoff to TLS, not just the byte parser. */
 class VersionHandshakeFramingTest {
+    private val admission = ConnectionAdmission { action -> action(); true }
     private lateinit var log: org.mockito.MockedStatic<android.util.Log>
     @org.junit.Before fun stubLog() {
         log = mockStatic(android.util.Log::class.java)
@@ -477,7 +479,7 @@ class VersionHandshakeFramingTest {
     @Test fun `closed TCP socket is not a live handshake connection`() {
         val socket = mock(Socket::class.java)
         `when`(socket.inetAddress).thenReturn(InetAddress.getByName("192.0.2.22"))
-        val connection = SocketProjectionConnection(socket, mock(Context::class.java))
+        val connection = SocketProjectionConnection(socket, mock(Context::class.java), admission)
         // Socket keeps isConnected=true after close if it was ever connected.
         `when`(socket.isConnected).thenReturn(true)
         assertTrue(connection.isConnected)
@@ -493,7 +495,7 @@ class VersionHandshakeFramingTest {
         `when`(socket.localAddress).thenReturn(InetAddress.getByName("192.0.2.1"))
         `when`(socket.port).thenReturn(port)
         `when`(socket.localPort).thenReturn(5277)
-        return SocketProjectionConnection(socket, mock(Context::class.java)).galVersionPeer()
+        return SocketProjectionConnection(socket, mock(Context::class.java), admission).galVersionPeer()
     }
 
     private fun versionConnection(peer: ByteArray, tcpPeer: GalVersionPolicy.Peer.Tcp? = null,

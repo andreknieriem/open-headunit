@@ -102,13 +102,15 @@ class UsbLogicalAttemptTest {
             // Fail one actual candidate after openDevice, rather than usbOpen's own
             // null-handle retry loop (which would sleep and retry inside the same connect).
             `when`(handle.claimInterface(iface, true)).thenAnswer { !(failFirst && opens == 1) }
-            // Only transport retirement is doubled. Admission, candidate construction, open,
-            // physical success/failure and publication remain the real production consumers.
-            doAnswer { call ->
-                set("disconnectRequested", true)
-                states.value = CommManager.ConnectionState.Disconnected(settingsRetryOwner = call.getArgument(5))
-                null
-            }.`when`(comm).disconnect(any(), any(), any(), any(), any(), anyOrNull(), anyOrNull())
+            // Exercise the real owner-aware retirement. Only codec resources are Android doubles;
+            // the same queued scope keeps teardown completion visible to retries.
+            set("_scope", scope)
+            val audio = mock(com.andrerinas.openheadunit.decoder.audio.AudioDecoder::class.java)
+            `when`(audio.captureCleanup()).thenReturn({})
+            set("audioDecoder", audio)
+            set("videoDecoder", mock(com.andrerinas.openheadunit.decoder.video.VideoDecoder::class.java))
+            set("keyStates", mutableMapOf<Int, Any>())
+            set("dimState", com.andrerinas.openheadunit.aap.DimState())
             launcher = UsbLauncherManager(service)
         }
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
@@ -404,7 +406,6 @@ class UsbLogicalAttemptTest {
             val resumeA = checkNotNull(f.io.take()) { "A did not reach its first IO entry" }
             if (exit) {
                 // The real user-exit disconnect, as the home screen's Exit issues it.
-                doCallRealMethod().`when`(f.comm).disconnect(any(), any(), any(), any(), any(), anyOrNull(), anyOrNull())
                 f.comm.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
             }
             resumeA.run()

@@ -34,6 +34,9 @@ class DuplicateDisconnectTest {
         field(manager, "_scope", cleanupScope)
         field(manager, "settings", mock(Settings::class.java))
         field(manager, "appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
+        val attempt = CommManager.Attempt(CommManager.ConnectionRequest(manager.appConnectionTicket(),
+            mock(com.andrerinas.openheadunit.connection.ConnectionArbiter.Claim::class.java), null, null, null))
+        field(manager, "connectionAttempt", attempt)
         var callbacks = 0
         var lastPlaying: Boolean? = true
         var wasPlaying = false
@@ -48,7 +51,7 @@ class DuplicateDisconnectTest {
             }
         }
         try {
-            manager.disconnectForLinkLoss(0)
+            manager.disconnectForLinkLoss(attempt, 0)
             yield() // Main consumes D1 while IO cleanup remains queued.
             val ended = states.value
             assertEquals(1, callbacks)
@@ -57,7 +60,7 @@ class DuplicateDisconnectTest {
                 .apply { isAccessible = true }
             quit.invoke(manager, mock(AapTransport::class.java), false)
             yield()
-            manager.disconnectForLinkLoss(0)
+            manager.disconnectForLinkLoss(attempt, 0)
             manager.disconnect(honorKillOnDisconnect = false)
             yield()
             assertSame(ended, states.value)

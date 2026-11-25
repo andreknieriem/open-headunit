@@ -20,8 +20,8 @@ A harness failure fails that job. The `host-connection-diagnostics` artifact ret
 extracted Kotlin sources and method/toolchain metadata, including on failure.
 
 For local lifecycle changes, run `./gradlew :app:testGithubDebugUnitTest` first to populate
-the Kotlin dependency cache and compile the generated GAL protocol classes used by the
-lifecycle and audio integration fixtures, then `python3 app/src/test/host-connection/run.py`.
+the Kotlin dependency cache and compile the actual generated protocol classes used by the
+audio integration fixture, then `python3 app/src/test/host-connection/run.py`.
 The Gradle task alone does not run the harness. The full runner includes the Self launch
 suite, which can also be run separately with `python3 app/src/test/host-connection/self-launch.py`
 after the first full run.
@@ -29,9 +29,9 @@ after the first full run.
 Production member lookup uses exact declarations; a missing or renamed member raises an
 error and must be updated together with its fixture. These tools complement JVM unit tests.
 
-The wireless cleanup suite extracts the complete service disconnect callback and foreground
-shutdown. It checks late notifications, rearm during teardown, session-resource release and
-Exit waiter ownership with a queued Main dispatcher; platform services are recording doubles.
+The wireless cleanup suite extracts the complete service disconnect callback. It checks
+late notifications, rearm during teardown, session-resource release and Exit waiter ownership
+with a queued Main dispatcher; platform services are recording doubles.
 
 The HCT owner suite also checks selection before its IO runner starts, same-channel
 reuse, callback replacement and stale-client cleanup. The native carrier is a recording

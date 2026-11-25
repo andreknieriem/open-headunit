@@ -1270,7 +1270,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                             // If not, onSurfaceChanged() will call startReading() when the surface
                             // becomes available.
                             if (isSurfaceSet) {
-                                commManager.startReading()
+                                commManager.captureReading()?.let { authority -> commManager.startReading(authority) }
                             }
                         }
                         is CommManager.ConnectionState.TransportStarted -> {
@@ -2627,7 +2627,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 // AapService should have started the handshake already, but as a fallback
                 // (e.g. service restarted) kick it off here. The HandshakeComplete observer
                 // will call startReading() once the handshake finishes.
-                lifecycleScope.launch { commManager.startHandshake() }
+                commManager.captureHandshake()?.let { authority ->
+                    lifecycleScope.launch { commManager.startHandshake(authority) }
+                }
             }
             is CommManager.ConnectionState.StartingTransport -> {
                 // Handshake is in progress. The HandshakeComplete observer will call
@@ -2635,7 +2637,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             is CommManager.ConnectionState.HandshakeComplete -> {
                 // Handshake already done before surface was ready — start reading now.
-                lifecycleScope.launch { commManager.startReading() }
+                commManager.captureReading()?.let { authority ->
+                    lifecycleScope.launch { commManager.startReading(authority) }
+                }
             }
             is CommManager.ConnectionState.TransportStarted -> {
                 // Surface recreated while transport was already running; request a keyframe.
@@ -3116,11 +3120,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 "reconnecting so Android Auto draws it $window."
         )
         shapeRedrawnFor = window
-        commManager.disconnect(
-            isUserExit = false,
-            honorKillOnDisconnect = false,
-            reason = CommManager.DisconnectReason.SETTINGS_RESTART,
-        )
+        // Only the session drawn in the old shape is redrawn; a later one is left alone.
+        commManager.currentConnectionAttempt()?.let { attempt ->
+            commManager.disconnectOwned(
+                attempt,
+                isUserExit = false,
+                honorKillOnDisconnect = false,
+                reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+            )
+        }
     }
 
     private fun applyOrientationSettings() {

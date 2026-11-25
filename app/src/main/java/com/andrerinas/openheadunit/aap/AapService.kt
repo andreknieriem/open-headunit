@@ -444,7 +444,8 @@ class AapService : Service() {
     // The session end runs on IO and power back on main; the lock hands the return over between them.
     private val externalPowerLock = Any()
     private var externalPowerEnding = false
-    private var externalPowerBackWhileEnding = false
+    // The return's own scan, minted as POWER_CONNECTED was received; replayed once the end is done.
+    private var externalPowerBackWhileEnding: UsbRecheck? = null
     private var externalPowerEndReached = false
     private var externalPowerEndGeneration = 0
     // A wired session's wireless re-arm, held by a pending stand-down and then owed to power back.
@@ -847,7 +848,8 @@ class AapService : Service() {
                     // Only check USB (don't launch UI) since this could also be a
                     // charger being plugged in on a phone/tablet.
                     onPossibleWake("POWER_CONNECTED")
-                    onExternalPowerBack()
+                    // Power coming back is the input: its scan is minted as it is received.
+                    onExternalPowerBack(commManager.usbRecheckNow())
                 }
                 Intent.ACTION_POWER_DISCONNECTED -> {
                     AppLog.i("WakeDetect: POWER_DISCONNECTED")
@@ -1023,6 +1025,8 @@ class AapService : Service() {
         // loop does in the two seconds it has left does not matter.
         if (trigger == LinkLossTrigger.WIFI_STATION_DISABLING) discoveryDormantAfterWifiLoss = true
 
+        // Read before goAsync: a broadcast held for a session that is already ending is never finished.
+        val attempt = commManager.currentConnectionAttempt() ?: return
         val pending = pendingResult()
         val startedAt = SystemClock.elapsedRealtime()
         AppLog.i(
@@ -1032,7 +1036,7 @@ class AapService : Service() {
         )
         Thread {
             try {
-                commManager.disconnectForLinkLoss(LINK_LOSS_TEARDOWN_BUDGET_MS)
+                commManager.disconnectForLinkLoss(attempt, LINK_LOSS_TEARDOWN_BUDGET_MS)
                 AppLog.i(
                     "AapService: link-loss teardown finished in " +
                         "${SystemClock.elapsedRealtime() - startedAt}ms"
@@ -1246,9 +1250,15 @@ class AapService : Service() {
      * [startupScan] are the authority of the command that started the service: the scan it
      * relayed, or one minted for it here when it relayed none.
      */
-    private fun initializeForStart(ticket: Long, startupScan: UsbRecheck) {
-        if (initializedForStart) return
-        initializedForStart = true
+    private fun initializeForStart(ticket: Long, startupScan: UsbRecheck): Boolean {
+        val initialize = commManager.withAppConnectionLifecycleLock {
+            when {
+                !commManager.acceptsAppConnectionTicket(ticket) || !commManager.isCurrent(startupScan) -> null
+                initializedForStart -> false
+                else -> { initializedForStart = true; true }
+            }
+        } ?: return false
+        if (!initialize) return true
         fillBluetoothAddressIfUnset()
         // A force-stop or a crash runs no teardown, so a station stand-down can outlive the process
         // that made it. Putting the network back here is what keeps that from stranding the unit off
@@ -1261,22 +1271,20 @@ class AapService : Service() {
             projectingSinceMs = 0L
         }
         commManager.onUsbHandshakeEnded = { f ->
-            // The recovery's owed scan is minted as the end is received, not after the hop to Main.
-            val recheck = commManager.usbRecheckNow()
-            serviceScope.launch(Dispatchers.Main) { usbLauncherManager.onUsbHandshakeEnded(f, recheck) }
+            serviceScope.launch(Dispatchers.Main) { usbLauncherManager.onUsbHandshakeEnded(f) }
         }
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.open(this, this)
         observeConnectionState()
         // ESP32 relay PROJECTION_UP must keep landing; 10s without a recorded write ends the session.
         // Only when this session is on the relay transport (not USB / other modes with a saved board).
-        Esp32RelaySession.onProjectionRecordFailed = {
+        // The relay binds the watch to the session up when projection came up, and the callback
+        // carries it: that session, not this service's first command or a replacement, owns the stop.
+        Esp32RelaySession.readAttempt = { commManager.currentConnectionAttempt() }
+        Esp32RelaySession.onProjectionRecordFailed = { attempt ->
             if (Esp32RelaySession.isRelayTransportActive() && commManager.isConnected) {
                 AppLog.w("AapService: PROJECTION_UP not recorded for 10s — ending projection")
-                commManager.disconnect(
-                    sendByeBye = true,
-                    isUserExit = false,
-                    honorKillOnDisconnect = false,
-                )
+                commManager.disconnectOwned(attempt, sendByeBye = true, isUserExit = false,
+                    honorKillOnDisconnect = false)
             }
         }
         registerReceivers()
@@ -1336,6 +1344,7 @@ class AapService : Service() {
         scheduleBootLoopStrikeClear()
         registerNetworkMonitor()
         FloatingButtonManager.update(this)
+        return true
     }
 
     /** Enables Android Automotive UI mode so the system uses car-optimised layouts. */
@@ -1634,7 +1643,9 @@ class AapService : Service() {
         startService(GpsLocationService.intent(this))
         nightModeManager?.start()
 
-        serviceScope.launch { commManager.startHandshake() }
+        commManager.captureHandshake()?.let { handshake ->
+            serviceScope.launch { commManager.startHandshake(handshake) }
+        }
     }
 
     /**
@@ -1704,9 +1715,11 @@ class AapService : Service() {
     private fun armProjectionRaiseDeadline(raiseAttempted: Boolean) {
         projectionRaiseJob?.cancel()
         if (!ProjectionRaiseDeadlinePolicy.arms(raiseAttempted)) return
+        val attempt = commManager.currentConnectionAttempt() ?: return
         projectionRaisesThisSession++
         projectionRaiseJob = serviceScope.launch {
             delay(ProjectionRaiseDeadlinePolicy.DEADLINE_MS)
+            if (commManager.currentConnectionAttempt() !== attempt) return@launch
             if (commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) return@launch
             when (ProjectionRaiseDeadlinePolicy.actionFor(projectionRaisesThisSession, unprojectedEndsInARow)) {
                 ProjectionRaiseDeadlinePolicy.Action.RETRY_RAISE -> {
@@ -1721,7 +1734,7 @@ class AapService : Service() {
                     unprojectedEndsInARow++
                     // Close the formed session gracefully, but keep the service and automatic
                     // recovery available for the replacement this deadline is asking for.
-                    commManager.disconnect(sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false)
+                    commManager.disconnectOwned(attempt, sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false)
                 }
                 ProjectionRaiseDeadlinePolicy.Action.END_AND_HOLD -> {
                     AppLog.e("AapService: the projection screen never came up again, so this session ends " +
@@ -1729,7 +1742,7 @@ class AapService : Service() {
                     unprojectedEndsInARow++
                     // A Native re-arm must not wake the phone: that would start the same loop.
                     sessionEndedByHand = true
-                    commManager.disconnect(sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false,
+                    commManager.disconnectOwned(attempt, sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false,
                         reason = CommManager.DisconnectReason.PROJECTION_UNRAISED)
                 }
             }
@@ -1904,7 +1917,9 @@ class AapService : Service() {
             // Save hands the route to its own restart, which never applied a stand-down.
             if (!standDownOwned || state.isSettingsRestart || !wifiLauncherManager.isCleanupCurrent(ticket)) return
             val wiredRearmHeld = wiredRearmHeldForStandDown.also { wiredRearmHeldForStandDown = false }
+            // A return a Stop or exit has withdrawn since it arrived is no return.
             val powerBack = endedByPower && synchronized(externalPowerLock) { externalPowerBackWhileEnding }
+                ?.let { commManager.isCurrent(it) } == true
             // A return seen during the end may have been unplugged again; the plug decides, not the event.
             val pluggedNow = powerBack && isExternalPowerPresent()
             val holds = ExternalPowerDisconnectPolicy.standDownHolds(powerBack, pluggedNow)
@@ -1919,7 +1934,7 @@ class AapService : Service() {
                 return
             }
             if (powerBack) {
-                synchronized(externalPowerLock) { externalPowerBackWhileEnding = false }
+                synchronized(externalPowerLock) { externalPowerBackWhileEnding = null }
                 AppLog.i("AapService: $label: power came back and went again while the session was ending; standing down.")
             }
             // Every mode, not only Native: Helper's user-exit branch restarts discovery
@@ -2445,11 +2460,11 @@ class AapService : Service() {
     /** What the connection arbiter asks of the service. See [ConnectionArbiter]. */
     private val arbiterActions = object : ConnectionArbiter.Actions {
         override fun preempt(loser: ConnectionArbiter.Claim) {
-            if (loser.owner == ConnectionPriorityPolicy.Owner.USB) usbLauncherManager.preemptAttempt()
+            if (loser.owner == ConnectionPriorityPolicy.Owner.USB) usbLauncherManager.preemptAttempt(loser)
             // The loser's claim lives until SSL, so its transport may be open and handshaking.
             val state = commManager.connectionState.value
             if (state is CommManager.ConnectionState.Connecting || (commManager.isConnected && !sessionFormed())) {
-                commManager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                commManager.disconnectPreempted(loser)
             }
         }
 
@@ -2640,17 +2655,19 @@ class AapService : Service() {
             AppLog.i("AapService: Bluetooth auto-disconnect: $mac went away, but nothing is projecting; leaving the connection stack alone.")
             return
         }
+        val attempt = commManager.currentConnectionAttempt() ?: return
         val delayMs = BtAutoDisconnectPolicy.graceDelayMs(App.provide(this).settings.autoDisconnectBtDelaySeconds)
         btAutoDisconnectJobs.remove(mac)?.cancel()
         AppLog.i("AapService: Bluetooth auto-disconnect: $mac went away; ending the session in ${delayMs}ms unless it comes back.")
         btAutoDisconnectJobs[mac] = serviceScope.launch {
             delay(delayMs)
             btAutoDisconnectJobs.remove(mac)
-            fireBtAutoDisconnect(mac)
+            fireBtAutoDisconnect(mac, attempt)
         }
     }
 
-    private fun fireBtAutoDisconnect(mac: String) {
+    private fun fireBtAutoDisconnect(mac: String, attempt: CommManager.Attempt) {
+        if (commManager.currentConnectionAttempt() !== attempt) return
         val sessionUp = isSessionUp()
         val ownCloseMs = (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.msSinceOwnSocketClose(mac)
         // The device coming back cancels the job on this same thread, so a job that runs never
@@ -2662,7 +2679,7 @@ class AapService : Service() {
         AppLog.i("AapService: Bluetooth auto-disconnect: $mac stayed away; ending the session the way the Exit button does.")
         pendingStandDown = wifiLauncherManager.cleanupTicket()
         pendingStandDownLabel = "Bluetooth auto-disconnect"
-        commManager.disconnect(sendByeBye = true, isUserExit = true)
+        commManager.disconnectOwned(attempt, sendByeBye = true, isUserExit = true)
     }
 
     private fun armExternalPowerDisconnect() {
@@ -2678,17 +2695,18 @@ class AapService : Service() {
             ExternalPowerArm.ARM -> {
                 val delayMs = ExternalPowerDisconnectPolicy.delayMs(settings.externalPowerDisconnectDelaySeconds)
                 AppLog.i("AapService: external-power disconnect: power lost; ending the session in ${delayMs}ms unless it comes back.")
-                startExternalPowerTimer(delayMs, screenOnly = false)
+                // The session up when power was lost is the one this ends; a later one is not.
+                startExternalPowerTimer(delayMs, screenOnly = false, commManager.currentConnectionAttempt())
             }
             ExternalPowerArm.ARM_SCREEN_ONLY -> {
                 val delayMs = ExternalPowerDisconnectPolicy.delayMs(settings.externalPowerDisconnectDelaySeconds)
                 AppLog.i("AapService: external-power disconnect: power lost with nothing projecting; turning the screen off in ${delayMs}ms unless it comes back.")
-                startExternalPowerTimer(delayMs, screenOnly = true)
+                startExternalPowerTimer(delayMs, screenOnly = true, attempt = null)
             }
         }
     }
 
-    private fun startExternalPowerTimer(delayMs: Long, screenOnly: Boolean) {
+    private fun startExternalPowerTimer(delayMs: Long, screenOnly: Boolean, attempt: CommManager.Attempt?) {
         externalPowerJob?.cancel()
         externalPowerJob = serviceScope.launch {
             // A delay counts uptime, which stops while the SoC sleeps on battery: hold the CPU
@@ -2702,7 +2720,7 @@ class AapService : Service() {
                     delay(minOf(left, EXTERNAL_POWER_STEP_MS))
                 }
                 externalPowerJob = null
-                if (screenOnly) fireExternalPowerScreenOnly() else fireExternalPowerDisconnect()
+                if (screenOnly) fireExternalPowerScreenOnly() else fireExternalPowerDisconnect(attempt)
             } finally {
                 if (hold?.isHeld == true) hold.release()
             }
@@ -2737,7 +2755,7 @@ class AapService : Service() {
         }
     }
 
-    private fun fireExternalPowerDisconnect() {
+    private fun fireExternalPowerDisconnect(attempt: CommManager.Attempt?) {
         val settings = App.provide(this).settings
         val sessionUp = isSessionUp()
         val enabled = settings.externalPowerDisconnect
@@ -2747,6 +2765,10 @@ class AapService : Service() {
             AppLog.i("AapService: external-power disconnect: not ending the session (enabled=$enabled, up=$sessionUp, powerBack=$chargerBack).")
             // The session is gone inside the wait: the screen still follows the charger.
             if (enabled && !sessionUp && !chargerBack) fireExternalPowerScreenOnly()
+            return
+        }
+        if (attempt == null || commManager.currentConnectionAttempt() !== attempt) {
+            AppLog.i("AapService: external-power disconnect: the session up when power was lost has ended; leaving the current one alone.")
             return
         }
         val grantHeld = ScreenPower.hasLockGrant(this)
@@ -2761,12 +2783,12 @@ class AapService : Service() {
         externalPowerReturnOwed = true
         val generation = synchronized(externalPowerLock) {
             externalPowerEnding = true
-            externalPowerBackWhileEnding = false
+            externalPowerBackWhileEnding = null
             externalPowerEndReached = false
             ++externalPowerEndGeneration
         }
         AppLog.i("AapService: external-power disconnect: power stayed away; ending the session the way the Exit button does.")
-        commManager.disconnect(sendByeBye = true, isUserExit = true)
+        commManager.disconnectOwned(attempt, sendByeBye = true, isUserExit = true)
         // A conflated state flow can skip this end's onDisconnected; without a bound the flags outlive it.
         serviceScope.launch {
             delay(ExternalPowerDisconnectPolicy.END_REACH_BOUND_MS)
@@ -2801,7 +2823,8 @@ class AapService : Service() {
         null
     }
 
-    private fun onExternalPowerBack() {
+    /** [input] is the power return's own scan, minted as POWER_CONNECTED was received. */
+    private fun onExternalPowerBack(input: UsbRecheck) {
         val enabled = App.provide(this).settings.externalPowerDisconnect
         if (ExternalPowerDisconnectPolicy.onPowerEvent(enabled, connected = true, sessionUp = isSessionUp(),
                 screenRow = false) ==
@@ -2811,7 +2834,7 @@ class AapService : Service() {
         }
         val waits = synchronized(externalPowerLock) {
             ExternalPowerDisconnectPolicy.returnWaitsForEnd(externalPowerReturnOwed, externalPowerEnding)
-                .also { if (it) externalPowerBackWhileEnding = true }
+                .also { if (it) externalPowerBackWhileEnding = input }
         }
         if (waits) {
             AppLog.i("AapService: external-power disconnect: power is back while the session is still ending; the return runs once it has ended.")
@@ -2823,17 +2846,21 @@ class AapService : Service() {
         for (step in plan) when (step) {
             ExternalPowerStep.SCREEN_ON -> turnScreenOn("external power back")
             ExternalPowerStep.REARM -> {
+                // A Stop or Exit accepted since power came back withdrew this return.
+                if (!commManager.isCurrent(input)) {
+                    AppLog.i("AapService: external-power disconnect: power is back, but a Stop or exit since then withdrew the return.")
+                    wiredRearmOwedToPowerBack = false
+                    continue
+                }
                 userExitedAA = false
                 userExitCooldownUntil = 0L
                 if (externalPowerEndedWireless) {
                     AppLog.i("AapService: external-power disconnect: power is back; re-arming the wireless bring-up.")
-                    // Power coming back is the input; its Stop ticket is read as it is received.
-                    startWirelessForSettings(commManager.appConnectionTicket())
+                    startWirelessForSettings(input.ticket)
                 } else {
                     AppLog.i("AapService: external-power disconnect: power is back; checking USB again.")
-                    // Power coming back is the input; the scan is minted as it is received.
-                    usbLauncherManager.checkOnRequest(userRequested = true, recheck = commManager.usbRecheckNow())
-                    if (wiredRearmOwedToPowerBack) launchWiredSessionRearm(commManager.appConnectionTicket())
+                    usbLauncherManager.checkOnRequest(userRequested = true, recheck = input)
+                    if (wiredRearmOwedToPowerBack) launchWiredSessionRearm(input.ticket)
                 }
                 wiredRearmOwedToPowerBack = false
             }
@@ -2854,9 +2881,9 @@ class AapService : Service() {
     private fun finishExternalPowerEnd() {
         val back = synchronized(externalPowerLock) {
             externalPowerEnding = false
-            externalPowerBackWhileEnding.also { externalPowerBackWhileEnding = false }
+            externalPowerBackWhileEnding.also { externalPowerBackWhileEnding = null }
         }
-        if (back) serviceScope.launch(Dispatchers.Main) { onExternalPowerBack() }
+        if (back != null) serviceScope.launch(Dispatchers.Main) { onExternalPowerBack(back) }
     }
 
     /** Lights the panel by a wake lock and raises a screen where the panel or a keyguard needs one. */
@@ -3671,6 +3698,7 @@ class AapService : Service() {
         commManager.onAaPlaybackStatus = null
         commManager.onAaPresentationClosed = null
         Esp32RelaySession.onProjectionRecordFailed = null
+        Esp32RelaySession.readAttempt = null
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(settingsPreferenceListener)
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(deviceHackPreferenceListener)
         settingsPrefs = null
@@ -3747,7 +3775,7 @@ class AapService : Service() {
         wiredRearmOwedToPowerBack = false
         synchronized(externalPowerLock) {
             externalPowerEnding = false
-            externalPowerBackWhileEnding = false
+            externalPowerBackWhileEnding = null
             externalPowerEndReached = false
         }
         stationScanMonitor.stop(this)
@@ -3799,7 +3827,7 @@ class AapService : Service() {
         )
         val teardownDone = if (waitForTeardown && wasConnected) CompletableDeferred<Unit>() else null
         exitTeardownDone = teardownDone
-        if (wasConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
+        if (wasConnected) appExitRequest?.let { commManager.disconnectForAppExit(it) }
         exitTeardownState = commManager.connectionState.value as? CommManager.ConnectionState.Disconnected
         selfLauncherManager.stop(wasConnected = false)
         if (!waitForTeardown) {
@@ -3992,7 +4020,12 @@ class AapService : Service() {
             return START_NOT_STICKY
         }
         if (isDestroying) return START_NOT_STICKY
-        initializeForStart(operationTicket, relayedUsbRecheck(intent, operationTicket) ?: commManager.usbRecheck(operationTicket))
+        val startAccepted = initializeForStart(operationTicket,
+            relayedUsbRecheck(intent, operationTicket) ?: commManager.usbRecheck(operationTicket))
+        if (!startAccepted) {
+            retireRejectedBootstrap()
+            return START_NOT_STICKY
+        }
 
         // An automation command may ask for the session without the screen; latch it before any
         // branch below can reach a raise.

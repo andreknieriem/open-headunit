@@ -215,6 +215,8 @@ class CommManager {
     // LIVE_LOOPBACK
     // REACHED_SSL
     // DISCONNECT
+    // DISCONNECT_OPERATION
+    // IS_CURRENT_OPERATION
     private fun doDisconnect(sendByeBye: Boolean = true, byeByeReason: ByeByeReason = ByeByeReason.USER_SELECTION,
                              reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) { teardown() }
     // The X action gates on teardown; production joins the disconnect job.
@@ -230,7 +232,7 @@ class CommManager {
         synchronized(transportLifecycleLock) {
             // publishRequest: the valid request becomes this attempt; its record stays.
             val request = validRequest()
-            val token = Attempt()
+            val token = Attempt(request ?: ConnectionRequest(stopEpoch, ConnectionArbiter.Claim(), null, null, null))
             beginAttempt(token)
             physicalConnectionReached = false
             disconnectRequested = false

@@ -148,7 +148,7 @@ class UsbRecheckAuthorityTest {
         /** Publishes [claim]'s live attempt in the given non-terminal state, as connect() does. */
         fun liveAttempt(claim: ConnectionArbiter.Claim) {
             CommManager::class.java.getDeclaredField("connectionAttempt").apply { isAccessible = true }
-                .set(manager, CommManager.Attempt(claim))
+                .set(manager, CommManager.Attempt(CommManager.ConnectionRequest(manager.appConnectionTicket(), claim, null, null, null)))
         }
 
         /** The launcher's production scan entry, as an attach or wake asks for it. */

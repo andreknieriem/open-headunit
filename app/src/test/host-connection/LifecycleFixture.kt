@@ -15,13 +15,14 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 private enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
 // PRODUCTION END_CAUSE
-private class ProjectionConnection {
-    val type = Type.WIFI
+private open class ProjectionConnection {
+    val type: Type? = null
     fun disconnect() {}
     enum class Type { USB, WIFI }
 }
@@ -41,6 +42,7 @@ private class QueuedCleanup : CoroutineDispatcher() {
     val tasks = java.util.concurrent.ConcurrentLinkedQueue<Runnable>()
     override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) { tasks.add(block) }
 }
+private class AbstractUsbProjectionConnection : ProjectionConnection()
 private class AapTransport(
     decoder: AudioDecoder, video: Any, manager: AudioManager, settings: Settings, notification: Any,
     context: Context, onAaMediaMetadata: (Any, Any) -> Unit, onAaPlaybackStatus: (Any, Any) -> Unit,
@@ -62,7 +64,9 @@ private class AapTransport(
 }
 
 // The production Attempt names the claim it was published under; no claim is taken here.
-private object ConnectionArbiter { class Claim }
+private object ConnectionArbiter { class Claim; fun holds(claim:Claim)=true }
+// PRODUCTION OPERATION
+
 // The production exit members mint and withdraw owed USB scans; nothing here asks the bus.
 private class UsbRecheck(val ticket: Long, val epoch: Long)
 
@@ -71,7 +75,12 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
     // PRODUCTION APP_EXIT
     // PRODUCTION ATTEMPT
-    private var connectionAttempt: Attempt? = Attempt()
+    // PRODUCTION CONNECTION_REQUEST
+    // PRODUCTION REQUEST_VALID
+    // PRODUCTION TRANSPORT_START
+    // PRODUCTION HANDSHAKE_CURRENT
+    // PRODUCTION CAPTURE_HANDSHAKE
+    private var connectionAttempt: Attempt? = Attempt(ConnectionRequest(appConnectionTicket(), ConnectionArbiter.Claim(), null, null, null)).also { it.request.attempt = it }
     private var lastEndedAttempt: Any? = null
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
@@ -103,14 +112,18 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     val audio get() = checkNotNull(_transport).aapAudio
     val isProjectionVideoFocusSuppressed get() = checkNotNull(_transport).isProjectionVideoFocusSuppressed
     fun quitCallback() = checkNotNull(_transport?.onQuit)
+    private var publicationAuthority: TransportStart? = null
     fun publish() = runBlocking {
+        val authority = captureHandshake() ?: return@runBlocking
+        publicationAuthority = authority
         withContext(Dispatchers.Default) {
-            val conn = _connection ?: return@withContext
+            val conn = authority.connection
             // PRODUCTION PUBLICATION
         }
     }
     fun lateHandshake() = _transport?.let { source ->
-        withLiveTransport(source, ConnectionState.StartingTransport) {
+        val authority = publicationAuthority ?: return@let false
+        withLiveHandshake(authority, source) {
             _connectionState.value = ConnectionState.HandshakeComplete
         }
     }
@@ -130,7 +143,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     fun nextConnection() {
         _transport?.aapAudio?.releaseAllFocus(); Handler.runAll()
         check(acceptAppConnection(appConnectionTicket(), acquireOwnership = true))
-        connectionAttempt = Attempt()
+        connectionAttempt = Attempt(ConnectionRequest(appConnectionTicket(), ConnectionArbiter.Claim(), null, null, null)).also { it.request.attempt = it }
         _transport = null; disconnectRequested = false; _connection = ProjectionConnection(); _connectionState.value = ConnectionState.Connected
     }
     fun close() { _transport?.aapAudio?.releaseAllFocus(); audioDecoder.stop(); Handler.runAll(); _scope.cancel() }

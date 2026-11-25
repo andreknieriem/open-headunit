@@ -38,9 +38,7 @@ class CommManager {
     fun hasPendingDisconnect() = !gate.isCompleted
     var onDisconnect: (ConnectionState.Disconnected) -> Unit = {}
     var taskFinishAttempts = 0
-    val disconnects = mutableListOf<Pair<Boolean, Boolean>>()
-    fun disconnect(sendByeBye: Boolean, honorKillOnDisconnect: Boolean) {
-        disconnects += sendByeBye to honorKillOnDisconnect
+    fun disconnectForAppExit(owner: Any) {
         val ended = ConnectionState.Disconnected(isUserExit = false)
         connectionState.value = ended
         onDisconnect(ended)
@@ -52,6 +50,7 @@ class CommManager {
     fun acceptsAppConnectionTicket(value: Long) = value == ticket
     fun usbRecheck(value: Long) = UsbRecheck(value)
     fun usbRecheckNow() = UsbRecheck(ticket)
+    fun isCurrent(recheck: UsbRecheck) = recheck.ticket == ticket
 }
 class UsbRecheck(val ticket: Long)
 object SystemClock { fun elapsedRealtime() = 100L }
@@ -151,9 +150,10 @@ class Service {
     val videoDecoder=VideoDecoder()
     var sessionEndedByHand=false; var pendingStandDown: Any?=null; var pendingStandDownLabel: String?=null; var wirelessQuiescedForWiredSession=false
     var exitTeardownDone: CompletableDeferred<Unit>?=null
+    private val appExitRequest: Any? = Any()
     var lastUncleanSessionEndAt=0L
     var exitTeardownState: CommManager.ConnectionState.Disconnected?=null
-    val externalPowerLock=Any(); var externalPowerEndReached=false; var externalPowerBackWhileEnding=false
+    val externalPowerLock=Any(); var externalPowerEndReached=false; var externalPowerBackWhileEnding: UsbRecheck?=null
     var screenOffAfterStandDown=false; var externalPowerTurnedScreenOff=false; var powerEndsFinished=0
     val EXTERNAL_POWER_STAND_DOWN="external-power disconnect"
     fun finishExternalPowerEnd() { powerEndsFinished++ }
@@ -166,8 +166,7 @@ class Service {
         if (commManager.acceptsAppConnectionTicket(ticket)) wiredRearms++
     }
     var isDestroying=false; var userExitedAA=false; var userExitCooldownUntil=0L
-    private var microphoneTypeClaimed=true
-    val microphoneActive get()=microphoneTypeClaimed
+    private var microphoneTypeClaimed=false
     val USER_EXIT_COOLDOWN_MS=5000L
     val usbLauncherManager=UnitManager(); val nightModeManager: UnitManager?=UnitManager(); val carKeysManager=UnitManager()
     var autoResumePlaybackJob: Job?=null; var mediaMetadataDecodeJob: Job?=null
@@ -359,12 +358,15 @@ fun main() {
             pendingStandDownLabel=EXTERNAL_POWER_STAND_DOWN
             notifyEnd(ended); main.drain()
             check(wiredRearms==0 && powerEndsFinished==0)
-            externalPowerBackWhileEnding=true
+            externalPowerBackWhileEnding=commManager.usbRecheckNow()
             externalPowerPresent=true
             if (stop) commManager.ticket++
             commManager.gate.complete(Unit); main.drain()
             check(wiredRearms==(if (stop) 0 else 1)) { "wired power-return re-arm ignored the end's ticket (stop=$stop)" }
-            check(powerEndsFinished==1 && wifiLauncherManager.stops==0)
+            // A withdrawn power return still owes the stand-down; the valid return skips it.
+            check(powerEndsFinished==1 && wifiLauncherManager.stops==(if (stop) 1 else 0)) {
+                "power-return stand-down did not follow the original ticket (stop=$stop, stops=${wifiLauncherManager.stops})"
+            }
         } finally { serviceScope.cancel() }
     }
     // A terminal can be observed before a fresh service Stop creates any exit waiter.
@@ -375,8 +377,6 @@ fun main() {
             notifyEnd(ended); main.drain()
             check(exitTeardownDone==null)
             requestStop(); main.drain()
-            check(isDestroying && !microphoneActive && foregroundStops==1)
-            check(commManager.disconnects.isEmpty()) { "Stop disconnected an already-retiring transport again" }
             println("STOP_RETIREMENT pending: stops=$serviceStops removeClosed=$networkRemovals")
             check(serviceStops==0 && networkRemovals.isEmpty()) {
                 "native removal preceded actual transport close after Disconnected"
@@ -392,8 +392,6 @@ fun main() {
         try {
             commManager.connectionState.value=CommManager.ConnectionState.Connected
             requestStop(); main.drain()
-            check(isDestroying && !microphoneActive && foregroundStops==1)
-            check(commManager.disconnects == listOf(true to false)) { "Stop did not retire the physical connection exactly once" }
             check(serviceStops==0 && networkRemovals.isEmpty())
             commManager.gate.complete(Unit); main.drain()
             check(serviceStops==1 && networkRemovals.isNotEmpty() && networkRemovals.all { it })

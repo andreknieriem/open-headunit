@@ -183,7 +183,7 @@ class UsbHandshakeRecheckTest {
                 val claim = checkNotNull(ConnectionArbiter.claim(if (claimOwner == Owner.USB) Tier.USB else Tier.WIRELESS_HANDSHAKE, claimOwner, "handshake"))
                 // Any non-terminal state is owned by the live attempt that claim published.
                 if (state !is ConnectionState.Disconnected && state !is ConnectionState.Error) {
-                    field("connectionAttempt", CommManager.Attempt(claim))
+                    field("connectionAttempt", CommManager.Attempt(CommManager.ConnectionRequest(manager.appConnectionTicket(), claim, null, null, null)))
                 }
                 val release = CommManager::class.java.getDeclaredMethod("releaseClaim", ConnectionArbiter.Claim::class.java)
                     .apply { isAccessible = true }

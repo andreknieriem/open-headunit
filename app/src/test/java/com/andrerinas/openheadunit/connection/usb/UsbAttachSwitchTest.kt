@@ -53,6 +53,7 @@ class UsbAttachSwitchTest {
             fun admit() = checkNotNull(manager.admitUsbRequest(Tier.USB, "USB switch of phone", null,
                 manager.usbRecheck(manager.appConnectionTicket())))
             val request = admit()
+            UsbSwitchClaim.stake(request.claim)
             when (revoked) {
                 "exit" -> manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
                 // Stop's retained-group hand-off asserts Main; with Looper mocked, as the suite's
@@ -84,6 +85,7 @@ class UsbAttachSwitchTest {
     @Test fun aLockedSwitchWhoseClaimWasLostMakesNoUsbCall() {
         for (lost in listOf("yield", "manual", "none")) {
             val claim = checkNotNull(ConnectionArbiter.claim(Tier.USB, ConnectionPriorityPolicy.Owner.USB, "USB switch of phone"))
+            UsbSwitchClaim.stake(claim)
             val newer = when (lost) {
                 "yield" -> { ConnectionArbiter.yieldToUser("Wi-Fi by hand"); null }
                 "manual" -> checkNotNull(ConnectionArbiter.claim(Tier.USER, ConnectionPriorityPolicy.Owner.MANUAL, "192.0.2.1:5277"))

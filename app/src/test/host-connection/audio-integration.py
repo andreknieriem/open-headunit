@@ -5,8 +5,8 @@ Run the Gradle unit tests first to populate the existing Kotlin compiler depende
 """
 from pathlib import Path
 import subprocess
-import json
 import os
+import json
 import re
 import sys
 
@@ -16,17 +16,16 @@ audio_base = base.parent / "host-audio"
 if not (audio_base / "sources.txt").exists():
     print("Audio/connection integration is available when the playback PR is also present.")
     raise SystemExit(0)
-# Use the lifecycle runner's exact compiler and keep implementation jars off the
-# fixture's compile/runtime classpath.
+# Use the runner's compiler, and the app's actual generated GAL protocol classes.
 toolchain = json.loads((repo / "build/host-connection/toolchain.json").read_text())
-compiler = [entry["path"] for entry in toolchain["jars"]]
+compiler = [Path(entry["path"]) for entry in toolchain["jars"]]
 cache = Path(os.environ.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))) / "caches/modules-2/files-2.1"
 protobuf_version = re.search(r"protobuf-java:([0-9.]+)", (repo / "app/build.gradle.kts").read_text()).group(1)
 protobuf = next(iter(sorted((cache / "com.google.protobuf" / "protobuf-java" / protobuf_version)
                             .glob(f"*/protobuf-java-{protobuf_version}.jar"))), None)
 protocol_classes = repo / "app/build/intermediates/javac/githubDebug/compileGithubDebugJavaWithJavac/classes"
 if protobuf is None or not (protocol_classes / "com/andrerinas/openheadunit/aap/protocol/proto/Media.class").is_file():
-    raise SystemExit("Missing compiled GAL protocol classes or protobuf runtime; run :app:testGithubDebugUnitTest first")
+    raise SystemExit("Missing compiled protocol classes or protobuf runtime; run :app:testGithubDebugUnitTest first")
 sources = [repo / line for line in (audio_base / "sources.txt").read_text().splitlines() if line]
 # observeConnectionState owns scan-control activation. Compile its real route policy and
 # strategy enum; only the Android launcher and Shizuku side effects are doubled below.
@@ -70,10 +69,13 @@ lifecycle = lifecycle.replace("// PRODUCTION APP_EXIT\n", exit_members)
 for marker, declaration, source in [
     ("PUBLICATION", "val transport = synchronized(transportLifecycleLock)", comm),
     ("APPLY", "fun applyAudioSettings()", comm),
-    ("ADVANCE", "private inline fun withLiveTransport(", comm),
+    ("ADVANCE", "private inline fun withLiveHandshake(", comm),
     ("DISCONNECT", "fun disconnect(", comm),
     ("RECORD_TERMINAL", "private fun recordTerminal(", comm),
     ("ATTEMPT", "internal class Attempt(", comm),
+    ("CONNECTION_REQUEST", "internal class ConnectionRequest(", comm),
+    ("REQUEST_VALID", "private fun ConnectionRequest.isValid()", comm),
+    ("CAPTURE_HANDSHAKE", "internal fun captureHandshake()", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
     ("END_CAUSE", "enum class EndCause", comm),
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
@@ -87,6 +89,15 @@ for marker, declaration, source in [
 ]:
     lifecycle = lifecycle.replace("// PRODUCTION " + marker + "\n",
         member_block(declaration, source).replace("CommManager.ConnectionState", "ConnectionState").replace("this@AapService", "this@ObserverFixture") + "\n")
+for marker, declaration in [("TRANSPORT_START", "internal class TransportStart internal constructor("),
+                            ("HANDSHAKE_CURRENT", "private fun handshakeCurrent(")]:
+    start = comm.index(declaration)
+    lifecycle = lifecycle.replace("// PRODUCTION " + marker + "\n", comm[start:comm.index("\n\n", start)] + "\n")
+operation = (repo / "app/src/main/java/com/andrerinas/openheadunit/connection/ConnectionOperation.kt").read_text()
+operation = operation[operation.index("class ConnectionOperation internal constructor("):]
+operation = operation.replace("class ConnectionOperation internal constructor(", "private class ConnectionOperation(")
+operation = operation.replace("CommManager.ConnectionState", "ConnectionState")
+lifecycle = lifecycle.replace("// PRODUCTION OPERATION\n", operation + "\n")
 lifecycle_fixture.write_text(lifecycle)
 sources.append(lifecycle_fixture)
 recovery = output / "SettingsRestartRecovery.kt"

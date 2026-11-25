@@ -59,8 +59,10 @@ object SoftApNetworkPolicy {
     private val EXCLUDED_PREFIXES = listOf("p2p-", "tun", "dummy", "apcli", "sta", "seth_lte", "rmnet")
 
     /**
-     * The interface most likely to be our access point, or null if none qualifies. Must be up and
-     * hold a site-local IPv4 — a running AP has one, and it is the address the phone is given.
+     * The interface most likely to be our access point, or null if none qualifies. Must hold a
+     * site-local IPv4 — a running AP has one, and it is the address the phone is given — and be up,
+     * or failing that be an access point still waiting for its first station
+     * ([isWaitingForFirstStation]).
      *
      * [stationIpv4] is this device's address on the WiFi network it is *joined to*, if any. It is
      * the one thing that reliably separates the access point from the station interface: on a real
@@ -71,6 +73,7 @@ object SoftApNetworkPolicy {
         candidates: List<ApInterfaceCandidate>,
         stationIpv4: String? = null
     ): ApInterfaceCandidate? = eligible(candidates, stationIpv4).minByOrNull { rank(it.name) }
+        ?: candidates.filter { isWaitingForFirstStation(it, stationIpv4) }.minByOrNull { rank(it.name) }
 
     /**
      * Everything [pickApInterface] considered, for a caller that wants to say so. More than one
@@ -89,7 +92,23 @@ object SoftApNetworkPolicy {
      * access point at all" rather than "which of these is it".
      */
     fun isApHost(candidate: ApInterfaceCandidate, stationIpv4: String? = null): Boolean =
-        isEligible(candidate, stationIpv4)
+        isEligible(candidate, stationIpv4) || isWaitingForFirstStation(candidate, stationIpv4)
+
+    /**
+     * An access point that is configured but has no station yet, on drivers that raise the link only
+     * when one associates.
+     *
+     * `NetworkInterface.isUp` means up *and running*. On a Unisoc UIS8581 head unit (Android 10)
+     * `wlan0` holds 192.168.43.1 from the moment hostapd reports AP-ENABLED, but is not running
+     * until the first station joins. The phone joins only after it was given the credentials, and
+     * the credentials waited for this interface: nothing connected until some other device joined
+     * the hotspot. So an interface that carries a known access point name, holds a site-local
+     * address and is merely not running counts, as a second choice behind any that is up.
+     */
+    private fun isWaitingForFirstStation(candidate: ApInterfaceCandidate, stationIpv4: String?): Boolean =
+        !candidate.isUp && !candidate.isLoopback && candidate.siteLocalIpv4 != null &&
+            !isExcluded(candidate.name) && rank(candidate.name) < PREFERRED_PREFIXES.size &&
+            !(stationIpv4 != null && candidate.siteLocalIpv4 == stationIpv4)
 
     private fun isEligible(candidate: ApInterfaceCandidate, stationIpv4: String?): Boolean =
         candidate.isUp && !candidate.isLoopback && candidate.siteLocalIpv4 != null &&

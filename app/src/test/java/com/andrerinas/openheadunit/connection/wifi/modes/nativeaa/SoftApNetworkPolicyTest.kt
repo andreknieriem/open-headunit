@@ -102,7 +102,7 @@ class SoftApNetworkPolicyTest {
             SoftApNetworkPolicy.isApHost(iface("wlan0", ipv4 = "192.168.1.55"), stationIpv4 = "192.168.1.55")
         )
         assertFalse(SoftApNetworkPolicy.isApHost(iface("tun0", ipv4 = "10.14.208.1")))
-        assertFalse(SoftApNetworkPolicy.isApHost(iface("wlan2", up = false)))
+        assertFalse(SoftApNetworkPolicy.isApHost(iface("wlan2", up = false, ipv4 = null)))
     }
 
     @Test
@@ -204,8 +204,40 @@ class SoftApNetworkPolicyTest {
     @Test
     fun `loopback, down and address-less interfaces are all excluded`() {
         assertNull(SoftApNetworkPolicy.pickApInterface(listOf(iface("lo", loopback = true, ipv4 = "127.0.0.1"))))
-        assertNull(SoftApNetworkPolicy.pickApInterface(listOf(iface("ap0", up = false))))
+        assertNull(SoftApNetworkPolicy.pickApInterface(listOf(iface("ap0", up = false, ipv4 = null))))
         assertNull(SoftApNetworkPolicy.pickApInterface(listOf(iface("ap0", ipv4 = null))))
+    }
+
+    // Unisoc UIS8581, Android 10: wlan0 holds 192.168.43.1 once hostapd is up, but is not "running"
+    // until the first station has joined, and the phone only joins after it got the credentials.
+    @Test
+    fun `an access point that holds its address but is not running yet is still found`() {
+        val picked = SoftApNetworkPolicy.pickApInterface(
+            listOf(iface("dummy0", ipv4 = null), iface("wlan0", up = false, ipv4 = "192.168.43.1"))
+        )
+
+        assertEquals("wlan0", picked?.name)
+        assertTrue(SoftApNetworkPolicy.isApHost(iface("wlan0", up = false, ipv4 = "192.168.43.1")))
+    }
+
+    @Test
+    fun `a running interface is preferred over one that is waiting for its first station`() {
+        val picked = SoftApNetworkPolicy.pickApInterface(
+            listOf(iface("ap0", up = false, ipv4 = "192.168.43.1"), iface("wlan1", ipv4 = "192.168.50.1"))
+        )
+
+        assertEquals("wlan1", picked?.name)
+    }
+
+    @Test
+    fun `not running only counts for access point names, never for excluded or unknown ones`() {
+        assertNull(SoftApNetworkPolicy.pickApInterface(listOf(iface("seth_lte0", up = false, ipv4 = "10.68.1.1"))))
+        assertNull(SoftApNetworkPolicy.pickApInterface(listOf(iface("eth0", up = false, ipv4 = "192.168.1.9"))))
+        assertNull(
+            SoftApNetworkPolicy.pickApInterface(
+                listOf(iface("wlan0", up = false, ipv4 = "192.168.1.55")), stationIpv4 = "192.168.1.55"
+            )
+        )
     }
 
     @Test

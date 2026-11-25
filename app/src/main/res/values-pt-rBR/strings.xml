@@ -1331,7 +1331,7 @@
     <string name="show_over_lock_screen">Mostrar sobre a tela de bloqueio</string>
     <string name="show_over_lock_screen_summary">O mapa e as rotas continuam visíveis bloqueado. Toques e botões não fazem nada.</string>
     <string name="show_over_lock_screen_help">Mostra a imagem do Android Auto sobre a tela de bloqueio, para ler o mapa e as rotas sem desbloquear. Enquanto esta unidade estiver bloqueada, nada chega ao celular: toques, botões, o controle giratório e o botão de voz são retidos, e o mapa é trazido para a frente. Pressione Voltar para desbloquear com seu PIN, padrão ou senha; depois tudo funciona normalmente. Música, chamadas e o assistente de voz no próprio celular não são afetados.</string>
-    <string name="show_over_lock_screen_locked_toast">Bloqueado: só o mapa. Pressione Voltar para desbloquear.</string>
+    <string name="show_over_lock_screen_locked_toast">Bloqueado. Pressione Voltar para desbloquear.</string>
     <string name="night_overlay_while_locked">Sobreposição noturna com bloqueio</string>
     <string name="night_overlay_while_locked_summary">Relógio, próxima curva e faixa no lugar do mapa.</string>
     <string name="night_overlay_while_locked_help">Enquanto esta unidade estiver bloqueada, ela mostra a sobreposição noturna no lugar da imagem do Android Auto: o relógio, a próxima curva e a faixa em reprodução sobre um fundo escuro. O mapa, os lugares salvos e os pop-ups do Android Auto, como o nome de quem liga, ficam cobertos. Ao desbloquear, a imagem volta. Isso muda apenas o que esta unidade mostra e não envia nada ao telefone. O tamanho do texto, o fundo e as linhas mostradas são as configurações da sobreposição noturna em “Gestos”.</string>

@@ -98,6 +98,7 @@ The [Automation guide](https://github.com/andreknieriem/open-headunit/wiki/Autom
 
 ## Planned
 - more customization options for the UI and the app itself
+- Carplay Integration
 
 ## Changelog
 ### 4.1.0-beta1

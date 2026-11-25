@@ -1307,7 +1307,7 @@
     <string name="show_over_lock_screen">Show over lock screen</string>
     <string name="show_over_lock_screen_summary">Map and directions stay visible while locked. Touches and keys do nothing.</string>
     <string name="show_over_lock_screen_help">Shows the Android Auto picture over the lock screen, so the map and directions can be read without unlocking. While this unit is locked, nothing reaches the phone: touches, keys, the rotary controller and the voice key are held back, and the map is brought to the front. Press Back to unlock with your PIN, pattern or password; after that everything works as usual. Music, calls and the voice assistant on the phone itself are not affected.</string>
-    <string name="show_over_lock_screen_locked_toast">Locked: map only. Press Back to unlock.</string>
+    <string name="show_over_lock_screen_locked_toast">Locked. Press Back to unlock.</string>
     <string name="night_overlay_while_locked">Night overlay while locked</string>
     <string name="night_overlay_while_locked_summary">Clock, next turn and track in place of the map.</string>
     <string name="night_overlay_while_locked_help">While this unit is locked, it shows the night overlay in place of the Android Auto picture: the clock, the next turn and the playing track on a dark background. The map, saved places and Android Auto\'s pop-ups, such as a caller\'s name, are covered. Unlocking shows the picture again. This changes only what this unit shows and sends nothing to the phone. Text size, background and lines are the night overlay settings under Gestures.</string>

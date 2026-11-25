@@ -1331,7 +1331,7 @@
     <string name="show_over_lock_screen">Hiển thị trên màn hình khóa</string>
     <string name="show_over_lock_screen_summary">Bản đồ và chỉ đường vẫn hiển thị khi khóa. Chạm và nút bấm không có tác dụng.</string>
     <string name="show_over_lock_screen_help">Hiển thị hình ảnh Android Auto trên màn hình khóa để có thể xem bản đồ và chỉ đường mà không cần mở khóa. Khi thiết bị này đang khóa, không có gì được gửi tới điện thoại: thao tác chạm, nút bấm, núm xoay và nút giọng nói đều bị giữ lại, và bản đồ được đưa lên phía trước. Nhấn Quay lại để mở khóa bằng mã PIN, hình mở khóa hoặc mật khẩu; sau đó mọi thứ hoạt động như bình thường. Nhạc, cuộc gọi và trợ lý giọng nói trên chính điện thoại không bị ảnh hưởng.</string>
-    <string name="show_over_lock_screen_locked_toast">Đã khóa: chỉ bản đồ. Nhấn Quay lại để mở khóa.</string>
+    <string name="show_over_lock_screen_locked_toast">Đã khóa. Nhấn Quay lại để mở khóa.</string>
     <string name="night_overlay_while_locked">Lớp phủ ban đêm khi đang khóa</string>
     <string name="night_overlay_while_locked_summary">Đồng hồ, chỗ rẽ tiếp theo và bài hát thay cho bản đồ.</string>
     <string name="night_overlay_while_locked_help">Khi thiết bị này đang khóa, thiết bị hiển thị lớp phủ ban đêm thay cho hình ảnh Android Auto: đồng hồ, chỗ rẽ tiếp theo và bài đang phát trên nền tối. Bản đồ, địa điểm đã lưu và cửa sổ bật lên của Android Auto, chẳng hạn tên người gọi, bị che đi. Khi mở khóa, hình ảnh hiển thị lại. Tùy chọn này chỉ thay đổi nội dung thiết bị này hiển thị và không gửi gì tới điện thoại. Cỡ chữ, nền và các dòng hiển thị là cài đặt lớp phủ ban đêm trong “Cử chỉ”.</string>

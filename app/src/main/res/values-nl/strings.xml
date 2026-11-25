@@ -1331,7 +1331,7 @@
     <string name="show_over_lock_screen">Boven vergrendelscherm tonen</string>
     <string name="show_over_lock_screen_summary">Kaart en route blijven zichtbaar als vergrendeld. Aanraken en knoppen doen niets.</string>
     <string name="show_over_lock_screen_help">Toont het Android Auto-beeld boven het vergrendelscherm, zodat kaart en routebeschrijving zonder ontgrendelen te lezen zijn. Zolang dit apparaat vergrendeld is, bereikt niets de telefoon: aanrakingen, knoppen, de draaiknop en de spraakknop worden tegengehouden en de kaart komt naar voren. Druk op Terug om te ontgrendelen met je pincode, patroon of wachtwoord; daarna werkt alles zoals gewoonlijk. Muziek, gesprekken en de spraakassistent op de telefoon zelf worden niet beïnvloed.</string>
-    <string name="show_over_lock_screen_locked_toast">Vergrendeld: alleen kaart. Druk op Terug om te ontgrendelen.</string>
+    <string name="show_over_lock_screen_locked_toast">Vergrendeld. Druk op Terug om te ontgrendelen.</string>
     <string name="night_overlay_while_locked">Nacht-overlay bij vergrendeling</string>
     <string name="night_overlay_while_locked_summary">Klok, volgende afslag en nummer in plaats van de kaart.</string>
     <string name="night_overlay_while_locked_help">Zolang deze unit vergrendeld is, toont hij de nacht-overlay in plaats van het Android Auto-beeld: de klok, de volgende afslag en het spelende nummer op een donkere achtergrond. De kaart, opgeslagen plaatsen en pop-ups van Android Auto, zoals de naam van een beller, zijn afgedekt. Na het ontgrendelen verschijnt het beeld weer. Dit verandert alleen wat deze unit toont en stuurt niets naar de telefoon. Tekstgrootte, achtergrond en de getoonde regels zijn de instellingen van de nacht-overlay onder “Gebaren”.</string>

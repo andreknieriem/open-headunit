@@ -1324,7 +1324,7 @@
     <string name="show_over_lock_screen">잠금 화면 위에 표시</string>
     <string name="show_over_lock_screen_summary">잠겨 있어도 지도와 길 안내가 보입니다. 터치와 버튼은 작동하지 않습니다.</string>
     <string name="show_over_lock_screen_help">Android Auto 화면을 잠금 화면 위에 표시하여 잠금을 해제하지 않고도 지도와 길 안내를 볼 수 있습니다. 이 기기가 잠겨 있는 동안에는 휴대전화로 아무것도 전달되지 않습니다. 터치, 버튼, 로터리 컨트롤러, 음성 버튼이 차단되고 지도가 앞으로 표시됩니다. 뒤로를 누르면 PIN, 패턴 또는 비밀번호로 잠금을 해제할 수 있으며, 그 후에는 평소처럼 작동합니다. 휴대전화 자체의 음악, 통화, 음성 비서에는 영향이 없습니다.</string>
-    <string name="show_over_lock_screen_locked_toast">잠김: 지도만 표시. 잠금 해제하려면 뒤로를 누르세요.</string>
+    <string name="show_over_lock_screen_locked_toast">잠김. 잠금 해제하려면 뒤로를 누르세요.</string>
     <string name="night_overlay_while_locked">잠금 중 야간 오버레이</string>
     <string name="night_overlay_while_locked_summary">지도 대신 시계, 다음 회전, 곡을 표시.</string>
     <string name="night_overlay_while_locked_help">이 기기가 잠겨 있는 동안 Android Auto 화면 대신 야간 오버레이를 표시합니다. 어두운 배경에 시계, 다음 회전, 재생 중인 곡이 나타납니다. 지도, 저장한 장소, 발신자 이름 같은 Android Auto 팝업은 가려집니다. 잠금을 해제하면 화면이 다시 표시됩니다. 이 기기가 표시하는 내용만 바꾸고 휴대전화로는 아무것도 보내지 않습니다. 글자 크기, 배경, 표시할 줄은 “제스처”의 야간 오버레이 설정에서 정합니다.</string>

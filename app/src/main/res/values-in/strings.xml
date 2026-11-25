@@ -1195,7 +1195,7 @@
     <string name="show_over_lock_screen">Tampilkan di atas layar kunci</string>
     <string name="show_over_lock_screen_summary">Peta dan petunjuk arah tetap terlihat saat terkunci. Sentuhan dan tombol tidak berfungsi.</string>
     <string name="show_over_lock_screen_help">Menampilkan gambar Android Auto di atas layar kunci, sehingga peta dan petunjuk arah dapat dibaca tanpa membuka kunci. Selama unit ini terkunci, tidak ada yang diteruskan ke ponsel: sentuhan, tombol, pengontrol putar, dan tombol suara ditahan, dan peta dibawa ke depan. Tekan Kembali untuk membuka kunci dengan PIN, pola, atau sandi; setelah itu semuanya berfungsi seperti biasa. Musik, panggilan, dan asisten suara di ponsel itu sendiri tidak terpengaruh.</string>
-    <string name="show_over_lock_screen_locked_toast">Terkunci: hanya peta. Tekan Kembali untuk membuka kunci.</string>
+    <string name="show_over_lock_screen_locked_toast">Terkunci. Tekan Kembali untuk membuka kunci.</string>
     <string name="night_overlay_while_locked">Hamparan malam saat terkunci</string>
     <string name="night_overlay_while_locked_summary">Jam, belokan berikutnya, dan lagu sebagai pengganti peta.</string>
     <string name="night_overlay_while_locked_help">Selama unit ini terkunci, unit menampilkan hamparan malam sebagai pengganti gambar Android Auto: jam, belokan berikutnya, dan lagu yang diputar pada latar gelap. Peta, tempat tersimpan, dan pop-up Android Auto, seperti nama penelepon, tertutup. Setelah kunci dibuka, gambar tampil lagi. Ini hanya mengubah apa yang ditampilkan unit ini dan tidak mengirim apa pun ke ponsel. Ukuran teks, latar, dan baris yang ditampilkan adalah setelan hamparan malam di “Gestur”.</string>

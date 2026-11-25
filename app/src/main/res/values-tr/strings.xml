@@ -1324,7 +1324,7 @@
     <string name="show_over_lock_screen">Kilit ekranının üzerinde göster</string>
     <string name="show_over_lock_screen_summary">Kilitliyken harita ve yol tarifi görünür kalır. Dokunma ve tuşlar çalışmaz.</string>
     <string name="show_over_lock_screen_help">Android Auto görüntüsünü kilit ekranının üzerinde gösterir; böylece harita ve yol tarifi kilit açmadan okunabilir. Bu cihaz kilitliyken telefona hiçbir şey ulaşmaz: dokunmalar, tuşlar, döner kumanda ve ses tuşu bekletilir ve harita öne getirilir. PIN, desen veya şifrenizle kilidi açmak için Geri tuşuna basın; ardından her şey her zamanki gibi çalışır. Telefonun kendisindeki müzik, aramalar ve sesli asistan bundan etkilenmez.</string>
-    <string name="show_over_lock_screen_locked_toast">Kilitli: yalnızca harita. Kilidi açmak için Geri tuşuna basın.</string>
+    <string name="show_over_lock_screen_locked_toast">Kilitli. Kilidi açmak için Geri tuşuna basın.</string>
     <string name="night_overlay_while_locked">Kilitliyken gece katmanı</string>
     <string name="night_overlay_while_locked_summary">Harita yerine saat, sonraki dönüş ve parça.</string>
     <string name="night_overlay_while_locked_help">Bu cihaz kilitliyken Android Auto görüntüsü yerine gece katmanını gösterir: koyu arka planda saat, sonraki dönüş ve çalan parça. Harita, kayıtlı yerler ve arayanın adı gibi Android Auto açılır pencereleri örtülür. Kilit açıldığında görüntü yeniden gösterilir. Bu yalnızca bu cihazın gösterdiğini değiştirir ve telefona hiçbir şey göndermez. Metin boyutu, arka plan ve gösterilen satırlar “Hareketler” menüsündeki gece katmanı ayarlarıdır.</string>

@@ -1332,7 +1332,7 @@
     <string name="show_over_lock_screen">Pokaż na ekranie blokady</string>
     <string name="show_over_lock_screen_summary">Mapa i wskazówki są widoczne po zablokowaniu. Dotyk i przyciski nie działają.</string>
     <string name="show_over_lock_screen_help">Wyświetla obraz Android Auto nad ekranem blokady, dzięki czemu mapę i wskazówki można czytać bez odblokowywania. Dopóki to urządzenie jest zablokowane, nic nie trafia do telefonu: dotyk, przyciski, pokrętło i przycisk głosowy są wstrzymywane, a mapa jest przenoszona na pierwszy plan. Naciśnij Wstecz, aby odblokować kodem PIN, wzorem lub hasłem; potem wszystko działa jak zwykle. Muzyka, połączenia i asystent głosowy na samym telefonie nie są objęte tą zmianą.</string>
-    <string name="show_over_lock_screen_locked_toast">Zablokowane: tylko mapa. Naciśnij Wstecz, aby odblokować.</string>
+    <string name="show_over_lock_screen_locked_toast">Zablokowane. Naciśnij Wstecz, aby odblokować.</string>
     <string name="night_overlay_while_locked">Nakładka nocna przy blokadzie</string>
     <string name="night_overlay_while_locked_summary">Zegar, następny skręt i utwór zamiast mapy.</string>
     <string name="night_overlay_while_locked_help">Gdy to urządzenie jest zablokowane, zamiast obrazu Android Auto pokazuje nakładkę nocną: zegar, następny skręt i odtwarzany utwór na ciemnym tle. Mapa, zapisane miejsca i wyskakujące okna Android Auto, na przykład nazwa dzwoniącego, są zasłonięte. Po odblokowaniu obraz wraca. Zmienia to tylko to, co pokazuje to urządzenie, i niczego nie wysyła do telefonu. Rozmiar tekstu, tło i pokazywane wiersze to ustawienia nakładki nocnej w menu “Gesty”.</string>

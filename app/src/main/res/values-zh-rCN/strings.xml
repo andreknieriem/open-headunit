@@ -1327,7 +1327,7 @@
     <string name="show_over_lock_screen">在锁屏上显示</string>
     <string name="show_over_lock_screen_summary">锁定时仍显示地图和路线指引。触摸和按键无效。</string>
     <string name="show_over_lock_screen_help">在锁屏上方显示 Android Auto 画面，无需解锁即可查看地图和路线指引。此设备锁定期间，不会有任何操作传到手机：触摸、按键、旋钮控制器和语音键都会被拦下，并把地图切换到前台。按“返回”可用 PIN 码、图案或密码解锁；之后一切照常工作。手机本身的音乐、通话和语音助理不受影响。</string>
-    <string name="show_over_lock_screen_locked_toast">已锁定：仅显示地图。按“返回”解锁。</string>
+    <string name="show_over_lock_screen_locked_toast">已锁定。按“返回”解锁。</string>
     <string name="night_overlay_while_locked">锁定时的夜间叠加层</string>
     <string name="night_overlay_while_locked_summary">以时钟、下一个转弯和曲目代替地图。</string>
     <string name="night_overlay_while_locked_help">此设备锁定期间，会以夜间叠加层代替 Android Auto 画面：在深色背景上显示时钟、下一个转弯和正在播放的曲目。地图、已保存的地点以及 Android Auto 的弹出提示（例如来电者姓名）会被遮住。解锁后重新显示画面。这只改变此设备显示的内容，不会向手机发送任何信息。文字大小、背景和显示的行由“手势”中的夜间叠加层设置决定。</string>

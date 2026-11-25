@@ -12,71 +12,60 @@ class HeldServerSocketTest {
     private val endpoint = "192.168.1.5:5277"
     private val socket = Socket()
 
-    @After fun tearDown() { HeldServerSocket.settle(socket) }
+    @After fun tearDown() { HeldServerSocket.adopt(socket) }
 
-    @Test fun onlyOneTakerGetsTheSocket() {
+    @Test fun onlyOneAdopterGetsTheSocket() {
         HeldServerSocket.hold(endpoint, socket)
-        assertSame(socket, HeldServerSocket.take(endpoint))
-        assertNull(HeldServerSocket.take(endpoint))
-        assertTrue(HeldServerSocket.isTaken(endpoint))
+        assertSame(socket, HeldServerSocket.adopt(endpoint))
+        assertNull(HeldServerSocket.adopt(endpoint))
+        assertFalse(HeldServerSocket.adopt(socket))
         assertFalse(HeldServerSocket.isHeld(endpoint))
     }
 
     @Test fun anotherEndpointLeavesItHeld() {
         HeldServerSocket.hold(endpoint, socket)
-        assertNull(HeldServerSocket.take("192.168.1.6:5277"))
+        assertNull(HeldServerSocket.adopt("192.168.1.6:5277"))
         assertTrue(HeldServerSocket.isHeld(endpoint))
     }
 
-    @Test fun aTakenSocketIsNotDiscarded() {
+    @Test fun aSocketAdoptedByItsEndpointIsNotAdoptedAgain() {
         HeldServerSocket.hold(endpoint, socket)
-        HeldServerSocket.take(endpoint)
-        assertFalse(HeldServerSocket.discard(socket))
-    }
-
-    @Test fun aDiscardAfterATakeLeavesTheTakerItsSocket() {
-        HeldServerSocket.hold(endpoint, socket)
-        HeldServerSocket.take(endpoint)
-        HeldServerSocket.discard(socket)
-        assertTrue(HeldServerSocket.isTaken(endpoint))
+        HeldServerSocket.adopt(endpoint)
+        assertFalse(HeldServerSocket.adopt(socket))
         assertFalse(socket.isClosed)
     }
 
-    @Test fun anUntakenSocketIsDiscarded() {
+    @Test fun aHeldSocketIsAdoptedBySocket() {
         HeldServerSocket.hold(endpoint, socket)
-        assertTrue(HeldServerSocket.discard(socket))
+        assertTrue(HeldServerSocket.adopt(socket))
         assertFalse(HeldServerSocket.isHeld(endpoint))
-    }
-
-    @Test fun settleEndsTheHandOff() {
-        HeldServerSocket.hold(endpoint, socket)
-        HeldServerSocket.take(endpoint)
-        HeldServerSocket.settle(socket)
-        assertFalse(HeldServerSocket.isTaken(endpoint))
+        assertNull(HeldServerSocket.adopt(endpoint))
     }
 
     @Test fun twoEndpointsAreHeldApart() {
         val other = Socket()
         HeldServerSocket.hold(endpoint, socket)
         HeldServerSocket.hold("192.168.1.6:5277", other)
-        assertSame(socket, HeldServerSocket.take(endpoint))
-        assertSame(other, HeldServerSocket.take("192.168.1.6:5277"))
-        HeldServerSocket.settle(other)
+        assertSame(socket, HeldServerSocket.adopt(endpoint))
+        assertSame(other, HeldServerSocket.adopt("192.168.1.6:5277"))
     }
 
-    @Test fun anAbandonedTakeIsNoLongerJoined() {
+    @Test fun aReplacedHeldSocketIsClosed() {
+        val newer = Socket()
         HeldServerSocket.hold(endpoint, socket)
-        HeldServerSocket.take(endpoint)
-        HeldServerSocket.abandon(socket)
-        assertFalse(HeldServerSocket.isTaken(endpoint))
+        HeldServerSocket.hold(endpoint, newer)
         assertTrue(socket.isClosed)
+        assertSame(newer, HeldServerSocket.adopt(endpoint))
     }
 
-    @Test fun discardAllLeavesATakenSocket() {
+    @Test fun discardAllClosesOnlyWhatIsStillHeld() {
+        val adopted = Socket()
+        HeldServerSocket.hold("192.168.1.6:5277", adopted)
+        HeldServerSocket.adopt("192.168.1.6:5277")
         HeldServerSocket.hold(endpoint, socket)
-        HeldServerSocket.take(endpoint)
         HeldServerSocket.discardAll()
-        assertTrue(HeldServerSocket.isTaken(endpoint))
-        assertFalse(socket.isClosed)
+        assertTrue(socket.isClosed)
+        assertFalse(HeldServerSocket.isHeld(endpoint))
+        assertFalse(adopted.isClosed)
     }
 }

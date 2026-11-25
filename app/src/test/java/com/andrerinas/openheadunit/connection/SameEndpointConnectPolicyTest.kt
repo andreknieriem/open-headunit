@@ -28,22 +28,4 @@ class SameEndpointConnectPolicyTest {
         assertEquals("fe80::1:5277", SameEndpointConnectPolicy.endpoint("fe80::1%wlan0", 5277))
         assertEquals("fe80::1:5277", SameEndpointConnectPolicy.endpoint("[fe80::1]", 5277))
     }
-
-    @Test fun aHeldSocketToTheEndpointIsAdopted() {
-        assertEquals(SameEndpointConnectPolicy.Route.ADOPT_HELD,
-            SameEndpointConnectPolicy.route("192.168.1.5:5277", null, "192.168.1.5:5277"))
-        assertEquals(SameEndpointConnectPolicy.Route.ADOPT_HELD,
-            SameEndpointConnectPolicy.route("192.168.1.5:5277", "192.168.1.5:5277", "192.168.1.5:5277"))
-    }
-
-    @Test fun aHeldSocketElsewhereStillJoinsTheAttemptInFlight() {
-        assertEquals(SameEndpointConnectPolicy.Route.JOIN,
-            SameEndpointConnectPolicy.route("192.168.1.6:5277", "192.168.1.5:5277", "192.168.1.5:5277"))
-    }
-
-    @Test fun nothingHeldOrInFlightDials() {
-        assertEquals(SameEndpointConnectPolicy.Route.DIAL, SameEndpointConnectPolicy.route(null, null, "192.168.1.5:5277"))
-        assertEquals(SameEndpointConnectPolicy.Route.DIAL,
-            SameEndpointConnectPolicy.route("192.168.1.6:5277", "192.168.1.6:5277", "192.168.1.5:5277"))
-    }
 }

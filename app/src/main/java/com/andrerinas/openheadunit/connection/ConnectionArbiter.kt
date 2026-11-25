@@ -15,6 +15,12 @@ import com.andrerinas.openheadunit.utils.AppLog
 object ConnectionArbiter {
 
     class Claim internal constructor(val tier: Tier, val owner: Owner, val what: String, val sinceMs: Long) {
+        /**
+         * Completes once this claim stops holding the arbiter: replaced by another claim, released,
+         * yielded to the user or reset. Completed only after the arbiter's monitor is released, and
+         * never given a completion handler, so nothing runs inside the frame that ends a claim.
+         */
+        internal val ended = kotlinx.coroutines.CompletableDeferred<Unit>()
         override fun toString() = "$what ($tier)"
     }
 
@@ -49,6 +55,7 @@ object ConnectionArbiter {
     fun claim(tier: Tier, owner: Owner, what: String, expectedHolder: Claim? = null): Claim? {
         val now = clock()
         val loser: Claim?
+        val replaced: Claim?
         val claim: Claim
         val spent: Boolean
         var episodeToWatch = -1L
@@ -66,6 +73,7 @@ object ConnectionArbiter {
                 return null
             }
             loser = if (verdict == Verdict.PREEMPT) held else null
+            replaced = held
             if (loser?.owner == Owner.USB) usbOwed = true
             if (owner == Owner.USB) {
                 usbOwed = false
@@ -80,6 +88,7 @@ object ConnectionArbiter {
             claim = Claim(tier, owner, what, now)
             holder = claim
         }
+        replaced?.ended?.complete(Unit)
         if (episodeToWatch >= 0) {
             actions?.schedule(ConnectionPriorityPolicy.USB_EPISODE_BUDGET_MS) { spendUsbEpisode(episodeToWatch) }
         }
@@ -97,26 +106,33 @@ object ConnectionArbiter {
     /** Ends [claim]; a claim another has since replaced is ignored. */
     fun release(claim: Claim?, sessionFormed: Boolean) {
         if (claim == null) return
-        val delayMs: Long
-        val token: Long
-        synchronized(this) {
-            if (holder !== claim) return
-            holder = null
-            if (sessionFormed) {
-                if (wirelessOwed || usbOwed) owedAfterSession = true
-                endUsbEpisode()
-                return
+        var released = false
+        try {
+            val delayMs: Long
+            val token: Long
+            synchronized(this) {
+                if (holder !== claim) return
+                holder = null
+                released = true
+                if (sessionFormed) {
+                    if (wirelessOwed || usbOwed) owedAfterSession = true
+                    endUsbEpisode()
+                    return
+                }
+                if (!wirelessOwed && !usbOwed && usbEpisodeSinceMs == 0L) return
+                delayMs = ConnectionPriorityPolicy.giveBackDelayMs(claim.owner)
+                token = generation
+                quietPending = true
             }
-            if (!wirelessOwed && !usbOwed && usbEpisodeSinceMs == 0L) return
-            delayMs = ConnectionPriorityPolicy.giveBackDelayMs(claim.owner)
-            token = generation
-            quietPending = true
+            if (delayMs > 0 && !usbEpisodeSpent()) {
+                AppLog.i("ConnectionArbiter: $claim ended with no session; USB has ${delayMs}ms to try again")
+            }
+            val act = actions
+            if (act == null || delayMs == 0L) settle(token, claim) else act.schedule(delayMs) { settle(token, claim) }
+        } finally {
+            // After the monitor: the claim's end wakes its waiters outside the frame that ended it.
+            if (released) claim.ended.complete(Unit)
         }
-        if (delayMs > 0 && !usbEpisodeSpent()) {
-            AppLog.i("ConnectionArbiter: $claim ended with no session; USB has ${delayMs}ms to try again")
-        }
-        val act = actions
-        if (act == null || delayMs == 0L) settle(token, claim) else act.schedule(delayMs) { settle(token, claim) }
     }
 
     /** Gives back what is owed unless another claim came along after [token]. */
@@ -240,6 +256,7 @@ object ConnectionArbiter {
             clearDebts()
             endUsbEpisode()
         }
+        loser?.ended?.complete(Unit)
         if (loser != null) {
             AppLog.i("ConnectionArbiter: $what preempts $loser")
             actions?.preempt(loser)
@@ -265,11 +282,16 @@ object ConnectionArbiter {
     }
 
     /** Tests only. */
-    internal fun reset() = synchronized(this) {
-        holder = null
-        generation = 0L
-        quietPending = false
-        clearDebts()
-        endUsbEpisode()
+    internal fun reset() {
+        val ended = synchronized(this) {
+            val held = holder
+            holder = null
+            generation = 0L
+            quietPending = false
+            clearDebts()
+            endUsbEpisode()
+            held
+        }
+        ended?.ended?.complete(Unit)
     }
 }

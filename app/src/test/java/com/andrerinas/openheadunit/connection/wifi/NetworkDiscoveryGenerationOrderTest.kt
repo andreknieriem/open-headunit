@@ -9,6 +9,7 @@ import android.os.Looper
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.HeldServerSocket
@@ -80,7 +81,7 @@ class NetworkDiscoveryGenerationOrderTest {
     private val accepted = Collections.synchronizedList(mutableListOf<Socket>())
     private var rescanWithoutWaiting = false
 
-    /** IO-side ticket checks, per ticket; the second one is the last check before the 5277 dial. */
+    /** IO-side ticket checks, per ticket; the fourth one is the effect-entry check immediately before the 5277 dial. */
     private val ioTicketChecks = ConcurrentHashMap<Long, AtomicInteger>()
     @Volatile private var holdBeforeDial: Long? = null
     private val atDial = CountDownLatch(1)
@@ -115,10 +116,10 @@ class NetworkDiscoveryGenerationOrderTest {
                 .whenever(comm).connectHeld(any<Socket>(), any(), any(), any(), anyOrNull())
         }
         doAnswer {
-            val ticket = it.arguments[0] as Long
+            val ticket = (it.arguments[0] as ConnectionOperation).ticket
             val accepts = it.callRealMethod() as Boolean
             if (Thread.currentThread() !== mainThread &&
-                ioTicketChecks.getOrPut(ticket) { AtomicInteger() }.incrementAndGet() == 2 &&
+                ioTicketChecks.getOrPut(ticket) { AtomicInteger() }.incrementAndGet() == 4 &&
                 ticket == holdBeforeDial
             ) {
                 // Validated, now in the uninterruptible dial while Stop/Open overtakes it.
@@ -126,7 +127,7 @@ class NetworkDiscoveryGenerationOrderTest {
                 assertTrue(releaseDial.await(10, TimeUnit.SECONDS))
             }
             accepts
-        }.whenever(comm).acceptsAppConnectionTicket(any())
+        }.whenever(comm).isCurrent(any<ConnectionOperation>())
     }
 
     @After fun tearDown() {
@@ -179,7 +180,7 @@ class NetworkDiscoveryGenerationOrderTest {
 
     /** Starts discovery through the shared services and confines it to [ip] before it probes. */
     private fun startDiscovery(oneShot: Boolean, wrap: (NetworkDiscovery.Listener) -> NetworkDiscovery.Listener): NetworkDiscovery {
-        shared.startLocalDiscovery(oneShot = oneShot, ticket = comm.appConnectionTicket())
+        shared.startLocalDiscovery(oneShot = oneShot, operation = ConnectionOperation(comm.appConnectionTicket(), null))
         val discovery = requireNotNull(shared.localDiscovery)
         val reported = field(discovery, "reportedIps")
         @Suppress("UNCHECKED_CAST")
@@ -238,17 +239,17 @@ class NetworkDiscoveryGenerationOrderTest {
             .set(shared, mock<WirelessServer>())
         val discovery = startDiscovery(oneShot = false) { real ->
             object : NetworkDiscovery.Listener by real {
-                override fun onScanFinished(wasOneShot: Boolean, ticket: Long) {
+                override fun onScanFinished(wasOneShot: Boolean, operation: ConnectionOperation) {
                     // The scan's IO return is held behind every IO worker while Main runs on.
                     if (finished.isEmpty()) saturated = SaturatedIo()
-                    real.onScanFinished(wasOneShot, ticket)
-                    finished += ticket
+                    real.onScanFinished(wasOneShot, operation)
+                    finished += operation.ticket
                 }
             }
         }
         val g0 = requireNotNull(scanJob(discovery))
         // A network kick while that scan runs folds into it and asks for an immediate rearm.
-        assertFalse(discovery.startScan())
+        assertFalse(discovery.startScan(operation = ConnectionOperation(comm.appConnectionTicket(), null)))
         assertSame(g0, scanJob(discovery))
         rescanWithoutWaiting = true
 
@@ -289,9 +290,9 @@ class NetworkDiscoveryGenerationOrderTest {
         holdBeforeDial = comm.appConnectionTicket()
         val discovery = startDiscovery(oneShot = true) { real ->
             object : NetworkDiscovery.Listener by real {
-                override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) {
-                    delivered += ticket to socket
-                    real.onServiceFound(ip, port, socket, ticket)
+                override fun onServiceFound(ip: String, port: Int, socket: Socket?, operation: ConnectionOperation) {
+                    delivered += operation.ticket to socket
+                    real.onServiceFound(ip, port, socket, operation)
                 }
             }
         }
@@ -300,7 +301,7 @@ class NetworkDiscoveryGenerationOrderTest {
         val superseded = mutableListOf<Job>()
         repeat(replacements) {
             stopAndOpen()
-            shared.startLocalDiscovery(oneShot = true, ticket = comm.appConnectionTicket())
+            shared.startLocalDiscovery(oneShot = true, operation = ConnectionOperation(comm.appConnectionTicket(), null))
             superseded += requireNotNull(scanJob(discovery))
         }
         val fresh = comm.appConnectionTicket()
@@ -336,13 +337,13 @@ class NetworkDiscoveryGenerationOrderTest {
         holdBeforeDial = comm.appConnectionTicket()
         val discovery = startDiscovery(oneShot = true) { real ->
             object : NetworkDiscovery.Listener by real {
-                override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) {
-                    delivered += ticket
-                    real.onServiceFound(ip, port, socket, ticket)
+                override fun onServiceFound(ip: String, port: Int, socket: Socket?, operation: ConnectionOperation) {
+                    delivered += operation.ticket
+                    real.onServiceFound(ip, port, socket, operation)
                 }
-                override fun onScanFinished(wasOneShot: Boolean, ticket: Long) {
-                    delivered += ticket
-                    real.onScanFinished(wasOneShot, ticket)
+                override fun onScanFinished(wasOneShot: Boolean, operation: ConnectionOperation) {
+                    delivered += operation.ticket
+                    real.onScanFinished(wasOneShot, operation)
                 }
             }
         }

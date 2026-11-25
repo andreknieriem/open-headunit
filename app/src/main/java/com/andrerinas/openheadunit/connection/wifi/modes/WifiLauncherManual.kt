@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes
 
 import android.content.Context
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncher
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
@@ -24,7 +25,7 @@ class WifiLauncherManual(
 
     override fun hasLocalDiscovery() = false
 
-    override fun start(noInfoToasts: Boolean, ticket: Long) {
+    override fun start(noInfoToasts: Boolean, operation: ConnectionOperation) {
     }
 
     override fun stop(seq: WifiLauncherStopSequence) {

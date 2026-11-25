@@ -62,5 +62,24 @@ fun effectEntryAuthority() = runBlocking {
         check(stopping.completeAppExit(first).effect == AppExitPolicy.Effect.RESTART_SERVICE)
     } finally { stopping.close() }
 
+    val yielding = CommManager()
+    try {
+        val old = ConnectionOperation(yielding.appConnectionTicket(), null)
+        checkNotNull(yielding.requestExplicitAppExit(old.ticket, false))
+        yielding.onAppRelaunched()
+        val successor = checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USER,
+            ConnectionPriorityPolicy.Owner.MANUAL, "successor manual connection"))
+        fun admission(operation: ConnectionOperation) = ConnectionAdmission { action ->
+            yielding.withAppConnectionLifecycleLock {
+                if (!yielding.isCurrent(operation)) false else { action(); true }
+            }
+        }
+        check(!ConnectionArbiter.yieldToUser("stale wireless continuation", admission(old)))
+        check(ConnectionArbiter.holds(successor) && !successor.ended.isCompleted)
+        val current = ConnectionOperation(yielding.appConnectionTicket(), null)
+        check(ConnectionArbiter.yieldToUser("fresh wireless input", admission(current)))
+        check(!ConnectionArbiter.holds(successor) && successor.ended.isCompleted)
+    } finally { yielding.close() }
+
     println("PASS effect entry authority: revoked Stop epochs, same-epoch Save, exact session/claim cleanup and committed physical Stop ownership")
 }

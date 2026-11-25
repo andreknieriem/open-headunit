@@ -76,7 +76,7 @@ class NearbySessionPublicationTest {
                     var rejected = false
                     try {
                         // The actual public restricted request: admission under the Nearby guard, then publication.
-                        manager.connect(socket, admission = admission, expectedState = saved)
+                        manager.connect(socket, admission = admission, ticket = manager.appConnectionTicket(), expectedState = saved)
                     } catch (_: ConnectionAdmissionRejectedException) { rejected = true }
                     val candidate = candidates.constructed().single()
                     assertEquals(outcome != "connected", rejected)

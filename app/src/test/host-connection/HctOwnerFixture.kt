@@ -12,17 +12,19 @@ class AapService {
     var isStopping = false
     var wirelessPausedForSettings = false
     val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    var wirelessRearmPendingForSettings = false
+    var wirelessRearmRequest: Any? = null
+    val wirelessRearmPendingForSettings: Boolean get() = wirelessRearmRequest != null
     val commManager = object : CancelRestart {}
     val wifiLauncherManager = RecordingLauncher()
     var releaseParked: () -> Unit = {}
+    var captureParked: () -> (() -> Unit)? = { releaseParked }
     fun releaseParkedHct() = releaseParked()
+    fun captureParkedHctRelease() = captureParked()
     val appliedSettings = mutableListOf<Boolean>()
     companion object {
         fun applyWirelessSettings(context: AapService, startWireless: Boolean, ticket: Long) {
-            if (!context.commManager.acceptsAppConnectionTicket(ticket)) return
             context.appliedSettings.add(startWireless)
-            if (!startWireless) context.stopWirelessForCommand(fromSettings = true)
+            if (!startWireless) context.stopWirelessForCommand(fromSettings = true, ticket = ticket)
         }
     }
     // STOP_WIRELESS
@@ -30,13 +32,17 @@ class AapService {
 interface CancelRestart {
     fun cancelPendingSettingsRestart() = Unit
     fun appConnectionTicket() = 0L
-    fun acceptsAppConnectionTicket(ticket: Long) = ticket == appConnectionTicket()
+    fun acceptsAppConnectionTicket(ticket: Long) = ticket == 0L
+    fun <T> withAppConnectionLifecycleLock(action: () -> T): T = action()
 }
+class ConnectionOperation(val ticket: Long, val save: Any?)
 fun interface ConnectionAdmission { fun run(action: () -> Unit): Boolean }
 object App { fun provide(context: AapService) = context }
 class RecordingLauncher {
     var onStop: () -> Unit = {}
     fun stop() = onStop()
+    fun detachForOperation(operation: ConnectionOperation): (() -> Unit)? = onStop
+    fun stopForOperation(operation: ConnectionOperation): Boolean { stop(); return true }
 }
 class Settings {
     enum class ConnectionMode { USB, WIFI, SELF }
@@ -205,6 +211,7 @@ fun main() = runBlocking {
     withTimeout(2_000) { while (4 !in served) delay(1) }
     service.wirelessPausedForSettings = false
     service.releaseParked = { owner.releaseParked() }
+    service.captureParked = { owner.captureParkedRelease() }
     service.wifiLauncherManager.onStop = { fourth.close() }
     val screen = SettingsScreen(service)
     screen.showConnectionModeDialog() // Merely opening it preserves the live projection.

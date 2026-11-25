@@ -149,8 +149,8 @@ for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt', 'SelfL
     .replace('package com.andrerinas.openheadunit.connection.wifi', 'package selflaunch'))
 # Reuse the toolchain selected by run.py, including its installed-Kotlin fallback.
 toolchain = json.loads((OUT.parent / 'toolchain.json').read_text())
-compiler = os.pathsep.join(item['path'] for item in toolchain['jars'])
-cp = os.pathsep.join(toolchain['runtime_jars'])
+jars = [item['path'] for item in toolchain['jars']]
+cp = os.pathsep.join(jars)
 # The extracted service observer also contains the wireless scan-control boundary.
 # Share its production policy and recording doubles with the audio lifecycle fixture.
 scan_sources = [SRC / 'connection/wifi/scan/ScanControlPolicy.kt',
@@ -159,7 +159,7 @@ scan_sources = [SRC / 'connection/wifi/scan/ScanControlPolicy.kt',
                 HERE / 'audio-stubs/WifiScanControl.kt',
                 HERE / 'audio-stubs/VideoFocusEvent.kt',
                 HERE / 'audio-stubs/XyAutoMediaSession.kt']
-subprocess.run(['java', '-cp', compiler, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
+subprocess.run(['java', '-cp', cp, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
                 '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp,
                 '-d', str(OUT / 'regression.jar'), *map(str, sorted(OUT.glob('*.kt')) + scan_sources)],
                check=True, timeout=45)

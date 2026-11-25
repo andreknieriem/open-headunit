@@ -3,8 +3,8 @@ package uiconnect
 import android.content.Context as PlatformContext
 import android.content.Intent as PlatformIntent
 import lifecycle.CommManager
-import lifecycle.ConnectionArbiter
 import lifecycle.ConnectionOperation
+import lifecycle.ConnectionArbiter
 import lifecycle.ConnectionPriorityPolicy
 import lifecycle.ConnectionState
 import lifecycle.HeldServerSocket
@@ -20,8 +20,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 // scheduling and unrelated effect dependencies are boundaries; connection ownership is real.
 object Dispatchers { var IO = QueuedDispatcher() }
 open class Context(val commManager: CommManager) {
-    var screenLockGranted = false
-    var screenInteractive = true
     val settings = Settings()
     val android = PlatformContext()
     val connectivity = ConnectivityManager()
@@ -146,18 +144,28 @@ class AddressAdapter(private val context: Context, private val scope: CoroutineS
 }
 class Dialog { var isShowing = true; fun dismiss() { isShowing = false } }
 class Discovery(private val manager: CommManager) {
-    var ticket = -1L
-    fun startScan(oneShot: Boolean, ticket: Long = manager.appConnectionTicket()) { this.ticket = ticket }
+    var operation: ConnectionOperation? = null
+    private var running = false
+    val ticket get() = operation?.ticket ?: -1L
+    fun startScan(oneShot: Boolean, operation: ConnectionOperation): Boolean {
+        if (running && this.operation?.ticket == operation.ticket) return false
+        this.operation = operation
+        running = true
+        return true
+    }
+    fun stop() { running = false }
 }
 class ScanFragment(val activity: MainActivity, val lifecycleScope: CoroutineScope) {
     val context: Context? get() = activity
     val adapter = AddressAdapter(activity, lifecycleScope)
     val networkDiscovery = Discovery(activity.commManager)
     var scanDialog: Dialog? = null
+    private var scanOperation: ConnectionOperation? = null
     fun showScanDialog() { scanDialog = Dialog() }
     fun requireContext(): Context = activity
     fun getString(id: Int, vararg args: Any): String = "$id"
     // UI_START_SCAN
+    // UI_CANCEL_SCAN
     // UI_SERVICE_FOUND
 }
 object AppLog { fun i(text: String) {}; fun w(text: String) {}; fun e(text: String, error: Throwable) {} }
@@ -231,7 +239,7 @@ private class Input(val manager: CommManager) {
                 scan.startScan()
                 // NetworkDiscovery holds every 5277 probe before it reports it to the scan UI.
                 if (route == "scan-socket") probe = ProbeSocket().also { HeldServerSocket.hold("192.0.2.154:5277", it) }
-                scan.onServiceFound("192.0.2.154", 5277, probe, scan.networkDiscovery.ticket)
+                scan.onServiceFound("192.0.2.154", 5277, probe, checkNotNull(scan.networkDiscovery.operation))
                 main.drainUi()
             }
         }
@@ -258,7 +266,7 @@ fun uiConnectCallerOwnership() = runBlocking {
                 check(Dispatchers.IO.tasks.isNotEmpty()) { "$route did not pause before public connect" }
                 if (stop) checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
                 val opened = manager.onAppRelaunched()
-                if (successor) manager.connect(liveSocket, ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE)
+                if (successor) manager.connect(liveSocket, ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE, ticket = manager.appConnectionTicket())
                 val live = manager.network()
                 val revision = manager.appOwnershipRevision()
                 Dispatchers.IO.drain()
@@ -293,16 +301,16 @@ fun uiConnectCallerOwnership() = runBlocking {
     val stale = ProbeSocket()
     try {
         input.scan.startScan()
-        val oldTicket = input.scan.networkDiscovery.ticket
+        val oldScan = checkNotNull(input.scan.networkDiscovery.operation)
         HeldServerSocket.hold("192.0.2.155:5277", stale)
-        input.scan.onServiceFound("192.0.2.155", 5277, stale, oldTicket)
+        input.scan.onServiceFound("192.0.2.155", 5277, stale, oldScan)
         checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
         val opened = manager.onAppRelaunched()
         input.main.drainUi(); Dispatchers.IO.drain()
         check(stale.isClosed && manager.network() == null && manager.isAppRunOwner(opened))
         check(input.main.overlays == 0)
         input.scan.startScan()
-        input.scan.onServiceFound("192.0.2.156", 5277, null, input.scan.networkDiscovery.ticket)
+        input.scan.onServiceFound("192.0.2.156", 5277, null, checkNotNull(input.scan.networkDiscovery.operation))
         input.main.drainUi(); Dispatchers.IO.drain()
         check(manager.state is ConnectionState.Connected && input.main.overlays == 1)
     } finally { stale.close(); input.close(); manager.close() }
@@ -332,19 +340,46 @@ fun uiConnectCallerOwnership() = runBlocking {
         } finally { fresh.close(); freshManager.close() }
     }
 
+    // A callback already posted to Main keeps its original scan object. A new manual scan
+    // in the same Stop epoch must keep its own dialog and must not connect the old candidate.
+    run {
+        Dispatchers.IO = QueuedDispatcher()
+        val manager = CommManager()
         manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
+        manager.cleanups()
+        val input = Input(manager)
+        val socket = ProbeSocket()
+        try {
+            input.scan.startScan()
+            val oldScan = checkNotNull(input.scan.networkDiscovery.operation)
+            HeldServerSocket.hold("192.0.2.159:5277", socket)
+            input.scan.onServiceFound("192.0.2.159", 5277, socket, oldScan)
+            input.scan.cancelScan()
+            input.scan.startScan()
+            val replacementDialog = input.scan.scanDialog
+            val replacementScan = input.scan.networkDiscovery.operation
+            input.scan.startScan() // An active scan folds the request without losing its owner.
+            check(input.scan.networkDiscovery.operation === replacementScan && input.scan.scanDialog === replacementDialog)
+            input.main.drainUi()
+            check(input.scan.scanDialog === replacementDialog && replacementDialog?.isShowing == true)
+            check(socket.isClosed && Dispatchers.IO.tasks.isEmpty() && input.main.overlays == 0)
+        } finally { input.close(); manager.close(); socket.close() }
+    }
+    println("PASS manual scan callback keeps exact operation identity across same-ticket replacement")
+
     // Rejected discovery candidates close their probe without revoking the accepted Stop.
     Dispatchers.IO = QueuedDispatcher()
     ContextCompat.starts.clear()
     val rejectedManager = CommManager()
     val rejected = Input(rejectedManager)
     try {
-        val ticket = rejectedManager.appConnectionTicket()
+        rejected.scan.startScan()
+        val operation = checkNotNull(rejected.scan.networkDiscovery.operation)
         val stop = checkNotNull(rejectedManager.requestExplicitAppExit(ticket = rejectedManager.appConnectionTicket(), killProcess = false))
         for (port in listOf(5289, 5277)) {
             val socket = ProbeSocket()
             if (port == 5277) HeldServerSocket.hold("192.0.2.157:5277", socket)
-            rejected.scan.onServiceFound("192.0.2.157", port, socket, ticket)
+            rejected.scan.onServiceFound("192.0.2.157", port, socket, operation)
             rejected.main.drainUi(); Dispatchers.IO.drain()
             check(socket.isClosed && rejectedManager.ownsAppExit(stop.id))
         }
@@ -411,7 +446,7 @@ fun uiConnectCallerOwnership() = runBlocking {
         try {
             HeldServerSocket.hold("192.0.2.158:5277", shared)
             scanInput.scan.startScan()
-            scanInput.scan.onServiceFound("192.0.2.158", 5277, shared, scanInput.scan.networkDiscovery.ticket)
+            scanInput.scan.onServiceFound("192.0.2.158", 5277, shared, checkNotNull(scanInput.scan.networkDiscovery.operation))
             scanInput.main.drainUi()
             check(Dispatchers.IO.tasks.isNotEmpty()) { "the scan hand-off did not wait for IO" }
             scanManager.connect("192.0.2.158", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = scanManager.appConnectionTicket())

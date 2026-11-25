@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.PowerManager
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.app.AccPowerState
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -24,6 +25,7 @@ import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -48,8 +50,13 @@ import java.net.NetworkInterface
 class SoftApCredentialsProvider(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val settings: Settings
+    private val settings: Settings,
+    private val operation: ConnectionOperation,
 ) {
+
+    private val commManager = com.andrerinas.openheadunit.App.provide(context).commManager
+    private fun isCurrent(command: ConnectionOperation): Boolean =
+        commManager.isCurrent(operation) && commManager.isCurrent(command)
 
     companion object {
         /** How often to look for the access point while waiting for it to come up. */
@@ -80,8 +87,8 @@ class SoftApCredentialsProvider(
      * finished starting, and a set of credentials dropped there is never resolved again. See
      * [CredentialsHandoff].
      */
-    private val credentialsHandoff = CredentialsHandoff()
-    private var onInvalidated: (() -> Unit)? = null
+    private val credentialsHandoff = CredentialsHandoff<Pair<NativeNetworkCredentials, ConnectionOperation>>()
+    private var onInvalidated: ((ConnectionOperation) -> Unit)? = null
 
     private var resolveJob: Job? = null
     @Volatile private var isRunning = false
@@ -133,9 +140,10 @@ class SoftApCredentialsProvider(
 
     private val apStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            if (!isCurrent(operation)) return
             if (intent.getIntExtra(EXTRA_WIFI_AP_STATE, -1) != WIFI_AP_STATE_DISABLED) return
             AppLog.w("SoftApCredentials: The hotspot went down — the credentials the phone was given are no longer valid.")
-            onInvalidated?.invoke()
+            onInvalidated?.invoke(operation)
             apDownAtMs = System.currentTimeMillis()
             if (autoEnabled && isRunning && !AccPowerState.isOff) {
                 // An enable at the moment of the drop fails and used to spend the only one; ours gets
@@ -144,21 +152,24 @@ class SoftApCredentialsProvider(
                 autoEnabled = false
                 autoEnableAttempts = 0
             }
-            refresh()
+            refresh(operation)
         }
     }
 
-    fun setCredentialsListener(callback: (String, String, String, String) -> Unit) {
-        credentialsHandoff.setListener { callback(it.ssid, it.psk, it.ip, it.bssid) }
+    fun setCredentialsListener(callback: (String, String, String, String, ConnectionOperation) -> Unit) {
+        credentialsHandoff.setListener { (credentials, command) ->
+            if (isCurrent(command)) callback(credentials.ssid, credentials.psk, credentials.ip, credentials.bssid, command)
+        }
     }
 
-    fun setInvalidatedListener(callback: () -> Unit) {
+    fun setInvalidatedListener(callback: (ConnectionOperation) -> Unit) {
         this.onInvalidated = callback
     }
 
     fun start() {
+        if (!isCurrent(operation)) return
         if (isRunning) {
-            refresh()
+            refresh(operation)
             return
         }
         isRunning = true
@@ -181,13 +192,13 @@ class SoftApCredentialsProvider(
                 AppLog.w("SoftApCredentials: Could not watch the hotspot state: ${e.message}")
             }
         }
-        beginResolve()
+        beginResolve(operation)
     }
 
     /** Look again, from the top. Called when the handshake has been waiting too long. */
-    fun refresh() {
-        if (!isRunning) return
-        beginResolve()
+    fun refresh(command: ConnectionOperation) {
+        if (!isCurrent(command) || !isRunning) return
+        beginResolve(command)
     }
 
     fun stop() {
@@ -219,35 +230,33 @@ class SoftApCredentialsProvider(
     }
 
     /** Callers set [autoEnableInFlight] first, so a loop restarted meanwhile sees it. */
-    private fun enableHotspot(): Boolean = try {
-        HotspotManager.setHotspotEnabled(context, true)
+    private fun enableHotspot(command: ConnectionOperation): Boolean = try {
+        if (isCurrent(command)) HotspotManager.setHotspotEnabled(context, true) else false
     } finally {
         lastAutoEnableAtMs = System.currentTimeMillis()
         autoEnableInFlight = false
     }
 
-    private fun beginResolve() {
-        resolveJob?.cancel()
-        reportedNoInterface = false
-        resolveJob = scope.launch(Dispatchers.IO + CoroutineName("SoftApCredentials-Resolve")) {
+    private fun beginResolve(command: ConnectionOperation) {
+        val candidate = scope.launch(Dispatchers.IO + CoroutineName("SoftApCredentials-Resolve"), start = CoroutineStart.LAZY) {
             val deadline = System.currentTimeMillis() + RESOLVE_BUDGET_MS
             var budgetReported = false
 
-            while (isActive && isRunning) {
+            while (isActive && isRunning && isCurrent(command)) {
                 // Past the budget, say so once, but keep looking while an enable is still owed:
                 // a loop that ended here left the retry to a refresh that might never come.
                 if (System.currentTimeMillis() >= deadline) {
                     if (!budgetReported) {
                         budgetReported = true
                         reportNoAccessPoint(System.currentTimeMillis() - runStartedAt, force = true)
-                        onInvalidated?.invoke()
+                        onInvalidated?.invoke(command)
                     }
                     if (!SoftApAutoEnablePolicy.attemptOwed(
                             settings.autoEnableHotspot, autoEnableAttempts, autoEnabled, autoEnableInFlight)) break
                 }
                 val chosen = pickApInterface()
                 val apName = chosen?.iface?.name ?: "the access point"
-                when (if (chosen == null) SoftApCredentialsAttempt.NO_AP_YET else publish(chosen)) {
+                when (if (chosen == null) SoftApCredentialsAttempt.NO_AP_YET else publish(chosen, command)) {
                     SoftApCredentialsAttempt.PUBLISHED -> return@launch
 
                     SoftApCredentialsAttempt.CONFIG_UNREADABLE -> {
@@ -267,7 +276,7 @@ class SoftApCredentialsProvider(
                             )
                             ConnectionIssues.raise(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
                         }
-                        onInvalidated?.invoke()
+                        onInvalidated?.invoke(command)
                         return@launch
                     }
 
@@ -308,13 +317,26 @@ class SoftApCredentialsProvider(
                             AppLog.i("SoftApCredentials: No access point after ${waited / 1000}s — trying to switch this device's hotspot on (attempt $attempt of ${SoftApAutoEnablePolicy.MAX_ATTEMPTS}).")
                             // Best effort; most unrooted units lack the permission. Keep polling
                             // anyway, since the user may switch it on by hand.
-                            autoEnabled = enableHotspot()
+                            autoEnabled = enableHotspot(command)
                             if (!autoEnabled) AppLog.w("SoftApCredentials: the hotspot did not come up on attempt $attempt.")
                         }
                     }
                 }
                 delay(POLL_INTERVAL_MS)
             }
+        }
+        var previous: Job? = null
+        val accepted = commManager.withAppConnectionLifecycleLock {
+            if (!isCurrent(command) || !isRunning) false else {
+                previous = resolveJob
+                resolveJob = candidate
+                reportedNoInterface = false
+                true
+            }
+        }
+        if (!accepted) candidate.cancel() else {
+            previous?.cancel()
+            candidate.start()
         }
     }
 
@@ -417,7 +439,8 @@ class SoftApCredentialsProvider(
     }
 
     /** Resolves the rest of the credentials for [iface] and hands them over. */
-    private fun publish(chosen: ChosenInterface): SoftApCredentialsAttempt {
+    private fun publish(chosen: ChosenInterface, command: ConnectionOperation): SoftApCredentialsAttempt {
+        if (!isCurrent(command)) return SoftApCredentialsAttempt.NO_AP_YET
         val iface = chosen.iface
         val ip = iface.siteLocalIpv4 ?: return SoftApCredentialsAttempt.NO_AP_YET
 
@@ -484,6 +507,7 @@ class SoftApCredentialsProvider(
             AppLog.w("SoftApCredentials: no source named an address for ${iface.name} - not sysfs, not the interface itself, and not its IPv6 link-local; the credentials will go out without one.")
         }
 
+        if (!isCurrent(command)) return SoftApCredentialsAttempt.NO_AP_YET
         AppLog.i("SoftApCredentials: SUCCESS - Providing credentials from ${iface.name}: SSID=$ssid, IP=$ip, BSSID=${bssid.ifEmpty { "<none>" }}")
         // Our own listener, not the phone — same reasoning as WifiDirectManager's delivery.
         ConnectionStageTracker.report(ConnectionStage.CREATING_NETWORK)
@@ -522,7 +546,7 @@ class SoftApCredentialsProvider(
         // concluded. Retired here rather than on the interface being found, so a device that shows
         // an interface but never yields joinable credentials keeps the record it earned.
         ConnectionIssues.clear(context, ConnectionIssue.HOTSPOT_NOT_RUNNING)
-        if (!credentialsHandoff.publish(NativeNetworkCredentials(ssid, psk, ip, bssid))) {
+        if (!credentialsHandoff.publish(NativeNetworkCredentials(ssid, psk, ip, bssid) to command)) {
             // Held rather than lost, so the connection still happens, but say so, because until
             // this line existed the log of a unit that never woke its phone was identical to the
             // log of one idling with everything healthy, and there is nothing further to grep for.

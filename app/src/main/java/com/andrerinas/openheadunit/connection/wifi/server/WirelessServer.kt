@@ -6,6 +6,7 @@ import android.net.nsd.NsdServiceInfo
 import android.os.SystemClock
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.utils.AppLog
 import java.net.ServerSocket
@@ -33,7 +34,9 @@ import java.net.NetworkInterface
 class WirelessServer(
     val registerNsd: Boolean,
     val service: AapService,
-    val history: WirelessServerHistory) {
+    val history: WirelessServerHistory,
+    private val operation: ConnectionOperation,
+) {
 
     companion object {
 
@@ -72,6 +75,7 @@ class WirelessServer(
 
     fun start() {
         val commManager = App.provide(service).commManager
+        if (!commManager.isCurrent(operation)) return
 
         nsdManager = service.getSystemService(Context.NSD_SERVICE) as? NsdManager
         if (nsdManager == null) {
@@ -97,11 +101,15 @@ class WirelessServer(
                 // nothing (NativeAaHandshakeManager aborts with "nothing is listening on 5288").
                 var bound: ServerSocket? = null
                 var attempt = 0
-                while (isActive && bound == null) {
+                while (isActive && commManager.isCurrent(operation) && bound == null) {
                     attempt++
                     try {
                         bound = ServerSocket().apply {
                             reuseAddress = true
+                            if (!commManager.isCurrent(operation)) {
+                                close()
+                                return@launch
+                            }
                             bind(InetSocketAddress(5288))
                         }
                     } catch (e: Exception) {
@@ -116,8 +124,17 @@ class WirelessServer(
                     AppLog.i("WirelessServer: stopped before port 5288 could be bound.")
                     return@launch
                 }
-                serverSocket = bound
-                isListening = true
+                val published = commManager.withAppConnectionLifecycleLock {
+                    if (!commManager.isCurrent(operation) || !isActive) false else {
+                        serverSocket = bound
+                        isListening = true
+                        true
+                    }
+                }
+                if (!published) {
+                    try { bound.close() } catch (_: Exception) {}
+                    return@launch
+                }
                 // A bind that worked ends the rebuild budget: the next failure, whenever it
                 // comes, is a fresh one and gets its own attempts.
                 history.reset()
@@ -127,9 +144,10 @@ class WirelessServer(
                 while (isActive) {
                     AppLog.d("WirelessServer: Waiting for TCP connection on port 5288...")
                     val clientSocket = serverSocket?.accept() ?: break
-                    val ticket = commManager.appConnectionTicket()
+                    // Arrival is a fresh external input; capture once before its queued handoff.
+                    val receipt = ConnectionOperation(commManager.appConnectionTicket(), null)
                     AppLog.i("WirelessServer: Incoming connection detected from ${clientSocket.inetAddress}")
-                    handOffClient(clientSocket, commManager, ticket)
+                    handOffClient(clientSocket, commManager, receipt)
                 }
             } catch (e: Exception) {
                 // The cancelled branch used to be silent, which made a server that was torn
@@ -148,11 +166,11 @@ class WirelessServer(
     internal fun handOffClient(
         clientSocket: java.net.Socket,
         commManager: CommManager,
-        ticket: Long = commManager.appConnectionTicket(),
+        receipt: ConnectionOperation,
     ): Job {
         var delegated = false
         val delivery = service.serviceScope.launch {
-            if (!commManager.acceptsAppConnectionTicket(ticket)) return@launch
+            if (!commManager.isCurrent(receipt)) return@launch
             if (commManager.isConnected) {
                 AppLog.w("WirelessServer: Already connected, dropping client from ${clientSocket.inetAddress}")
                 withContext(Dispatchers.IO) {
@@ -167,7 +185,7 @@ class WirelessServer(
                 AppLog.i("WirelessServer: Accepted client connection from ${clientSocket.inetAddress}. Passing to CommManager...")
                 service.userExitedAA = false
                 delegated = true
-                commManager.connect(clientSocket, ticket = ticket)
+                commManager.connect(clientSocket, ticket = receipt.ticket, expectedState = receipt.save)
             }
         }
         delivery.invokeOnCompletion {
@@ -201,6 +219,7 @@ class WirelessServer(
     }
 
     private fun registerNsd() {
+        if (!App.provide(service).commManager.isCurrent(operation)) return
         val serviceInfo = NsdServiceInfo().apply {
             serviceName = "AAWireless"
             serviceType = "_aawireless._tcp"

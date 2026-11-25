@@ -87,7 +87,7 @@ class UsbAttachSwitchTest {
             val claim = checkNotNull(ConnectionArbiter.claim(Tier.USB, ConnectionPriorityPolicy.Owner.USB, "USB switch of phone"))
             UsbSwitchClaim.stake(claim)
             val newer = when (lost) {
-                "yield" -> { ConnectionArbiter.yieldToUser("Wi-Fi by hand"); null }
+                "yield" -> { ConnectionArbiter.yieldToUser("Wi-Fi by hand", com.andrerinas.openheadunit.connection.ConnectionAdmission.UNRESTRICTED); null }
                 "manual" -> checkNotNull(ConnectionArbiter.claim(Tier.USER, ConnectionPriorityPolicy.Owner.MANUAL, "192.0.2.1:5277"))
                 else -> null
             }

@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+
 import android.content.Context
 import com.andrerinas.openheadunit.connection.*
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
@@ -135,7 +137,7 @@ class NearbyHandoffLifecycleTest {
             whenever(request.addOnFailureListener(any())).thenReturn(request)
             whenever(client.requestConnection(anyOrNull<String>(), any(), any())).thenReturn(request)
             Mockito.mockConstruction(Settings::class.java).use {
-                nearby.connectToEndpoint("phone", comm.appConnectionTicket())
+                nearby.connectToEndpoint("phone", ConnectionOperation(comm.appConnectionTicket(), null))
                 verify(client).requestConnection(anyOrNull<String>(), eq("phone"), any())
             }
         } finally {

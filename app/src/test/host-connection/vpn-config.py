@@ -20,8 +20,6 @@ method = source[start:end+1].replace('com.andrerinas.openheadunit.utils.DummyVpn
 (OUT / 'Fixture.kt').write_text((HERE / 'VpnConfigFixture.kt').read_text().replace('// CONFIG', method))
 policy = ROOT / 'app/src/main/java/com/andrerinas/openheadunit/utils/DummyVpnPolicy.kt'
 (OUT / 'Gate.kt').write_text(policy.read_text().replace('package com.andrerinas.openheadunit.utils', 'package vpnconfig'))
-toolchain = json.loads((OUT.parent / 'toolchain.json').read_text())
-compiler = os.pathsep.join(x['path'] for x in toolchain['jars'])
-cp = os.pathsep.join(toolchain['runtime_jars'])
-subprocess.run(['java', '-cp', compiler, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp, '-d', str(OUT / 'cases.jar'), str(OUT / 'Fixture.kt'), str(OUT / 'Gate.kt')], check=True, timeout=45)
+cp = os.pathsep.join(x['path'] for x in json.loads((OUT.parent / 'toolchain.json').read_text())['jars'])
+subprocess.run(['java', '-cp', cp, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp, '-d', str(OUT / 'cases.jar'), str(OUT / 'Fixture.kt'), str(OUT / 'Gate.kt')], check=True, timeout=45)
 subprocess.run(['java', '-cp', str(OUT / 'cases.jar') + os.pathsep + cp, 'vpnconfig.FixtureKt'], check=True, timeout=15)

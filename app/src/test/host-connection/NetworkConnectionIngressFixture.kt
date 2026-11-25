@@ -28,21 +28,19 @@ class NetworkServerIngress(val service: NetworkIngressService) {
 class NetworkDiscoveryIngress(val service: NetworkIngressService) {
     private val io = Dispatchers.Unconfined
     private val commManager get() = service.commManager
-    // What WifiLauncherSharedServices records when a Save starts the scan: that Save, by ticket.
-    var discoverySave: Pair<Long, ConnectionState.Disconnected>? = null
-    private fun discoverySaveFor(ticket: Long) = discoverySave?.takeIf { it.first == ticket }?.second
     // NETWORK_DISCOVERY_HANDOFF
 }
 interface NetworkDiscoveryListener {
-    fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long)
-    fun onScanFinished(wasOneShot: Boolean, ticket: Long)
+    fun onServiceFound(ip: String, port: Int, socket: Socket?, operation: ConnectionOperation)
+    fun onScanFinished(wasOneShot: Boolean, operation: ConnectionOperation)
 }
+
 enum class WifiLauncherMode { MANUAL, AUTO, HELPER, NATIVE }
 
 class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDiscoveryListener) {
-    var stationIpv4: String? = null
     val io = QueuedDispatcher()
     val main = QueuedDispatcher()
+    var stationIpv4: String? = null
     private val PROBE_LOCK = Any()
     private val PROBE_MUTEX = Mutex()
     private var inFlightScan: Job? = null
@@ -52,15 +50,15 @@ class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDisc
     private val reportedIps = mutableSetOf<String>()
     private var probeHelperPort = false
     private fun readProbeHelperPort() = false
-    private suspend fun scanGateways(ticket: Long): Boolean {
-        listener.onServiceFound("192.0.2.72", 5277, null, ticket)
+    private suspend fun scanGateways(operation: ConnectionOperation): Boolean {
+        listener.onServiceFound("192.0.2.72", 5277, null, operation)
         return true
     }
-    private suspend fun scanSubnet(ticket: Long) { error("gateway should have ended this scan") }
+    private suspend fun scanSubnet(operation: ConnectionOperation) { error("gateway should have ended this scan") }
     // NETWORK_SCAN_START
     // NETWORK_SCAN_JOB
     // NETWORK_WIFI_WAIT
-    fun scanOwner() = scanJob to currentGeneration?.ticket
+    fun scanOwner() = scanJob to currentGeneration?.operation?.ticket
     fun scanIsOneShot() = currentGeneration?.oneShot
     fun drain() { io.drain(); main.drain(); io.drain(); main.drain(); io.drain() }
 }
@@ -73,7 +71,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             val server = NetworkServerIngress(service)
             val old = Socket()
             try {
-                val delivery = server.handOffClient(old, comm)
+                val delivery = server.handOffClient(old, comm, ConnectionOperation(comm.appConnectionTicket(), null))
                 if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
                 comm.onAppRelaunched()
                 service.main.drain(); delivery.join()
@@ -82,7 +80,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
                 check((comm.state is ConnectionState.Connected) == !stop)
                 if (stop) {
                     val fresh = Socket()
-                    server.handOffClient(fresh, comm)
+                    server.handOffClient(fresh, comm, ConnectionOperation(comm.appConnectionTicket(), null))
                     service.main.drain()
                     check(comm.state is ConnectionState.Connected && !fresh.isClosed)
                 }
@@ -101,7 +99,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             val ticket = comm.appConnectionTicket()
             HeldServerSocket.hold(endpoint, old)
             try {
-                ingress.onServiceFound("192.0.2.70", 5277, old, ticket)
+                ingress.onServiceFound("192.0.2.70", 5277, old, ConnectionOperation(ticket, null))
                 if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
                 comm.onAppRelaunched()
                 if (replace) HeldServerSocket.hold(endpoint, replacement)
@@ -110,7 +108,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
                     check(old.isClosed && comm.network() == null)
                     if (replace) {
                         check(HeldServerSocket.isHeld(endpoint) && !replacement.isClosed)
-                        ingress.onServiceFound("192.0.2.70", 5277, replacement, comm.appConnectionTicket())
+                        ingress.onServiceFound("192.0.2.70", 5277, replacement, ConnectionOperation(comm.appConnectionTicket(), null))
                         service.main.drain()
                         check(comm.state is ConnectionState.Connected && !replacement.isClosed)
                     }
@@ -126,7 +124,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
         NetworkIngressService(comm).use { service ->
             val old = Socket()
             HeldServerSocket.hold("192.0.2.71:5277", old)
-            NetworkDiscoveryIngress(service).onServiceFound("192.0.2.71", 5277, old, comm.appConnectionTicket())
+            NetworkDiscoveryIngress(service).onServiceFound("192.0.2.71", 5277, old, ConnectionOperation(comm.appConnectionTicket(), null))
             service.serviceScope.cancel(); service.main.drain()
             check(old.isClosed && !HeldServerSocket.isHeld("192.0.2.71:5277"))
             comm.close()
@@ -147,10 +145,10 @@ fun networkConnectionIngressOwnership() = runBlocking {
                 val saved = comm.state as ConnectionState.Disconnected
                 check(saved.isSettingsRestart)
                 val ticket = comm.appConnectionTicket()
-                val ingress = NetworkDiscoveryIngress(service).apply { discoverySave = ticket to saved }
+                val ingress = NetworkDiscoveryIngress(service)
                 if (exit) comm.disconnect(ConnectionOperation(comm.appConnectionTicket(), null), isUserExit = true, honorKillOnDisconnect = false)
                 val before = SocketProjectionConnection.created.size
-                ingress.onServiceFound("192.0.2.95", 5277, null, ticket)
+                ingress.onServiceFound("192.0.2.95", 5277, null, ConnectionOperation(ticket, saved))
                 service.main.drain(); comm.cleanups()
                 // Recorded after every production frame has returned.
                 val created = SocketProjectionConnection.created.size - before
@@ -160,6 +158,44 @@ fun networkConnectionIngressOwnership() = runBlocking {
             } finally { comm.close() }
         }
     }
+    // A scan waiting for the phone hotspot still reports completion so it can be rearmed.
+    // It does not probe a different link, or log the same wait again until Wi-Fi has joined.
+    networkComm().let { comm ->
+        val operation = ConnectionOperation(comm.appConnectionTicket(), null)
+        val found = mutableListOf<ConnectionOperation>()
+        val finished = mutableListOf<Pair<Boolean, ConnectionOperation>>()
+        val scan = NetworkScanIngress(comm, object : NetworkDiscoveryListener {
+            override fun onServiceFound(ip: String, port: Int, socket: Socket?, operation: ConnectionOperation) {
+                found += operation
+            }
+            override fun onScanFinished(wasOneShot: Boolean, operation: ConnectionOperation) {
+                finished += wasOneShot to operation
+            }
+        })
+        comm.settings.headunitServerNetwork = HeadunitServerNetwork.PHONE_HOTSPOT
+        var waitLogs = 0
+        val previousHook = AppLog.hook
+        AppLog.hook = { message ->
+            if (message.startsWith("NetworkDiscovery: on the phone's hotspot")) waitLogs++
+        }
+        try {
+            fun sweep() {
+                check(scan.startScan(oneShot = true, operation = operation))
+                scan.drain()
+            }
+            repeat(2) { sweep() }
+            check(found.isEmpty() && waitLogs == 1 && finished == List(2) { true to operation })
+            scan.stationIpv4 = "192.0.2.10"
+            sweep()
+            check(found == listOf(operation) && waitLogs == 1)
+            scan.stationIpv4 = null
+            sweep()
+            check(found == listOf(operation) && waitLogs == 2 && finished == List(4) { true to operation })
+        } finally {
+            AppLog.hook = previousHook
+            comm.close()
+        }
+    }
     // A reusable scanner retains per-scan input through IO entry and Main callback dispatch;
     // it must not stamp a later genuinely fresh scan with the old cancelled scan's ticket.
     for (stop in listOf(false, true)) for (pauseAtCallback in listOf(false, true)) {
@@ -167,13 +203,13 @@ fun networkConnectionIngressOwnership() = runBlocking {
         NetworkIngressService(comm).use { service ->
             val ingress = NetworkDiscoveryIngress(service)
             val listener = object : NetworkDiscoveryListener {
-                override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) {
-                    ingress.onServiceFound(ip, port, socket, ticket)
+                override fun onServiceFound(ip: String, port: Int, socket: Socket?, operation: ConnectionOperation) {
+                    ingress.onServiceFound(ip, port, socket, operation)
                 }
-                override fun onScanFinished(wasOneShot: Boolean, ticket: Long) {}
+                override fun onScanFinished(wasOneShot: Boolean, operation: ConnectionOperation) {}
             }
             val scan = NetworkScanIngress(comm, listener)
-            scan.startScan(oneShot = true)
+            scan.startScan(oneShot = true, operation = ConnectionOperation(comm.appConnectionTicket(), null))
             if (pauseAtCallback) scan.io.drain()
             if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
             val owner = comm.onAppRelaunched()
@@ -181,7 +217,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             check((comm.state is ConnectionState.Connected) == !stop)
             if (stop) {
                 check(comm.isAppRunOwner(owner) && comm.network() == null)
-                check(scan.startScan(oneShot = true))
+                check(scan.startScan(oneShot = true, operation = ConnectionOperation(comm.appConnectionTicket(), null)))
                 scan.drain(); service.main.drain()
                 check(comm.state is ConnectionState.Connected)
             }
@@ -196,22 +232,22 @@ fun networkConnectionIngressOwnership() = runBlocking {
             val ingress = NetworkDiscoveryIngress(service)
             val finished = mutableListOf<Pair<Boolean, Long>>()
             val listener = object : NetworkDiscoveryListener {
-                override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) {
-                    ingress.onServiceFound(ip, port, socket, ticket)
+                override fun onServiceFound(ip: String, port: Int, socket: Socket?, operation: ConnectionOperation) {
+                    ingress.onServiceFound(ip, port, socket, operation)
                 }
-                override fun onScanFinished(wasOneShot: Boolean, ticket: Long) {
-                    finished += wasOneShot to ticket
+                override fun onScanFinished(wasOneShot: Boolean, operation: ConnectionOperation) {
+                    finished += wasOneShot to operation.ticket
                 }
             }
             val scan = NetworkScanIngress(comm, listener)
             val oldTicket = comm.appConnectionTicket()
-            check(scan.startScan(oneShot = true, ticket = oldTicket))
+            check(scan.startScan(oneShot = true, operation = ConnectionOperation(oldTicket, null)))
             val oldJob = requireNotNull(scan.scanOwner().first)
             if (pauseAtCallback) scan.io.drain()
             if (stop) comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)
             comm.onAppRelaunched()
             val freshTicket = comm.appConnectionTicket()
-            check(scan.startScan(oneShot = stop, ticket = freshTicket) == stop)
+            check(scan.startScan(oneShot = stop, operation = ConnectionOperation(freshTicket, null)) == stop)
             val (ownerJob, currentTicket) = scan.scanOwner()
             val currentJob = requireNotNull(ownerJob)
             check(currentTicket == freshTicket && currentJob.isActive)
@@ -219,7 +255,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
                 check(currentJob !== oldJob && oldJob.isCancelled)
                 check(scan.scanIsOneShot() == true)
                 // A stale continuous request must neither cancel nor promote the fresh one-shot.
-                check(!scan.startScan(oneShot = false, ticket = oldTicket))
+                check(!scan.startScan(oneShot = false, operation = ConnectionOperation(oldTicket, null)))
                 check(scan.scanOwner().first === currentJob && currentJob.isActive)
                 check(scan.scanIsOneShot() == true)
             } else {
@@ -246,13 +282,11 @@ fun networkConnectionIngressOwnership() = runBlocking {
             val held = Socket()
             HeldServerSocket.hold(endpoint, held)
             try {
-                NetworkDiscoveryIngress(service).onServiceFound("192.0.2.73", 5277, held, comm.appConnectionTicket())
+                NetworkDiscoveryIngress(service).onServiceFound("192.0.2.73", 5277, held, ConnectionOperation(comm.appConnectionTicket(), null))
                 service.main.drain()
                 val handOff = checkNotNull(io.tasks.poll()) { "the hand-off did not reach connection IO" }
                 val mark = comm.launchMark(comm.appConnectionTicket())
-                val dial = launch(start = CoroutineStart.UNDISPATCHED) {
-                    comm.connect("192.0.2.73", 5277, ticket = comm.appConnectionTicket())
-                }
+                val dial = launch(start = CoroutineStart.UNDISPATCHED) { comm.connect("192.0.2.73", 5277, ticket = comm.appConnectionTicket()) }
                 io.drain(); dial.join()
                 val decision = comm.reportLaunchFailure("timeout", mark)
                 handOff.run(); io.drain(); service.main.drain()
@@ -282,7 +316,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
             val held = Socket()
             HeldServerSocket.hold(endpoint, held)
             try {
-                NetworkDiscoveryIngress(service).onServiceFound("192.0.2.74", 5277, held, comm.appConnectionTicket())
+                NetworkDiscoveryIngress(service).onServiceFound("192.0.2.74", 5277, held, ConnectionOperation(comm.appConnectionTicket(), null))
                 service.main.drain()
                 val handOff = checkNotNull(io.tasks.poll()) { "the hand-off did not reach connection IO" }
                 comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false)

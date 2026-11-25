@@ -67,8 +67,8 @@ object ZbtDiscovery {
  fun snapshot()=Snapshot();fun deferIdentityForArming(decision:ZbtDiscoveryPolicy.Decision){error("unexpected fallback")}
  object Measurement {enum class Completion {SETTLED,CARRIER_BUSY,CANCELLED}}
 }
-class ConnectionOperation(val ticket:Long)
-fun interface ConnectionAdmission { fun run(action:()->Unit):Boolean }
+class ConnectionOperation(val ticket:Long,val save:Any?)
+fun interface ConnectionAdmission {fun run(action:()->Unit):Boolean}
 class ZbtAaCarrier(
  val admission:ConnectionAdmission,
  val serve:suspend (Any)->Unit, val isRunning:()->Boolean, val isFinishedForSession:()->Boolean,
@@ -77,15 +77,13 @@ class ZbtAaCarrier(
  val retryDelayMs:()->Long
 ) {
  var wakes=0;var explicitWakes=0;val sendsWake=true
- fun requestWake(userAsked:Boolean=false, admission:ConnectionAdmission) {
-  admission.run { wakes++; if(userAsked) explicitWakes++ }
- }
+ fun requestWake(userAsked:Boolean=false,admission:ConnectionAdmission){if(admission.run {}){wakes++;if(userAsked)explicitWakes++}}
  suspend fun run(){}
  fun close(){}
 }
 class Manager {
  val scope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
- var measuringDaemon=false;var enablingAndroidBluetooth=false;var measureGeneration=4;var wakeAwaitingModule=false
+ var measuringDaemon=false;var enablingAndroidBluetooth=false;var measureGeneration=4;var wakeAwaitingModule:ConnectionOperation?=null
  var moduleCarrier:ZbtAaCarrier?=null
  var reason:String?=null
  private var notStartedReason:String? get()=reason;set(value){reason=value}
@@ -95,13 +93,15 @@ class Manager {
  var isSelectionCanceled=false;var pendingSelectionTargetMac:String?=null
  var measurementRequired=true;var starts=0
  val commManager=Comm()
- val operation=ConnectionOperation(commManager.ticket)
- // ARM_ADMISSION
+ val operation=ConnectionOperation(commManager.ticket,null)
+ val effectAdmission=ConnectionAdmission { action -> if(commManager.isCurrent(operation)){action();true}else false }
  class Comm {
-  var isConnected=false; var ticket=0L
+  var isConnected=false;var ticket=0L
   fun isCurrent(operation:ConnectionOperation)=operation.ticket==ticket
-  fun <T> withAppConnectionLifecycleLock(action:()->T):T=synchronized(this) { action() }
+  fun <T> withAppConnectionLifecycleLock(body:()->T):T=body()
  }
+ fun isCurrent(command:ConnectionOperation)=commManager.isCurrent(operation)&&commManager.isCurrent(command)
+ fun admissionFor(command:ConnectionOperation)=ConnectionAdmission{action->if(isCurrent(command)){action();true}else false}
  fun isMeasuringDaemon()=measuringDaemon
  // Replace only route selection/measurement; all downstream production methods are below.
  fun start(){starts++;if(measurementRequired)measuringDaemon=true else startOverExternalModule()}
@@ -110,12 +110,13 @@ class Manager {
  fun resetHandshakeBackoff(){};fun resetJoinRefusals(){}
  fun seedBluetoothAddressFromModule(value:String){}
  suspend fun handleHandshake(link:Any){}
- fun manualPoke(mac:String){error("unexpected Android radio wake")}
- fun triggerPoke(){error("unexpected Android radio wake")}
+ fun manualPoke(mac:String, command:ConnectionOperation){error("unexpected Android radio wake")}
+ fun triggerPoke(command:ConnectionOperation){error("unexpected Android radio wake")}
 // MANAGER_METHODS
 }
 class Native(val handshakeManager:Manager)
 class Service(val native:Native?) {
+ val operationTicket=0L
  fun getString(id:Int)="not running"
  fun press(){when(ModuleRearmPolicy.action(true,false,native?.handshakeManager?.isRunning==true,
      native?.handshakeManager?.isMeasuringDaemon()==true)) {
@@ -125,46 +126,57 @@ class Service(val native:Native?) {
 }
 fun main() {
  val androidStartup=Manager()
+ val operation=ConnectionOperation(androidStartup.operation.ticket,null)
  androidStartup.enablingAndroidBluetooth=true
- check(androidStartup.wakeOverModule() && androidStartup.wakeAwaitingModule)
+ check(androidStartup.wakeOverModule(operation) && androidStartup.wakeAwaitingModule===operation)
+ check(!androidStartup.wakeOverModule(ConnectionOperation(operation.ticket-1,null)))
+ check(androidStartup.wakeAwaitingModule===operation)
  check(androidStartup.moduleCarrier==null && androidStartup.starts==0)
+ // A new wake with the same Stop ticket can take ownership while measurement resumes.
+ androidStartup.enablingAndroidBluetooth=false
+ androidStartup.measuringDaemon=true
+ val replacement=ConnectionOperation(operation.ticket,null)
+ androidStartup.resumeAfterDaemonMeasurement(androidStartup.measureGeneration) {
+  androidStartup.enablingAndroidBluetooth=true
+  check(androidStartup.wakeOverModule(replacement))
+ }
+ check(androidStartup.wakeAwaitingModule===replacement)
  androidStartup.scope.cancel()
  for(immediate in listOf(false,true)) {
   val manager=Manager()
-  manager.measuringDaemon=true;manager.wakeAwaitingModule=true
+  manager.measuringDaemon=true;manager.wakeAwaitingModule=manager.operation
   manager.completeDaemonMeasurement(4,ZbtDiscoveryPolicy.Decision(),ZbtDiscovery.Measurement.Completion.CARRIER_BUSY)
-  check(!manager.measuringDaemon && !manager.wakeAwaitingModule && manager.moduleCarrier==null)
+  check(!manager.measuringDaemon && manager.wakeAwaitingModule==null && manager.moduleCarrier==null)
   check(manager.starts==0)
   manager.measurementRequired=!immediate
   Service(Native(manager)).press() // Actual AapService branch, without a credential callback.
   check(manager.starts==1)
   if(!immediate) {
-   check(manager.measuringDaemon && manager.wakeAwaitingModule && manager.moduleCarrier==null)
+   check(manager.measuringDaemon && manager.wakeAwaitingModule!=null && manager.moduleCarrier==null)
    manager.measurementRequired=false
    manager.completeDaemonMeasurement(4,ZbtDiscoveryPolicy.Decision(),ZbtDiscovery.Measurement.Completion.SETTLED)
   }
   check(manager.moduleCarrier?.wakes==1){"first WiFi retry did not wake the module: immediate=$immediate"}
-  check(!manager.wakeAwaitingModule)
+  check(manager.wakeAwaitingModule==null)
   check(ToastUtils.shown==0)
   manager.scope.cancel()
  }
  val retry=Manager()
  Service(Native(retry)).press()
- check(retry.wakeAwaitingModule)
+ check(retry.wakeAwaitingModule!=null)
  retry.completeDaemonMeasurement(4,ZbtDiscoveryPolicy.Decision(),ZbtDiscovery.Measurement.Completion.CARRIER_BUSY)
- check(!retry.wakeAwaitingModule && !retry.measuringDaemon && retry.moduleCarrier==null)
+ check(retry.wakeAwaitingModule==null && !retry.measuringDaemon && retry.moduleCarrier==null)
  retry.scope.cancel()
  println("PASS actual service START_HANDSHAKE: first retry queues or sends exactly one module wake without credential events; repeated BUSY clears queued wake")
 }
 '''
 body = '\n'.join(member(manager, declaration) for declaration in [
-    'fun wakeOverModule(): Boolean',
+    'fun wakeOverModule(',
     'internal fun resumeAfterDaemonMeasurement(',
     'internal fun completeDaemonMeasurement(',
     'private fun startOverExternalModule()',
 ])
 code = code.replace('// MANAGER_METHODS', body)
-code = code.replace('// ARM_ADMISSION', member(manager, 'private val effectAdmission = ConnectionAdmission'))
 code = code.replace('// BUTTON_BRANCH', member('aap/AapService.kt',
     'ModuleRearmPolicy.Action.START_HANDSHAKE ->'))
 (OUT / 'Fixture.kt').write_text(code)
@@ -173,9 +185,8 @@ policy = (SRC / 'connection/wifi/modes/nativeaa/ModuleRearmPolicy.kt').read_text
     'package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa', 'package moduleretry'))
 (OUT / 'extracted-method-sha256.json').write_text(json.dumps(methods, indent=2))
 toolchain = json.loads((OUT.parent / 'toolchain.json').read_text())
-compiler = os.pathsep.join(item['path'] for item in toolchain['jars'])
-cp = os.pathsep.join(toolchain['runtime_jars'])
-subprocess.run(['java', '-cp', compiler, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
+cp = os.pathsep.join(item['path'] for item in toolchain['jars'])
+subprocess.run(['java', '-cp', cp, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
     '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp, '-d', str(OUT / 'regression.jar'),
     *map(str, sorted(OUT.glob('*.kt')))], check=True, timeout=45)
 subprocess.run(['java', '-cp', str(OUT / 'regression.jar') + os.pathsep + cp,

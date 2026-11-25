@@ -139,6 +139,7 @@ ui_members={
     'UI_HANDLE_LAUNCH_INTENT':extract(ui_main,'private fun handleLaunchIntent(', 'Main launch producer').replace('private fun handleLaunchIntent(','fun handleLaunchIntent(',1),
     'UI_ADDRESS_ON_CLICK':extract(ui_network,'override fun onClick(', 'Address click producer').replace('override ','',1),
     'UI_START_SCAN':extract(ui_network,'private fun startScan(', 'Network scan producer').replace('private fun startScan(','fun startScan(',1),
+    'UI_CANCEL_SCAN':extract(ui_network,'private fun cancelScan(', 'Network scan cancellation').replace('private fun cancelScan(','fun cancelScan(',1),
     'UI_SERVICE_FOUND':extract(ui_network,'override fun onServiceFound(', 'Network UI callback').replace('override ','',1),
     'UI_AUTOMATION_EFFECTS':extract((base/'automation/AutomationCommandPolicy.kt').read_text(),'sealed interface Effect', 'Automation effects'),
     'UI_AUTOMATION_RUN':extract(ui_automation,'fun run(', 'Automation run'),
@@ -926,15 +927,15 @@ class SettingsActionFixture(val commManager:CommManager) {
  var userExitedAA=false
  private fun parkRetainedHct(){}
  private val isDestroying=false
- private fun stopWirelessForCommand(settingsRearm:Boolean){commManager.cancelPendingSettingsRestart()}
- private var wirelessRearmPendingForSettings=false
+ private fun stopWirelessForCommand(settingsRearm:Boolean,ticket:Long){commManager.cancelPendingSettingsRestart()}
+ private var wirelessRearmRequest:Any?=null
  private var usbCheckPendingForSettings:UsbRecheck?=null;private var bluetoothLaunchPendingForSettings=false
  private class Wifi {
   private val ticket=Any()
   fun holdForUser(){}
   fun cleanupTicket()=ticket
   fun isCleanupCurrent(value:Any)=value===ticket
-  val active:Any?=null;fun stop(){};fun stopForUser(){}
+  val active:Any?=null;fun stop(owner:Any){};fun stopForUser(owner:Any){}
  }
  private class WifiLauncherNative {val handshakeManager=Handshake()}
  private class Handshake {fun noteSessionEnded(wake:Boolean){}}
@@ -1343,9 +1344,35 @@ subprocess.run(["python3", str(Path(__file__).with_name("vpn-config.py"))], chec
 # Exercise the service module-retry branch with production wake and completion methods.
 subprocess.run(["python3", str(Path(__file__).with_name("module-retry.py"))], check=True)
 
+# Original input authority at the actual effect entry points.
+subprocess.run(["python3", str(Path(__file__).with_name("service-ui-effects.py")), str(ROOT)], check=True)
+
+# Original input authority at the actual effect entry points.
+subprocess.run(["python3", str(Path(__file__).with_name("wireless-authority.py")), str(ROOT)], check=True)
+
+# Native listener, TCP bind and exact shared-stop ownership at their production entries.
+subprocess.run(["python3", str(Path(__file__).with_name("wireless-entries.py")), str(ROOT)], check=True)
+
+# Save commands retain their own authority through Native/SoftAP effects and HFP work.
+subprocess.run(["python3", str(Path(__file__).with_name("native-commands.py")), str(ROOT)], check=True)
+
+# Direct refresh/create continuations keep the Save and exact cleanup owner.
+subprocess.run(["python3", str(Path(__file__).with_name("direct-command.py")), str(ROOT)], check=True)
+
+# Upstream stored-profile cleanup keeps the original arm and command through every deletion.
+subprocess.run(["python3", str(Path(__file__).with_name("direct-purge.py")), str(ROOT)], check=True)
+
+# Original input authority at the actual effect entry points.
 subprocess.run(["python3", str(Path(__file__).with_name("usb-effects.py")), str(ROOT)], check=True)
 subprocess.run(["python3", str(Path(__file__).with_name("usb-effects.py")), str(ROOT), "--libusb"], check=True)
-subprocess.run(["python3", str(Path(__file__).with_name("socket-effects.py")), str(ROOT)], check=True)
 
 # Full external-module carriers: original Native arm at reopen, init, shell and worker effects.
 subprocess.run(["python3", str(Path(__file__).with_name("native-carrier-effects.py")), str(ROOT)], check=True)
+subprocess.run(["python3", str(Path(__file__).with_name("usb-preemption.py")), str(ROOT)], check=True)
+
+# Exercise the full TCP driver and exact-owner transport replacement, including its internal
+# network wait. The lifecycle suite above deliberately doubles that driver for its other cases.
+subprocess.run(["python3", str(Path(__file__).with_name("socket-effects.py")), str(ROOT)], check=True)
+
+# A sleeping Native Save keeps its own Direct continuation through wake and settings holds.
+subprocess.run(["python3", str(Path(__file__).with_name("sleep-replay-effects.py")), str(ROOT)], check=True)

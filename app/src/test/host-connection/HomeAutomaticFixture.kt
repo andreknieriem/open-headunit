@@ -187,15 +187,16 @@ class HomeAutomaticProducer(
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
     private var hasAutoStarted = false
-    private var forceSelfModeTicket: Long? = null
     private var pendingWidgetId = -1
     private var pendingWidgetPage: Int? = null
     private var pendingSelfModeVpn = false
     private var pendingSelfModeTicket: Long? = null
+    private var pendingBluetoothPickerTicket: Long? = null
     private val STATE_PENDING_WIDGET_ID = "home_pending_widget_id"
     private val STATE_PENDING_WIDGET_PAGE = "home_pending_widget_page"
     private val STATE_PENDING_SELF_VPN = "home_pending_self_vpn"
     private val STATE_PENDING_SELF_TICKET = "home_pending_self_ticket"
+    private val STATE_PENDING_BT_PICKER = "home_pending_bt_picker"
     fun requireContext() = context
     fun requireActivity(): Any = activity
     fun getString(id: Int, vararg args: Any) = "resource-$id"

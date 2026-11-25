@@ -1140,7 +1140,7 @@ class CommManager(
         restartEndpoint: Pair<String, Int>? = null,
         expectedState: ConnectionState.Disconnected? = null,
         admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
-        ticket: Long = appConnectionTicket(),
+        ticket: Long,
     ) {
         connectSocketWithTicket(socket, tier, restartEndpoint, expectedState, admission, ticket)
     }

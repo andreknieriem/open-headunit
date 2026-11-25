@@ -124,7 +124,7 @@ open class BaseActivity : AppCompatActivity() {
     fun applyWindowBackground() {
         val settings = Settings(this)
         // The own color paints the system bars only, never the window background.
-        applyBarColorsFor(settings.customBackgroundColor)
+        applyBarColorsFor(settings.systemBarColor)
         currentHomeBackgroundImagePath = settings.homeBackgroundImagePath
         val path = settings.homeBackgroundImagePath
         val file = if (path.isNotEmpty()) File(path) else null
@@ -169,8 +169,8 @@ open class BaseActivity : AppCompatActivity() {
      * Shows [color] on the system bars without saving it, so the
      * color picker can preview live. 0 returns to the saved look.
      */
-    fun previewBackgroundColor(color: Int) {
-        applyBarColorsFor(if (color != 0) color else Settings(this).customBackgroundColor)
+    fun previewSystemBarColor(color: Int) {
+        applyBarColorsFor(if (color != 0) color else Settings(this).systemBarColor)
     }
 
     private fun applyBarColorsFor(color: Int) {

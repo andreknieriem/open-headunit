@@ -829,13 +829,13 @@ class CustomizationFragment : Fragment() {
 
         switchAutoMonochromeNight?.isChecked = settings.autoMonochromeButtonsAtNight
 
-        val ownBgColor = settings.customBackgroundColor
+        val ownBarColor = settings.systemBarColor
         indicatorBgColor?.background = GradientDrawable().apply {
-            setColor(if (ownBgColor != 0) ownBgColor else Color.parseColor("#296ddb"))
+            setColor(if (ownBarColor != 0) ownBarColor else Color.parseColor("#296ddb"))
             cornerRadius = 12f * ctx.resources.displayMetrics.density
         }
-        txtBgColorValue?.text = if (ownBgColor != 0) {
-            String.format("#%06X", 0xFFFFFF and ownBgColor)
+        txtBgColorValue?.text = if (ownBarColor != 0) {
+            String.format("#%06X", 0xFFFFFF and ownBarColor)
         } else {
             getString(R.string.bg_color_summary)
         }
@@ -1033,7 +1033,7 @@ class CustomizationFragment : Fragment() {
             .map { view.findViewById<android.widget.EditText>(it) }
         val hex = view.findViewById<TextInputEditText>(R.id.bgc_hex)
 
-        val saved = settings.customBackgroundColor
+        val saved = settings.systemBarColor
         var color = if (saved != 0) saved else Color.parseColor("#999999")
         var syncing = false
         var committed = false
@@ -1052,7 +1052,7 @@ class CustomizationFragment : Fragment() {
             if (hex !== skip) hex.setText(String.format("#%06X", 0xFFFFFF and color))
             syncing = false
             preview.setBackgroundColor(color)
-            host?.previewBackgroundColor(color)
+            host?.previewSystemBarColor(color)
         }
 
         for (i in 0..2) {
@@ -1082,19 +1082,19 @@ class CustomizationFragment : Fragment() {
 
         show(color, null)
         // The first show() only filled the dialog: nothing is previewed until the user changes it.
-        if (saved == 0) host?.previewBackgroundColor(0)
+        if (saved == 0) host?.previewSystemBarColor(0)
 
         MaterialAlertDialogBuilder(ctx)
             .setView(view)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 committed = true
-                settings.customBackgroundColor = color
+                settings.systemBarColor = color
                 notifyMainActivityBackgroundChanged()
                 refreshUI()
             }
             .setNeutralButton(R.string.bg_color_default_value) { _, _ ->
                 committed = true
-                settings.customBackgroundColor = 0
+                settings.systemBarColor = 0
                 notifyMainActivityBackgroundChanged()
                 refreshUI()
             }

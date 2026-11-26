@@ -48,8 +48,8 @@ data class VideoPreflightProgress(
  * Plays the synthetic clips through a fresh [VideoDecoder] and the real projection view.
  *
  * This is deliberately not the running session's decoder: the wizard runs before a phone is
- * connected, and a failure here must not disturb anything the projection owns. Each clip gets a
- * new decoder, so one broken codec cannot poison the next clip's result.
+ * connected, and a failure here must not disturb anything the projection owns. Clips use fresh
+ * decoders, but never allocate another until the previous native owner has actually retired.
  *
  * The view is the same class the projection uses (TextureView, SurfaceView or GLES), attached to
  * a small preview container. A backend that decodes but never draws is therefore a real result,
@@ -63,8 +63,10 @@ class VideoPreflightRunner(
     private val container: FrameLayout,
     private val onProgress: (VideoPreflightProgress) -> Unit,
 ) {
+    private var retirementBlocked = false
 
     suspend fun run(): VideoPreflightRun = withContext(Dispatchers.Main) {
+        retirementBlocked = false
         val optimizerResult = SystemOptimizer(context).calculateOptimalSettings(sizePreset, portrait)
         val staticCodec = codecOf(optimizerResult.recommendedVideoCodec)
         val staticResolution = Settings.Resolution.fromId(optimizerResult.recommendedResolutionId)
@@ -114,6 +116,7 @@ class VideoPreflightRunner(
                 }
                 val backendOutcome = runBackend(backend, preview, surface, clips)
                 outcomes += backendOutcome
+                if (retirementBlocked) break
                 if (backendOutcome.clips.any { it.passed }) break
                 val failure = backendOutcome.clips.firstOrNull()?.failure
                 val rendererProblem = failure == VideoPreflightFailure.NO_SURFACE ||
@@ -168,6 +171,11 @@ class VideoPreflightRunner(
                     "samples=${outcome.samples.size} bad=${outcome.badSamples} " +
                     "failure=${outcome.failure}${outcome.detail?.let { " detail=$it" } ?: ""}",
             )
+            if (retirementBlocked) {
+                AppLog.w("VideoPreflight: decoder for backend=$backend clip=${clip.id} is still retiring; " +
+                    "no further clips or backends will be tested")
+                break
+            }
             if (!outcome.passed) break
         }
         return VideoPreflightBackendOutcome(backend, outcomes)
@@ -203,6 +211,15 @@ class VideoPreflightRunner(
         // The preview outlives the clip, so its draw counter has to be read as a delta. Reading the
         // total would let a later clip pass on the frames an earlier one drew.
         val drawnBefore = if (preview.observesDraws) preview.drawnFrames() else -1L
+        val owner = ClipOwner(decoder)
+        synchronized(clipOwnerLock) {
+            val previous = clipOwner
+            if (previous != null && (!previous.retired || previous.decoder.hasPendingRetirement)) {
+                return@withContext failed(clip, VideoPreflightFailure.DECODER_ERROR,
+                    "another preflight decoder is still active or retiring")
+            }
+            clipOwner = owner
+        }
 
         try {
             // Configure the codec on the IDR before the clock starts. A slow first frame is a
@@ -275,6 +292,20 @@ class VideoPreflightRunner(
             withContext(NonCancellable) {
                 decoder.setSurface(null)
                 decoder.stop("preflight")
+                owner.retired = true
+                val retired = CompletableDeferred<Unit>()
+                decoder.whenRetired {
+                    // Completion, not the observation deadline, owns this lease. In particular
+                    // a timed-out wizard must release its Activity/sink when native work returns.
+                    synchronized(clipOwnerLock) {
+                        if (clipOwner === owner) clipOwner = null
+                    }
+                    retired.complete(Unit)
+                }
+                // This deadline bounds observation, not native work. Keep the process-wide lease
+                // when it expires so reopening the wizard cannot pile codecs behind a stuck one.
+                withTimeoutOrNull(RETIREMENT_TIMEOUT_MS) { retired.await() }
+                retirementBlocked = !retired.isCompleted
             }
         }
     }
@@ -529,7 +560,14 @@ class VideoPreflightRunner(
         val release: () -> Unit,
     )
 
+    private class ClipOwner(val decoder: VideoDecoder) {
+        @Volatile var retired = false
+    }
+
     companion object {
+        private val clipOwnerLock = Any()
+        private var clipOwner: ClipOwner? = null
+        private const val RETIREMENT_TIMEOUT_MS = 1_000L
         private const val SURFACE_TIMEOUT_MS = 3_000L
         private const val FIRST_FRAME_TIMEOUT_MS = 5_000L
         private const val DRAIN_TIMEOUT_MS = 2_000L

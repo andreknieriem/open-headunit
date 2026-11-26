@@ -138,6 +138,10 @@ object AppLog {
     @Volatile private var appLogFileLogger: Logger.File? = null
     @Volatile private var lastAppLogFile: IoFile? = null
     @Volatile private var currentLogSource: Settings.LogSource = Settings.LogSource.LOGCAT
+    private val ringBuffer = AppLogRingBuffer()
+
+    /** Snapshot of the in-memory OPENHU ring buffer, appended to exported logs. */
+    fun recentLogSnapshot(): String = ringBuffer.snapshot()
 
     fun init(settings: Settings?, context: Context? = null) {
         // Cache the level rather than resolving it per call: every call site below, and every
@@ -267,7 +271,18 @@ object AppLog {
     }
 
     private fun log(priority: Int, msg: String) {
+        ringBuffer.record(priorityChar(priority), TAG, msg)
         LOGGER.println(priority, TAG, msg)
+    }
+
+    private fun priorityChar(priority: Int): String = when (priority) {
+        Log.VERBOSE -> "V"
+        Log.DEBUG -> "D"
+        Log.INFO -> "I"
+        Log.WARN -> "W"
+        Log.ERROR -> "E"
+        Log.ASSERT -> "A"
+        else -> priority.toString()
     }
 
     private fun isLoggable(priority: Int): Boolean = priority >= LOG_LEVEL
@@ -282,7 +297,9 @@ object AppLog {
      */
     private fun loge(message: String, tr: Throwable?) {
         val trace = if (tr != null) Log.getStackTraceString(tr) else ""
-        LOGGER.println(Log.ERROR, TAG, if (trace.isEmpty()) message else "$message\n$trace")
+        val full = if (trace.isEmpty()) message else "$message\n$trace"
+        ringBuffer.record("E", TAG, full)
+        LOGGER.println(Log.ERROR, TAG, full)
     }
 
     private fun closeAppLogFileLogger() {

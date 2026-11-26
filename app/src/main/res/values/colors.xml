@@ -28,9 +28,9 @@
     <color name="adaptive_text_color">#DE000000</color>
 
     <color name="extreme_dark_background">#000000</color>
-    <color name="splash_background">@color/color_projection_blue</color>
+    <color name="splash_background">#2C2C2C</color>
     <color name="splash_text_white">#FFFFFF</color>
-    <color name="splash_text_revived">#214876</color>
+    <color name="splash_text_revived">@color/color_projection_blue</color>
 
     <!-- Custom Menu Colors -->
     <color name="color_projection_blue">#3198ef</color>

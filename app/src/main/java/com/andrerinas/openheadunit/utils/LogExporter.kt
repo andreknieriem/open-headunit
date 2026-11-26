@@ -448,7 +448,8 @@ object LogExporter {
                     "LogExporter: exportArtifact commit=${BuildConfig.GIT_SHA} baseApkSha256=$apkHash " +
                     "exportElapsedMs=${SystemClock.elapsedRealtime()} " +
                     "(identifies the exporting app; earlier captured sessions may differ)\n" +
-                    AudioDiagnostics.snapshot(SystemClock.elapsedRealtime()) + "\n").toByteArray())
+                    AudioDiagnostics.snapshot(SystemClock.elapsedRealtime()) + "\n" +
+                    AppLog.recentLogSnapshot() + "\n").toByteArray())
             }
         } catch (e: Exception) {
             AppLog.w("LogExporter: could not write the session banner into ${file.name}: ${e.message}")

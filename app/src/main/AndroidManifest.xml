@@ -57,7 +57,6 @@
         android:name="com.andrerinas.openheadunit.permission.NAVIGATION_UPDATE"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

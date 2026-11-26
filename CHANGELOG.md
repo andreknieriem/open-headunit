@@ -5,6 +5,7 @@
 - Logging: keep an in-app ring buffer of recent OPENHU log lines and append it to exported logs so noisy system logcat buffers no longer lose them
 - UI: use a dark default splash screen background on older Android versions without system dark mode (#808)
 - Navigation: opt-in "Share navigation with apps" setting (GitHub flavor only) to send turn-by-turn broadcasts to user-selected apps, thanks to @Oleg-rit
+- Keys: unified key & volume routing, new "Do nothing" keymap action, media-session key learning, declared AA keycodes, double-send fix on car keys, and steering-wheel key support for Roadrover, Dynavin, Dongfeng, Topway, Ola S1, and QF K706 units, thanks to @o-jcardenass
 
 ### 4.1.0-beta2
 - Video: show late map frames immediately instead of dropping them when wireless transfer exhausts the GAL pacing window, thanks to @o-jcardenass

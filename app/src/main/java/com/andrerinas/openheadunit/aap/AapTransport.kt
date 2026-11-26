@@ -53,9 +53,9 @@ import com.andrerinas.openheadunit.utils.Utils
  * Core AAP message pump.
  *
  * Owns three [HandlerThread]s:
- * - **Send** (`AapTransport:Handler::Send`) — encrypts and delivers outbound messages.
- * - **Poll** (`AapTransport:Handler::Poll`) — reads, decrypts, and dispatches inbound messages.
- * - **Video** (`AapTransport:Handler::Video`) — assembles and decodes the picture, so the
+ * - **Send** (`Aap::Send`) — encrypts and delivers outbound messages.
+ * - **Poll** (`Aap::Poll`) — reads, decrypts, and dispatches inbound messages.
+ * - **Video** (`Aap::Video`) — assembles and decodes the picture, so the
  *   decoder's own backpressure park cannot hold the socket shut on every other channel.
  *
  * Lifecycle: [startHandshake] → [startReading] → message loop → [stop]/[quit].
@@ -1163,16 +1163,16 @@ class AapTransport(
                 resetSessionObservations()
                 resetMicrophone()
 
-                videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
+                videoThread = HandlerThread(AapThreadNames.VIDEO, Process.THREAD_PRIORITY_DISPLAY)
                 videoThread!!.start()
                 videoHandler = Handler(videoThread!!.looper)
 
-                sendThread = HandlerThread("AapTransport:Handler::Send", Process.THREAD_PRIORITY_AUDIO)
+                sendThread = HandlerThread(AapThreadNames.SEND, Process.THREAD_PRIORITY_AUDIO)
                 sendThread!!.start()
                 sendHandler = Handler(sendThread!!.looper, sendHandlerCallback)
                 sendHandler?.post { LegacyOptimizer.setHighPriority() }
 
-                pollThread = HandlerThread("AapTransport:Handler::Poll", Process.THREAD_PRIORITY_AUDIO)
+                pollThread = HandlerThread(AapThreadNames.POLL, Process.THREAD_PRIORITY_AUDIO)
                 pollThread!!.start()
                 pollHandler = Handler(pollThread!!.looper, pollHandlerCallback)
                 pollHandler?.post { LegacyOptimizer.setHighPriority() }

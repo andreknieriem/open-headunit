@@ -214,7 +214,7 @@ class MainActivity : BaseActivity() {
                 ContextCompat.getColor(this, R.color.extreme_dark_background)
             )
         }
-        applyCustomHomeBackground()
+        applyWindowBackground()
 
         val appSettings = Settings(this)
         requestedOrientation = appSettings.screenOrientation.androidOrientation
@@ -1319,7 +1319,7 @@ class MainActivity : BaseActivity() {
             imm?.hideSoftInputFromWindow(v.windowToken, 0)
         }
         setFullscreen()
-        applyCustomHomeBackground()
+        applyWindowBackground()
 
         checkSetupFlow()
 
@@ -1645,15 +1645,6 @@ class MainActivity : BaseActivity() {
             HomeFragment.resetAutoStart()
             hasRequestedPermissionsThisSession = false
         }
-    }
-
-    fun applyCustomHomeBackground() {
-        findViewById<ImageView>(R.id.custom_home_background)?.let {
-            try { ActivityState.glide(this).clear(it) } catch (_: Exception) {}
-            it.setImageDrawable(null)
-            it.visibility = View.GONE
-        }
-        applyWindowBackground()
     }
 
     companion object {

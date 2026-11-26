@@ -7,14 +7,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Custom Home Screen Background Image -->
-    <ImageView
-        android:id="@+id/custom_home_background"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:visibility="gone" />
-
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main_content"
         android:layout_width="match_parent"

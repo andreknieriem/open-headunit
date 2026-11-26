@@ -228,6 +228,7 @@ transport_fixture=transport_head+'\n'.join(extract(transport,n) for n in [
 bulk=(base/'aap/AapReadMultipleMessages.kt').read_text()
 process=extract(bulk,'private fun processBulk()')
 (OUT/'AapReadRecoveryPolicy.kt').write_text((base/'aap/AapReadRecoveryPolicy.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
+(OUT/'AapThreadNames.kt').write_text((base/'aap/AapThreadNames.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 support=r'''
 object AppLog {
  @Volatile var hook:((String)->Unit)?=null

@@ -9,12 +9,14 @@ import android.media.MediaFormat
 import android.os.Build
 import android.view.Surface
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder.CodecType
+import com.andrerinas.openheadunit.decoder.video.preflight.AnnexBAccessUnits
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
+import java.io.File
 import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ArrayBlockingQueue
@@ -98,7 +100,7 @@ class VideoCodecSessionTest {
                     .thenReturn("native library unavailable on the host JVM")
                 mock(FfmpegVideoDecoder::class.java)
             }
-            `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong()))
+            `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong(), anyBoolean()))
                 .thenReturn(results.first(), *results.drop(1).toTypedArray())
             setOwner("softwareVideoDecoder", owner)
             val timing = GalVideoOutputTiming(null, 0)
@@ -204,6 +206,14 @@ class VideoCodecSessionTest {
 
     private fun other(type: CodecType) = if (type == CodecType.H264) CodecType.H265 else CodecType.H264
 
+    private fun eventually(message: String, condition: () -> Boolean) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3)
+        while (!condition()) {
+            assertTrue(message, System.nanoTime() < deadline)
+            Thread.sleep(5)
+        }
+    }
+
     private fun softwareWorker(decoder: VideoDecoder): Thread =
         VideoDecoder::class.java.getDeclaredField("feedThread").apply { isAccessible = true }.get(decoder) as Thread
 
@@ -241,7 +251,7 @@ class VideoCodecSessionTest {
             val backend = f.bundledOutput(1, fullAtFirstOffer = true)
             f.decode(slice(CodecType.H264), CodecType.H264)
             assertTrue(f.timedFeedOffers > 0)
-            verify(backend).decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong())
+            verify(backend).decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong(), anyBoolean())
         }
     }
 
@@ -648,6 +658,203 @@ class VideoCodecSessionTest {
         }
     }
 
+    @Test fun `idle restart picture preserves ownership and does not hide later reference loss`() {
+        val clip = File("src/main/res/raw/preflight_h264_480p.h264").readBytes()
+        val first = AnnexBAccessUnits.split(clip, CodecType.H264).first()
+        val packet = clip.copyOfRange(first.offset, first.offset + first.length)
+        assertTrue(VideoKeyframeScanner.containsKeyframe(packet, 0, packet.size, false))
+        for (repairResponse in listOf(false, true)) for (gap in listOf(false, true)) withPlatformCodecs {
+            Fixture(CodecType.H264).use { f ->
+                f.beginPinnedSession(CodecType.H264, packet)
+                val old = f.failOutputOwner()
+                val pause = NativePause()
+                doAnswer { pause.block(); null }.`when`(old).release()
+                val replacement = renderingCodec(packet)
+                val rendered = CountDownLatch(1)
+                val keyframe = CountDownLatch(1)
+                val dropped = CountDownLatch(1)
+                val retirementThread = AtomicReference<Thread>()
+                val callbackFailure = AtomicReference<Throwable?>()
+                val scopes = mutableListOf<AutoCloseable>()
+                f.decoder.onFirstFrameListener = { rendered.countDown() }
+                f.decoder.onKeyframeObserved = { keyframe.countDown() }
+                f.decoder.onFrameDropped = { dropped.countDown() }
+                // Mockito's static/constructor doubles are thread-local. Install only platform
+                // boundaries on the retiring thread; replay and both worker loops remain real.
+                doAnswer {
+                    scopes.asReversed().forEach { it.close() }
+                    scopes.clear()
+                    null
+                }.`when`(replacement).start()
+                try {
+                    `when`(f.surface.isValid).thenReturn(true)
+                    if (repairResponse) f.decode(slice(CodecType.H264), CodecType.H264)
+                    val transport = ByteArray(packet.size + 13)
+                    packet.copyInto(transport, 7)
+                    f.decoder.decode(transport, 7, packet.size, false, CodecType.H264)
+                    transport.fill(0x55)
+                    pause.await()
+                    // A clean idle replay can acknowledge repair; a picture followed by discarded
+                    // references cannot. Both must preserve the owned IDR bytes and render it.
+                    if (gap) repeat(5) { f.decode(slice(CodecType.H264), CodecType.H264) }
+                    f.decoder.whenRetired {
+                        retirementThread.set(Thread.currentThread())
+                        try {
+                            assertFalse(Thread.holdsLock(f.decoder))
+                            val info = mock(MediaCodecInfo::class.java)
+                            `when`(info.name).thenReturn("OMX.vendor.H264.decoder")
+                            `when`(info.supportedTypes).thenReturn(arrayOf(CodecType.H264.mimeType))
+                            scopes += mockConstruction(MediaCodecList::class.java) { list, _ ->
+                                `when`(list.codecInfos).thenReturn(arrayOf(info))
+                            }
+                            val formats = mockStatic(MediaFormat::class.java)
+                            scopes += formats
+                            formats.`when`<MediaFormat> {
+                                MediaFormat.createVideoFormat(anyString(), anyInt(), anyInt())
+                            }.thenAnswer { mock(MediaFormat::class.java) }
+                            val codecs = mockStatic(MediaCodec::class.java)
+                            scopes += codecs
+                            codecs.`when`<MediaCodec> {
+                                MediaCodec.createByCodecName(anyString())
+                            }.thenReturn(replacement)
+                        } catch (failure: Throwable) { callbackFailure.set(failure) }
+                    }
+                    assertEquals(listOf("sync_consecutive_errors"), f.errors)
+                    assertEquals(1L, rendered.count)
+                    pause.resume.countDown()
+                    assertTrue("idle transport must still recover its IDR", rendered.await(3, TimeUnit.SECONDS))
+                    if (gap) {
+                        assertTrue("lost references must keep transport recovery armed", dropped.await(3, TimeUnit.SECONDS))
+                        assertEquals("older IDR must not acknowledge later reference loss", 1L, keyframe.count)
+                        assertFalse(f.decoder.hasCrediblePicture)
+                        f.decode(slice(CodecType.H264), CodecType.H264)
+                        verify(replacement, timeout(3_000)).queueInputBuffer(anyInt(), eq(0),
+                            eq(slice(CodecType.H264).size), anyLong(), eq(0))
+                        assertEquals(1L, keyframe.count)
+                        assertFalse("dependent live input cannot repair missing references", f.decoder.hasCrediblePicture)
+                        f.decode(packet, CodecType.H264)
+                    }
+                    assertTrue("a subsequent complete keyframe repairs the picture", keyframe.await(3, TimeUnit.SECONDS))
+                    callbackFailure.get()?.let { throw AssertionError("platform callback failed", it) }
+                    assertTrue(f.decoder.hasCrediblePicture)
+                    verify(old).release()
+                    verify(replacement).configure(any(), eq(f.surface), isNull(), eq(0))
+                } finally {
+                    pause.resume.countDown()
+                    f.decoder.awaitRetirementForTest()
+                    retirementThread.get()?.join(3_000)
+                    scopes.asReversed().forEach { it.close() }
+                }
+            }
+        }
+    }
+
+    private enum class ReplayGap { DISCARDED_PICTURE, REPLACED_DEPENDENT, WIRE_LOSS }
+
+    @Test fun `bundled replay keeps later reference loss visible until newer keyframe output`() =
+        checkBundledReplayGap(ReplayGap.DISCARDED_PICTURE)
+
+    @Test fun `replacing a dependent retirement picture counts the loss and requests repair`() =
+        checkBundledReplayGap(ReplayGap.REPLACED_DEPENDENT)
+
+    @Test fun `wire loss after a retained IDR cannot be acknowledged by idle replay`() =
+        checkBundledReplayGap(ReplayGap.WIRE_LOSS)
+
+    private fun checkBundledReplayGap(gap: ReplayGap) {
+        val clip = File("src/main/res/raw/preflight_h264_480p.h264").readBytes()
+        val first = AnnexBAccessUnits.split(clip, CodecType.H264).first()
+        val packet = clip.copyOfRange(first.offset, first.offset + first.length)
+        val dependent = slice(CodecType.H264)
+        // The slice header after a large SEI is beyond the bounded codec-config scan.
+        val retained = if (gap == ReplayGap.REPLACED_DEPENDENT) largeSei() + dependent else packet
+        Fixture(CodecType.H264, forceSoftware = true).use { f ->
+            f.beginPinnedSession(CodecType.H264, packet)
+            val old = f.bundledOutput(0)
+            val pause = NativePause()
+            doAnswer { pause.block(); null }.`when`(old).stop()
+            val rendered = CountDownLatch(1)
+            val repaired = CountDownLatch(1)
+            val dropped = CountDownLatch(1)
+            val replacement = AtomicReference<FfmpegVideoDecoder>()
+            val retirementThread = AtomicReference<Thread>()
+            val construction = AtomicReference<org.mockito.MockedConstruction<FfmpegVideoDecoder>>()
+            f.decoder.onFirstFrameListener = { rendered.countDown() }
+            f.decoder.onKeyframeObserved = { repaired.countDown() }
+            f.decoder.onFrameDropped = { dropped.countDown() }
+            try {
+                f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                pause.await()
+                `when`(f.surface.isValid).thenReturn(true)
+                when (gap) {
+                    ReplayGap.DISCARDED_PICTURE -> {
+                        f.decode(packet, CodecType.H264)
+                        f.decode(dependent, CodecType.H264)
+                    }
+                    ReplayGap.REPLACED_DEPENDENT -> {
+                        f.decode(dependent, CodecType.H264)
+                        f.decode(retained, CodecType.H264)
+                        f.decode(byteArrayOf(0, 0, 1, 9, 0x10), CodecType.H264)
+                    }
+                    // The assembler did not hand the damaged access unit to decode().
+                    ReplayGap.WIRE_LOSS -> {
+                        f.decode(packet, CodecType.H264)
+                        f.decoder.noteStreamCorrupted("middle fragment lost")
+                    }
+                }
+                f.decoder.whenRetired {
+                    retirementThread.set(Thread.currentThread())
+                    construction.set(mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ ->
+                        replacement.set(owner)
+                        `when`(owner.start()).thenReturn(true)
+                        val keyframeOutput = java.util.concurrent.atomic.AtomicBoolean()
+                        `when`(owner.keyframeRendered).thenAnswer { keyframeOutput.get() }
+                        `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong(), anyBoolean()))
+                            .thenAnswer { call ->
+                                val data = call.getArgument<ByteArray>(0)
+                                val offset = call.getArgument<Int>(1)
+                                val size = call.getArgument<Int>(2)
+                                val eligible = call.getArgument<Boolean>(4)
+                                keyframeOutput.set(eligible &&
+                                    VideoKeyframeScanner.containsKeyframe(data, offset, size, false))
+                                if (size == retained.size) {
+                                    assertArrayEquals(retained, data.copyOfRange(offset, offset + size))
+                                    construction.getAndSet(null)?.close()
+                                }
+                                if (CodecConfigScanner.classify(data, offset, size, false) ==
+                                    CodecConfigScanner.Content.PARAMETER_SETS_ONLY) 0 else 1
+                            }
+                    })
+                }
+                val expectedDrops = if (gap == ReplayGap.WIRE_LOSS) 0L else 1L
+                assertEquals(expectedDrops, f.decoder.sessionHealth().framesDropped)
+                pause.resume.countDown()
+                assertTrue(rendered.await(3, TimeUnit.SECONDS))
+                if (gap == ReplayGap.WIRE_LOSS) {
+                    checkNotNull(retirementThread.get()).join(3_000)
+                    assertFalse(retirementThread.get().isAlive)
+                    assertEquals("transport already reported the wire loss", 1L, dropped.count)
+                } else {
+                    assertTrue(dropped.await(3, TimeUnit.SECONDS))
+                }
+                assertEquals("older software picture cannot cancel recovery", 1L, repaired.count)
+                assertFalse("software output alone is not continuity proof", f.decoder.hasCrediblePicture)
+                f.decode(dependent, CodecType.H264)
+                assertFalse(f.decoder.hasCrediblePicture)
+                assertEquals(1L, repaired.count)
+                f.decode(packet, CodecType.H264)
+                assertTrue(repaired.await(3, TimeUnit.SECONDS))
+                assertTrue(f.decoder.hasCrediblePicture)
+                verify(replacement.get()).decode(org.mockito.kotlin.any(), anyInt(), eq(retained.size), anyLong(), eq(false))
+                verify(old).stop()
+            } finally {
+                pause.resume.countDown()
+                f.decoder.awaitRetirementForTest()
+                retirementThread.get()?.join(3_000)
+                construction.getAndSet(null)?.close()
+            }
+        }
+    }
+
     @Test fun `late retirement completion notifies once without reviving a detached picture`() {
         withPlatformCodecs {
             Fixture(CodecType.H264).use { f ->
@@ -705,7 +912,7 @@ class VideoCodecSessionTest {
             val worker = softwareWorker(f.decoder)
             val pause = NativePause()
             val nativeFailure = AtomicReference<Throwable?>()
-            `when`(software.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong())).thenAnswer {
+            `when`(software.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong(), anyBoolean())).thenAnswer {
                 if (Thread.holdsLock(f.decoder)) nativeFailure.set(AssertionError("native decode owns the UI monitor"))
                 pause.block()
                 1
@@ -854,6 +1061,280 @@ class VideoCodecSessionTest {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @Test fun `same-ID CSD update during retirement invalidates an older retained keyframe`() {
+        val type = CodecType.H264
+        fun firstPicture(name: String): Pair<ByteArray, ByteArray> {
+            val clip = File("src/main/res/raw/$name").readBytes()
+            val unit = AnnexBAccessUnits.split(clip, type).first()
+            val prefix = AnnexBAccessUnits.parameterSetPrefix(clip, unit, type)
+            assertTrue(prefix > 0)
+            return clip.copyOfRange(unit.offset, unit.offset + unit.length) to
+                clip.copyOfRange(unit.offset, unit.offset + prefix)
+        }
+        val (oldPicture, _) = firstPicture("preflight_h264_480p.h264")
+        val (newPicture, newConfig) = firstPicture("preflight_h264_720p.h264")
+        Fixture(type, forceSoftware = true).use { f ->
+            val field = VideoDecoder::class.java.getDeclaredField("parameterSets").apply { isAccessible = true }
+            val cache = field.get(f.decoder) as ParameterSetCache
+            fun cachedWidth(): Int {
+                val sps = checkNotNull(cache.latest(7))
+                return checkNotNull(ParameterSetInspector.parseH264Sps(sps, 4, sps.size - 4)).width
+            }
+            f.beginPinnedSession(type, oldPicture)
+            assertEquals(800, cachedWidth())
+            val old = f.bundledOutput(0)
+            val pause = NativePause()
+            doAnswer { pause.block(); null }.`when`(old).stop()
+            val retirementThread = AtomicReference<Thread>()
+            val callbackEntered = CountDownLatch(1)
+            val construction = AtomicReference<org.mockito.MockedConstruction<FfmpegVideoDecoder>>()
+            val dropped = java.util.concurrent.atomic.AtomicInteger()
+            val repaired = java.util.concurrent.atomic.AtomicInteger()
+            f.decoder.onFrameDropped = { dropped.incrementAndGet() }
+            f.decoder.onKeyframeObserved = { repaired.incrementAndGet() }
+            try {
+                f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                pause.await()
+                `when`(f.surface.isValid).thenReturn(true)
+                f.decode(oldPicture, type)
+                f.decode(newConfig, type)
+                assertEquals("new same-ID configuration was received", 1280, cachedWidth())
+                f.decoder.whenRetired {
+                    retirementThread.set(Thread.currentThread())
+                    // The valid Surface remains attached. Replace only the JNI endpoint on the
+                    // retiring thread; actual retention, replay, initialization and cache run.
+                    construction.set(mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ ->
+                        `when`(owner.start()).thenReturn(true)
+                        `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong(), anyBoolean())).thenReturn(0)
+                    })
+                    callbackEntered.countDown()
+                }
+                pause.resume.countDown()
+                assertTrue(callbackEntered.await(3, TimeUnit.SECONDS))
+                checkNotNull(retirementThread.get()).join(3_000)
+                assertFalse(retirementThread.get().isAlive)
+                assertEquals("older replay must not overwrite newer same-ID SPS", 1280, cachedWidth())
+                assertEquals("configuration invalidation must request fresh input even on idle stream", 1, dropped.get())
+                assertEquals("stale input cannot acknowledge repair", 0, repaired.get())
+                assertFalse(f.decoder.hasCrediblePicture)
+                assertTrue("stale-config replay must not allocate a decoder", construction.get().constructed().isEmpty())
+                construction.getAndSet(null)?.close()
+                // A fresh keyframe is admitted normally and repairs only after output.
+                mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ ->
+                    val keyframe = java.util.concurrent.atomic.AtomicBoolean()
+                    `when`(owner.start()).thenReturn(true)
+                    `when`(owner.keyframeRendered).thenAnswer { keyframe.get() }
+                    `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong(), anyBoolean())).thenAnswer { call ->
+                        val data = call.getArgument<ByteArray>(0)
+                        val offset = call.getArgument<Int>(1)
+                        val size = call.getArgument<Int>(2)
+                        val isPicture = VideoKeyframeScanner.containsKeyframe(data, offset, size, false)
+                        keyframe.set(isPicture && call.getArgument<Boolean>(4))
+                        if (isPicture) 1 else 0
+                    }
+                }.use {
+                    f.decode(newPicture, type)
+                    eventually("the fresh keyframe was not presented") { repaired.get() == 1 }
+                    assertTrue(f.decoder.hasCrediblePicture)
+                    assertEquals(1280, cachedWidth())
+                }
+            } finally {
+                pause.resume.countDown()
+                retirementThread.get()?.join(3_000)
+                construction.getAndSet(null)?.close()
+            }
+        }
+    }
+
+    private enum class RetainedConfigControl {
+        IDENTICAL, PPS_CHANGE, NEWER_KEYFRAME, DETACHED, INVALID_SURFACE, INVALID_BEFORE_CALLBACK,
+        RETIRED_GENERATION,
+    }
+
+    private fun largeSei(): ByteArray =
+        byteArrayOf(0, 0, 1, 6) + ByteArray(CodecConfigScanner.MAX_BYTES_SCANNED) { 0x55 }
+
+    @Test fun `metadata and byte-identical CSD do not displace a retained picture or create a gap`() =
+        checkRetainedConfigControl(RetainedConfigControl.IDENTICAL)
+
+    @Test fun `same-ID PPS update keeps newest PPS and requests a fresh keyframe`() =
+        checkRetainedConfigControl(RetainedConfigControl.PPS_CHANGE)
+
+    @Test fun `newer keyframe replaces stale retained configuration without extra recovery`() =
+        checkRetainedConfigControl(RetainedConfigControl.NEWER_KEYFRAME)
+
+    @Test fun `detaching after a CSD update suppresses retained replay and recovery callbacks`() =
+        checkRetainedConfigControl(RetainedConfigControl.DETACHED)
+
+    @Test fun `invalidating the retained Surface after a CSD update suppresses replay and recovery callbacks`() =
+        checkRetainedConfigControl(RetainedConfigControl.INVALID_SURFACE)
+
+    @Test fun `Surface invalidated after replay validation cannot request repair`() =
+        checkRetainedConfigControl(RetainedConfigControl.INVALID_BEFORE_CALLBACK)
+
+    @Test fun `retiring the same Surface generation after a CSD update suppresses replay and recovery callbacks`() =
+        checkRetainedConfigControl(RetainedConfigControl.RETIRED_GENERATION)
+
+    private fun checkRetainedConfigControl(control: RetainedConfigControl) {
+        val type = CodecType.H264
+        fun firstPicture(name: String): Pair<ByteArray, ByteArray> {
+            val clip = File("src/main/res/raw/$name").readBytes()
+            val unit = AnnexBAccessUnits.split(clip, type).first()
+            val prefix = AnnexBAccessUnits.parameterSetPrefix(clip, unit, type)
+            assertTrue(prefix > 0)
+            return clip.copyOfRange(unit.offset, unit.offset + unit.length) to
+                clip.copyOfRange(unit.offset, unit.offset + prefix)
+        }
+        val (oldPicture, oldConfig) = firstPicture("preflight_h264_480p.h264")
+        val (newPicture, newConfig) = firstPicture("preflight_h264_720p.h264")
+        // Existing PPS id=0, SPS id=0, with constrained_intra_pred_flag changed from 0 to 1.
+        // The payload length and both syntax IDs are unchanged; no resolution change is needed.
+        val newPps = byteArrayOf(0, 0, 0, 1, 0x68, 0xce.toByte(), 0x0f, 0x2e, 0x80.toByte())
+        assertEquals(0, ParameterSetInspector.parameterSetId(newPps, 4, newPps.size - 4, false))
+        Fixture(type, forceSoftware = true).use { f ->
+            val cache = VideoDecoder::class.java.getDeclaredField("parameterSets")
+                .apply { isAccessible = true }.get(f.decoder) as ParameterSetCache
+            fun cachedWidth(): Int {
+                val sps = checkNotNull(cache.latest(7))
+                return checkNotNull(ParameterSetInspector.parseH264Sps(sps, 4, sps.size - 4)).width
+            }
+            fun scriptNative(owner: FfmpegVideoDecoder) {
+                val keyframe = java.util.concurrent.atomic.AtomicBoolean()
+                `when`(owner.start()).thenReturn(true)
+                `when`(owner.keyframeRendered).thenAnswer { keyframe.get() }
+                `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong(), anyBoolean())).thenAnswer { call ->
+                    val bytes = call.getArgument<ByteArray>(0)
+                    val offset = call.getArgument<Int>(1)
+                    val size = call.getArgument<Int>(2)
+                    val key = VideoKeyframeScanner.containsKeyframe(bytes, offset, size, false)
+                    keyframe.set(key && call.getArgument<Boolean>(4))
+                    if (CodecConfigScanner.classify(bytes, offset, size, false) ==
+                        CodecConfigScanner.Content.PARAMETER_SETS_ONLY) 0 else 1
+                }
+            }
+            f.beginPinnedSession(type, oldPicture)
+            assertEquals(800, cachedWidth())
+            assertFalse(newPps.contentEquals(cache.latest(8)))
+            val old = f.bundledOutput(0)
+            val pause = NativePause()
+            doAnswer { pause.block(); null }.`when`(old).stop()
+            val callbackEntered = CountDownLatch(1)
+            val retirementThread = AtomicReference<Thread>()
+            val construction = AtomicReference<org.mockito.MockedConstruction<FfmpegVideoDecoder>>()
+            val dropped = java.util.concurrent.atomic.AtomicInteger()
+            val repaired = java.util.concurrent.atomic.AtomicInteger()
+            val rendered = java.util.concurrent.atomic.AtomicInteger()
+            f.decoder.onFrameDropped = { dropped.incrementAndGet() }
+            f.decoder.onKeyframeObserved = { repaired.incrementAndGet() }
+            f.decoder.onFirstFrameListener = { rendered.incrementAndGet() }
+            try {
+                f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                pause.await()
+                `when`(f.surface.isValid).thenReturn(true)
+                f.decode(oldPicture, type)
+                when (control) {
+                    RetainedConfigControl.IDENTICAL -> {
+                        f.decode(byteArrayOf(0, 0, 1, 9, 0x10), type)
+                        f.decode(largeSei(), type)
+                        val paddedConfig = oldConfig + largeSei()
+                        assertEquals(CodecConfigScanner.Content.PARAMETER_SETS_WITH_PICTURE,
+                            CodecConfigScanner.classify(paddedConfig, 0, paddedConfig.size, false))
+                        f.decode(paddedConfig, type)
+                    }
+                    RetainedConfigControl.PPS_CHANGE -> f.decode(newPps, type)
+                    RetainedConfigControl.NEWER_KEYFRAME -> {
+                        f.decode(slice(type), type)
+                        f.decoder.noteStreamCorrupted("middle fragment lost before the replacement IDR")
+                        f.decode(newConfig, type)
+                        f.decode(newPicture, type)
+                    }
+                    RetainedConfigControl.DETACHED -> {
+                        f.decode(newConfig, type)
+                        f.decoder.setSurface(null)
+                    }
+                    RetainedConfigControl.INVALID_SURFACE -> {
+                        f.decode(newConfig, type)
+                        `when`(f.surface.isValid).thenReturn(false)
+                    }
+                    RetainedConfigControl.INVALID_BEFORE_CALLBACK -> {
+                        f.decode(newConfig, type)
+                        // The replay ownership check passes; callback-time validity must be
+                        // rechecked after configuration invalidation, not captured once.
+                        `when`(f.surface.isValid).thenReturn(true, false)
+                    }
+                    RetainedConfigControl.RETIRED_GENERATION -> {
+                        f.decode(newConfig, type)
+                        f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                        assertTrue(f.decoder.isCurrentSurface(f.surface))
+                    }
+                }
+                f.decoder.whenRetired {
+                    retirementThread.set(Thread.currentThread())
+                    try {
+                        construction.set(mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ ->
+                            scriptNative(owner)
+                        })
+                    } finally { callbackEntered.countDown() }
+                }
+                pause.resume.countDown()
+                assertTrue(callbackEntered.await(3, TimeUnit.SECONDS))
+                checkNotNull(retirementThread.get()).join(3_000)
+                assertFalse(retirementThread.get().isAlive)
+                when (control) {
+                    RetainedConfigControl.IDENTICAL, RetainedConfigControl.NEWER_KEYFRAME -> {
+                        assertEquals(1, construction.get().constructed().size)
+                        eventually("the replayed picture was not presented") { repaired.get() == 1 }
+                        assertEquals(1, rendered.get())
+                        assertEquals(1, repaired.get())
+                        assertEquals(0, dropped.get())
+                        assertEquals(if (control == RetainedConfigControl.IDENTICAL) 0L else 2L,
+                            f.decoder.sessionHealth().framesDropped)
+                        assertTrue(f.decoder.hasCrediblePicture)
+                        assertEquals(if (control == RetainedConfigControl.IDENTICAL) 800 else 1280, cachedWidth())
+                    }
+                    RetainedConfigControl.PPS_CHANGE -> {
+                        assertArrayEquals("older IDR must not restore the old PPS", newPps, cache.latest(8))
+                        assertEquals("PPS-only changes do not need a resolution change", 800, cachedWidth())
+                        assertTrue(construction.get().constructed().isEmpty())
+                        assertEquals(0, rendered.get())
+                        assertEquals(0, repaired.get())
+                        assertEquals(1, dropped.get())
+                        assertFalse(f.decoder.hasCrediblePicture)
+                    }
+                    RetainedConfigControl.DETACHED, RetainedConfigControl.INVALID_SURFACE,
+                    RetainedConfigControl.INVALID_BEFORE_CALLBACK, RetainedConfigControl.RETIRED_GENERATION -> {
+                        assertTrue(construction.get().constructed().isEmpty())
+                        assertEquals(0, rendered.get())
+                        assertEquals(0, repaired.get())
+                        assertEquals(0, dropped.get())
+                        assertEquals(1280, cachedWidth())
+                        if (control == RetainedConfigControl.INVALID_BEFORE_CALLBACK) {
+                            assertEquals("configuration invalidation happened before callback suppression",
+                                1L, f.decoder.sessionHealth().framesDropped)
+                        }
+                    }
+                }
+                construction.getAndSet(null)?.close()
+                if (control == RetainedConfigControl.PPS_CHANGE) {
+                    val pictureOnly = oldPicture.copyOfRange(oldConfig.size, oldPicture.size)
+                    assertTrue(VideoKeyframeScanner.containsKeyframe(pictureOnly, 0, pictureOnly.size, false))
+                    mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ -> scriptNative(owner) }.use {
+                        f.decode(pictureOnly, type)
+                        eventually("the fresh keyframe was not presented") { repaired.get() == 1 }
+                        assertArrayEquals(newPps, cache.latest(8))
+                        assertEquals(1, rendered.get())
+                        assertEquals(1, repaired.get())
+                        assertTrue(f.decoder.hasCrediblePicture)
+                    }
+                }
+            } finally {
+                pause.resume.countDown()
+                retirementThread.get()?.join(3_000)
+                construction.getAndSet(null)?.close()
             }
         }
     }

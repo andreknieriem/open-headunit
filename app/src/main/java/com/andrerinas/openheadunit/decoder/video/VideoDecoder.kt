@@ -232,6 +232,20 @@ class VideoDecoder(
     private var nativeResources: NativeResources? = null
     private var pendingRetirements = 0
     private var retirementCompleteListener: (() -> Unit)? = null
+    private class RecoveryInput(
+        val generation: Long,
+        val surface: Surface,
+        var bytes: ByteArray,
+        var size: Int,
+        var keyframe: Boolean,
+        var forceSoftware: Boolean,
+        var announcedCodec: CodecType,
+        var configurationRevision: Long,
+        var streamLossGeneration: Long,
+        var continuityLost: Boolean = false,
+    )
+    private var recoveryInput: RecoveryInput? = null
+    @Volatile private var recoveryContinuityLost = false
     private class StartRequest(
         val resources: NativeResources,
         val generation: Long,
@@ -446,7 +460,8 @@ class VideoDecoder(
     // copied on the way in because the transport reuses the buffer it hands us.
     private class PendingFrame(
         var data: ByteArray, var size: Int, var arrivalNanos: Long, var generation: Long = 0L,
-        var sourceTimeUs: Long = Long.MIN_VALUE, var receiverArrivalNs: Long = 0L
+        var sourceTimeUs: Long = Long.MIN_VALUE, var receiverArrivalNs: Long = 0L,
+        var repairEligible: Boolean = true,
     )
     private class FeedOwner(
         val thread: Thread,
@@ -594,6 +609,8 @@ class VideoDecoder(
      */
     @Volatile private var corruptionReportedMs = 0L
     @Volatile private var lastCorruptionReason = ""
+    // A monotonic sequence also distinguishes two reports in the same clock tick.
+    @Volatile private var streamLossGeneration = 0L
 
     // Output updates and lifecycle reset are fenced by the publication lock.
     private var concealState = CorruptionConcealmentPolicy.State.ARMED
@@ -614,6 +631,7 @@ class VideoDecoder(
      * why they call this *above* that throttle, so a report the throttle swallows still conceals.
      */
     fun noteStreamCorrupted(reason: String) {
+        streamLossGeneration++
         lastCorruptionReason = reason
         corruptionReportedMs = elapsedRealtime()
     }
@@ -748,7 +766,7 @@ class VideoDecoder(
      * decoded from P-frames alone. See [PictureCredibilityPolicy].
      */
     val hasCrediblePicture: Boolean
-        get() = PictureCredibilityPolicy.hasCrediblePicture(
+        get() = !recoveryContinuityLost && PictureCredibilityPolicy.hasCrediblePicture(
             renderedSinceCodecStart = lastFrameRenderedMs != 0L,
             keyframeAccountingAvailable = !usingBundledSoftwareVideo,
             keyframeDecodedSinceCodecStart = keyframeRepair.keyframeDecoded,
@@ -1015,6 +1033,8 @@ class VideoDecoder(
                 decoderRestartReason = null
                 decoderGeneration++
                 galDecodedFrames = 0L
+                recoveryInput = null
+                recoveryContinuityLost = false
                 retiredFeed = feedThread
                 feedThread = null
                 // A retired poll must never receive replacement input, even when the
@@ -1068,7 +1088,9 @@ class VideoDecoder(
                                 retirementCompleteListener.also { retirementCompleteListener = null }
                             } else null
                         }
-                        completion?.invoke()
+                        try { completion?.invoke() } finally {
+                            nativeWorkLock.withLock { replayRecoveryInput() }
+                        }
                     }
                 }.apply { name = "VideoDecoder-Retire"; isDaemon = true }.start()
             }
@@ -1167,7 +1189,7 @@ class VideoDecoder(
 
     /**
      * Call from a transport/preflight worker; native creation is serialized.
-     * Keep [buffer] stable until return; queued input is copied. Do not call on the UI thread.
+     * Keep [buffer] stable until return; queued/retained input is copied. Do not call on the UI thread.
      * Most backends pace video dispatch with its ACK held when the queue is full, for up to
      * [VideoFeedThrottlePolicy.WAIT_BUDGET_MS] through [offerWithBackpressure]; this budget does
      * not bound the whole call. Timed software output may be deliberately waiting for a deadline,
@@ -1178,18 +1200,22 @@ class VideoDecoder(
     fun decode(buffer: ByteArray, offset: Int, size: Int, forceSoftware: Boolean, announcedCodec: CodecType,
                sourceTimeUs: Long? = null, receiverArrivalNs: Long = System.nanoTime()) {
         nativeWorkLock.withLock {
+            // Live input must not overtake the retained restart picture when retirement finishes.
+            replayRecoveryInput()
             decodeLocked(buffer, offset, size, forceSoftware, announcedCodec, sourceTimeUs, receiverArrivalNs)
         }
     }
 
     private fun decodeLocked(
         buffer: ByteArray, offset: Int, size: Int, forceSoftware: Boolean, announcedCodec: CodecType,
-        sourceTimeUs: Long?, receiverArrivalNs: Long,
+        sourceTimeUs: Long?, receiverArrivalNs: Long, recovery: RecoveryInput? = null,
     ) {
         var request: StartRequest? = null
         val generation = synchronized(this) {
+            if (recovery != null &&
+                (decoderGeneration != recovery.generation || mSurface !== recovery.surface)) return
             // Input-side liveness: bytes are arriving from the phone right now.
-            lastInputBytesReceivedMs = elapsedRealtime()
+            if (recovery == null) lastInputBytesReceivedMs = elapsedRealtime()
 
             // Check if a restart was requested by output thread
             if (decoderNeedsRestart) {
@@ -1248,7 +1274,7 @@ class VideoDecoder(
 
             // Capture the entire access unit on every backend, including while an owner is
             // running or absent. Recovery must retain all configurations the live decoder saw.
-            scanAndApplyConfig(buffer, offset, size, currentCodecType)
+            val hasPicture = scanAndApplyConfig(buffer, offset, size, currentCodecType)
             if (decoderPermanentlyFailed) return
 
             if (codec == null && softwareVideoDecoder == null) {
@@ -1269,9 +1295,13 @@ class VideoDecoder(
                 val dimensions = videoSize
                 if (dimensions.width == 0 || dimensions.height == 0) return
 
-                // No owner allocates until the previous one has physically retired; input in
-                // that window is not decoded.
-                if (pendingRetirements != 0) return
+                // Retain one owned AU while disposal stalls. Prefer a decodable keyframe to
+                // dependent slices, so the restart-triggering IDR (or its requested replacement)
+                // still produces a picture if the phone goes idle before retirement finishes.
+                if (pendingRetirements != 0) {
+                    if (hasPicture) retainRecoveryInput(buffer, offset, size, forceSoftware, announcedCodec)
+                    return
+                }
                 refreshPipelineSizing()
                 val resources = NativeResources()
                 nativeResources = resources
@@ -1293,9 +1323,16 @@ class VideoDecoder(
         val frame = synchronized(this) {
             if (generation != decoderGeneration) return
             if (codec == null && softwareVideoDecoder == null) return
-            prepareFrame(buffer, offset, size)?.also {
+            // A fragment loss never delivered to decode() can still be newer than this picture.
+            val repairEligible = recovery == null ||
+                (!recovery.continuityLost && recovery.streamLossGeneration == streamLossGeneration)
+            if (!repairEligible) recoveryContinuityLost = true
+            val prepared = if (recovery != null) PendingFrame(buffer, size, System.nanoTime(), generation)
+                else prepareFrame(buffer, offset, size)
+            prepared?.also {
                 it.sourceTimeUs = sourceTimeUs ?: Long.MIN_VALUE
                 it.receiverArrivalNs = receiverArrivalNs
+                it.repairEligible = repairEligible
             }
         }
 
@@ -1305,6 +1342,77 @@ class VideoDecoder(
         frame?.let {
             if (softwareVideoDecoder != null && outputTiming?.controlsPresentation() == true) offerSoftwareFrame(it)
             else offerWithBackpressure(it)
+        }
+    }
+
+    // Both methods run under nativeWorkLock; state ownership is still checked under the decoder
+    // monitor because a UI stop never waits for that native lock.
+    private fun retainRecoveryInput(
+        buffer: ByteArray, offset: Int, size: Int, forceSoftware: Boolean, announcedCodec: CodecType,
+    ) {
+        val lossGeneration = streamLossGeneration
+        val surface = mSurface ?: return
+        val keyframe = VideoKeyframeScanner.containsKeyframe(buffer, offset, size, currentCodecType == CodecType.H265)
+        val previous = recoveryInput
+        // With one slot, either the newer dependent picture or its predecessor is discarded.
+        // An independent picture supersedes that gap, but still counts the displaced picture.
+        if (previous != null) {
+            synchronized(outputPublicationLock) { framesDropped++ }
+            if (!keyframe) {
+                previous.continuityLost = true
+                if (previous.keyframe) return
+            }
+        }
+        val pending = previous ?: RecoveryInput(decoderGeneration, surface, ByteArray(size),
+            size, keyframe, forceSoftware, announcedCodec, parameterSets.revision,
+            lossGeneration).also { recoveryInput = it }
+        if (pending.bytes.size < size) pending.bytes = ByteArray(size)
+        System.arraycopy(buffer, offset, pending.bytes, 0, size)
+        pending.size = size
+        pending.keyframe = keyframe
+        if (keyframe) pending.continuityLost = false
+        pending.forceSoftware = forceSoftware
+        pending.announcedCodec = announcedCodec
+        pending.configurationRevision = parameterSets.revision
+        pending.streamLossGeneration = lossGeneration
+    }
+
+    private fun replayRecoveryInput() {
+        var configurationChanged = false
+        val pending = synchronized(this) {
+            if (pendingRetirements != 0) return
+            val pending = recoveryInput.also { recoveryInput = null } ?: return
+            if (decoderGeneration != pending.generation || mSurface !== pending.surface ||
+                !pending.surface.isValid) return
+            if (pending.configurationRevision != parameterSets.revision) {
+                // A newer configuration can reuse an SPS/PPS ID. Replaying the older AU would
+                // overwrite that session cache (and the native decoder's in-band state). Keep
+                // the newest configuration and recover from a fresh keyframe instead. Even a
+                // new, independent ID invalidates conservatively; no slice dependency guess.
+                configurationChanged = true
+                pending.continuityLost = true
+                synchronized(outputPublicationLock) {
+                    recoveryContinuityLost = true
+                    framesDropped++
+                }
+            }
+            pending
+        }
+        if (!configurationChanged) {
+            // A replay is shown on arrival: its source clock belongs to the retired stream position.
+            decodeLocked(pending.bytes, 0, pending.size, pending.forceSoftware, pending.announcedCodec,
+                sourceTimeUs = null, receiverArrivalNs = System.nanoTime(), recovery = pending)
+        }
+        if (pending.continuityLost) {
+            // An older IDR restores a still picture, not references discarded after it. It must
+            // not acknowledge transport repair. Keep normal live admission and ask for a newer
+            // keyframe through the existing lost-reference recovery path.
+            val events = OutputEvents("VideoDecoder.retirementGap")
+            events.callback(onFrameDropped)
+            events.dispatch {
+                decoderGeneration == pending.generation && mSurface === pending.surface &&
+                    pending.surface.isValid && recoveryContinuityLost
+            }
         }
     }
 
@@ -1323,6 +1431,7 @@ class VideoDecoder(
         System.arraycopy(frameData, frameOffset, frame.data, 0, size)
         frame.size = size
         frame.generation = decoderGeneration
+        frame.repairEligible = true
         // Stamped here, not where the frame is handed over: the feed thread drains a backlog in
         // a few milliseconds, so timestamps taken there would give a dozen frames near-identical
         // values and flatten the cadence the codec sees.
@@ -1537,7 +1646,7 @@ class VideoDecoder(
                         running, feedThread === owner.thread, codec === owner.codec, decoderNeedsRestart
                     )) continue
                 val result = feedInputBuffer(owner, events, ByteBuffer.wrap(frame.data, 0, frame.size), frame.arrivalNanos,
-                    frame.sourceTimeUs, frame.receiverArrivalNs)
+                    frame.sourceTimeUs, frame.receiverArrivalNs, frame.repairEligible)
                 publishFeed(owner) {
                     when (result) {
                         FeedResult.FED -> framesFed++
@@ -1714,7 +1823,7 @@ class VideoDecoder(
                     if (frame.generation != generation || !running || feedThread !== self) continue
                     val pts = frame.arrivalNanos / 1000L
                     timing.register(pts, frame.sourceTimeUs, frame.receiverArrivalNs)
-                    val rendered = decoder.decode(frame.data, 0, frame.size, pts)
+                    val rendered = decoder.decode(frame.data, 0, frame.size, pts, frame.repairEligible)
                     synchronized(outputPublicationLock) {
                         if (running && feedThread === self && decoderGeneration == generation) {
                             framesFed++
@@ -1728,7 +1837,10 @@ class VideoDecoder(
                                     // dimensions and the old worker's UI notification was retired.
                                     dimensionsAnnounced = true
                                 }
-                                if (decoder.keyframeRendered) events.callback(onKeyframeObserved)
+                                if (decoder.keyframeRendered) {
+                                    recoveryContinuityLost = false
+                                    events.callback(onKeyframeObserved)
+                                }
                             } else if (rendered < 0) scheduleRestart("software_video_error_$rendered")
                         }
                     }
@@ -1787,10 +1899,11 @@ class VideoDecoder(
         }
     }
 
-    /**
-     * Walks the full access unit and exposes only parameter-set ranges, without copying picture data.
-     */
-    private inline fun forEachParameterSet(buffer: ByteArray, offset: Int, size: Int, type: CodecType, callback: (Int, Int, Int) -> Unit) {
+    private fun isParameterSet(kind: Int, hevc: Boolean): Boolean =
+        if (hevc) kind in 32..34 else kind == 7 || kind == 8
+
+    /** Walks complete Annex-B access units without copying their NAL payloads. */
+    private inline fun forEachNal(buffer: ByteArray, offset: Int, size: Int, type: CodecType, callback: (Int, Int, Int) -> Unit) {
         var currentPos = offset
         val limit = offset + size
 
@@ -1821,10 +1934,7 @@ class VideoDecoder(
                 if (header < nalEnd) {
                     val first = buffer[header].toInt() and 0xFF
                     val kind = if (type == CodecType.H265) (first and 0x7E) shr 1 else first and 0x1F
-                    val parameterSet = if (type == CodecType.H265) kind in 32..34 else kind == 7 || kind == 8
-                    if (parameterSet) {
-                        callback(header, nalEnd - header, kind)
-                    }
+                    callback(header, nalEnd - header, kind)
                 }
                 currentPos = nalEnd
             } else break
@@ -1915,15 +2025,26 @@ class VideoDecoder(
     /**
      * Extracts SPS/PPS/VPS data for the decoder configuration (CSD).
      */
-    private fun scanAndApplyConfig(buffer: ByteArray, offset: Int, size: Int, type: CodecType) {
-        forEachParameterSet(buffer, offset, size, type) { header, length, kind ->
+    private fun scanAndApplyConfig(buffer: ByteArray, offset: Int, size: Int, type: CodecType): Boolean {
+        val hevc = type == CodecType.H265
+        val retiring = pendingRetirements != 0
+        var hasPicture = false
+        forEachNal(buffer, offset, size, type) { header, length, kind ->
+            if (!isParameterSet(kind, hevc)) {
+                // Only the retirement path needs VCL evidence, not the bounded codec-flag guess.
+                if (retiring &&
+                    (if (hevc) length >= 2 && kind in 0..31 else kind in 1..5 || kind in 19..21)) {
+                    hasPicture = true
+                }
+                return@forEachNal
+            }
             val previous = parameterSets.latest(kind)
-            val data = parameterSets.store(buffer, header, length, type == CodecType.H265, kind)
-                ?: return@forEachParameterSet
+            val data = parameterSets.store(buffer, header, length, hevc, kind) ?: return@forEachNal
             if ((kind == 7 || kind == 33) && data !== previous) {
                 applyParameterSet(data, 4, type)
             }
         }
+        return hasPicture
     }
 
     /**
@@ -2210,18 +2331,19 @@ class VideoDecoder(
      *
      * Diagnostic only - see [ParameterSetTracker] for why nothing here writes to the stored CSD or
      * the configured size. Runs only on units the config scanner says carry parameter sets, which is
-     * keyframes and config messages; [forEachParameterSet] never copies their picture payload.
+     * keyframes and config messages; [forEachNal] never copies their picture payload.
      */
     private fun trackParameterSets(data: ByteArray, offset: Int, size: Int, events: OutputEvents) {
         val hevc = currentCodecType == CodecType.H265
         var spsOffset = -1
         var spsLength = 0
-        forEachParameterSet(data, offset, size, currentCodecType) { header, length, nalKind ->
+        forEachNal(data, offset, size, currentCodecType) { header, length, nalKind ->
+            if (!isParameterSet(nalKind, hevc)) return@forEachNal
             val kind = when (nalKind) {
                 32 -> ParameterSetTracker.Kind.VPS
                 7, 33 -> ParameterSetTracker.Kind.SPS
                 8, 34 -> ParameterSetTracker.Kind.PPS
-                else -> return@forEachParameterSet
+                else -> return@forEachNal
             }
             parameterSetTracker.offer(kind, data, header, length)
             if (kind == ParameterSetTracker.Kind.SPS) {
@@ -2289,7 +2411,7 @@ class VideoDecoder(
      */
     private fun feedInputBuffer(
         owner: FeedOwner, events: OutputEvents, buffer: ByteBuffer, arrivalNanos: Long,
-        sourceTimeUs: Long, receiverArrivalNs: Long
+        sourceTimeUs: Long, receiverArrivalNs: Long, repairEligible: Boolean
     ): FeedResult {
         // Capture the codec and its legacy input-buffer array together in FeedOwner. A late native
         // completion must never switch to the replacement codec's buffers or timestamp origin.
@@ -2337,7 +2459,7 @@ class VideoDecoder(
                     buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining(), owner.type == CodecType.H265
                 )
             } else CodecConfigScanner.Content.NO_PARAMETER_SETS
-            val isKeyframe = buffer.hasArray() && VideoKeyframeScanner.containsKeyframe(
+            val isKeyframe = repairEligible && buffer.hasArray() && VideoKeyframeScanner.containsKeyframe(
                 buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining(), owner.type == CodecType.H265
             )
             publishFeed(owner) {
@@ -2416,6 +2538,7 @@ class VideoDecoder(
     }
 
     private fun reportKeyframeRepair(events: OutputEvents) {
+        recoveryContinuityLost = false
         if (keyframeRepair.timestampsUnusable && !loggedUnusableOutputTimestamps) {
             loggedUnusableOutputTimestamps = true
             events.warn(

@@ -26,7 +26,7 @@ class VideoSoftwareRetirementTest {
         val replacementReleases = AtomicInteger()
         val failure = AtomicReference<Throwable>()
         val workers = mutableListOf<Thread>()
-        whenever(old.decode(any(), any(), any(), any())).thenAnswer {
+        whenever(old.decode(any(), any(), any(), any(), any())).thenAnswer {
             // Model the real synchronized FFmpeg decode while its GL callback borrows AVFrame.
             synchronized(oldNativeMonitor) {
                 borrowing.countDown()
@@ -46,7 +46,7 @@ class VideoSoftwareRetirementTest {
             }
             null
         }.whenever(old).stop()
-        whenever(replacement.decode(any(), any(), any(), any())).thenReturn(1)
+        whenever(replacement.decode(any(), any(), any(), any(), any())).thenReturn(1)
         doAnswer { replacementReleases.incrementAndGet(); null }.whenever(replacement).stop()
 
         fun start(backend: FfmpegVideoDecoder): Thread {
@@ -110,7 +110,7 @@ class VideoSoftwareRetirementTest {
 
     private fun runDimensionFrame(decoder: VideoDecoder) {
         val backend = mock<FfmpegVideoDecoder>()
-        whenever(backend.decode(any(), any(), any(), any())).thenReturn(1)
+        whenever(backend.decode(any(), any(), any(), any(), any())).thenReturn(1)
         whenever(backend.outputWidth).thenReturn(800)
         whenever(backend.outputHeight).thenReturn(480)
         val generation = field(decoder, "decoderGeneration").getLong(decoder)

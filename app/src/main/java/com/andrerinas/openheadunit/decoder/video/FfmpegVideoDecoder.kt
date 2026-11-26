@@ -61,11 +61,20 @@ class FfmpegVideoDecoder(
         return true
     }
 
-    @Synchronized fun decode(buffer: ByteArray, offset: Int, size: Int, presentationTimeUs: Long = System.nanoTime() / 1000L): Int {
+    /**
+     * Calls native decoding and its output callbacks synchronously on the caller thread.
+     * Returns a negative error code or the rendered-frame count; [keyframeRendered] carries
+     * separate output-side keyframe evidence from this call.
+     * [repairEligible] gates repair acknowledgement only, so false does not suppress display.
+     */
+    @Synchronized fun decode(
+        buffer: ByteArray, offset: Int, size: Int,
+        presentationTimeUs: Long = System.nanoTime() / 1000L, repairEligible: Boolean = true,
+    ): Int {
         keyframeRendered = false
         val handle = nativeHandle
         if (handle == 0L) return 0
-        val result = nativeDecode(handle, buffer, offset, size, presentationTimeUs)
+        val result = nativeDecode(handle, buffer, offset, size, presentationTimeUs, repairEligible)
         if (result < 0) return result
         keyframeRendered = result and RENDERED_KEYFRAME != 0
         return result and RENDERED_KEYFRAME.inv()
@@ -156,7 +165,7 @@ class FfmpegVideoDecoder(
 
         private external fun nativeIsAvailable(codecId: Int): Boolean
         private external fun nativeCreate(codecId: Int, surface: Surface?, callback: FfmpegVideoDecoder, useYuvCallback: Boolean, width: Int, height: Int, threadCount: Int): Long
-        private external fun nativeDecode(handle: Long, buffer: ByteArray, offset: Int, size: Int, presentationTimeUs: Long): Int
+        private external fun nativeDecode(handle: Long, buffer: ByteArray, offset: Int, size: Int, presentationTimeUs: Long, repairEligible: Boolean): Int
         private external fun nativeRelease(handle: Long)
     }
 }

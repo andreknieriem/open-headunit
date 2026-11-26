@@ -129,7 +129,7 @@ class VideoDimensionsPublicationTest {
         }
         fun startSoftware(width: Int, height: Int) {
             val backend = mock<FfmpegVideoDecoder>()
-            whenever(backend.decode(any(), any(), any(), any())).thenReturn(1)
+            whenever(backend.decode(any(), any(), any(), any(), any())).thenReturn(1)
             whenever(backend.outputWidth).thenReturn(width)
             whenever(backend.outputHeight).thenReturn(height)
             val generation = VideoDecoder::class.java.getDeclaredField("decoderGeneration")

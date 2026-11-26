@@ -29,6 +29,14 @@ including while MediaCodec is running or a surface is absent. The cache preserve
 each syntax ID, replaces updates to that ID, and replays VPS/SPS/PPS in dependency
 order into a fresh decoder. Identical sets reuse stored bytes. Encoded picture
 bytes are passed through unchanged.
+A picture retained during native retirement also retains its configuration revision.
+If newer parameter sets arrive, the entire older access unit is discarded before replay,
+so neither the session cache nor the native decoder receives its stale in-band configuration.
+The current valid surface owner requests a fresh keyframe through the existing recovery path.
+Byte-identical configuration preserves replay; even a new independent syntax ID invalidates
+conservatively rather than guessing which configurations the retained picture depends on.
+Only pictures compete for the recovery slot. A retained keyframe can still render
+after newer pictures were dropped or lost in transport, but cannot acknowledge their repair.
 Direct Surface rendering checks ownership before each native window submission.
 
 The message type selects the CSD or timestamped-DATA payload offset; start-code

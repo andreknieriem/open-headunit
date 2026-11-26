@@ -1,0 +1,33 @@
+name: Feature Request
+description: Suggest a concrete improvement or new capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For general setup questions or open-ended ideas, please use [GitHub Discussions](https://github.com/andreknieriem/open-headunit/discussions).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: What problem does this solve, or what workflow would it improve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: How should this work from the user's perspective?
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Target Device / Setup (optional)
+      placeholder: "e.g. Car Launcher mode on 1280x720 Android 10 head unit"
+    validations:
+      required: false

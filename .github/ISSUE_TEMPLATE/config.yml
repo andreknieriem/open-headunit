@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup Questions & General Discussion
+    url: https://github.com/andreknieriem/open-headunit/discussions
+    about: Ask setup questions, share hardware tips, or discuss general ideas before opening an issue.
+  - name: Wiki & Troubleshooting Guides
+    url: https://github.com/andreknieriem/open-headunit/wiki
+    about: Check the setup guides, Capturing Logs guide, and known head unit quirks first.

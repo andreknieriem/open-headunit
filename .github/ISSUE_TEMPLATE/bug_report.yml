@@ -1,0 +1,90 @@
+name: Bug Report
+description: Report a crash, connection failure, audio/video glitch, or regression
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill out the details below and **attach an Open Headunit log** whenever possible.
+        See [Capturing Logs](https://github.com/andreknieriem/open-headunit/wiki/Capturing-Logs#option-a-export-from-the-app) (`Settings → Logging → Log Level: Verbose → Start Capture`, reproduce the issue, then **Export Log**).
+
+  - type: input
+    id: ohu_version
+    attributes:
+      label: Open Headunit Version
+      description: Exact version shown in Settings (e.g. 4.1.0-beta2, 4.0.0) and flavor (GitHub / Play Store)
+      placeholder: "4.1.0-beta2 (GitHub)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: connection_mode
+    attributes:
+      label: Connection Mode
+      options:
+        - USB (direct phone)
+        - USB (wireless dongle, e.g. AAWireless / Carlinkit)
+        - Wireless — Native AA (Wi-Fi Direct)
+        - Wireless — Native AA (Hotspot)
+        - Wireless — Headunit Server (AA 17.4+)
+        - Wireless — Wireless Helper
+        - Self Mode
+        - Other / Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: headunit
+    attributes:
+      label: Head Unit / Tablet & Android Version
+      description: Device model, SoC/platform if known (FYT, Allwinner, MediaTek, Unisoc, tablet), and real Android version
+      placeholder: "e.g. FYT 7862 (Android 10) / Samsung Galaxy Tab A8 (Android 14)"
+    validations:
+      required: true
+
+  - type: input
+    id: phone
+    attributes:
+      label: Phone & Android Auto Version
+      description: Phone model, Android version, and Android Auto app version
+      placeholder: "e.g. Pixel 9 (Android 16), AA 18.0"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the issue clearly and mention if it worked on a previous Open Headunit version.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Drag and drop your exported `OHU_Log_*.txt` file here (or paste relevant excerpts).
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I tested on the latest release or beta
+          required: false
+        - label: I attached an exported Open Headunit log (`OHU_Log_*.txt`)
+          required: false

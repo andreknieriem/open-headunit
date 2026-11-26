@@ -56,10 +56,12 @@ public:
                 callbackClass,
                 "onNativeYuv420Frame",
                 "(IILjava/nio/ByteBuffer;ILjava/nio/ByteBuffer;ILjava/nio/ByteBuffer;I)Z");
+        } else if (!env->ExceptionCheck()) {
+            canSubmitWindowFrameMethod = env->GetMethodID(callbackClass, "canSubmitNativeWindowFrame", "()Z");
         }
         env->DeleteLocalRef(callbackClass);
         if (env->ExceptionCheck() || onOutputSizeMethod == nullptr || onBeforeRenderMethod == nullptr ||
-            (useYuvCallback && onYuvFrameMethod == nullptr)) {
+            (useYuvCallback ? onYuvFrameMethod == nullptr : canSubmitWindowFrameMethod == nullptr)) {
             env->ExceptionClear();
             LOGE("Video output callback methods not found");
             env->DeleteGlobalRef(callback);
@@ -71,7 +73,7 @@ public:
         release(nullptr);
     }
 
-    bool start() {
+    bool start(JNIEnv* env) {
         if (callback == nullptr || (window == nullptr && onYuvFrameMethod == nullptr)) {
             LOGE("No output target or decoder callback configured");
             return false;
@@ -106,13 +108,14 @@ public:
             return false;
         }
 
-        if (window != nullptr && requestedWidth > 0 && requestedHeight > 0) {
+        if (onYuvFrameMethod == nullptr && window != nullptr && requestedWidth > 0 && requestedHeight > 0) {
+            if (!canSubmitWindowFrame(env)) return false;
             ANativeWindow_setBuffersGeometry(window, requestedWidth, requestedHeight, WINDOW_FORMAT_RGBA_8888);
         }
         return true;
     }
 
-    int decode(JNIEnv* env, jbyteArray input, jint offset, jint size, jlong ptsUs) {
+    int decode(JNIEnv* env, jbyteArray input, jint offset, jint size, jlong ptsUs, bool repairEligible) {
         if (codecContext == nullptr || packet == nullptr || frame == nullptr || size <= 0) {
             return -1;
         }
@@ -128,6 +131,10 @@ public:
         }
         packet->pts = ptsUs;
         packet->dts = ptsUs;
+        // A replayed picture can precede references discarded during retirement. Preserve its
+        // display, but never acknowledge repair from that picture, even if FFmpeg delays output
+        // until a later decode call. Missing output timestamps cannot prove a newer repair.
+        if (!repairEligible) repairAfterPts = ptsUs;
 
         int result = avcodec_send_packet(codecContext, packet);
         av_packet_unref(packet);
@@ -187,6 +194,11 @@ public:
     }
 
 private:
+    bool canSubmitWindowFrame(JNIEnv* env) {
+        const jboolean current = env->CallBooleanMethod(callback, canSubmitWindowFrameMethod);
+        return !env->ExceptionCheck() && current == JNI_TRUE;
+    }
+
     int receiveFrames(JNIEnv* env) {
         int rendered = 0;
         bool renderedKeyframe = false;
@@ -229,7 +241,8 @@ private:
                 reportedHeight = height;
             }
             renderedKeyframe |= (frame->flags & AV_FRAME_FLAG_KEY) != 0 &&
-                (frame->flags & AV_FRAME_FLAG_CORRUPT) == 0 && frame->decode_error_flags == 0;
+                (frame->flags & AV_FRAME_FLAG_CORRUPT) == 0 && frame->decode_error_flags == 0 &&
+                (repairAfterPts == AV_NOPTS_VALUE || frame->pts > repairAfterPts);
             rendered++;
             av_frame_unref(frame);
         }
@@ -310,6 +323,10 @@ private:
             height,
             rgbaFrame->data,
             rgbaFrame->linesize);
+
+        // Conversion can outlive logical retirement. Admit the window operation only after it,
+        // then finish any admitted lock/post pair before the native owner can be released.
+        if (!canSubmitWindowFrame(env)) return false;
 
         ANativeWindow_setBuffersGeometry(window, width, height, WINDOW_FORMAT_RGBA_8888);
 
@@ -466,8 +483,10 @@ private:
     jmethodID onYuvFrameMethod = nullptr;
     jmethodID onOutputSizeMethod = nullptr;
     jmethodID onBeforeRenderMethod = nullptr;
+    jmethodID canSubmitWindowFrameMethod = nullptr;
     int reportedWidth = 0;
     int reportedHeight = 0;
+    int64_t repairAfterPts = AV_NOPTS_VALUE;
     AVCodecContext* codecContext = nullptr;
     AVPacket* packet = nullptr;
     AVFrame* frame = nullptr;
@@ -529,7 +548,7 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion
         width,
         height,
         threadCount);
-    if (!decoder->start()) {
+    if (!decoder->start(env)) {
         return 0;
     }
     return reinterpret_cast<jlong>(decoder.release());
@@ -548,11 +567,12 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion_nativeDecode(
-    JNIEnv* env, jobject, jlong handle, jbyteArray buffer, jint offset, jint size, jlong presentationTimeUs) {
+    JNIEnv* env, jobject, jlong handle, jbyteArray buffer, jint offset, jint size,
+    jlong presentationTimeUs, jboolean repairEligible) {
 #if HUR_HAVE_FFMPEG
     auto* decoder = reinterpret_cast<FfmpegDecoder*>(handle);
     if (decoder == nullptr) return -1;
-    return decoder->decode(env, buffer, offset, size, presentationTimeUs);
+    return decoder->decode(env, buffer, offset, size, presentationTimeUs, repairEligible == JNI_TRUE);
 #else
     (void)env;
     (void)handle;
@@ -560,6 +580,7 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion
     (void)offset;
     (void)size;
     (void)presentationTimeUs;
+    (void)repairEligible;
     return -1;
 #endif
 }

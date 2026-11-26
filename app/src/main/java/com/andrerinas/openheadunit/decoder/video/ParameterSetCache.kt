@@ -7,6 +7,9 @@ internal class ParameterSetCache {
     private val ppsBase = 48
     private var entries: Array<ByteArray?>? = null
     private val latest = arrayOfNulls<ByteArray>(3)
+    /** Changes only when the retained configuration changes, not on byte-identical repetition. */
+    var revision: Long = 0L
+        private set
     var lastIndex: Int = -1
         private set
 
@@ -43,6 +46,7 @@ internal class ParameterSetCache {
         System.arraycopy(data, offset, normalized, 4, length)
         storage[slot] = normalized
         latest[group] = normalized
+        revision++
         if (slot > lastIndex) lastIndex = slot
         return normalized
     }
@@ -75,6 +79,7 @@ internal class ParameterSetCache {
         entries?.fill(null)
         latest.fill(null)
         lastIndex = -1
+        revision++
     }
 
     private fun kindIndex(kind: Int): Int = when (kind) {

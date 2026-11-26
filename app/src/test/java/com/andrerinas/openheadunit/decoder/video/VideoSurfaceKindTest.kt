@@ -50,6 +50,7 @@ class VideoSurfaceKindTest {
         VideoDecoder::class.java.getDeclaredField("outputTiming").apply { isAccessible = true }.set(decoder, bridge)
         decoder.setSurface(surface, VideoSurfaceKind.TEXTURE_CONSUMER)
         assertEquals(VideoSurfaceKind.TEXTURE_CONSUMER, decoder.currentSurfaceKind)
+        decoder.awaitRetirementForTest()
         verify(codec).stop()
         verify(codec).release()
         assertEquals(Long.MIN_VALUE, bridge.deadline(12))

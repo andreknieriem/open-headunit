@@ -15,6 +15,7 @@ import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.FfmpegVideoDecoder
 import com.andrerinas.openheadunit.decoder.video.GalVideoOutputTiming
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
+import com.andrerinas.openheadunit.decoder.video.awaitRetirementForTest
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.decoder.video.VideoSize
 import com.andrerinas.openheadunit.utils.AppLog
@@ -381,10 +382,10 @@ class VideoDimensionsPublicationTest {
                 old.start()
                 assertTrue("output did not reach format lookup", enteredFormat.await(5, TimeUnit.SECONDS))
                 // The selected size really changes even though it now matches actual output.
-                // Stop must retire the blocked worker without holding the publication lock.
+                // Stop must retire the blocked worker without holding the publication lock,
+                // and must not release its codec underneath that still-running worker.
                 assertTrue(f.decoder.selectFormat(1920, 1080, 30))
-                verify(codec).stop()
-                verify(codec).release()
+                verify(codec, never()).release()
                 f.decoder.notifyVideoDimensions()
                 f.drainUi()
                 assertEquals(1920 to 1080, f.storedSize())
@@ -392,6 +393,9 @@ class VideoDimensionsPublicationTest {
                 old.join(3_000)
                 assertFalse("retired output did not finish", old.isAlive)
                 failure.get()?.let { throw AssertionError("old output failed", it) }
+                f.decoder.awaitRetirementForTest()
+                verify(codec).stop()
+                verify(codec).release()
                 f.decoder.notifyVideoDimensions()
                 f.drainUi()
                 assertEquals(1920 to 1080, f.storedSize())

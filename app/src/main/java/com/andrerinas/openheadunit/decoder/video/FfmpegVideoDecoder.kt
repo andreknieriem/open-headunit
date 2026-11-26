@@ -13,9 +13,14 @@ class FfmpegVideoDecoder(
     private val yuvFrameSink: SoftwareYuvFrameSink?,
     private val width: Int,
     private val height: Int,
-    private val beforeRender: PresentationGate? = null
+    private val isCurrent: () -> Boolean = { true },
+    private val beforeRender: PresentationGate? = null,
 ) {
     fun interface PresentationGate { fun beforeRender(presentationTimeUs: Long): Boolean }
+
+    // JNI renders/callbacks run synchronously inside nativeDecode. VideoDecoder retires a started
+    // instance only after its worker returns; the monitor still keeps stop from freeing the
+    // handle concurrently with a native call.
     private var nativeHandle: Long = 0
     // Both callbacks run synchronously on the same decoder worker, for one AVFrame at a time.
     private var submissionSequence = 0L
@@ -66,6 +71,10 @@ class FfmpegVideoDecoder(
         return result and RENDERED_KEYFRAME.inv()
     }
 
+    /**
+     * Clears the handle and output evidence, then releases native resources on the caller thread.
+     * Native decoding and its synchronous callbacks finish before release.
+     */
     @Synchronized fun stop() {
         val handle = nativeHandle
         nativeHandle = 0
@@ -84,7 +93,12 @@ class FfmpegVideoDecoder(
 
     @Keep
     @Suppress("unused")
+    private fun canSubmitNativeWindowFrame(): Boolean = isCurrent()
+
+    @Keep
+    @Suppress("unused")
     private fun onNativeOutputSize(width: Int, height: Int) {
+        if (!isCurrent()) return
         outputWidth = width
         outputHeight = height
     }
@@ -115,6 +129,7 @@ class FfmpegVideoDecoder(
         vPlane: ByteBuffer,
         vStride: Int
     ): Boolean {
+        if (!isCurrent()) return false
         // Native planes are borrowed for this call only; the sink must finish or cancel every
         // reader before returning, including when teardown interrupts this worker.
         return yuvFrameSink?.renderYuv420Frame(

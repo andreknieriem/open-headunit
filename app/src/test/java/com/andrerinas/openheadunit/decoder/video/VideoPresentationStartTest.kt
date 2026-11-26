@@ -225,6 +225,7 @@ class VideoPresentationStartTest {
         assertNotNull(csd1)
         assertTrue(decoder.selectFormat(800, 480, 30))
         decoder.beginPresentationSession(1)
+        decoder.awaitRetirementForTest()
         verify(codec).stop()
         verify(codec).release()
         assertEquals(30, field(decoder, "selectedFps").get(decoder))

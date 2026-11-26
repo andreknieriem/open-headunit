@@ -9,6 +9,7 @@ import android.media.MediaFormat
 import android.os.Build
 import android.view.Surface
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder.CodecType
+import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
 import org.junit.Test
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 /** Real session selection/recovery; platform output is scripted, not the decoder's decisions. */
 class VideoCodecSessionTest {
-    private class Fixture(preference: CodecType, forceSoftware: Boolean = false) : AutoCloseable {
+    private class Fixture(preference: CodecType, forceSoftware: Boolean = false, lowLatency: Boolean = false) : AutoCloseable {
         val decoder: VideoDecoder
         // An invalid platform target exposes the initialization gate without creating a codec,
         // touching a real Surface, or depending on a packaged FFmpeg library.
@@ -34,6 +35,9 @@ class VideoCodecSessionTest {
         private val softwareFailure = AtomicReference<Throwable?>()
         var timedFeedOffers = 0
             private set
+        // Only the scripted worker reports per-frame completion; a real replacement is observed
+        // through its callbacks and native-boundary invocations instead.
+        private var scriptedQueue: Any? = null
 
         init {
             val context = mock(Context::class.java)
@@ -43,16 +47,25 @@ class VideoCodecSessionTest {
             `when`(preferences.getString(anyString(), anyString())).thenAnswer { it.arguments[1] }
             `when`(preferences.getString(eq("video-codec"), anyString())).thenReturn(preference.settingsValue)
             `when`(preferences.getBoolean(eq("force-software-decoding"), anyBoolean())).thenReturn(forceSoftware)
+            `when`(preferences.getBoolean(eq("debug-video-low-latency"), anyBoolean())).thenReturn(lowLatency)
             `when`(preferences.getInt(eq("software-video-decoder"), anyInt()))
                 .thenReturn(Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG.value)
-            decoder = VideoDecoder(Settings(context), elapsedRealtime = { 1_000L })
+            // Host JVMs have neither Android scheduling nor FFmpeg JNI. Replace only these
+            // platform boundaries; startup, retirement, replay and worker loops remain real.
+            decoder = VideoDecoder(
+                Settings(context),
+                elapsedRealtime = { 1_000L },
+                setThreadPriority = {},
+                bundledDecoderAvailable = { true },
+            )
             decoder.onDecoderError = { errors.add(it) }
             decoder.setSurface(surface)
             clearInvocations(surface)
         }
 
         fun decode(packet: ByteArray, announced: CodecType) {
-            val completion = if (decoder.usingBundledSoftwareVideo) CountDownLatch(1) else null
+            val queue = VideoDecoder::class.java.getDeclaredField("frameQueue").apply { isAccessible = true }.get(decoder)
+            val completion = if (decoder.usingBundledSoftwareVideo && queue === scriptedQueue) CountDownLatch(1) else null
             softwareCompletion.set(completion)
             decoder.decode(packet, 0, packet.size, software, announced)
             // A restart may have retired the software owner instead of queueing this packet.
@@ -121,6 +134,7 @@ class VideoCodecSessionTest {
                 }
             }
             setOwner("outputTiming", timing)
+            scriptedQueue = queue
             setOwner("frameQueue", queue)
             setOwner("running", true)
             setOwner("feedThread", worker)
@@ -169,6 +183,7 @@ class VideoCodecSessionTest {
             val owner = failOutputOwner(renderFirst)
             clearInvocations(surface)
             decode(packet, announced)
+            decoder.awaitRetirementForTest()
             verify(owner).stop()
             verify(owner).release()
         }
@@ -178,7 +193,7 @@ class VideoCodecSessionTest {
             assertFalse("decoder failure is not evidence of a different encoding", decoder.sessionHealth().codecFallbackUsed)
         }
 
-        override fun close() { decoder.stop("test session ended") }
+        override fun close() { decoder.stop("test session ended"); decoder.awaitRetirementForTest() }
     }
 
     private fun slice(type: CodecType): ByteArray = when (type) {
@@ -189,8 +204,11 @@ class VideoCodecSessionTest {
 
     private fun other(type: CodecType) = if (type == CodecType.H264) CodecType.H265 else CodecType.H264
 
+    private fun softwareWorker(decoder: VideoDecoder): Thread =
+        VideoDecoder::class.java.getDeclaredField("feedThread").apply { isAccessible = true }.get(decoder) as Thread
+
     /** Mock only Android enumeration, so the removed AVC -> available HEVC fallback could run. */
-    private fun withPlatformCodecs(hevcAvailable: Boolean = true, body: () -> Unit) {
+    private fun withPlatformCodecs(hevcAvailable: Boolean = true, sdkInt: Int = 21, body: () -> Unit) {
         val sdk = Build.VERSION::class.java.getDeclaredField("SDK_INT").apply { isAccessible = true }
         val oldSdk = sdk.getInt(null)
         // Same host-stub technique as MicrophoneForegroundClaimTest; always restore the final field.
@@ -207,7 +225,7 @@ class VideoCodecSessionTest {
             }
         }.toTypedArray()
         try {
-            setSdk(21)
+            setSdk(sdkInt)
             mockConstruction(MediaCodecList::class.java) { list, _ ->
                 `when`(list.codecInfos).thenReturn(codecs)
             }.use {
@@ -374,7 +392,10 @@ class VideoCodecSessionTest {
                         Fixture(preference = CodecType.H264).use { f ->
                             `when`(f.surface.isValid).thenReturn(true)
                             val packet = slice(CodecType.H264) // No SPS evidence and no successful start.
-                            repeat(8) { f.decode(packet, CodecType.H264) }
+                            repeat(8) {
+                                f.decode(packet, CodecType.H264)
+                                f.decoder.awaitRetirementForTest()
+                            }
                             assertEquals(3, f.errors.size)
                             assertTrue(attempts > 0)
                             val latchedAttempts = attempts
@@ -520,12 +541,320 @@ class VideoCodecSessionTest {
             f.decode(packet, type)
             f.decode(packet, other(type))
             assertEquals(listOf("software_video_error_-7"), f.errors)
+            f.decoder.awaitRetirementForTest()
             verify(owner).stop()
             assertFalse(f.decoder.usingBundledSoftwareVideo)
             assertFalse(f.decoder.hasCrediblePicture)
             assertTrue(f.decoder.hasRenderedThisSession)
             assertEquals(3L, f.decoder.sessionHealth().framesRendered)
             f.assertSelected(type)
+        }
+    }
+    private class NativePause {
+        val entered = CountDownLatch(1)
+        val resume = CountDownLatch(1)
+        fun block() {
+            entered.countDown()
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+            while (resume.count != 0L && System.nanoTime() < deadline) {
+                try { resume.await(100, TimeUnit.MILLISECONDS) } catch (_: InterruptedException) {}
+            }
+            check(resume.count == 0L) { "native call was not resumed" }
+        }
+        fun await() = assertTrue("native call was not reached", entered.await(3, TimeUnit.SECONDS))
+    }
+
+    private fun renderingCodec(requiredAccessUnit: ByteArray? = null): MediaCodec {
+        val codec = mock(MediaCodec::class.java)
+        val input = ByteBuffer.allocate(maxOf(4096, requiredAccessUnit?.size ?: 0))
+        val outputs = LinkedBlockingQueue<Long>()
+        `when`(codec.dequeueInputBuffer(anyLong())).thenReturn(0)
+        `when`(codec.getInputBuffer(anyInt())).thenReturn(input)
+        doAnswer { call ->
+            val size = call.getArgument<Int>(2)
+            val accepted = if (requiredAccessUnit == null) size > 0 else {
+                val bytes = ByteArray(size)
+                input.duplicate().apply { position(call.getArgument(1)); get(bytes) }
+                requiredAccessUnit.contentEquals(bytes) &&
+                    VideoKeyframeScanner.containsKeyframe(bytes, 0, bytes.size, false)
+            }
+            if (accepted) outputs.add(call.getArgument(3))
+            null
+        }.`when`(codec).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+        `when`(codec.dequeueOutputBuffer(any(), anyLong())).thenAnswer { call ->
+            val pts = outputs.poll(10, TimeUnit.MILLISECONDS)
+            if (pts == null) MediaCodec.INFO_TRY_AGAIN_LATER else {
+                call.getArgument<MediaCodec.BufferInfo>(0).apply {
+                    presentationTimeUs = pts
+                    size = 1
+                }
+                7
+            }
+        }
+        return codec
+    }
+
+    @Test fun `blocking stop or release gates replacements and decoding recovers after physical retirement`() {
+        for (blockStop in listOf(true, false)) withPlatformCodecs {
+            mockStatic(MediaFormat::class.java).use { formats ->
+                formats.`when`<MediaFormat> { MediaFormat.createVideoFormat(anyString(), anyInt(), anyInt()) }
+                    .thenAnswer { mock(MediaFormat::class.java) }
+                mockStatic(MediaCodec::class.java).use { factories ->
+                    val replacement = renderingCodec()
+                    factories.`when`<MediaCodec> { MediaCodec.createByCodecName(anyString()) }.thenReturn(replacement)
+                    Fixture(CodecType.H264).use { f ->
+                        val packet = slice(CodecType.H264)
+                        f.beginPinnedSession(CodecType.H264, packet)
+                        val old = f.failOutputOwner()
+                        val pause = NativePause()
+                        val caller = Thread.currentThread()
+                        val pauseNative = org.mockito.stubbing.Answer<Any?> {
+                            assertNotSame(caller, Thread.currentThread())
+                            assertFalse("native shutdown must not own the UI monitor", Thread.holdsLock(f.decoder))
+                            pause.block()
+                            null
+                        }
+                        if (blockStop) doAnswer(pauseNative).`when`(old).stop()
+                        else doAnswer(pauseNative).`when`(old).release()
+                        try {
+                            f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                            pause.await()
+                            `when`(f.surface.isValid).thenReturn(true)
+                            repeat(10) {
+                                f.decoder.setSurface(null)
+                                f.decoder.setSurface(f.surface)
+                                f.decode(packet, CodecType.H264)
+                            }
+                            factories.verifyNoInteractions()
+                            assertTrue(f.decoder.hasPendingRetirement)
+                            assertTrue("waiting is not a decoder failure", f.errors.isEmpty())
+                            // This case exercises an explicit later retry; idle recovery is covered
+                            // separately with a real IDR and thread-scoped platform doubles.
+                            f.decoder.stop("discard gated test input")
+                            pause.resume.countDown()
+                            f.decoder.awaitRetirementForTest()
+                            val rendered = CountDownLatch(1)
+                            f.decoder.onFirstFrameListener = { rendered.countDown() }
+                            f.decode(packet, CodecType.H264)
+                            assertTrue("subsequent input must restart actual decoding", rendered.await(3, TimeUnit.SECONDS))
+                            assertTrue(f.decoder.hasRenderedThisSession)
+                            verify(old).stop()
+                            verify(old).release()
+                            verify(replacement).configure(any(), eq(f.surface), isNull(), eq(0))
+                        } finally { pause.resume.countDown() }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test fun `late retirement completion notifies once without reviving a detached picture`() {
+        withPlatformCodecs {
+            Fixture(CodecType.H264).use { f ->
+                val packet = slice(CodecType.H264)
+                f.beginPinnedSession(CodecType.H264, packet)
+                val old = f.failOutputOwner()
+                val pause = NativePause()
+                doAnswer { pause.block(); null }.`when`(old).release()
+                val completed = CountDownLatch(1)
+                val retirementThread = AtomicReference<Thread>()
+                val callbackFailure = AtomicReference<Throwable?>()
+                val rendered = CountDownLatch(1)
+                f.decoder.onFirstFrameListener = { rendered.countDown() }
+                try {
+                    `when`(f.surface.isValid).thenReturn(true)
+                    f.decode(packet, CodecType.H264)
+                    pause.await()
+                    f.decoder.setSurface(null)
+                    f.decoder.stop("preflight")
+                    f.decoder.whenRetired {
+                        retirementThread.set(Thread.currentThread())
+                        try {
+                            assertFalse(Thread.holdsLock(f.decoder))
+                            val lock = VideoDecoder::class.java.getDeclaredField("nativeWorkLock")
+                                .apply { isAccessible = true }.get(f.decoder) as java.util.concurrent.locks.ReentrantLock
+                            assertFalse(lock.isHeldByCurrentThread)
+                            assertFalse(f.decoder.hasPendingRetirement)
+                        } catch (failure: Throwable) { callbackFailure.set(failure) }
+                        completed.countDown()
+                    }
+                    assertFalse("observation deadlines cannot finish native release", completed.await(1_100, TimeUnit.MILLISECONDS))
+                    assertTrue(f.decoder.hasPendingRetirement)
+                    pause.resume.countDown()
+                    assertTrue("late physical completion must still release its observer", completed.await(3, TimeUnit.SECONDS))
+                    retirementThread.get().join(3_000)
+                    assertFalse(retirementThread.get().isAlive)
+                    callbackFailure.get()?.let { throw AssertionError("retirement callback failed", it) }
+                    assertEquals("detached pending input must not produce a picture", 1L, rendered.count)
+                    assertFalse(f.decoder.hasCrediblePicture)
+                    verify(old).release()
+                    var immediate = 0
+                    f.decoder.whenRetired { immediate++ }
+                    f.decoder.stop("already retired")
+                    assertEquals("already-complete observers run once without another shutdown", 1, immediate)
+                } finally { pause.resume.countDown() }
+            }
+        }
+    }
+
+    @Test fun `software native decode cannot block surface retirement or publish into the next owner`() {
+        Fixture(CodecType.H264, forceSoftware = true).use { f ->
+            val packet = slice(CodecType.H264)
+            f.beginPinnedSession(CodecType.H264, packet)
+            val software = f.bundledOutput(1)
+            val worker = softwareWorker(f.decoder)
+            val pause = NativePause()
+            val nativeFailure = AtomicReference<Throwable?>()
+            `when`(software.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyLong())).thenAnswer {
+                if (Thread.holdsLock(f.decoder)) nativeFailure.set(AssertionError("native decode owns the UI monitor"))
+                pause.block()
+                1
+            }
+            try {
+                // The transport only queues; the software worker owns the native call.
+                f.decoder.decode(packet, 0, packet.size, true, CodecType.H264)
+                pause.await()
+                val stopped = CountDownLatch(1)
+                val stopper = Thread {
+                    f.decoder.setSurface(null)
+                    stopped.countDown()
+                }
+                stopper.start()
+                assertTrue("UI teardown must not wait for native decode", stopped.await(250, TimeUnit.MILLISECONDS))
+                stopper.join(3000)
+                val replacementListener: () -> Unit = { fail("retired software must not notify the next owner") }
+                f.decoder.onFirstFrameListener = replacementListener
+                verify(software, never()).stop()
+                assertTrue("a blocked native call keeps replacement allocation closed", f.decoder.hasPendingRetirement)
+                pause.resume.countDown()
+                f.decoder.awaitRetirementForTest()
+                assertFalse(worker.isAlive)
+                nativeFailure.get()?.let { throw it }
+                verify(software).stop()
+                assertSame(replacementListener, f.decoder.onFirstFrameListener)
+                assertFalse(f.decoder.hasRenderedThisSession)
+                assertEquals(0L, f.decoder.framesRenderedThisSession)
+                assertTrue(f.errors.isEmpty())
+            } finally {
+                pause.resume.countDown()
+                worker.join(3000)
+            }
+        }
+    }
+
+    @Test fun `replacement bundled decoder reannounces dimensions after old dispatch is suppressed`() {
+        Fixture(CodecType.H264, forceSoftware = true).use { f ->
+            val packet = slice(CodecType.H264)
+            f.beginPinnedSession(CodecType.H264, packet)
+            val old = f.bundledOutput(1)
+            val oldWorker = softwareWorker(f.decoder)
+            `when`(old.outputWidth).thenReturn(1280)
+            `when`(old.outputHeight).thenReturn(720)
+            val pause = NativePause()
+            val previousLogger = AppLog.LOGGER
+            val dimensions = mutableListOf<Pair<Int, Int>>()
+            f.decoder.dimensionsListener = object : VideoDimensionsListener {
+                override fun onVideoDimensionsChanged(update: VideoDimensions) {
+                    dimensions += update.width to update.height
+                }
+            }
+            // The first-frame line is dispatched before that frame's dimension callback.
+            AppLog.LOGGER = object : AppLog.Logger {
+                override fun println(priority: Int, tag: String, msg: String) {
+                    if (msg.contains("First bundled software")) pause.block()
+                }
+            }
+            try {
+                f.decoder.decode(packet, 0, packet.size, true, CodecType.H264)
+                pause.await()
+                f.decoder.stopIfCurrentSurface(f.surface, DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                pause.resume.countDown()
+                oldWorker.join(3_000)
+                assertFalse(oldWorker.isAlive)
+                assertTrue(dimensions.isEmpty())
+                f.decoder.awaitRetirementForTest()
+                AppLog.LOGGER = previousLogger
+                val replacement = f.bundledOutput(1, 1)
+                `when`(replacement.outputWidth).thenReturn(1280)
+                `when`(replacement.outputHeight).thenReturn(720)
+                repeat(2) { f.decode(packet, CodecType.H264) }
+                assertEquals(listOf(1280 to 720), dimensions)
+            } finally {
+                AppLog.LOGGER = previousLogger
+                pause.resume.countDown()
+                oldWorker.join(3_000)
+            }
+        }
+    }
+
+    @Test fun `retiring during configure or failed rung release cannot publish or allocate another stale candidate`() {
+        for (blockConfigure in listOf(true, false)) withPlatformCodecs(sdkInt = 23) {
+            mockStatic(android.util.Log::class.java).use { logs ->
+                logs.`when`<String> { android.util.Log.getStackTraceString(any(Throwable::class.java)) }
+                    .thenReturn("synthetic configuration failure")
+                mockStatic(MediaFormat::class.java).use { formats ->
+                    formats.`when`<MediaFormat> { MediaFormat.createVideoFormat(anyString(), anyInt(), anyInt()) }
+                        .thenAnswer { mock(MediaFormat::class.java) }
+                    mockStatic(MediaCodec::class.java).use { factories ->
+                        val old = mock(MediaCodec::class.java)
+                        val replacement = renderingCodec()
+                        factories.`when`<MediaCodec> { MediaCodec.createByCodecName(anyString()) }
+                            .thenReturn(old, replacement)
+                        Fixture(CodecType.H264, lowLatency = true).use { f ->
+                            val packet = slice(CodecType.H264)
+                            val pause = NativePause()
+                            `when`(f.surface.isValid).thenReturn(true)
+                            doAnswer {
+                                assertFalse(Thread.holdsLock(f.decoder))
+                                if (blockConfigure) pause.block()
+                                else throw IllegalArgumentException("optional keys rejected")
+                                null
+                            }.`when`(old).configure(any(), eq(f.surface), isNull(), eq(0))
+                            if (!blockConfigure) doAnswer {
+                                assertFalse(Thread.holdsLock(f.decoder))
+                                pause.block()
+                                null
+                            }.`when`(old).release()
+                            val failure = AtomicReference<Throwable?>()
+                            val teardown = Thread {
+                                try {
+                                    pause.await()
+                                    val start = System.nanoTime()
+                                    assertTrue(f.decoder.detachSurfaceIfCurrent(
+                                        f.surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED))
+                                    f.decoder.setSurface(f.surface)
+                                    assertTrue("native initialization must not hold the UI monitor",
+                                        System.nanoTime() - start < TimeUnit.MILLISECONDS.toNanos(250))
+                                    assertTrue(f.decoder.hasPendingRetirement)
+                                    if (blockConfigure) verify(old, never()).release()
+                                } catch (t: Throwable) {
+                                    failure.set(t)
+                                } finally { pause.resume.countDown() }
+                            }
+                            teardown.start()
+                            try {
+                                f.decode(packet, CodecType.H264)
+                                teardown.join(3000)
+                                assertFalse(teardown.isAlive)
+                                failure.get()?.let { throw AssertionError("surface teardown failed", it) }
+                                f.decoder.awaitRetirementForTest()
+                                verify(old, never()).start()
+                                verify(old).release()
+                                verifyNoInteractions(replacement)
+                                assertTrue(f.errors.isEmpty())
+                                val rendered = CountDownLatch(1)
+                                f.decoder.onFirstFrameListener = { rendered.countDown() }
+                                f.decode(packet, CodecType.H264)
+                                assertTrue("fresh input must recover after the old rung exits",
+                                    rendered.await(3, TimeUnit.SECONDS))
+                            } finally {
+                                pause.resume.countDown()
+                                teardown.join(3000)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

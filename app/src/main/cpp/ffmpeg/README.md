@@ -29,6 +29,8 @@ including while MediaCodec is running or a surface is absent. The cache preserve
 each syntax ID, replaces updates to that ID, and replays VPS/SPS/PPS in dependency
 order into a fresh decoder. Identical sets reuse stored bytes. Encoded picture
 bytes are passed through unchanged.
+Direct Surface rendering checks ownership before each native window submission.
+
 The message type selects the CSD or timestamped-DATA payload offset; start-code
 lookalikes at another offset do not change the envelope.
 A fragment-loss verdict remains attached to its assembly until LAST or replacement;

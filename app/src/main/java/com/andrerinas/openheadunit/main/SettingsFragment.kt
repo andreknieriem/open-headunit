@@ -87,6 +87,7 @@ import com.andrerinas.openheadunit.utils.LogExporter
 import com.andrerinas.openheadunit.utils.SettingsBackupManager
 import com.andrerinas.openheadunit.utils.SettingsRestoreHandler
 import com.andrerinas.openheadunit.utils.ToastUtils
+import com.andrerinas.openheadunit.utils.NavigationShareControl
 import com.andrerinas.openheadunit.utils.VpnControl
 import com.andrerinas.openheadunit.utils.DialogUtils
 import com.andrerinas.openheadunit.utils.ProjectionSetupQrDialog
@@ -189,6 +190,7 @@ class SettingsFragment : Fragment() {
     private var pendingEsp32RelayEnabled: Boolean? = null
     private var pendingUseGps by pending::useGps
     private var pendingShowNavigationNotifications by pending::showNavigationNotifications
+    private var pendingNavigationUpdateSharePackages by pending::navigationUpdateSharePackages
     private var pendingSyncMediaSessionAaMetadata by pending::syncMediaSessionAaMetadata
     private var pendingAutoResumePlaybackOnReconnect by pending::autoResumePlaybackOnReconnect
     private var pendingResolution by pending::resolution
@@ -625,6 +627,7 @@ class SettingsFragment : Fragment() {
 
         pendingUseGps?.let { if (it != settings.useGpsForNavigation) settings.useGpsForNavigation = it }
         pendingShowNavigationNotifications?.let { if (it != settings.showNavigationNotifications) settings.showNavigationNotifications = it }
+        pendingNavigationUpdateSharePackages?.let { if (it != settings.navigationUpdateSharePackages) settings.navigationUpdateSharePackages = it }
         pendingSyncMediaSessionAaMetadata?.let { if (it != settings.syncMediaSessionWithAaMetadata) settings.syncMediaSessionWithAaMetadata = it }
         pendingAutoResumePlaybackOnReconnect?.let { if (it != settings.autoResumePlaybackOnReconnect) settings.autoResumePlaybackOnReconnect = it }
         // The way back from a link the app measured as too slow: it lowered the profile after three
@@ -2443,6 +2446,27 @@ class SettingsFragment : Fragment() {
                 updateSettingsList()
             }
         ))
+
+        // Github flavor only, through NavigationShareControl: the copy lives in that flavor's
+        // resources, and the Play Store build keeps the broadcast to the signature permission.
+        if (NavigationShareControl.isAvailable()) {
+            val sharePackages = pendingNavigationUpdateSharePackages ?: settings.navigationUpdateSharePackages
+            items.add(SettingItem.SettingEntry(
+                stableId = "navigationUpdateShareApps",
+                nameResId = NavigationShareControl.rowNameRes,
+                descriptionResId = NavigationShareControl.rowDescriptionRes,
+                helpResId = NavigationShareControl.rowHelpRes,
+                value = NavigationSharePicker.summaryFor(requireContext(), sharePackages),
+                searchKeywords = "navigation broadcast share app status bar dashboard road distance eta turn",
+                onClick = { _ ->
+                    NavigationSharePicker.show(requireContext(), sharePackages) { chosen ->
+                        pendingNavigationUpdateSharePackages = chosen
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                }
+            ))
+        }
 
         // --- Theming Settings ---
         items.add(SettingItem.CategoryHeader("theming", R.string.category_theming))

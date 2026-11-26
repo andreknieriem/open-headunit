@@ -1,4 +1,11 @@
 # Changelog
+### 4.1.0-beta3
+- Native AA: start a local-only hotspot on Android 8 and later, with a setting to keep the system hotspot, thanks to @o-jcardenass
+- Native AA: one ordered Phones list decides which phone wakes and connects, thanks to @o-jcardenass
+- Logging: keep an in-app ring buffer of recent OPENHU log lines and append it to exported logs so noisy system logcat buffers no longer lose them
+- UI: use a dark default splash screen background on older Android versions without system dark mode (#808)
+- Navigation: opt-in "Share navigation with apps" setting (GitHub flavor only) to send turn-by-turn broadcasts to user-selected apps, thanks to @Oleg-rit
+
 ### 4.1.0-beta2
 - Video: show late map frames immediately instead of dropping them when wireless transfer exhausts the GAL pacing window, thanks to @o-jcardenass
 - Video: show the newest decoded picture even when video falls behind audio. Under load, the bundled FFmpeg decoder stops pacing before its input queue fills and makes room for recovery frames without discarding queued codec configuration.

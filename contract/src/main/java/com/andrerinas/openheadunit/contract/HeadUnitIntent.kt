@@ -161,6 +161,10 @@ class NavigationUpdateIntent(
          * Signature-level permission required to receive or send [NavigationUpdateIntent] broadcasts.
          * Senders must call sendBroadcast(intent, BROADCAST_PERMISSION).
          * Receivers must request this permission using <uses-permission> and should enforce it in their manifest declaration.
+         *
+         * In the github build the user can also name apps in Settings ("Share navigation with
+         * apps"). Each named app gets its own copy addressed to its package with `setPackage()`,
+         * without this permission and with the same extras. An app that is not named gets nothing.
          */
         const val BROADCAST_PERMISSION = "${HeadUnit.packageName}.permission.NAVIGATION_UPDATE"
     }

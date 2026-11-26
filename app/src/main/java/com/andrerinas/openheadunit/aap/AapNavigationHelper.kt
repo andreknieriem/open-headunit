@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.SystemClock
 import android.text.format.DateFormat
@@ -11,12 +12,15 @@ import androidx.core.app.NotificationCompat
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.protocol.proto.NavigationStatus
 import com.andrerinas.openheadunit.contract.NavigationUpdateIntent
+import com.andrerinas.openheadunit.utils.NavigationShareControl
 import java.util.Date
 import com.andrerinas.openheadunit.aap.protocol.proto.NavigationStatus.NextTurnDetail.NextEvent as LegacyNextEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.NavigationStatus.NextTurnDetail.Side as LegacySide
 
 class AapNavigationHelper(
     private val context: Context,
+    /** The apps the user named in Settings; see [NavigationUpdateSharePolicy]. */
+    private val sharePackages: () -> Set<String> = { emptySet() },
     private val onNavigationUpdate: ((NightOverlayState.Navigation?) -> Unit)? = null
 ) {
     data class TimedMessage<T>(
@@ -124,7 +128,17 @@ class AapNavigationHelper(
             estimatedArrival = prepared.estimatedArrival,
             currentRoad = prepared.currentRoad
         )
-        context.applicationContext.sendBroadcast(intent, NavigationUpdateIntent.BROADCAST_PERMISSION)
+        val appContext = context.applicationContext
+        appContext.sendBroadcast(intent, NavigationUpdateIntent.BROADCAST_PERMISSION)
+        // An app the user named cannot hold the signature permission, so its copy goes without
+        // one. setPackage() makes that copy reach this one app and nothing else.
+        NavigationUpdateSharePolicy.targetPackages(
+            sharingAvailable = NavigationShareControl.isAvailable(),
+            chosenPackages = sharePackages(),
+            ownPackage = appContext.packageName.orEmpty()
+        ).forEach { target ->
+            appContext.sendBroadcast(Intent(intent).setPackage(target))
+        }
     }
 
     fun showNotificationForSnapshot(snapshot: NavigationSnapshot, distanceMeters: Int?) {

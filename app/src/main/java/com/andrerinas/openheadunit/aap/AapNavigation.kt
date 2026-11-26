@@ -16,7 +16,11 @@ internal class AapNavigation(
     private val presentation: PresentationQueue,
     onNavigationUpdate: ((NightOverlayState.Navigation?) -> Unit)? = null,
 ) {
-    private val helper = AapNavigationHelper(context, onNavigationUpdate)
+    private val helper = AapNavigationHelper(
+        context,
+        sharePackages = { settings.navigationUpdateSharePackages },
+        onNavigationUpdate = onNavigationUpdate
+    )
     private val snapshot = AapNavigationHelper.NavigationSnapshot()
     // Written on the reader, read by the serial presentation executor at retirement. A pending
     // update counts too: close cancels its debounce, but external displays still need a clear.

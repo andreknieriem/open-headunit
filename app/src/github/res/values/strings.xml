@@ -6,10 +6,19 @@
     flavor ships no VPN component, no VpnControl implementation that does anything, and none of the
     copy below. Code in `main` reaches these through VpnControl's resource ids rather than R
     directly, because R.string.keep_dummy_vpn does not exist in the other flavor.
+
+    Sharing navigation updates with apps the user names is github-only for a related reason: it
+    passes location-related data to another app, which may need a data-sharing disclosure on Google
+    Play. Code in `main` reaches those strings through NavigationShareControl.
 -->
 <resources>
     <string name="keep_dummy_vpn">Keep the offline VPN up while connected</string>
     <string name="keep_dummy_vpn_description">Brings this app’s offline VPN up while a phone is connected. Intended for units on 2.4 GHz or with periodic audio and video stutters: it stops the head unit’s WiFi chip from looking for other networks. While it is on, other apps on this head unit have no internet. Applies on the next connection.</string>
     <string name="keep_dummy_vpn_summary">Keep the offline VPN up while a phone is connected. Other apps lose internet.</string>
     <string name="keep_dummy_vpn_denied">VPN permission denied. The offline VPN cannot be brought up automatically.</string>
+    <string name="navigation_share_apps">Share navigation with apps</string>
+    <string name="navigation_share_apps_summary">Chosen apps get road names, distances and the ETA from Android Auto.</string>
+    <string name="navigation_share_apps_help">Sends the turn-by-turn updates from Android Auto navigation to the apps you choose here, for example a status bar or a dashboard on this unit. Each chosen app gets the current road and the next road, the distance and time to the next maneuver, the maneuver itself, the distance and time left to the destination, and the ETA. It does not get your position or your destination. Only the apps you choose get it, and nothing is shared while no app is chosen.</string>
+    <string name="navigation_share_apps_off">Off</string>
+    <string name="navigation_share_apps_none_installed">No apps to choose from.</string>
 </resources>

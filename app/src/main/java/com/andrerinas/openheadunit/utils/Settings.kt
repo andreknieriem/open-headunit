@@ -266,6 +266,22 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("show-navigation-notifications", value).apply()
         }
 
+    /**
+     * Apps the user named to get their own copy of the navigation update broadcast, addressed with
+     * `setPackage()`. Empty by default, which keeps the broadcast to the signature permission only.
+     * See [com.andrerinas.openheadunit.aap.NavigationUpdateSharePolicy] for who actually gets it.
+     *
+     * Inert on the Play Store flavor: [NavigationShareControl.isAvailable] is false there, so the
+     * row is never rendered and nothing is sent to these packages.
+     *
+     * Not in backups and not writable through external configuration (see
+     * [SettingsBackupManager]): naming an app is a data-sharing grant, so only the user makes it,
+     * on this unit. A settings reset still clears it.
+     */
+    var navigationUpdateSharePackages: Set<String>
+        get() = prefs.getStringSet(KEY_NAVIGATION_UPDATE_SHARE_PACKAGES, null)?.toSet() ?: emptySet()
+        set(value) { prefs.edit().putStringSet(KEY_NAVIGATION_UPDATE_SHARE_PACKAGES, value).apply() }
+
     /** Mirror phone now-playing (title, artist, duration, art) in the system media session. */
     var syncMediaSessionWithAaMetadata: Boolean
         get() = prefs.getBoolean(KEY_SYNC_MEDIA_SESSION_AA_METADATA, false)
@@ -2108,6 +2124,7 @@ class Settings(private val context: Context) {
         /** SharedPreferences key; also used by [com.andrerinas.openheadunit.aap.AapService] for change listener. */
         const val KEY_LOG_LEVEL = "log-level"
         const val KEY_ALLOW_EXTERNAL_CONFIGURATION = "allow-external-configuration"
+        const val KEY_NAVIGATION_UPDATE_SHARE_PACKAGES = "navigation-update-share-packages"
         const val KEY_LOG_SOURCE = "log-source"
         const val KEY_LOG_LOCATION = "log-location"
         /** Persist whether log capture should be active across restarts. */

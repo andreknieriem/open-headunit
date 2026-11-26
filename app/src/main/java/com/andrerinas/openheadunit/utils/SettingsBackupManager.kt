@@ -326,6 +326,16 @@ object SettingsBackupManager {
         "usb-blacklist" to ValueType.STRING_SET
     )
 
+    /**
+     * Keys a reset clears but no backup carries and no import writes. Naming an app that gets the
+     * navigation updates is a data-sharing grant, so only the user makes it, on this unit: neither
+     * a backup file from elsewhere nor another app sending ACTION_SET_SETTINGS while external
+     * configuration is on may name an app, least of all itself.
+     */
+    internal val resetOnlyKeys = setOf(
+        Settings.KEY_NAVIGATION_UPDATE_SHARE_PACKAGES
+    )
+
     private val wifiScanBackupKeys = mapOf(
         "wifi-scan-enabled" to "enabled",
         "wifi-scan-fyt-auto-start" to "fyt-auto-start"
@@ -508,7 +518,7 @@ object SettingsBackupManager {
 
     fun resetPreferencesToDefaults(prefs: SharedPreferences): ResetResult {
         val existingPreferences = prefs.all
-        val changedKeys = backupKeys.keys
+        val changedKeys = (backupKeys.keys + resetOnlyKeys)
             .filter { key -> existingPreferences.containsKey(key) }
             .toCollection(linkedSetOf())
 

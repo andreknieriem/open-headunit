@@ -34,7 +34,29 @@ class SettingsBackupManagerTest {
             "p2p-legacy-5ghz", "p2p-legacy-5ghz-upper", "stand-down-station-for-wifi-direct",
             "start-in-fullscreen-mode", "auto-start-bt-mac"
         )
-        assertEquals(emptySet<String>(), readKeys - SettingsBackupManager.backupKeys.keys - migrationKeys)
+        // Read by the screen and cleared by a reset, but deliberately never exported or imported.
+        val grantKeys = SettingsBackupManager.resetOnlyKeys
+        assertEquals(emptySet<String>(), readKeys - SettingsBackupManager.backupKeys.keys - migrationKeys - grantKeys)
+    }
+
+    @Test fun `navigation share apps are never exported or imported but a reset clears them`() {
+        val key = Settings.KEY_NAVIGATION_UPDATE_SHARE_PACKAGES
+        assertFalse(key in SettingsBackupManager.backupKeys)
+        prefs.edit().putStringSet(key, setOf("club.x70.polosa")).commit()
+
+        val exported = SettingsBackupManager.exportFromContext(context)
+        assertFalse(JSONObject(exported).getJSONObject("settings").has(key))
+
+        // A file or an external ACTION_SET_SETTINGS naming another app is skipped, not applied.
+        val crafted = JSONObject(SettingsBackupManager.exportToJson(emptyMap<String, Any>(), "test", 1))
+        crafted.getJSONObject("settings").put(key, org.json.JSONArray(listOf("com.example.other")))
+        val result = SettingsBackupManager.importFromJson(context, crafted.toString(), applyTheme = false)
+        assertEquals(1, result.skippedKeys)
+        assertEquals(setOf("club.x70.polosa"), prefs.getStringSet(key, null))
+
+        val reset = SettingsBackupManager.resetFromContext(context, applyTheme = false)
+        assertTrue(key in reset.changedKeys)
+        assertFalse(prefs.contains(key))
     }
 
     @Test fun `every registered type survives JSON export and parsing`() {

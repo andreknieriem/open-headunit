@@ -374,7 +374,7 @@
     <string name="auto_connect_help">Questi metodi vengono eseguiti automaticamente all\'apertura dell\'app. Abilita quelli che desideri, quindi trascina per impostare l\'ordine. Verrà utilizzato il primo metodo abilitato che ha successo.</string>
     <string name="auto_connect_screen_help">Imposta come l\'app si connette da sola all\'apertura. Attiva i metodi che vuoi e trascinali nell\'ordine in cui provarli. Viene usato il primo che riesce. Il ritardo dà al WiFi il tempo di riattivarsi su un\'unità lenta. Niente qui cambia una connessione avviata da te. Salva applica le modifiche.</string>
     <string name="dpi_screen_help">Imposta la densità di pixel con cui disegna Android Auto. Un DPI più alto ingrandisce icone e testo, quindi sullo schermo ne entra meno. Un DPI più basso li rimpicciolisce, quindi ne entra di più. Automatico usa la densità di questo dispositivo. Il nuovo valore si applica alla prossima connessione.</string>
-    <string name="keymap_screen_help">Associa i tasti e i pulsanti di questa unità ad azioni: un tasto di Android Auto, un\'azione dello schermo di proiezione o l\'avvio di un\'app. Tocca Aggiungi associazione tasto, premi il tasto e scegli l\'azione. Tocca un\'associazione per modificarla o rimuoverla. Ripristina elimina tutte le associazioni.</string>
+    <string name="keymap_screen_help">Associa i tasti e i pulsanti di questa unità ad azioni: un tasto di Android Auto, un\'azione dello schermo di proiezione o l\'avvio di un\'app. Tocca Aggiungi associazione tasto, premi il tasto e scegli l\'azione. Tocca un\'associazione per modificarla o rimuoverla. Non fare nulla ignora il tasto su ogni percorso fisico. Ripristina elimina tutte le associazioni.</string>
     <string name="customization_screen_help">Cambia l\'aspetto della schermata iniziale di questa app: l\'immagine di sfondo, i colori e la dimensione dei quattro pulsanti, e la dimensione del testo. L\'impostazione notte controlla lo sfondo in modalità scura. Niente di questo cambia ciò che Android Auto mostra nella proiezione.</string>
     <string name="loading_screen_screen_help">Imposta l\'immagine o il breve video mostrati mentre Android Auto si avvia. Scegli un\'immagine o un video fino a 10 MB, adattali allo schermo e ripeti in loop le animazioni brevi. Puoi anche nascondere il testo di avvio. Rimuovi torna alla schermata predefinita.</string>
     <string name="auto_connect_priority">Priorità %d</string>
@@ -483,6 +483,7 @@
     <string name="key_assigned">\'%1$s\' assegnato a \'%2$s\'</string>
     <string name="action_picker_title">Scegli azione</string>
     <string name="action_remove_binding">Rimuovi associazione</string>
+    <string name="key_do_nothing">Non fare nulla</string>
     <string name="action_section_projection">Schermo di proiezione</string>
     <string name="action_section_aa_keys">Tasti di Android Auto</string>
     <string name="action_section_apps">App</string>

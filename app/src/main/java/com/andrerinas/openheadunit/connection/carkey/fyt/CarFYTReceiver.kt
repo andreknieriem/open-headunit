@@ -133,12 +133,9 @@ class CarFYTReceiver : CarKeyReceiver {
             modules[moduleCode] = module
             val callback = AAPCallback(moduleCode)
 
+            // Flag 1 also pushes the current value at once, which replays the last key as a new press.
             for (code in codes) {
-                module.register(
-                    callback,
-                    code,
-                    1, /* 1 = register, 0 = unregister */
-                )
+                module.register(callback, code, 0)
             }
 
             return true
@@ -174,7 +171,11 @@ class CarFYTReceiver : CarKeyReceiver {
                                 return
                             }
 
-                            receiver.handleClick(context, key)
+                            val settings = App.provide(context).settings
+                            receiver.handleClick(
+                                context, key,
+                                FytKeyTranslationPolicy.sendCode(key, settings.keyBindings),
+                            )
                         }
                     }
                 }

@@ -12,9 +12,11 @@ import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
 import com.andrerinas.openheadunit.input.InputAction
 import com.andrerinas.openheadunit.input.InputActionCodec
 import com.andrerinas.openheadunit.input.KeyBindingPolicy
+import com.andrerinas.openheadunit.input.KeyLearnPolicy
 import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
+import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.main.AppLauncher
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.utils.AppLog
@@ -234,6 +236,9 @@ class CommManager(
     private val BT_MEDIA_LINK_CACHE_MS = 2_000L
 
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
+
+    /** Whether the keymap screen is learning a key. Null in tests that build no AppComponent. */
+    var keyLearning: (() -> Boolean)? = null
 
     /** Callback for audio focus state changes (isPlaying). Set by AapService. */
     var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
@@ -1344,8 +1349,31 @@ class CommManager(
             return
         }
 
+        if (KeyLearnPolicy.holdsFromWire(keyLearning?.invoke() == true, source)) {
+            AppLog.d("CommManager: Holding key $keyCode for the keymap screen (src=$source)")
+            return
+        }
+
+        val stored = settings.keyBindings
+        if (ProjectionKeyPolicy.isIgnored(stored, keyCode, source)) {
+            AppLog.d("CommManager: Dropping ignored key $keyCode (src=$source)")
+            return
+        }
+        // An ignored key from a command or a notification goes on as if it had no binding.
+        val bindings = if (stored[keyCode] == InputAction.Ignore) stored - keyCode else stored
+
+        // A volume key nobody bound stays on the head unit; sending it moves Android Auto's focus.
+        if (ProjectionKeyPolicy.isLocalKey(keyCode, bindings, settings.volumeKeysToPhone, source)) {
+            AppLog.d("CommManager: Keeping key $keyCode local (src=$source)")
+            return
+        }
+        if (ProjectionKeyPolicy.lockKeepsKey(keyCode, LockedInputPolicy.engaged)) {
+            AppLog.d("CommManager: Keeping key $keyCode local, the unit is locked (src=$source)")
+            return
+        }
+
         // 1. Bindings (physical key -> action). An unbound key goes on as itself.
-        val logicalCode = when (val resolution = KeyBindingPolicy.resolve(settings.keyBindings, keyCode, isPress)) {
+        val logicalCode = when (val resolution = KeyBindingPolicy.resolve(bindings, keyCode, isPress)) {
             is KeyBindingPolicy.Resolution.SendToAa -> resolution.logicalCode
             is KeyBindingPolicy.Resolution.Swallow -> return
             is KeyBindingPolicy.Resolution.Run -> {
@@ -1430,7 +1458,7 @@ class CommManager(
         when (action) {
             is InputAction.Local -> _localActions.tryEmit(action.kind)
             is InputAction.LaunchApp -> AppLauncher.launch(context, action.target)
-            is InputAction.AaKey, InputAction.None -> Unit
+            is InputAction.AaKey, InputAction.None, InputAction.Ignore -> Unit
         }
     }
 

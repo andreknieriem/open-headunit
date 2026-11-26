@@ -43,6 +43,7 @@ import com.andrerinas.openheadunit.input.InputAction
 import com.andrerinas.openheadunit.input.InputActionCodec
 import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.input.TwoFingerGestureTracker
+import com.andrerinas.openheadunit.input.KeyBindingSnapshot
 import com.andrerinas.openheadunit.main.AppLauncher
 import com.andrerinas.openheadunit.utils.ActivityState
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ import com.andrerinas.openheadunit.decoder.video.VideoDimensions
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ScreenPower
+import com.andrerinas.openheadunit.input.KeyLearnPolicy
 import com.andrerinas.openheadunit.input.LockedInputPolicy
 import com.andrerinas.openheadunit.input.LockedViewPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
@@ -73,6 +75,7 @@ import com.andrerinas.openheadunit.view.ProjectionView
 import com.andrerinas.openheadunit.view.TextureProjectionView
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
+import com.andrerinas.openheadunit.utils.TsMainUiAudioChannel
 import com.andrerinas.openheadunit.view.OverlayTouchView
 import com.andrerinas.openheadunit.view.PerformanceOverlay
 import com.andrerinas.openheadunit.view.NightProjectionOverlay
@@ -108,7 +111,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private lateinit var projectionView: IProjectionView
     private val videoDecoder: VideoDecoder by lazy { App.provide(this).videoDecoder }
     private val settings: Settings by lazy { Settings(this) }
-    private val cachedKeyBindings: Map<Int, InputAction> by lazy { settings.keyBindings }
+    private val keyBindingSnapshot = KeyBindingSnapshot { settings.keyBindings }
+    private val cachedKeyBindings: Map<Int, InputAction> get() = keyBindingSnapshot.current
 
     // "Show over lock screen": the open exit dialog (closed when the unit locks), the last
     // "Locked" hint, and the receiver that follows screen-off and unlock.
@@ -1112,7 +1116,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         override fun onReceive(context: Context, intent: Intent) {
             val event: KeyEvent? = IntentCompat.getParcelableExtra(intent, KeyIntent.extraEvent, KeyEvent::class.java)
             event?.let {
-                onKeyEvent(it.keyCode, it.action == KeyEvent.ACTION_DOWN)
+                onKeyEvent(it.keyCode, it.action == KeyEvent.ACTION_DOWN, intent.getStringExtra(KeyLearnPolicy.EXTRA_ROUTE))
             }
         }
     }
@@ -1475,8 +1479,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // Again here: the setting may have changed in the settings screen.
         applyShowOverLockScreen()
         refreshLockedInput("resume")
+        keyBindingSnapshot.reload()
         closeCallRaiseEpisode("the projection is back in front")
         AppLog.i("AapProjectionActivity: onResume")
+        // Coming back from the stock car screen on a Topway unit leaves the speakers on the car.
+        TsMainUiAudioChannel.restore(this, "projection resumed")
         // Show the one-time rename notice even here, on top of an active projection.
         RenameNotice.maybeShow(this, App.provide(this).settings)
         Aa174Notice.maybeShow(this, App.provide(this).settings)
@@ -2528,7 +2535,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     /** What a gesture does: the same choices a key binding has. */
     private fun performTouchGesture(action: InputAction): Boolean = when (action) {
-        InputAction.None -> false
+        InputAction.None, InputAction.Ignore -> false
         is InputAction.Local -> performLocalAction(action.kind)
         is InputAction.AaKey -> {
             commManager.sendLogicalKey(action.keyCode, true, source = "gesture")
@@ -2900,11 +2907,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         }
 
-        // 1. Let the system handle volume keys and unmapped back keys.
+        if (ProjectionKeyPolicy.isIgnored(cachedKeyBindings, event.keyCode, "projection")) {
+            return true
+        }
+
+        // 1. Let the system handle unmapped back keys and local volume keys.
         // If Back was explicitly learned in Keymap and transport is running,
         // route it through CommManager so it can be remapped and sent to Android Auto.
-        if (commManager.connectionState.value is CommManager.ConnectionState.TransportStarted &&
-            ProjectionKeyPolicy.shouldRouteBackKeyToProjection(cachedKeyBindings, event.keyCode)) {
+        val transportStarted = commManager.connectionState.value is CommManager.ConnectionState.TransportStarted
+        if (transportStarted && ProjectionKeyPolicy.shouldRouteBackKeyToProjection(cachedKeyBindings, event.keyCode)) {
             commManager.sendKey(event.keyCode, action == KeyEvent.ACTION_DOWN, event.downTime, "projection")
             return true
         }
@@ -2920,14 +2931,16 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         // 1c. Volume keys go to the phone when the user chose that: a phone that keeps its own audio
         // does not hear this head unit's volume.
-        if (settings.volumeKeysToPhone &&
-            commManager.connectionState.value is CommManager.ConnectionState.TransportStarted &&
-            ProjectionKeyPolicy.isVolumeKey(event.keyCode)) {
+        val volumeToPhone = settings.volumeKeysToPhone
+        if (volumeToPhone && transportStarted && ProjectionKeyPolicy.isVolumeKey(event.keyCode)) {
             commManager.sendKey(event.keyCode, action == KeyEvent.ACTION_DOWN, event.downTime, "volume-to-phone")
             return true
         }
 
-        if (event.keyCode == KeyEvent.KEYCODE_BACK || ProjectionKeyPolicy.isVolumeKey(event.keyCode)) {
+        // A bound volume key goes on to CommManager like any other key.
+        if (event.keyCode == KeyEvent.KEYCODE_BACK ||
+            ProjectionKeyPolicy.isLocalKey(event.keyCode, cachedKeyBindings, volumeToPhone, "projection") ||
+            (ProjectionKeyPolicy.isVolumeKey(event.keyCode) && !transportStarted)) {
             return super.dispatchKeyEvent(event)
         }
 
@@ -2936,12 +2949,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         return true
     }
 
-    private fun onKeyEvent(keyCode: Int, isPress: Boolean) {
+    private fun onKeyEvent(keyCode: Int, isPress: Boolean, route: String?) {
         // Broadcasts (e.g. from CarKeyReceiver) still use this path.
         if (LockedInputPolicy.engaged) {
             AppLog.i("AapProjectionActivity: key broadcast $keyCode ignored, the unit is locked")
             return
         }
+        if (ProjectionKeyPolicy.isIgnored(cachedKeyBindings, keyCode, "key-broadcast")) return
         if (ProjectionKeyPolicy.isHomeKey(keyCode)) {
             if (isPress) {
                 AppLog.i("AapProjectionActivity: KEYCODE_HOME broadcast received -> returning to App Home")
@@ -2949,6 +2963,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             return
         }
+        if (!ProjectionKeyPolicy.broadcastSendsKey(route)) return
         commManager.sendKey(keyCode, isPress, null, "key-broadcast")
     }
 

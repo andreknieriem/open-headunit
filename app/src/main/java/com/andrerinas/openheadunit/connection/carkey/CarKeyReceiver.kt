@@ -4,21 +4,37 @@ import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
 import com.andrerinas.openheadunit.App
-import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.carkey.byd.CarBydReceiver
+import com.andrerinas.openheadunit.connection.carkey.dongfeng.CarDongfengReceiver
+import com.andrerinas.openheadunit.connection.carkey.dynavin.CarDynavinReceiver
 import com.andrerinas.openheadunit.connection.carkey.fyt.CarFYTReceiver
+import com.andrerinas.openheadunit.connection.carkey.ola.OlaVolumeReceiver
+import com.andrerinas.openheadunit.connection.carkey.qf.CarQfReceiver
+import com.andrerinas.openheadunit.connection.carkey.roadrover.CarRoadroverReceiver
+import com.andrerinas.openheadunit.connection.carkey.topway.CarTopwayReceiver
 import com.andrerinas.openheadunit.contract.KeyIntent
+import com.andrerinas.openheadunit.input.KeyLearnPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 
 interface CarKeyReceiver {
 
     companion object {
+        /** The source of a car key. A vendor route names itself as `carkey-<vendor>`. */
+        const val SOURCE = "carkey"
+        const val DEBUG_KEY_ACTION = "com.andrerinas.openheadunit.DEBUG_KEY"
+
         @JvmStatic
         fun newDefaultReceivers(): Array<CarKeyReceiver> {
             return arrayOf(
                 CarKeyBroadcastReceiver(),
                 CarBydReceiver(),
                 CarFYTReceiver(),
+                CarRoadroverReceiver(),
+                CarDynavinReceiver(),
+                CarDongfengReceiver(),
+                CarTopwayReceiver(),
+                CarQfReceiver(),
+                OlaVolumeReceiver(),
             )
         }
     }
@@ -35,6 +51,10 @@ interface CarKeyReceiver {
     val isSessionScoped: Boolean
         get() = false
 
+    /** Whether the keymap screen may register this session-scoped receiver while no session runs. */
+    val servesLearning: Boolean
+        get() = true
+
     @Throws(Exception::class)
     fun register(context: Context)
 
@@ -42,13 +62,22 @@ interface CarKeyReceiver {
     fun unregister()
 
 
-    /** Single key press or release — broadcasts for learning and projection handling. */
+    /** Whether this unit runs the vendor this receiver serves. Absent, the receiver is never registered. */
+    fun isSupportedOn(context: Context): Boolean = isSupported
 
-    private fun handleKey(context: Context, commManager: CommManager, keyCode: Int, isDown: Boolean) {
-        AppLog.d("CarKeyReceiver: Broadcasting key event: code=$keyCode, isDown=$isDown")
+    /**
+     * Single key press or release: feeds the keymap screen, then goes to `CommManager.sendKey`.
+     * [keyCode] is what the keymap screen sees; [sendCode] is what goes on.
+     */
+    fun handleKey(
+        context: Context, keyCode: Int, isDown: Boolean, sendCode: Int = keyCode,
+        source: String = SOURCE, downTime: Long? = null,
+    ) {
+        AppLog.d("CarKeyReceiver: Broadcasting key event: code=$keyCode, isDown=$isDown, src=$source")
         context.sendBroadcast(
             Intent(KeyIntent.action).apply {
                 setPackage(context.packageName)
+                putExtra(KeyLearnPolicy.EXTRA_ROUTE, source)
                 putExtra(
                     KeyIntent.extraEvent,
                     KeyEvent(
@@ -57,21 +86,28 @@ interface CarKeyReceiver {
                 )
             },
         )
-        commManager.sendKey(keyCode, isDown, null, "carkey")
+        App.provide(context).commManager.sendKey(sendCode, isDown, downTime, source)
     }
 
-    fun handleKey(context: Context, keyCode: Int, isDown: Boolean) {
-        handleKey(context, App.provide(context).commManager, keyCode, isDown)
+    /** Full click (DOWN + UP). A [downTime] marks a new press, so fast clicks are not dropped as copies. */
+    fun handleClick(
+        context: Context, keyCode: Int, sendCode: Int = keyCode,
+        source: String = SOURCE, downTime: Long? = null,
+    ) {
+        handleKey(context, keyCode, true, sendCode, source, downTime)
+        handleKey(context, keyCode, false, sendCode, source, downTime)
     }
 
-    /** Full click (DOWN + UP) — broadcasts both events for learning AND sends to AA. */
-    private fun handleClick(context: Context, commManager: CommManager, keyCode: Int) {
-        handleKey(context, commManager, keyCode, true)
-        handleKey(context, commManager, keyCode, false)
-    }
-
-    fun handleClick(context: Context, keyCode: Int) {
-        handleClick(context, App.provide(context).commManager, keyCode)
+    /** Shows a vendor key's raw data on the keymap screen's tester, before it is mapped. */
+    fun showRawKey(context: Context, action: String, keyCode: Int, vararg detail: Pair<String, String>) {
+        context.sendBroadcast(
+            Intent(DEBUG_KEY_ACTION).apply {
+                setPackage(context.packageName)
+                putExtra("action", action)
+                putExtra("keyCode", keyCode)
+                detail.forEach { (name, value) -> putExtra(name, value) }
+            },
+        )
     }
 
     fun toggleVoiceAssistant(context: Context) {

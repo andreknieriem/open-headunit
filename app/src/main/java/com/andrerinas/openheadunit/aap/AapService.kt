@@ -72,6 +72,10 @@ import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.aap.protocol.messages.NightModeEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.MediaPlayback
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
+import com.andrerinas.openheadunit.contract.KeyIntent
+import com.andrerinas.openheadunit.input.KeyLearnPolicy
+import com.andrerinas.openheadunit.input.KeyLearnSilentTrack
+import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
@@ -222,6 +226,7 @@ class AapService : Service() {
     private var lastAaMediaMetadata: MediaPlayback.MediaMetaData? = null
     private var lastAaPlaybackPositionMs: Long = 0L
     private var lastAaPlaybackIsPlaying: Boolean? = null
+    private var lastAaPlaybackPaused = false
     private val reconnectPlayback = ReconnectPlaybackSnapshot()
     private var mediaSessionIsPlaying = false
     private var mediaMetadataDecodeJob: Job? = null
@@ -450,6 +455,40 @@ class AapService : Service() {
         )
     }
 
+    private var keyLearnWasLearning = false
+    private var keyLearnTrack: KeyLearnSilentTrack? = null
+
+    /** Reaches the media button route while the keymap screen learns, and lets go after. */
+    private fun applyKeyLearnState() {
+        val learning = carKeysManager.isLearning
+        val plan = KeyLearnSessionPolicy.decide(
+            sdkInt = Build.VERSION.SDK_INT,
+            learning = learning,
+            wasLearning = keyLearnWasLearning,
+            dialogOpen = carKeysManager.isAssignDialogOpen,
+            selfMode = commManager.isLoopbackSession || selfLauncherManager.isActive,
+            phoneConnected = commManager.isConnected,
+        )
+        keyLearnWasLearning = learning
+        if (plan.activate) safeMediaSessionCall { it.isActive = true }
+        if (plan.deactivate) {
+            AppLog.i("AapService: key learning: session inactive, no phone connected")
+            safeMediaSessionCall { it.isActive = false }
+        }
+        if (Build.VERSION.SDK_INT < 26) return
+        if (plan.silentTrack && keyLearnTrack == null) {
+            val track = KeyLearnSilentTrack()
+            if (track.start()) {
+                AppLog.d("AapService: key learning: silent track on")
+                keyLearnTrack = track
+            }
+        } else if (!plan.silentTrack && keyLearnTrack != null) {
+            AppLog.d("AapService: key learning: silent track off")
+            keyLearnTrack?.stop()
+            keyLearnTrack = null
+        }
+    }
+
     private fun shouldSyncAaMediaMetadata(): Boolean {
         return MediaSessionActivationPolicy.shouldSyncAaMetadata(
             isLoopbackSession = commManager.isLoopbackSession,
@@ -464,7 +503,7 @@ class AapService : Service() {
     fun nativeAttemptInFlight(): Boolean? =
         (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.isAttemptInFlight()
 
-    fun updateMediaSessionState(isPlaying: Boolean) {
+    fun updateMediaSessionState(isPlaying: Boolean, paused: Boolean = false) {
         if (!shouldActivateMediaSession()) {
             mediaSessionIsPlaying = false
             safeMediaSessionCall {
@@ -485,15 +524,8 @@ class AapService : Service() {
                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
                 PlaybackStateCompat.ACTION_PLAY_PAUSE
 
-        var state: Int
-
-        if (isPlaying) {
-            state = PlaybackStateCompat.STATE_PLAYING
-            actions = actions or PlaybackStateCompat.ACTION_PAUSE
-        } else {
-            state = PlaybackStateCompat.STATE_STOPPED
-            actions = actions or PlaybackStateCompat.ACTION_PLAY
-        }
+        val state = MediaSessionStatePolicy.sessionState(isPlaying, paused)
+        actions = actions or if (isPlaying) PlaybackStateCompat.ACTION_PAUSE else PlaybackStateCompat.ACTION_PLAY
 
         safeMediaSessionCall {
             it.setPlaybackState(
@@ -504,7 +536,7 @@ class AapService : Service() {
             )
         }
         AppLog.d(
-            "MediaSession: State updated to ${if (isPlaying) "PLAYING" else "STOPPED"}, positionMs=$lastAaPlaybackPositionMs"
+            "MediaSession: State updated to ${if (isPlaying) "PLAYING" else if (paused) "PAUSED" else "STOPPED"}, positionMs=$lastAaPlaybackPositionMs"
         )
     }
 
@@ -565,6 +597,7 @@ class AapService : Service() {
             if (aaPresentationSession != null) clearAaPresentationMetadata()
             lastAaPlaybackPositionMs = 0L
             lastAaPlaybackIsPlaying = null
+            lastAaPlaybackPaused = false
             aaPresentationSession = session
         }
         return true
@@ -587,9 +620,12 @@ class AapService : Service() {
         val isPlayingFromStatus = resolveIsPlayingFromStatus(status)
         lastAaPlaybackIsPlaying = isPlayingFromStatus
         mediaSessionIsPlaying = isPlayingFromStatus
+        lastAaPlaybackPaused = MediaSessionStatePolicy.phonePaused(
+            if (status.hasState()) status.state else null, lastAaPlaybackPaused,
+        )
 
         if (!shouldSyncAaMediaMetadata()) return
-        updateMediaSessionState(isPlayingFromStatus)
+        updateMediaSessionState(isPlayingFromStatus, lastAaPlaybackPaused)
         lastAaMediaMetadata?.let { updateMediaNotification(it) }
     }
 
@@ -1263,9 +1299,9 @@ class AapService : Service() {
         // Handle immediate WiFi auto-start check (e.g. if already connected on boot/wake)
         WifiAutoStartReceiver.checkAndStart(this)
 
-        // Initialize MediaSession early and set it active immediately if allowed by policy.
-        // This ensures media button routing works even BEFORE an AA connection in remote mode,
-        // which is critical for keymap configuration and early button presses.
+        // Create the session early so it exists for the keymap and for early button presses.
+        // From API 26 the platform sends media keys to the app that played last, so an early
+        // setActive routes nothing there.
         if (mediaSession == null) {
             setupMediaSession()
         }
@@ -1274,6 +1310,9 @@ class AapService : Service() {
         if (shouldActivate) {
             updateMediaSessionState(false) // Set initial PlaybackState so system knows our actions
         }
+        carKeysManager.onLearnStateChanged = { applyKeyLearnState() }
+        selfLauncherManager.onActiveChanged = { applyKeyLearnState() }
+        applyKeyLearnState()
 
         commManager.onAaMediaMetadata = { meta, session -> onAaMediaMetadataFromPhone(meta, session) }
         commManager.onAaPlaybackStatus = { status, session -> onAaPlaybackStatusFromPhone(status, session) }
@@ -1597,7 +1636,8 @@ class AapService : Service() {
         // Link audio focus state changes to our MediaSession state
         commManager.onAudioFocusStateChanged = { isPlaying ->
             if (shouldActivateMediaSession()) {
-                updateMediaSessionState(isPlaying)
+                // The phone releases focus after a pause, so a focus loss must not turn PAUSED into STOPPED.
+                updateMediaSessionState(isPlaying, lastAaPlaybackPaused)
             }
         }
 
@@ -1754,6 +1794,26 @@ class AapService : Service() {
                     if (keyEvent != null) {
                         val actionStr = if (keyEvent.action == android.view.KeyEvent.ACTION_DOWN) "DOWN" else "UP"
                         AppLog.d("MediaButtonEvent: Received key ${keyEvent.keyCode} ($actionStr)")
+
+                        // While the keymap screen learns, the key goes to it and nowhere else.
+                        if (carKeysManager.isLearning) {
+                            if (KeyLearnPolicy.feedsLearnScreen(keyEvent.action, keyEvent.repeatCount)) {
+                                sendBroadcast(Intent(KeyIntent.action).apply {
+                                    setPackage(packageName)
+                                    putExtra(KeyLearnPolicy.EXTRA_ROUTE, "session")
+                                    putExtra(KeyIntent.extraEvent, keyEvent)
+                                })
+                            }
+                            return true
+                        }
+
+                        // Every edge and repeat stops here; a repeat DOWN would reach onSkipToNext otherwise.
+                        if (ProjectionKeyPolicy.isIgnored(settings.keyBindings, keyEvent.keyCode, "mediasession")) {
+                            if (keyEvent.action == android.view.KeyEvent.ACTION_DOWN && keyEvent.repeatCount == 0) {
+                                AppLog.d("MediaButtonEvent: Dropping ignored key ${keyEvent.keyCode}")
+                            }
+                            return true
+                        }
 
                         // Only handle ACTION_DOWN to prevent double triggers from standard Android behavior.
                         // Physical double triggers are handled by CommManager.sendKey deduplication.
@@ -1968,6 +2028,7 @@ class AapService : Service() {
             deliberate = state.isClean || state.isUserExit,
         )
         lastAaPlaybackIsPlaying = null
+        lastAaPlaybackPaused = false
         cachedAaAlbumArtBitmap = null
         mediaNotification.cancel()
         applyPlaceholderMediaMetadata()
@@ -1977,6 +2038,7 @@ class AapService : Service() {
         // the next connection. OpenHU keeps its session alive the entire service lifetime.
         safeMediaSessionCall { it.isActive = false }
         updateMediaSessionState(false)
+        applyKeyLearnState()
         if (superseded) {
             serviceScope.launch {
                 try {
@@ -3488,6 +3550,10 @@ class AapService : Service() {
 
     @SuppressLint("WrongConstant")
     override fun onDestroy() {
+        carKeysManager.onLearnStateChanged = null
+        selfLauncherManager.onActiveChanged = null
+        if (Build.VERSION.SDK_INT >= 26) keyLearnTrack?.stop()
+        keyLearnTrack = null
         closeRetainedHct()
         AppLog.i("AapService destroying... (wakeLock held=${bootWakeLock?.isHeld == true})")
         FloatingButtonManager.removeOverlay(this)
@@ -3804,6 +3870,7 @@ class AapService : Service() {
                     it.setMetadata(null)
                 }
                 updateMediaSessionState(false)
+                applyKeyLearnState()
             }
             ACTION_STOP_SELF_MODE        -> {
                 selfLauncherManager.stop(wasConnected = commManager.isConnected)

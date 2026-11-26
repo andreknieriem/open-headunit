@@ -124,6 +124,13 @@ class KeyCodeTest {
     }
 
     @Test
+    fun `the phone key TEL is declared, RADIO is not`() {
+        assertEquals(65540, KeyCode.KEY_TEL)
+        assertTrue(KeyCode.supported.contains(KeyCode.KEY_TEL))
+        assertFalse(KeyCode.supported.contains(65539))
+    }
+
+    @Test
     fun `a legacy night mapping under KEYCODE_N moves to KEY_NIGHT_MODE`() {
         val legacy = mapOf(KeyEvent.KEYCODE_N to 300, KeyEvent.KEYCODE_HOME to 301)
         assertEquals(
@@ -142,5 +149,26 @@ class KeyCodeTest {
     fun `an existing KEY_NIGHT_MODE mapping wins and the stale entry is dropped`() {
         val keymap = mapOf(KeyEvent.KEYCODE_N to 300, KeyCode.KEY_NIGHT_MODE to 302)
         assertEquals(mapOf(KeyCode.KEY_NIGHT_MODE to 302), KeyCode.migrateLegacyNightKey(keymap))
+    }
+
+    @Test
+    fun `rewind, fast forward and mute are declared`() {
+        listOf(
+            KeyEvent.KEYCODE_MEDIA_REWIND,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+            KeyEvent.KEYCODE_MUTE,
+            KeyEvent.KEYCODE_VOLUME_MUTE,
+        ).forEach { code ->
+            assertTrue("KeyCode.supported must declare $code", KeyCode.supported.contains(code))
+        }
+    }
+
+    @Test
+    fun `every key that convert sends as itself is declared`() {
+        (0..300).forEach { code ->
+            if (code != KeyEvent.KEYCODE_UNKNOWN && KeyCode.convert(code) == code) {
+                assertTrue("convert sends $code, so supported must declare it", KeyCode.supported.contains(code))
+            }
+        }
     }
 }

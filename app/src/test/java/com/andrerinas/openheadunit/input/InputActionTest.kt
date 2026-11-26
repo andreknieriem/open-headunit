@@ -14,6 +14,7 @@ class InputActionTest {
 
     @Test fun everyKindOfActionSurvivesEncoding() {
         roundTrip(InputAction.None)
+        roundTrip(InputAction.Ignore)
         roundTrip(InputAction.AaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
         roundTrip(InputAction.AaKey(KeyCode.KEY_NIGHT_MODE))
         LocalAction.values().forEach { roundTrip(InputAction.Local(it)) }
@@ -24,11 +25,12 @@ class InputActionTest {
     @Test fun theStoredFormIsReadable() {
         assertEquals("key:85", InputActionCodec.encode(InputAction.AaKey(85)))
         assertEquals("local:dim", InputActionCodec.encode(InputAction.Local(LocalAction.DIM_SCREEN)))
+        assertEquals("ignore", InputActionCodec.encode(InputAction.Ignore))
         assertEquals("app:com.example", InputActionCodec.encode(InputAction.LaunchApp(FavoriteTarget.App("com.example"))))
     }
 
     @Test fun anythingUnreadableIsNone() {
-        listOf(null, "", "garbage", "key:", "key:abc", "local:", "local:teleport", "app:").forEach {
+        listOf(null, "", "garbage", "key:", "key:abc", "local:", "local:teleport", "app:", "ignore:", "IGNORE", " ignore").forEach {
             assertEquals(it.toString(), InputAction.None, InputActionCodec.decode(it))
         }
         assertEquals("none", InputActionCodec.encode(InputAction.LaunchApp(FavoriteTarget.Empty)))
@@ -56,6 +58,12 @@ class InputActionTest {
         assertEquals(Resolution.Run(app), KeyBindingPolicy.resolve(bindings, 1001, false))
         assertEquals(Resolution.Swallow, KeyBindingPolicy.resolve(bindings, 132, true))
         assertEquals(Resolution.Run(dim), KeyBindingPolicy.resolve(bindings, 132, false))
+    }
+
+    @Test fun anIgnoredKeyIsSwallowedBothWays() {
+        val bindings = mapOf(87 to InputAction.Ignore)
+        assertEquals(Resolution.Swallow, KeyBindingPolicy.resolve(bindings, 87, true))
+        assertEquals(Resolution.Swallow, KeyBindingPolicy.resolve(bindings, 87, false))
     }
 
     @Test fun unboundKeysPassThrough() {

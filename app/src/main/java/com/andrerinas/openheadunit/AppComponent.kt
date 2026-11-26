@@ -33,4 +33,8 @@ class AppComponent(private val app: App) {
     val suExecutor = SUExecutor()
 
     val carKeysManager = CarKeysManager()
+
+    init {
+        commManager.keyLearning = { carKeysManager.isLearning }
+    }
 }

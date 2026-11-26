@@ -24,6 +24,9 @@ enum class LocalAction(val id: String) {
 sealed class InputAction {
     object None : InputAction()
 
+    /** A key binding only: the user chose to drop this physical key on every physical route. */
+    object Ignore : InputAction()
+
     /** A key sent to Android Auto, by the logical code [KeyCode.convert] understands. */
     data class AaKey(val keyCode: Int) : InputAction()
 
@@ -34,18 +37,20 @@ sealed class InputAction {
 }
 
 /**
- * Stores an [InputAction] as one string: `none`, `key:85`, `local:dim`, or `app:` followed by the
+ * Stores an [InputAction] as one string: `none`, `ignore`, `key:85`, `local:dim`, or `app:` followed by the
  * target the way [FavoriteAppsPolicy] stores a favorite slot. Anything unreadable decodes to
  * [InputAction.None], so a corrupt value never triggers something unexpected.
  */
 object InputActionCodec {
     private const val NONE = "none"
+    private const val IGNORE = "ignore"
     private const val KEY = "key:"
     private const val LOCAL = "local:"
     private const val APP = "app:"
 
     fun encode(action: InputAction): String = when (action) {
         InputAction.None -> NONE
+        InputAction.Ignore -> IGNORE
         is InputAction.AaKey -> KEY + action.keyCode
         is InputAction.Local -> LOCAL + action.kind.id
         is InputAction.LaunchApp ->
@@ -56,6 +61,7 @@ object InputActionCodec {
     fun decode(stored: String?): InputAction {
         if (stored == null) return InputAction.None
         return when {
+            stored == IGNORE -> InputAction.Ignore
             stored.startsWith(KEY) ->
                 stored.removePrefix(KEY).toIntOrNull()?.let { InputAction.AaKey(it) } ?: InputAction.None
             stored.startsWith(LOCAL) ->
@@ -95,6 +101,7 @@ object KeyBindingPolicy {
     fun resolve(bindings: Map<Int, InputAction>, keyCode: Int, isPress: Boolean): Resolution =
         when (val action = bindings[keyCode]) {
             null, InputAction.None -> Resolution.Unbound
+            InputAction.Ignore -> Resolution.Swallow
             is InputAction.AaKey -> Resolution.SendToAa(action.keyCode)
             is InputAction.Local, is InputAction.LaunchApp ->
                 if (isPress) Resolution.Swallow else Resolution.Run(action)

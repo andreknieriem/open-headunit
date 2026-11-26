@@ -6,6 +6,7 @@ import android.content.Intent
 import android.view.KeyEvent
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.carkey.CarKeyReceiver
 import com.andrerinas.openheadunit.utils.AppLog
 
 class RemoteControlReceiver : BroadcastReceiver() {
@@ -15,7 +16,7 @@ class RemoteControlReceiver : BroadcastReceiver() {
         AppLog.i("RemoteControlReceiver received: $action")
 
         // Broadcast for UI debugging (KeymapFragment)
-        val debugIntent = Intent("com.andrerinas.openheadunit.DEBUG_KEY").apply {
+        val debugIntent = Intent(CarKeyReceiver.DEBUG_KEY_ACTION).apply {
             putExtra("action", action)
             intent.extras?.let { putExtras(it) }
             setPackage(context.packageName)
@@ -48,7 +49,7 @@ class RemoteControlReceiver : BroadcastReceiver() {
 
             // Broadcast command for UI debug (if not already handled by ACTION_MEDIA_BUTTON block)
             if (action != Intent.ACTION_MEDIA_BUTTON) {
-                val debugIntent = Intent("com.andrerinas.openheadunit.DEBUG_KEY").apply {
+                val debugIntent = Intent(CarKeyReceiver.DEBUG_KEY_ACTION).apply {
                     putExtra("action", action)
                     putExtra("command", command)
                     intent.extras?.let { putExtras(it) }
@@ -85,8 +86,8 @@ class RemoteControlReceiver : BroadcastReceiver() {
                     commManager.sendKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, false, null, "remote-command")
                 }
                 "mute", "volume_mute" -> {
-                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, true, null, "remote-command")
-                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, false, null, "remote-command")
+                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, true, null, "remote-mute")
+                    commManager.sendKey(KeyEvent.KEYCODE_VOLUME_MUTE, false, null, "remote-mute")
                 }
                 "voice", "mic", "microphone", "search" -> {
                     commManager.sendKey(KeyEvent.KEYCODE_SEARCH, true, null, "remote-command")
@@ -99,8 +100,8 @@ class RemoteControlReceiver : BroadcastReceiver() {
                         ?: intent.getIntExtra("key_code", -1).takeIf { it > 0 }
                     if (extraKeyCode != null) {
                         AppLog.i("RemoteControlReceiver: raw keycode=$extraKeyCode from command=$command")
-                        commManager.sendKey(extraKeyCode, true, null, "remote-command")
-                        commManager.sendKey(extraKeyCode, false, null, "remote-command")
+                        commManager.sendKey(extraKeyCode, true, null, "remote-keycode")
+                        commManager.sendKey(extraKeyCode, false, null, "remote-keycode")
                     } else {
                         AppLog.i("RemoteControlReceiver: Unknown command='$command' from action='$action'")
                     }

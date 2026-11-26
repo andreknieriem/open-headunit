@@ -115,7 +115,7 @@ class CarBydReceiver : BroadcastReceiver(), CarKeyReceiver {
         // Feed the keymap screen's debugger, the way the OEM broadcast receiver does, so an
         // uncatalogued button is visible before it is mapped.
         context.sendBroadcast(
-            Intent("com.andrerinas.openheadunit.DEBUG_KEY").apply {
+            Intent(CarKeyReceiver.DEBUG_KEY_ACTION).apply {
                 setPackage(context.packageName)
                 putExtra("action", BydPanelKey.ACTION)
                 putExtra("keyCode", keyCode)

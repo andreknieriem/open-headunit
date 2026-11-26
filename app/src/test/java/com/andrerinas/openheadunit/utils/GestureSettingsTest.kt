@@ -143,6 +143,7 @@ class GestureSettingsTest {
             131 to InputAction.LaunchApp(FavoriteTarget.Shortcut("com.example", "id=1")),
             132 to InputAction.Local(LocalAction.NIGHT_OVERLAY),
             133 to InputAction.None,
+            134 to InputAction.Ignore,
         )
         settings.keyBindings = bindings
         assertEquals(bindings - 133, Settings(context).keyBindings)

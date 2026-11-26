@@ -6,7 +6,11 @@ import com.andrerinas.openheadunit.utils.AppLog
 
 object KeyCode {
 
+    // 65539 is RADIO on the wire; the code stays local and is never sent.
     const val KEY_NIGHT_MODE = 65539
+
+    /** Android Auto's phone key on the wire. */
+    const val KEY_TEL = 65540
 
     val supported = listOf(
         // Standard Android KeyEvents used in the convert method or common
@@ -34,6 +38,11 @@ object KeyCode {
         KeyEvent.KEYCODE_HOME,
         KeyEvent.KEYCODE_HEADSETHOOK,
         KeyEvent.KEYCODE_MEDIA_STOP,
+        // The phone may drop a key the head unit did not declare, so declare every key we send.
+        KeyEvent.KEYCODE_MEDIA_REWIND,
+        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+        KeyEvent.KEYCODE_MUTE,
+        KeyEvent.KEYCODE_VOLUME_MUTE,
 
         // Alphabetic keys (A through Z) for text entry and search
         KeyEvent.KEYCODE_A,
@@ -115,7 +124,8 @@ object KeyCode {
         224, // KEYCODE_WAKEUP → Voice Command
         264, 265, 267, // STEM_PRIMARY, STEM_1, STEM_3 (steering wheel)
         268, 269, 270, 271, // Rotary controller
-        65536, 65537, 65538 // Rotary controller
+        65536, 65537, 65538, // 65536 rotary controller, 65537 MEDIA, 65538 NAVIGATION
+        KEY_TEL, // 65539 (RADIO) stays undeclared: it is the local night key
     ).distinct().sorted()
 
     /**
@@ -139,13 +149,8 @@ object KeyCode {
                 keyCode == KeyEvent.KEYCODE_MEDIA_REWIND
 
     internal fun convert(keyCode: Int): Int {
-        // If it's in our supported list or a standard media key, pass it through.
-        // We no longer force ENTER -> DPAD_CENTER here to allow users to map it specifically.
-        if (supported.contains(keyCode) ||
-            keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD ||
-            keyCode == KeyEvent.KEYCODE_MEDIA_REWIND ||
-            keyCode == KeyEvent.KEYCODE_MUTE ||
-            keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+        // A declared key passes through. ENTER stays ENTER so users can map it.
+        if (supported.contains(keyCode)) {
             return keyCode
         }
 

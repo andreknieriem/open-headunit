@@ -45,6 +45,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSe
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAddressRecord
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAdvertisedEndpoint
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WakePlanPolicy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
 
@@ -1721,38 +1722,6 @@ class Settings(private val context: Context) {
         }
 
     /**
-     * Devices the Native AA wake poke connects to, to make Android Auto start on the phone.
-     *
-     * Its own setting since the auto-start list was both this and the trigger for
-     * `AutoStartReceiver`, and the handshake wrote a completed peer back into it - so clearing
-     * auto-start undid itself on the next poke cycle. Seeded from the auto-start list once, so a
-     * unit that has been poking a phone keeps poking it. Read after unlock only, so no mirror.
-     */
-    var nativePokeBtMacs: Set<String>
-        get() {
-            var macs = prefs.getStringSet("native-poke-bt-macs", null)
-            if (macs == null) {
-                macs = autoStartBluetoothDeviceMacs
-                prefs.edit().putStringSet("native-poke-bt-macs", macs).apply()
-            }
-            return macs
-        }
-        set(value) {
-            prefs.edit().putStringSet("native-poke-bt-macs", value).apply()
-        }
-
-    /**
-     * Whether an empty [nativePokeBtMacs] pokes every paired device instead of nothing.
-     *
-     * What the empty list used to do implicitly, kept as the default because the poke is the only
-     * thing that starts Android Auto on some units and a unit with nothing chosen yet must still
-     * connect. Turning it off is how a user says "this phone only".
-     */
-    var nativePokeAllPairedDevices: Boolean
-        get() = prefs.getBoolean("native-poke-all-paired", true)
-        set(value) { prefs.edit().putBoolean("native-poke-all-paired", value).apply() }
-
-    /**
      * Devices whose Bluetooth link going away ends a session. Deliberately not the auto-start list,
      * which doubles as the wake-poke targets. Read after unlock only, so no device-protected mirror.
      */
@@ -2114,6 +2083,9 @@ class Settings(private val context: Context) {
         const val PREFS_NAME = "settings"
 
         const val KEY_BINDINGS = "key-bindings"
+
+        /** Several instances share one prefs file, so the learned phones' seed locks here. */
+        private val LEARNED_SEED_LOCK = Any()
 
         private val GESTURE_KEYS = listOf(
             "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
@@ -2771,13 +2743,44 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("native-driver-selection-timeout", NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC)
         set(value) = prefs.edit().putInt("native-driver-selection-timeout", NativeDriverSelectionPolicy.sanitizeTimeout(value)).apply()
 
-    var nativePreferredDeviceMac: String
-        get() = prefs.getString("native-preferred-device-mac", "") ?: ""
-        set(value) = prefs.edit().putString("native-preferred-device-mac", value).apply()
-
     var lastConnectedNativeMac: String
         get() = prefs.getString("last-connected-native-mac", "") ?: ""
-        set(value) = prefs.edit().putString("last-connected-native-mac", value).apply()
+        set(value) = synchronized(LEARNED_SEED_LOCK) {
+            // Fix the learned phones' seed from the old value first: this write comes at type 3, before SSL.
+            learnedPhonesSeeded()
+            prefs.edit().putString("last-connected-native-mac", value).apply()
+        }
+
+    /** Phones that formed a wireless session, most recent first. Widens the wake list, never narrows it. */
+    var nativeLearnedPhones: List<String>
+        get() = learnedPhonesSeeded()
+        set(value) = synchronized(LEARNED_SEED_LOCK) {
+            prefs.edit().putString("native-learned-phones", WakePlanPolicy.formatMacs(value)).apply()
+        }
+
+    /** Stores the seed at the first read, also when it is empty, so a later type-3 write cannot become it. */
+    private fun learnedPhonesSeeded(): List<String> = synchronized(LEARNED_SEED_LOCK) {
+        val stored = prefs.getString("native-learned-phones", null)
+        val phones = WakePlanPolicy.seedLearned(stored, prefs.getString("last-connected-native-mac", "") ?: "")
+        if (stored == null) {
+            prefs.edit().putString("native-learned-phones", WakePlanPolicy.formatMacs(phones)).apply()
+        }
+        phones
+    }
+
+    /** The user's ordered list of phones to wake and pick first. Empty means every paired phone. */
+    var nativePhonesList: List<String>
+        get() = WakePlanPolicy.parseMacs(prefs.getString("native-phones", null))
+        set(value) = prefs.edit().putString("native-phones", WakePlanPolicy.formatMacs(value)).apply()
+
+    /** Whether the wake plan holds only the listed phones; no effect while the list is empty. */
+    var nativeOnlyListedPhones: Boolean
+        get() = prefs.getBoolean("native-phones-only", false)
+        set(value) { prefs.edit().putBoolean("native-phones-only", value).apply() }
+
+    /** Phones known to have worked: the learned ones, and the last connected one. */
+    val nativeProvenPhones: List<String>
+        get() = nativeLearnedPhones + WakePlanPolicy.parseMacs(lastConnectedNativeMac)
 
     /**
      * The last phone that finished a handshake through an external Bluetooth module. Kept apart

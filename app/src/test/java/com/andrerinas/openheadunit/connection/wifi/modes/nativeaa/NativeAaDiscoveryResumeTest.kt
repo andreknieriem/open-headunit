@@ -4,6 +4,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
+import com.andrerinas.openheadunit.utils.Settings
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -38,6 +39,9 @@ class NativeAaDiscoveryResumeTest {
         val manager = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
         set(manager, "measuringDaemon", true)
         set(manager, "measureGeneration", 4)
+        set(manager, "settings", mock(Settings::class.java))
+        // A mock skips the constructor, so the pick's own state needs its initial value here.
+        set(manager, "refusingPick", java.util.concurrent.atomic.AtomicStampedReference<HandsFreeRefusalPolicy.RefusingPick?>(null, 0))
         val wakes = mutableListOf<String>()
         doAnswer {
             // Use the real deferral while discovery owns the route, and replace only the

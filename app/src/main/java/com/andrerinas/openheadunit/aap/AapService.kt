@@ -1422,6 +1422,7 @@ class AapService : Service() {
                         if (Esp32RelaySession.shouldNotifyProjection(this@AapService)) {
                             Esp32RelaySession.notifyProjection(true)
                         }
+                        (wifiLauncherManager.active as? WifiLauncherNative)?.onSessionSecured()
                         quiesceWirelessForWiredSession()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
                         projectionRaisesThisSession = 0
@@ -1441,6 +1442,7 @@ class AapService : Service() {
                             Esp32RelaySession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession() // The flow is conflated: HandshakeComplete can be skipped.
+                        (wifiLauncherManager.active as? WifiLauncherNative)?.onSessionSecured()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
                         // Backstop for a skipped Connected; a no-op once onConnected released it.
                         stopDummyVpn(DummyVpnPolicy.Reason.SELF_MODE_SESSION_LIVE)
@@ -3663,7 +3665,7 @@ class AapService : Service() {
             bluetoothReadable = readable,
             resolve = {
                 val paired = BluetoothHelper.pairedForNaming(
-                    BluetoothHelper.driverCandidates(this, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac)
+                    BluetoothHelper.driverCandidates(this, settings.nativePhonesList, settings.nativeProvenPhones)
                 )
                 if (given != null) NamedPhonePolicy.resolveMac(given, paired)
                 else NamedPhonePolicy.resolve(name ?: "", paired)
@@ -3928,7 +3930,11 @@ class AapService : Service() {
                         val launcher = wifiLauncherManager.active
 
                         if (launcher is WifiLauncherNative) {
-                            launcher.handshakeManager?.selectDriver(mac, intent?.getBooleanExtra(EXTRA_EXPLICIT_PICK, false) ?: false)
+                            launcher.handshakeManager?.selectDriver(
+                                mac,
+                                intent?.getBooleanExtra(EXTRA_EXPLICIT_PICK, false) ?: false,
+                                intent?.getBooleanExtra(EXTRA_PICK_FROM_PLAN, false) ?: false
+                            )
                         } else {
                             ToastUtils.showToast(this, "Native AA mode not active.")
                         }
@@ -4658,6 +4664,8 @@ class AapService : Service() {
         const val EXTRA_UI_HELD = "ui_held"
         const val EXTRA_MAC = "extra_mac"
         const val EXTRA_EXPLICIT_PICK = "extra_explicit_pick"
+        /** A pick the selector did not name (the WiFi button, a task): wake it as a pick, but do not learn it before SSL. */
+        const val EXTRA_PICK_FROM_PLAN = "extra_pick_from_plan"
         const val EXTRA_DEVICE_NAME = "extra_device_name"
         const val EXTRA_BY_COMMAND = "extra_by_command"
         const val EXTRA_ENDPOINT_ID = "extra_endpoint_id"

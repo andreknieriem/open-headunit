@@ -58,6 +58,7 @@ import com.andrerinas.openheadunit.connection.wifi.direct.P2pIdentityRotationPol
 import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeCredentialsPreflightPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WakePlanPolicy
 import com.andrerinas.openheadunit.aap.NativeTransport
 import com.andrerinas.openheadunit.connection.wifi.FiveGhzChannelPolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.P2pBandPreference
@@ -158,7 +159,7 @@ class SettingsFragment : Fragment() {
         // "What is my head unit's WiFi password" is an everyday question, not an Advanced one.
         "wifiDirectLastNetwork", "wifiDirectGroupIdentity",
         // Which phone Native AA wakes: the first thing to set when two phones share the car.
-        "nativePokeBt", "nativePokeAllPaired",
+        "nativePhones", "nativeOnlyListedPhones",
         // Which Bluetooth the phone pairs with, and the ESP32 relay page it leads to once chosen.
         "bluetoothLink", "Esp32Relay",
         "hotspotInterfaceOverride",
@@ -254,9 +255,8 @@ class SettingsFragment : Fragment() {
     private var pendingNativeApTransport by pending::nativeApTransport
     private var pendingNativeDriverSelectionMode by pending::nativeDriverSelectionMode
     private var pendingNativeDriverSelectionTimeout by pending::nativeDriverSelectionTimeout
-    private var pendingNativePreferredDeviceMac by pending::nativePreferredDeviceMac
-    private var pendingNativePokeBtMacs by pending::nativePokeBtMacs
-    private var pendingNativePokeAllPaired by pending::nativePokeAllPaired
+    private var pendingNativePhonesList by pending::nativePhonesList
+    private var pendingNativeOnlyListedPhones by pending::nativeOnlyListedPhones
     private var pendingWifiDirectBand by pending::wifiDirectBand
     private var pendingWifiDirectStableIdentity by pending::wifiDirectStableIdentity
     // The pair and its provenance move together; null on the second means neither was edited,
@@ -310,24 +310,16 @@ class SettingsFragment : Fragment() {
     private var hasChanges = false
     private var pendingStorageAction: (() -> Unit)? = null
 
-    // The preferred-phone row lists paired devices, which needs BLUETOOTH_CONNECT on API 31+.
-    private val preferredDevicePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+    // The Phones list reads the paired devices, so it needs BLUETOOTH_CONNECT on API 31+.
+    private val wakeDevicePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) {
             updateSettingsList()
-            showPreferredDevicePicker()
-        } else {
-            ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
-        }
-    }
-
-    // The wake list also lists paired devices, so it needs the same permission.
-    private val wakeDevicePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) showWakeDevicePicker()
-        else ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
+            showPhonesEditor()
+        } else ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
     }
 
     private val wakeBluetoothEnableLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) showWakeDevicePicker()
+        if (result.resultCode == android.app.Activity.RESULT_OK) showPhonesEditor()
     }
 
     private val bluetoothPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -537,44 +529,40 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    /** The phone Native AA prefers when several are paired. Needs BLUETOOTH_CONNECT on API 31+. */
-    @android.annotation.SuppressLint("MissingPermission")
-    private fun showPreferredDevicePicker() {
-        val currentPrefMac = pendingNativePreferredDeviceMac.orEmpty()
-        val bonded = BluetoothHelper.pairedDevicesOrEmpty(requireContext())
-        // Only a phone can be the preferred phone: a watch chosen here used to
-        // count as one everywhere. A stored non-phone is cleared with None.
-        val likelyPhones = bonded.filter {
-            BluetoothHelper.isLikelyPhone(it, preferredMac = currentPrefMac)
-        }
-
-        val options = mutableListOf<Pair<String, String>>()
-        options.add("" to getString(R.string.driver_none))
-        for (dev in likelyPhones) {
-            val name = dev.name ?: "Unknown"
-            options.add(dev.address to "$name (${dev.address})")
-        }
-        val labels = options.map { it.second }.toTypedArray()
-        val selectedIdx = options.indexOfFirst { it.first.equals(currentPrefMac, ignoreCase = true) }.coerceAtLeast(0)
-
-        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(R.string.native_driver_preferred_device)
-            .setSingleChoiceItems(labels, selectedIdx) { dialog, which ->
-                dialog.dismiss()
-                pendingNativePreferredDeviceMac = options[which].first
-                checkChanges()
-                updateSettingsList()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+    /** A listed phone by name when it is paired, else by address, so a phone that was unpaired can still be removed. */
+    private fun phoneLabel(mac: String): String {
+        val dev = BluetoothHelper.pairedDevicesOrEmpty(requireContext()).firstOrNull { it.address.equals(mac, ignoreCase = true) }
+        return dev?.let { BluetoothDevicePicker.labelFor(it) } ?: mac
     }
 
-    /** The Native AA wake list. Only a phone can answer the wake, so the list offers phones. */
-    private fun showWakeDevicePicker() {
+    /** The ordered Phones list: a tap moves a phone to the front, "Edit phones" adds or removes. */
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun showPhonesEditor() {
         if (!BluetoothHelper.canReadPairedDevices(requireContext())) {
             wakeDevicePermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
             return
         }
+        val phones = pendingNativePhonesList ?: settings.nativePhonesList
+        val builder = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.native_phones_label)
+            .setPositiveButton(R.string.native_phones_edit) { _, _ -> showPhonesPicker() }
+            .setNegativeButton(android.R.string.ok, null)
+        if (phones.isEmpty()) {
+            builder.setMessage(R.string.native_phones_empty_message)
+        } else {
+            val labels = phones.mapIndexed { i, mac -> "${i + 1}. ${phoneLabel(mac)}" }.toTypedArray()
+            builder.setItems(labels) { _, which ->
+                pendingNativePhonesList = WakePlanPolicy.movedToFront(phones, phones[which])
+                checkChanges()
+                updateSettingsList()
+                showPhonesEditor()
+            }
+        }
+        builder.show()
+    }
+
+    /** Picks which paired phones are listed. Only a phone can answer the wake, so the list offers phones. */
+    private fun showPhonesPicker() {
         val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
         if (adapter == null || !adapter.isEnabled) {
             if (adapter == null && BluetoothDevicePicker.showManufacturerDevices(requireContext())) return
@@ -586,15 +574,16 @@ class SettingsFragment : Fragment() {
             wakeBluetoothEnableLauncher.launch(Intent(android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE))
             return
         }
-        val selected = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
-        BluetoothDevicePicker.show(requireContext(), R.string.select_bt_poke_device, selected, { device ->
+        val phones = pendingNativePhonesList ?: settings.nativePhonesList
+        BluetoothDevicePicker.show(requireContext(), R.string.native_phones_label, phones.toSet(), { device ->
             BluetoothHelper.isLikelyPhone(
-                device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac, requireContext()
+                device, settings.nativePhonesList, settings.nativeProvenPhones, requireContext()
             )
         }) { chosen ->
-            pendingNativePokeBtMacs = chosen
+            pendingNativePhonesList = WakePlanPolicy.edited(phones, chosen)
             checkChanges()
             updateSettingsList()
+            showPhonesEditor()
         }
     }
 
@@ -752,9 +741,8 @@ class SettingsFragment : Fragment() {
         pendingUseSystemHotspot?.let { if (it != settings.useSystemHotspot) settings.useSystemHotspot = it }
         pendingNativeDriverSelectionMode?.let { if (it != settings.nativeDriverSelectionMode) settings.nativeDriverSelectionMode = it }
         pendingNativeDriverSelectionTimeout?.let { if (it != settings.nativeDriverSelectionTimeoutSec) settings.nativeDriverSelectionTimeoutSec = it }
-        pendingNativePreferredDeviceMac?.let { if (it != settings.nativePreferredDeviceMac) settings.nativePreferredDeviceMac = it }
-        pendingNativePokeBtMacs?.let { if (it != settings.nativePokeBtMacs) settings.nativePokeBtMacs = it }
-        pendingNativePokeAllPaired?.let { if (it != settings.nativePokeAllPairedDevices) settings.nativePokeAllPairedDevices = it }
+        pendingNativePhonesList?.let { if (it != settings.nativePhonesList) settings.nativePhonesList = it }
+        pendingNativeOnlyListedPhones?.let { if (it != settings.nativeOnlyListedPhones) settings.nativeOnlyListedPhones = it }
         pendingWifiDirectBand?.let { if (it != settings.wifiDirectBand) settings.wifiDirectBand = it }
         pendingWifiDirectStableIdentity?.let { if (it != settings.wifiDirectStableIdentity) settings.wifiDirectStableIdentity = it }
         // The pair is written whole, null included, so a Reset really does hand the choice back.
@@ -4607,50 +4595,29 @@ class SettingsFragment : Fragment() {
                         checkChanges()
                     }
                 ))
-
-                val currentPrefMac = pendingNativePreferredDeviceMac.orEmpty()
-                // Empty without BLUETOOTH_CONNECT: the row then shows the stored address, and
-                // tapping it asks for the permission instead of crashing the screen on open.
-                val bonded = BluetoothHelper.pairedDevicesOrEmpty(requireContext())
-                val prefDeviceName = bonded.firstOrNull { it.address.equals(currentPrefMac, ignoreCase = true) }?.name
-                    ?: if (currentPrefMac.isNotEmpty()) currentPrefMac else getString(R.string.driver_none)
-
-                items.add(SettingItem.SettingEntry(
-                    stableId = "nativePreferredDevice",
-                    nameResId = R.string.native_driver_preferred_device,
-                    helpResId = R.string.native_driver_preferred_device_help,
-                    value = prefDeviceName,
-                    onClick = { _ ->
-                        if (BluetoothHelper.canReadPairedDevices(requireContext())) {
-                            showPreferredDevicePicker()
-                        } else {
-                            preferredDevicePermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
-                        }
-                    }
-                ))
             }
 
-            // Which phone the wake reaches. Beside driver selection, since both choose the phone.
-            val wakeMacs = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
+            // Which phones the wake reaches, in order. Beside driver selection, since both choose the phone.
+            val phonesList = pendingNativePhonesList ?: settings.nativePhonesList
             items.add(SettingItem.SettingEntry(
-                stableId = "nativePokeBt",
-                nameResId = R.string.native_poke_bt_label,
-                helpResId = R.string.native_poke_bt_help,
-                value = BluetoothDevicePicker.summaryFor(requireContext(), wakeMacs)
-                    ?: getString(R.string.bt_device_not_set),
-                onClick = { _ -> showWakeDevicePicker() }
+                stableId = "nativePhones",
+                nameResId = R.string.native_phones_label,
+                helpResId = R.string.native_phones_help,
+                value = if (phonesList.isEmpty()) getString(R.string.native_phones_all)
+                else phonesList.joinToString { phoneLabel(it) },
+                onClick = { _ -> showPhonesEditor() }
             ))
 
-            // Only asked when nothing is chosen: a chosen device is never widened.
-            if (wakeMacs.isEmpty()) {
+            // Only asked when phones are listed: with an empty list it has nothing to narrow.
+            if (phonesList.isNotEmpty()) {
                 items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "nativePokeAllPaired",
-                    nameResId = R.string.native_poke_all_paired_label,
-                    descriptionResId = R.string.native_poke_all_paired_summary,
-                    helpResId = R.string.native_poke_all_paired_description,
-                    isChecked = pendingNativePokeAllPaired ?: settings.nativePokeAllPairedDevices,
+                    stableId = "nativeOnlyListedPhones",
+                    nameResId = R.string.native_phones_only_label,
+                    descriptionResId = R.string.native_phones_only_summary,
+                    helpResId = R.string.native_phones_only_help,
+                    isChecked = pendingNativeOnlyListedPhones ?: settings.nativeOnlyListedPhones,
                     onCheckedChanged = { isChecked ->
-                        pendingNativePokeAllPaired = isChecked
+                        pendingNativeOnlyListedPhones = isChecked
                         checkChanges()
                     }
                 ))

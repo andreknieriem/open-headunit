@@ -44,6 +44,13 @@ object HandsFreeRefusalPolicy {
             linkAfterProbe == BluetoothWakePolicy.TargetLink.ABSENT
 
     /**
+     * Whether a hands-free link [linkedMac] completed retires the refusal record. Only the phone that
+     * refused, or any phone when none here is known to have raised it: another phone's link says nothing.
+     */
+    fun retiresRefusal(linkedMac: String, refuserMac: String?): Boolean =
+        refuserMac == null || refuserMac.equals(linkedMac, ignoreCase = true)
+
+    /**
      * Whether a chosen phone's wake keeps going past its ordinary rounds because it refused.
      *
      * The refusal decides, not the last round: on the Fold the ask after a refusal failed to connect
@@ -62,4 +69,64 @@ object HandsFreeRefusalPolicy {
         nowMs - firstRefusalAtMs < PATIENCE_MS -> RETRY_GAP_MS
         else -> SLOW_RETRY_GAP_MS
     }
+
+    /**
+     * A chosen phone that still refuses after its ordinary rounds, and when it was last asked.
+     * [namedByDriver] is fixed when the pick starts refusing, not read from the live pick later.
+     */
+    data class RefusingPick(
+        val mac: String,
+        val firstRefusalAtMs: Long,
+        val lastAskAtMs: Long,
+        val namedByDriver: Boolean = false
+    )
+
+    /**
+     * The refusing pick the wake plan asks although the plan leaves it out, or null. Only a phone the
+     * driver named: "Only these phones" still wakes a phone picked by hand, and nothing else.
+     */
+    fun unplannedAsk(pick: RefusingPick?, planned: Collection<String>): String? =
+        pick?.takeIf { it.namedByDriver && planned.none { mac -> mac.equals(it.mac, ignoreCase = true) } }?.mac
+
+    /** What a chosen wake does once only the refusal keeps it going. [GIVE_WAY] hands over once a wake loop waits. */
+    enum class AfterRounds { KEEP_SLOT, GIVE_WAY, HAND_OVER }
+
+    /**
+     * The slow asks must not keep the wake slot from another phone of the plan. A phone the driver
+     * named never starts the plan itself, nor does one with no credentials to start a loop with.
+     * [planCanStart] false (a handshake in flight, listeners down, a session) keeps the slot too.
+     */
+    fun afterRounds(
+        otherPhones: Boolean,
+        credentialsReady: Boolean,
+        namedByDriver: Boolean,
+        wakeLoopWaits: Boolean,
+        planCanStart: Boolean
+    ): AfterRounds = when {
+        !otherPhones -> AfterRounds.KEEP_SLOT
+        !credentialsReady || !planCanStart || (namedByDriver && !wakeLoopWaits) -> AfterRounds.GIVE_WAY
+        else -> AfterRounds.HAND_OVER
+    }
+
+    /**
+     * Whether the wake plan asks a phone that refused it, at the gaps of a refusing pick. A phone with
+     * no [refusal], or one past its hour, keeps the ordinary cadence: each ask opens Android Auto.
+     */
+    fun planAskDue(refusal: RefusingPick?, nowMs: Long): Boolean =
+        refusal == null || !keepsAsking(refusal.firstRefusalAtMs, nowMs) || askDue(refusal, nowMs)
+
+    /** [mac]'s refusal after the plan asked it: a refusal opens one, an ask moves an open one, the hour ends it. */
+    fun afterPlanAsk(mac: String, refusal: RefusingPick?, refused: Boolean, nowMs: Long): RefusingPick? {
+        val open = refusal?.takeIf { keepsAsking(it.firstRefusalAtMs, nowMs) }
+        return when {
+            open != null -> open.copy(lastAskAtMs = nowMs)
+            refused -> RefusingPick(mac, nowMs, nowMs)
+            else -> null
+        }
+    }
+
+    /** Whether the wake plan asks [pick] on this pass: the same gaps and the same end as the chosen wake. */
+    fun askDue(pick: RefusingPick, nowMs: Long): Boolean =
+        keepsAsking(pick.firstRefusalAtMs, nowMs) &&
+            nowMs - pick.lastAskAtMs >= gapMs(pick.firstRefusalAtMs, pick.lastAskAtMs, RETRY_GAP_MS)
 }

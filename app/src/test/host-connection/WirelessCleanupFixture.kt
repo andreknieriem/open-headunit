@@ -69,6 +69,7 @@ class WifiLauncherNative {
     val strategy="Direct"
     fun hasWifiDirect() = true
     fun noteSessionEnded(b: Boolean) {}
+    fun onSessionSecured() {}
     fun rearmAfterSessionEnd(wakePhone: Boolean) {}
     fun noteUserExit() {}
 }

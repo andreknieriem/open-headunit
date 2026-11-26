@@ -703,7 +703,7 @@ class SettingsActionFixture(val commManager:CommManager) {
   fun isCleanupCurrent(value:Any)=value===ticket
   val active:Any?=null;fun stop(){};fun stopForUser(){}
  }
- private class WifiLauncherNative {val handshakeManager=Handshake()}
+ private class WifiLauncherNative {val handshakeManager=Handshake(); fun onSessionSecured(){}}
  private class Handshake {fun noteSessionEnded(wake:Boolean){}}
  private class Usb {fun isSwitchingToProjection()=false;fun stopForUser(){}}
  private val wifiLauncherManager=Wifi();private val usbLauncherManager=Usb()

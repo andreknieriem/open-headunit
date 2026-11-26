@@ -40,7 +40,8 @@ import android.bluetooth.BluetoothDevice
 import android.os.CountDownTimer
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.PokeTargetPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WakeBackoffs
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WakePlanPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy
@@ -2118,30 +2119,19 @@ class HomeFragment : Fragment() {
                 } else {
                     val appSettings = App.provide(requireContext()).settings
                     val cands = BluetoothHelper.driverCandidates(
-                        requireContext(), appSettings.nativePreferredDeviceMac, appSettings.lastConnectedNativeMac
+                        requireContext(), appSettings.nativePhonesList, appSettings.nativeProvenPhones
                     )
                     val candidates = cands.offered
                     val connectedMacs = cands.connectedOffered.map { it.address }
-                    val hasHistory = appSettings.lastConnectedNativeMac.isNotEmpty() ||
-                        appSettings.nativePreferredDeviceMac.isNotEmpty() ||
-                        appSettings.nativePokeBtMacs.isNotEmpty()
-
-                    val scope = autoScopeMacs(cands, appSettings)
-                    val autoTargetMac = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-                        preferredMac = appSettings.nativePreferredDeviceMac,
-                        lastUsedMac = NativeDriverSelectionPolicy.lastUsedMac(
-                            appSettings.lastConnectedNativeMac, appSettings.nativePokeBtMacs
-                        ),
-                        connectedMacs = connectedMacs,
-                        pairedMacs = candidates.map { it.address },
-                        scopeMacs = scope
-                    )
+                    val plan = wakePlanFor(cands, appSettings)
+                    val hasHistory = plan.known.isNotEmpty() || appSettings.lastConnectedNativeMac.isNotEmpty()
+                    val autoTargetMac = WakePlanPolicy.autoPick(plan, connectedMacs)
 
                     val shouldShow = NativeDriverSelectionPolicy.shouldShowSelector(
                         mode = appSettings.nativeDriverSelectionMode,
                         pairedCount = candidates.size,
                         connectedCount = connectedMacs.size,
-                        scopedCount = scope.size,
+                        knownCount = plan.known.size,
                         hasHistory = hasHistory
                     )
 
@@ -2149,7 +2139,7 @@ class HomeFragment : Fragment() {
                         if (autoTargetMac != null) {
                             val targetDev = cands.deviceFor(autoTargetMac)
                             val devName = targetDev?.name ?: autoTargetMac
-                            connectToNativeDevice(autoTargetMac, devName, connectedMacs, explicit = false)
+                            connectToNativeDevice(autoTargetMac, devName, connectedMacs, explicit = true, fromPlan = true)
                         } else {
                             // AapService drops a poke with no MAC, so this branch used to be a
                             // toast and nothing else. Ask which phone instead, which is what
@@ -2159,7 +2149,7 @@ class HomeFragment : Fragment() {
                     } else if (!shouldShow && autoTargetMac != null) {
                         val targetDev = cands.deviceFor(autoTargetMac)
                         val devName = targetDev?.name ?: autoTargetMac
-                        connectToNativeDevice(autoTargetMac, devName, connectedMacs, explicit = false)
+                        connectToNativeDevice(autoTargetMac, devName, connectedMacs, explicit = true, fromPlan = true)
                     } else {
                         showNativeAaDeviceSelector(autoCountdown = false)
                     }
@@ -2630,14 +2620,18 @@ class HomeFragment : Fragment() {
         ProjectionHealthPolicy.Action.RESOLUTION_720 -> R.string.projection_health_suggest_720p
     }
 
-    /** The offered phones an automatic pick may name, from the same wake list the poke loop reads. */
-    private fun autoScopeMacs(cands: BluetoothHelper.DriverCandidates, settings: Settings): List<String> {
-        val notPhones = settings.nativePokeBtMacs.filter {
-            cands.verdictOf(it) == DriverCandidatePolicy.Verdict.NOT_A_PHONE
-        }.toSet()
-        val targets = PokeTargetPolicy.targets(settings.nativePokeBtMacs, settings.nativePokeAllPairedDevices, notPhones)
-        return NativeDriverSelectionPolicy.autoScope(cands.offered.map { it.address }, targets)
-    }
+    /** The wake plan the retry loop also builds, without an explicit pick. */
+    private fun wakePlanFor(cands: BluetoothHelper.DriverCandidates, settings: Settings): WakePlanPolicy.WakePlan =
+        WakePlanPolicy.plan(
+            phonesList = settings.nativePhonesList,
+            onlyListed = settings.nativeOnlyListedPhones,
+            learned = settings.nativeLearnedPhones,
+            explicitPick = null,
+            linked = cands.connectedOffered.map { it.address }.toSet(),
+            phones = cands.offered.map { it.address },
+            backedOffUntil = WakeBackoffs.snapshot(),
+            now = SystemClock.elapsedRealtime()
+        )
 
     /** @return whether this put something on screen, or started connecting, so nothing else should. */
     private fun checkNativeDriverSelectionOnStartup(): Boolean {
@@ -2664,32 +2658,26 @@ class HomeFragment : Fragment() {
         // Only the classified phones count, so a connected watch neither becomes the driver nor
         // hides the one phone that is unambiguously here.
         val cands = BluetoothHelper.driverCandidates(
-            requireContext(), appSettings.nativePreferredDeviceMac, appSettings.lastConnectedNativeMac
+            requireContext(), appSettings.nativePhonesList, appSettings.nativeProvenPhones
         )
         val targetList = cands.offered
         val connectedMacs = cands.connectedOffered.map { it.address }
 
-        val effectiveLastUsedMac = NativeDriverSelectionPolicy.lastUsedMac(
-            appSettings.lastConnectedNativeMac, appSettings.nativePokeBtMacs
-        )
-        val hasHistory = effectiveLastUsedMac.isNotEmpty() || appSettings.nativePreferredDeviceMac.isNotEmpty()
-
-        val scope = autoScopeMacs(cands, appSettings)
+        val plan = wakePlanFor(cands, appSettings)
+        val hasHistory = plan.known.isNotEmpty() || appSettings.lastConnectedNativeMac.isNotEmpty()
         val shouldShow = NativeDriverSelectionPolicy.shouldShowSelector(
             mode = appSettings.nativeDriverSelectionMode,
             pairedCount = targetList.size,
             connectedCount = connectedMacs.size,
-            scopedCount = scope.size,
+            knownCount = plan.known.size,
             hasHistory = hasHistory
         )
-
-        val autoTargetMac = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = appSettings.nativePreferredDeviceMac,
-            lastUsedMac = effectiveLastUsedMac,
-            connectedMacs = connectedMacs,
-            pairedMacs = targetList.map { it.address },
-            scopeMacs = scope
+        AppLog.i(
+            "HomeFragment: driver check: bonded ${targetList.size}, linked ${connectedMacs.size}, " +
+                "known ${plan.known.size}, prompt $shouldShow"
         )
+
+        val autoTargetMac = WakePlanPolicy.autoPick(plan, connectedMacs)
 
         if (shouldShow) {
             showNativeAaDeviceSelector(autoCountdown = true)
@@ -2719,9 +2707,12 @@ class HomeFragment : Fragment() {
         }
 
         val appSettings = App.provide(requireContext()).settings
-        val preferredMac = appSettings.nativePreferredDeviceMac
+        val preferredMac = appSettings.nativePhonesList.firstOrNull().orEmpty()
         val lastUsedMac = appSettings.lastConnectedNativeMac
-        val cands = BluetoothHelper.driverCandidates(requireContext(), preferredMac, lastUsedMac)
+        val cands = BluetoothHelper.driverCandidates(
+            requireContext(), appSettings.nativePhonesList, appSettings.nativeProvenPhones
+        )
+        val planOrder = wakePlanFor(cands, appSettings).order
         val bondedDevices = cands.all.map { it.device }
         if (bondedDevices.isEmpty()) {
             if (BluetoothDevicePicker.showManufacturerDevices(requireContext(), cands.inventory)) return
@@ -2741,8 +2732,8 @@ class HomeFragment : Fragment() {
         fun sortDeviceList(devices: List<BluetoothDevice>): List<BluetoothDevice> {
             return devices.sortedWith(
                 compareByDescending<BluetoothDevice> { it.address in connectedMacs }
-                    .thenByDescending { it.address.equals(preferredMac, ignoreCase = true) }
-                    .thenByDescending { it.address.equals(lastUsedMac, ignoreCase = true) }
+                    .thenBy { dev -> planOrder.indexOfFirst { it.equals(dev.address, ignoreCase = true) }
+                        .let { if (it < 0) Int.MAX_VALUE else it } }
                     .thenBy { it.name ?: "" }
             )
         }
@@ -2908,17 +2899,10 @@ class HomeFragment : Fragment() {
             }
         }
 
-        val effectiveLastUsed = NativeDriverSelectionPolicy.lastUsedMac(
-            lastUsedMac, appSettings.nativePokeBtMacs
-        )
         // Scoped to the phones whatever "Show all" is showing, so widening the list never changes
         // what the countdown connects to.
-        val autoTargetMac = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = preferredMac,
-            lastUsedMac = effectiveLastUsed,
-            connectedMacs = cands.connectedOffered.map { it.address },
-            pairedMacs = likelyPhones.map { it.address },
-            scopeMacs = autoScopeMacs(cands, appSettings)
+        val autoTargetMac = WakePlanPolicy.autoPick(
+            wakePlanFor(cands, appSettings), cands.connectedOffered.map { it.address }
         )
         val autoTargetDevice = cands.deviceFor(autoTargetMac)
         val targetName = autoTargetDevice?.name ?: autoTargetMac ?: ""
@@ -2987,7 +2971,13 @@ class HomeFragment : Fragment() {
      * so every path gets the non-blocking pill with its step line; the full-screen overlay takes
      * over once the phone answers. The pill names the phone, so no toast repeats it.
      */
-    private fun connectToNativeDevice(mac: String, name: String, connectedMacs: Collection<String>, explicit: Boolean) {
+    private fun connectToNativeDevice(
+        mac: String,
+        name: String,
+        connectedMacs: Collection<String>,
+        explicit: Boolean,
+        fromPlan: Boolean = false,
+    ) {
         val reachable = NativeDriverSelectionPolicy.connectUiIsImmediate(mac, connectedMacs)
         AppLog.i("HomeFragment: Connecting to Native-AA device: $name ($mac), btConnected=$reachable")
         // Without a status text the indicator falls back to "Android Auto is starting", which is the
@@ -3004,6 +2994,7 @@ class HomeFragment : Fragment() {
             action = AapService.ACTION_NATIVE_AA_POKE
             putExtra(AapService.EXTRA_MAC, mac)
             putExtra(AapService.EXTRA_EXPLICIT_PICK, explicit)
+            putExtra(AapService.EXTRA_PICK_FROM_PLAN, fromPlan)
         }
         ContextCompat.startForegroundService(requireContext(), intent)
     }

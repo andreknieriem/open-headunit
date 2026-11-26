@@ -28,6 +28,8 @@ object AutomationOutputPolicy {
         "auto-start-bt-name",
         "auto-disconnect-bt-macs",
         "native-poke-bt-macs",
+        "native-phones",
+        "native-learned-phones",
         "static-bssid",
         "static-p2p-bssid"
     )

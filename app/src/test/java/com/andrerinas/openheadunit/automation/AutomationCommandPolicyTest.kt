@@ -223,6 +223,7 @@ class AutomationCommandPolicyTest {
             stringExtras = mapOf(key to value),
             flagExtras = mapOf(
                 AapService.EXTRA_EXPLICIT_PICK to true,
+                AapService.EXTRA_PICK_FROM_PLAN to true,
                 AapService.EXTRA_BY_COMMAND to true,
                 AapService.EXTRA_NO_UI to noUi
             )
@@ -287,7 +288,7 @@ class AutomationCommandPolicyTest {
     }
 
     @Test
-    fun `a poke by name equals a connect by name and a poke by mac keeps its old effect`() {
+    fun `a poke by name equals a connect by name and a poke by mac is an explicit pick of that phone`() {
         val name = mapOf(HeadUnitCommand.EXTRA_DEVICE_NAME to "P")
         assertEquals(
             effects(HeadUnitCommand.ACTION_CONNECT, name),
@@ -296,7 +297,8 @@ class AutomationCommandPolicyTest {
         assertEquals(
             AutomationCommandPolicy.Effect.StartService(
                 AapService.ACTION_NATIVE_AA_POKE,
-                stringExtras = mapOf(AapService.EXTRA_MAC to "AA:BB")
+                stringExtras = mapOf(AapService.EXTRA_MAC to "AA:BB"),
+                flagExtras = mapOf(AapService.EXTRA_EXPLICIT_PICK to true, AapService.EXTRA_PICK_FROM_PLAN to true)
             ),
             single(HeadUnitCommand.ACTION_NATIVE_AA_POKE, mapOf(HeadUnitCommand.EXTRA_PHONE_MAC to "AA:BB"))
         )
@@ -317,7 +319,8 @@ class AutomationCommandPolicyTest {
         assertEquals(
             AutomationCommandPolicy.Effect.StartService(
                 AapService.ACTION_NATIVE_AA_POKE,
-                stringExtras = mapOf(AapService.EXTRA_MAC to "AA:BB:CC:DD:EE:FF")
+                stringExtras = mapOf(AapService.EXTRA_MAC to "AA:BB:CC:DD:EE:FF"),
+                flagExtras = mapOf(AapService.EXTRA_EXPLICIT_PICK to true, AapService.EXTRA_PICK_FROM_PLAN to true)
             ),
             single(HeadUnitCommand.ACTION_NATIVE_AA_POKE, mapOf(HeadUnitCommand.EXTRA_MAC to "AA:BB:CC:DD:EE:FF"))
         )

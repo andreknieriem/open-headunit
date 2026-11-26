@@ -91,4 +91,126 @@ class HandsFreeRefusalPolicyTest {
     fun `the link is read after the phone has had time to drop it`() {
         assertTrue(HandsFreeRefusalPolicy.LINK_PROBE_MS >= 1_000L)
     }
+
+    private fun afterRounds(
+        otherPhones: Boolean = true,
+        credentialsReady: Boolean = true,
+        namedByDriver: Boolean = false,
+        wakeLoopWaits: Boolean = false,
+        planCanStart: Boolean = true
+    ) = HandsFreeRefusalPolicy.afterRounds(otherPhones, credentialsReady, namedByDriver, wakeLoopWaits, planCanStart)
+
+    @Test
+    fun `a refusing phone alone in the plan keeps the wake slot`() {
+        for (named in listOf(true, false)) for (waits in listOf(true, false)) {
+            assertEquals(
+                HandsFreeRefusalPolicy.AfterRounds.KEEP_SLOT,
+                afterRounds(otherPhones = false, namedByDriver = named, wakeLoopWaits = waits)
+            )
+        }
+    }
+
+    @Test
+    fun `a refusing phone hands over to the plan when another phone waits`() {
+        assertEquals(HandsFreeRefusalPolicy.AfterRounds.HAND_OVER, afterRounds())
+    }
+
+    @Test
+    fun `a phone the driver named hands over only once a wake loop waits`() {
+        assertEquals(HandsFreeRefusalPolicy.AfterRounds.GIVE_WAY, afterRounds(namedByDriver = true))
+        assertEquals(HandsFreeRefusalPolicy.AfterRounds.HAND_OVER, afterRounds(namedByDriver = true, wakeLoopWaits = true))
+    }
+
+    // Another phone's handshake in flight, or the listeners down, stops the plan from starting. A
+    // break there ended the chosen wake too, and a handshake that failed before type 3 woke nobody.
+    @Test
+    fun `a refusing phone keeps the slot when the plan cannot start now`() {
+        for (named in listOf(true, false)) {
+            assertEquals(
+                HandsFreeRefusalPolicy.AfterRounds.GIVE_WAY,
+                afterRounds(namedByDriver = named, wakeLoopWaits = true, planCanStart = false)
+            )
+        }
+        assertEquals(
+            HandsFreeRefusalPolicy.AfterRounds.KEEP_SLOT, afterRounds(otherPhones = false, planCanStart = false)
+        )
+    }
+
+    @Test
+    fun `nothing is handed over with no credentials to start a loop with`() {
+        assertEquals(
+            HandsFreeRefusalPolicy.AfterRounds.GIVE_WAY, afterRounds(credentialsReady = false, wakeLoopWaits = true)
+        )
+    }
+
+    @Test
+    fun `the plan asks a refusing pick at the gaps of the chosen wake, then stops after the hour`() {
+        val refusedAt = 1_000L
+        fun due(sinceFirst: Long, sinceAsk: Long) = HandsFreeRefusalPolicy.askDue(
+            HandsFreeRefusalPolicy.RefusingPick("A0:46:5A:97:E4:95", refusedAt, refusedAt + sinceFirst - sinceAsk),
+            refusedAt + sinceFirst
+        )
+        assertFalse(due(60_000L, HandsFreeRefusalPolicy.RETRY_GAP_MS - 1))
+        assertTrue(due(60_000L, HandsFreeRefusalPolicy.RETRY_GAP_MS))
+        val slow = HandsFreeRefusalPolicy.PATIENCE_MS + HandsFreeRefusalPolicy.SLOW_RETRY_GAP_MS
+        assertFalse(due(slow, HandsFreeRefusalPolicy.SLOW_RETRY_GAP_MS - 1))
+        assertTrue(due(slow, HandsFreeRefusalPolicy.SLOW_RETRY_GAP_MS))
+        assertFalse(due(HandsFreeRefusalPolicy.SLOW_PATIENCE_MS, HandsFreeRefusalPolicy.SLOW_RETRY_GAP_MS))
+    }
+
+    // The automatic pick or the WiFi button is not a phone picked by hand, so "Only these phones"
+    // leaving it out ends its asks. A phone the driver named is still woken.
+    @Test
+    fun `only a refusing pick the driver named is asked outside the plan`() {
+        val named = HandsFreeRefusalPolicy.RefusingPick("A0:46:5A:97:E4:95", 1_000L, 1_000L, namedByDriver = true)
+        val other = "5C:51:4F:0A:11:22"
+        assertEquals(named.mac, HandsFreeRefusalPolicy.unplannedAsk(named, listOf(other)))
+        assertEquals(null, HandsFreeRefusalPolicy.unplannedAsk(named.copy(namedByDriver = false), listOf(other)))
+        assertEquals(null, HandsFreeRefusalPolicy.unplannedAsk(named, listOf(other, "a0:46:5a:97:e4:95")))
+        assertEquals(null, HandsFreeRefusalPolicy.unplannedAsk(null, listOf(other)))
+    }
+
+    // A second phone that refuses in the wake plan was asked about every 17 s, and each ask
+    // opened Android Auto on it and raised ACL_CONNECTED on this unit.
+    @Test
+    fun `a phone that refused in the plan gets the slow gap, and one that never refused does not`() {
+        val mac = "5C:51:4F:0A:11:22"
+        val at = 1_000L
+        assertTrue(HandsFreeRefusalPolicy.planAskDue(null, at))
+        val opened = HandsFreeRefusalPolicy.afterPlanAsk(mac, null, refused = true, nowMs = at)!!
+        assertEquals(HandsFreeRefusalPolicy.RefusingPick(mac, at, at), opened)
+        assertFalse(HandsFreeRefusalPolicy.planAskDue(opened, at + 17_000L))
+        assertTrue(HandsFreeRefusalPolicy.planAskDue(opened, at + HandsFreeRefusalPolicy.RETRY_GAP_MS))
+        assertEquals(null, HandsFreeRefusalPolicy.afterPlanAsk(mac, null, refused = false, nowMs = at))
+    }
+
+    // On the Fold the ask after a refusal failed to connect at all: that does not end the slow gap.
+    @Test
+    fun `a later ask moves the plan refusal and keeps its start, and the hour ends it`() {
+        val mac = "5C:51:4F:0A:11:22"
+        val opened = HandsFreeRefusalPolicy.RefusingPick(mac, 1_000L, 1_000L)
+        val later = 1_000L + HandsFreeRefusalPolicy.RETRY_GAP_MS
+        assertEquals(
+            opened.copy(lastAskAtMs = later),
+            HandsFreeRefusalPolicy.afterPlanAsk(mac, opened, refused = false, nowMs = later)
+        )
+        val pastHour = 1_000L + HandsFreeRefusalPolicy.SLOW_PATIENCE_MS
+        assertTrue(HandsFreeRefusalPolicy.planAskDue(opened.copy(lastAskAtMs = pastHour - 1), pastHour))
+        assertEquals(null, HandsFreeRefusalPolicy.afterPlanAsk(mac, opened, refused = false, nowMs = pastHour))
+        assertEquals(
+            HandsFreeRefusalPolicy.RefusingPick(mac, pastHour, pastHour),
+            HandsFreeRefusalPolicy.afterPlanAsk(mac, opened, refused = true, nowMs = pastHour)
+        )
+    }
+
+    // The plan dials B between the asks to a refusing A. B's link cleared A's record, and A's next
+    // refusal raised it with a new stamp, so the banner came back over the driver's dismissal.
+    @Test
+    fun `only the refusing phone's own link retires the refusal record`() {
+        val refuser = "A0:46:5A:97:E4:95"
+        assertFalse(HandsFreeRefusalPolicy.retiresRefusal("5C:51:4F:0A:11:22", refuser))
+        assertTrue(HandsFreeRefusalPolicy.retiresRefusal("a0:46:5a:97:e4:95", refuser))
+        // A record from an earlier run names no phone, and any link here retires it as before.
+        assertTrue(HandsFreeRefusalPolicy.retiresRefusal("5C:51:4F:0A:11:22", null))
+    }
 }

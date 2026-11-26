@@ -56,6 +56,9 @@ object AutomationCommandPolicy {
     /** Port of Android Auto's built-in head unit server, which is what an `ip` command targets. */
     const val HEADUNIT_SERVER_PORT = 5277
 
+    /** Optional boolean extra on [HeadUnitCommand.ACTION_CONNECT] to trigger a wireless scan instead of USB. */
+    const val EXTRA_WIRELESS = "wireless"
+
     private val NIGHT_MODES = setOf("day", "night", "auto")
 
     private val LOG_LEVELS = setOf("verbose", "debug", "info", "warn", "error", "silent")
@@ -83,7 +86,6 @@ object AutomationCommandPolicy {
         HeadUnitCommand.ACTION_EXIT to AapService.ACTION_STOP_SERVICE,
         HeadUnitCommand.ACTION_STOP_WIRELESS to AapService.ACTION_STOP_WIRELESS,
         HeadUnitCommand.ACTION_CANCEL_WIRELESS to AapService.ACTION_CANCEL_WIRELESS,
-        HeadUnitCommand.ACTION_START_WIRELESS_SCAN to AapService.ACTION_START_WIRELESS_SCAN,
         HeadUnitCommand.ACTION_END_SESSION_STAY_ARMED to AapService.ACTION_END_SESSION_STAY_ARMED,
         HeadUnitCommand.ACTION_REFRESH_SENSORS to AapService.ACTION_REFRESH_SENSORS,
         HeadUnitCommand.ACTION_RESTART_AUDIO to AapService.ACTION_RESTART_AUDIO,
@@ -123,6 +125,9 @@ object AutomationCommandPolicy {
                     AapService.ACTION_START_WIRELESS,
                     flagExtras = mapOf(AapService.EXTRA_NO_UI to extras.flag(HeadUnitCommand.EXTRA_NO_UI))
                 )
+            )
+            HeadUnitCommand.ACTION_START_WIRELESS_SCAN -> listOf(
+                startWirelessScan(extras.flag(HeadUnitCommand.EXTRA_NO_UI))
             )
             HeadUnitCommand.ACTION_START_SELF_MODE -> listOf(
                 Effect.StartService(
@@ -167,8 +172,14 @@ object AutomationCommandPolicy {
     private fun connect(extras: Extras): List<Effect> {
         val ip = extras.string(HeadUnitCommand.EXTRA_IP)?.trim()
         if (ip.isNullOrEmpty()) {
-            val target = phoneTarget(extras) ?: return listOf(checkUsb())
-            return listOf(namedWake(target, extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
+            val target = phoneTarget(extras)
+            if (target != null) {
+                return listOf(namedWake(target, extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
+            }
+            if (extras.flag(EXTRA_WIRELESS)) {
+                return listOf(startWirelessScan(extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
+            }
+            return listOf(checkUsb())
         }
         return listOf(
             Effect.StartService(
@@ -178,6 +189,14 @@ object AutomationCommandPolicy {
             Effect.ConnectSocket(ip, HEADUNIT_SERVER_PORT)
         )
     }
+
+    private fun startWirelessScan(noUi: Boolean) = Effect.StartService(
+        AapService.ACTION_START_WIRELESS_SCAN,
+        flagExtras = mapOf(
+            AapService.EXTRA_NO_UI to noUi,
+            AapService.EXTRA_BY_COMMAND to true,
+        )
+    )
 
     /** An explicit command, so it lifts the status pill's X like the USB button does. */
     private fun checkUsb() = Effect.StartService(

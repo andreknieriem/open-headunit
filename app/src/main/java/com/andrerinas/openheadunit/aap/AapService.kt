@@ -165,6 +165,7 @@ class AapService : Service() {
     private lateinit var uiModeManager: UiModeManager
     private var nightModeManager: NightModeManager? = null
     private var wifiAutoStartReceiver: WifiAutoStartReceiver? = null
+    private var bleProximityTrigger: com.andrerinas.openheadunit.app.BleProximityTrigger? = null
     private var mediaSession: MediaSessionCompat? = null
     private val hctWppOwnerDelegate = lazy {
         com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner(this)
@@ -242,6 +243,41 @@ class AapService : Service() {
                 commManager.connectionState.value is CommManager.ConnectionState.TransportStarted
         )
     }
+
+    private fun reconcileBleProximityTrigger() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
+        if (isDestroying) {
+            bleProximityTrigger?.stop()
+            return
+        }
+        val sessionBusy = commManager.isBusy || commManager.isConnected
+        if (!settings.autoStartOnBleProximity) {
+            bleProximityTrigger?.stop()
+            return
+        }
+        val trigger = bleProximityTrigger ?: com.andrerinas.openheadunit.app.BleProximityTrigger(
+            context = this,
+            settings = settings,
+            environmentProvider = {
+                com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.Environment(
+                    sessionBusy = commManager.isBusy || commManager.isConnected,
+                    settingsVisible = SettingsActivity.isVisible,
+                    userExitActive = userExitedAA || SystemClock.elapsedRealtime() < userExitCooldownUntil,
+                    wirelessCancelledByUser = wirelessCancelledByUser(),
+                )
+            },
+            onTriggered = { _ ->
+                ContextCompat.startForegroundService(
+                    this,
+                    Intent(this, AapService::class.java).apply {
+                        action = ACTION_START_WIRELESS_SCAN
+                        putExtra(EXTRA_BY_COMMAND, true)
+                    }
+                )
+            },
+        ).also { bleProximityTrigger = it }
+        trigger.reconcile(sessionBusy = sessionBusy)
+    }
     private val settings: Settings by lazy { App.provide(this).settings }
     private val mediaNotification by lazy { BackgroundNotification(this) }
 
@@ -283,6 +319,15 @@ class AapService : Service() {
             if (key == Settings.KEY_ENABLE_CAR_LAUNCHER) {
                 serviceScope.launch(Dispatchers.Main) {
                     updateNotification()
+                }
+            }
+
+            if (key == Settings.KEY_AUTO_START_ON_BLE_PROXIMITY ||
+                key == Settings.KEY_AUTO_START_BLE_TARGET ||
+                key == Settings.KEY_AUTO_START_BLE_COOLDOWN_SECONDS
+            ) {
+                serviceScope.launch(Dispatchers.Main) {
+                    reconcileBleProximityTrigger()
                 }
             }
         }
@@ -1254,6 +1299,7 @@ class AapService : Service() {
         }
         registerReceivers()
         carKeysManager.registerIdleReceivers(this)
+        reconcileBleProximityTrigger()
 
         MicRecorder.foregroundClaim = object : MicRecorder.ForegroundMicrophoneClaim {
             override fun claim() = promoteForMicrophone()
@@ -1382,6 +1428,7 @@ class AapService : Service() {
             commManager.connectionState.collect { state ->
                 automaticReconnect.onStateChanged()
                 usbReconnect.onStateChanged()
+                reconcileBleProximityTrigger()
                 if (Build.VERSION.SDK_INT >= 26) {
                     val live = state is CommManager.ConnectionState.Connected ||
                         state is CommManager.ConnectionState.StartingTransport ||
@@ -3494,6 +3541,8 @@ class AapService : Service() {
         stopForegroundForShutdown()
         deviceHackManager?.stop()
         deviceHackManager = null
+        bleProximityTrigger?.stop()
+        bleProximityTrigger = null
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.close(this)
         if (Build.VERSION.SDK_INT >= 26) WifiScanControl.end(this)
         ConnectionArbiter.actions = null
@@ -3819,8 +3868,10 @@ class AapService : Service() {
             ACTION_START_WIRELESS_SCAN   -> {
                 val settings = App.provide(this).settings
                 val mode = settings.wifiConnectionMode
+                val byCommand = intent?.getBooleanExtra(EXTRA_BY_COMMAND, false) == true
+                val noUi = intent?.getBooleanExtra(EXTRA_NO_UI, false) == true
 
-                AppLog.i("AapService: Force-starting WIFI-Scan from UI")
+                AppLog.i("AapService: Force-starting WIFI-Scan from ${if (byCommand) "automation command" else "UI"}")
 
                 // [FIX] Reset exit flags on manual scan start
                 userExitedAA = false
@@ -3832,6 +3883,10 @@ class AapService : Service() {
 
                 if (mode == WifiLauncherMode.AUTO)
                     wifiLauncherManager.startDiscovery(oneShot = true)
+
+                if (byCommand && !noUi && !commManager.isConnected) {
+                    launchMainActivityFromBackground("Automation wireless scan")
+                }
             }
             ACTION_STOP_WIRELESS         -> {
                 stopWirelessForCommand(intent?.getBooleanExtra(EXTRA_SETTINGS_REARM, false) == true)
@@ -4316,42 +4371,62 @@ class AapService : Service() {
     }
 
     private fun launchMainActivityOnBoot() {
-        // Android < 10: no background activity start restrictions
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            AppLog.i("Boot auto-start: launching directly (API ${Build.VERSION.SDK_INT} < 29)")
-            launchDirectly()
+        launchMainActivityFromBackground("Boot auto-start", checkSettingsVisible = false)
+    }
+
+    /**
+     * Raises [MainActivity] from a background service using [ActivityLaunchPolicy]
+     * (DIRECT -> OVERLAY trampoline -> full-screen intent NOTIFICATION).
+     */
+    private fun launchMainActivityFromBackground(
+        source: String,
+        checkSettingsVisible: Boolean = true,
+    ) {
+        if (commManager.isConnected) {
+            AppLog.i("$source: session already connected, not raising MainActivity")
+            return
+        }
+        if (checkSettingsVisible && SettingsActivity.isVisible) {
+            AppLog.i("$source: settings screen is visible, not raising MainActivity")
             return
         }
 
-        // Android 10+: try overlay trampoline (bypasses all known OEM restrictions)
-        if (AppPermissions.isOverlayGranted(this)) {
-            AppLog.i("Boot auto-start: launching via overlay window trampoline")
-            if (launchViaOverlayTrampoline()) return
-        }
+        val canOverlay = AppPermissions.isOverlayGranted(this)
+        val strategy = ActivityLaunchPolicy.chooseLaunchStrategy(
+            Build.VERSION.SDK_INT, canOverlay, App.hasStartedActivity
+        )
+        AppLog.i("$source: launching MainActivity via $strategy (overlay=$canOverlay, foreground=${App.hasStartedActivity})")
 
-        // Fallback: full-screen intent notification
-        AppLog.i("Boot auto-start: falling back to full-screen intent notification")
-        launchViaFullScreenIntent()
+        when (strategy) {
+            ActivityLaunchPolicy.LaunchStrategy.DIRECT -> launchDirectly(source)
+            ActivityLaunchPolicy.LaunchStrategy.OVERLAY -> {
+                if (!launchViaOverlayTrampoline(source)) {
+                    AppLog.w("$source: overlay trampoline failed, falling back to full-screen intent notification")
+                    launchViaFullScreenIntent(source)
+                }
+            }
+            ActivityLaunchPolicy.LaunchStrategy.NOTIFICATION -> launchViaFullScreenIntent(source)
+        }
     }
 
-    private fun launchDirectly() {
+    private fun launchDirectly(source: String = "Boot auto-start") {
         try {
             val launchIntent = Intent(this, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
+                putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
             }
             startActivity(launchIntent)
-            AppLog.i("Boot auto-start: direct startActivity succeeded")
+            AppLog.i("$source: direct startActivity succeeded")
         } catch (e: Exception) {
-            AppLog.e("Boot auto-start: direct startActivity failed: ${e.message}")
-            launchViaFullScreenIntent()
+            AppLog.e("$source: direct startActivity failed: ${e.message}")
+            launchViaFullScreenIntent(source)
         }
     }
 
-    private fun launchViaOverlayTrampoline(): Boolean {
+    private fun launchViaOverlayTrampoline(source: String = "Boot auto-start"): Boolean {
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
+            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
         }
         return launchViaOverlayTrampoline(launchIntent)
     }
@@ -4385,10 +4460,10 @@ class AapService : Service() {
         }
     }
 
-    private fun launchViaFullScreenIntent() {
+    private fun launchViaFullScreenIntent(source: String = "Boot auto-start") {
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
+            putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
         }
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)

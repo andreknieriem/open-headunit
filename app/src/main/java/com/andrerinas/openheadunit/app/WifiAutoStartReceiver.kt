@@ -76,8 +76,12 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                     return
                 }
 
-                // Start the service
-                val serviceIntent = Intent(context, AapService::class.java)
+                // Start the service and explicitly trigger a wireless scan so an already-running
+                // service also re-arms wireless and discovers the phone on the joined network.
+                val serviceIntent = Intent(context, AapService::class.java).apply {
+                    action = AapService.ACTION_START_WIRELESS_SCAN
+                    putExtra(AapService.EXTRA_BY_COMMAND, true)
+                }
                 try {
                     ContextCompat.startForegroundService(context, serviceIntent)
                 } catch (e: Exception) {

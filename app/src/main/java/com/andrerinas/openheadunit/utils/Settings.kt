@@ -1590,6 +1590,19 @@ class Settings(private val context: Context) {
         get() = prefs.getString("auto-start-wifi-ssid", "")!!
         set(value) { prefs.edit().putString("auto-start-wifi-ssid", value).apply() }
 
+    /** Opt-in BLE proximity trigger (off by default); wakes wireless scan when target device is nearby. */
+    var autoStartOnBleProximity: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_START_ON_BLE_PROXIMITY, false)
+        set(value) { prefs.edit().putBoolean(KEY_AUTO_START_ON_BLE_PROXIMITY, value).apply() }
+
+    var autoStartBleTarget: String
+        get() = prefs.getString(KEY_AUTO_START_BLE_TARGET, "")!!
+        set(value) { prefs.edit().putString(KEY_AUTO_START_BLE_TARGET, value).apply() }
+
+    var autoStartBleCooldownSeconds: Int
+        get() = prefs.getInt(KEY_AUTO_START_BLE_COOLDOWN_SECONDS, com.andrerinas.openheadunit.app.BleProximityTriggerPolicy.DEFAULT_COOLDOWN_SECONDS)
+        set(value) { prefs.edit().putInt(KEY_AUTO_START_BLE_COOLDOWN_SECONDS, value).apply() }
+
     var listenForUsbDevices: Boolean
         get() = prefs.getBoolean("listen-for-usb-devices", true)
         set(value) { prefs.edit().putBoolean("listen-for-usb-devices", value).apply() }
@@ -2340,6 +2353,9 @@ class Settings(private val context: Context) {
 
         private const val KEY_AUTO_START_ON_WIFI = "auto-start-on-wifi"
         private const val KEY_AUTO_START_WIFI_SSID = "auto-start-wifi-ssid"
+        const val KEY_AUTO_START_ON_BLE_PROXIMITY = "auto-start-on-ble-proximity"
+        const val KEY_AUTO_START_BLE_TARGET = "auto-start-ble-target"
+        const val KEY_AUTO_START_BLE_COOLDOWN_SECONDS = "auto-start-ble-cooldown-seconds"
 
         fun isAutoStartOnWifiEnabled(context: Context): Boolean {
             val prefs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

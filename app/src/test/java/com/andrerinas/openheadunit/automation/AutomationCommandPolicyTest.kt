@@ -129,7 +129,6 @@ class AutomationCommandPolicyTest {
             HeadUnitCommand.ACTION_DISCONNECT to AapService.ACTION_DISCONNECT,
             HeadUnitCommand.ACTION_STOP_WIRELESS to AapService.ACTION_STOP_WIRELESS,
             HeadUnitCommand.ACTION_CANCEL_WIRELESS to AapService.ACTION_CANCEL_WIRELESS,
-            HeadUnitCommand.ACTION_START_WIRELESS_SCAN to AapService.ACTION_START_WIRELESS_SCAN,
             HeadUnitCommand.ACTION_END_SESSION_STAY_ARMED to AapService.ACTION_END_SESSION_STAY_ARMED,
             HeadUnitCommand.ACTION_REFRESH_SENSORS to AapService.ACTION_REFRESH_SENSORS,
             HeadUnitCommand.ACTION_RESTART_AUDIO to AapService.ACTION_RESTART_AUDIO,
@@ -206,6 +205,74 @@ class AutomationCommandPolicyTest {
         val wireless = single(HeadUnitCommand.ACTION_START_WIRELESS)
             as AutomationCommandPolicy.Effect.StartService
         assertEquals(false, wireless.flagExtras[AapService.EXTRA_NO_UI])
+    }
+
+    @Test
+    fun `starting wireless scan marks by_command and forwards no_ui`() {
+        assertEquals(
+            AutomationCommandPolicy.Effect.StartService(
+                AapService.ACTION_START_WIRELESS_SCAN,
+                flagExtras = mapOf(
+                    AapService.EXTRA_NO_UI to false,
+                    AapService.EXTRA_BY_COMMAND to true,
+                )
+            ),
+            single(HeadUnitCommand.ACTION_START_WIRELESS_SCAN)
+        )
+        assertEquals(
+            AutomationCommandPolicy.Effect.StartService(
+                AapService.ACTION_START_WIRELESS_SCAN,
+                flagExtras = mapOf(
+                    AapService.EXTRA_NO_UI to true,
+                    AapService.EXTRA_BY_COMMAND to true,
+                )
+            ),
+            single(
+                HeadUnitCommand.ACTION_START_WIRELESS_SCAN,
+                mapOf(HeadUnitCommand.EXTRA_NO_UI to "true")
+            )
+        )
+    }
+
+    @Test
+    fun `connect with wireless flag triggers wireless scan without breaking USB or target precedence`() {
+        val scan = AutomationCommandPolicy.Effect.StartService(
+            AapService.ACTION_START_WIRELESS_SCAN,
+            flagExtras = mapOf(
+                AapService.EXTRA_NO_UI to false,
+                AapService.EXTRA_BY_COMMAND to true,
+            )
+        )
+        assertEquals(
+            scan,
+            single(HeadUnitCommand.ACTION_CONNECT, mapOf(AutomationCommandPolicy.EXTRA_WIRELESS to "true"))
+        )
+        assertEquals(
+            scan.copy(flagExtras = mapOf(AapService.EXTRA_NO_UI to true, AapService.EXTRA_BY_COMMAND to true)),
+            single(
+                HeadUnitCommand.ACTION_CONNECT,
+                mapOf(
+                    AutomationCommandPolicy.EXTRA_WIRELESS to "true",
+                    HeadUnitCommand.EXTRA_NO_UI to "true",
+                )
+            )
+        )
+        // Existing precedence: ip and phone target still outrank wireless=true.
+        val ipEffects = effects(
+            HeadUnitCommand.ACTION_CONNECT,
+            mapOf(HeadUnitCommand.EXTRA_IP to "192.168.1.25", AutomationCommandPolicy.EXTRA_WIRELESS to "true")
+        )
+        assertEquals(
+            AutomationCommandPolicy.Effect.ConnectSocket("192.168.1.25", AutomationCommandPolicy.HEADUNIT_SERVER_PORT),
+            ipEffects.last()
+        )
+        assertEquals(
+            listOf(wake(AapService.EXTRA_DEVICE_NAME, "Pixel 7")),
+            effects(
+                HeadUnitCommand.ACTION_CONNECT,
+                mapOf(HeadUnitCommand.EXTRA_DEVICE_NAME to "Pixel 7", AutomationCommandPolicy.EXTRA_WIRELESS to "true")
+            )
+        )
     }
 
     @Test

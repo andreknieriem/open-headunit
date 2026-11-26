@@ -816,15 +816,16 @@
     <string name="carplay_native_checking">正在检查此设备...</string>
     <string name="carplay_native_signer_chip">签名方:MFi 芯片</string>
     <string name="carplay_native_signer_file">签名方:已导入的文件</string>
+    <string name="carplay_native_signer_link">签名方:LIVI Link</string>
     <string name="carplay_native_signer_none">签名方:无</string>
     <string name="carplay_native_chip_candidate">找到 MFi 路径(%1$s),芯片未知</string>
     <string name="carplay_native_chip_none">无 MFi 路径(%1$s)</string>
     <string name="carplay_native_import">导入证书和密钥</string>
-    <string name="carplay_native_import_hint">请选择包含您自己的证书和私钥的 PEM 文件。</string>
+    <string name="carplay_native_import_hint">请选择一个包含您自己的证书和密钥的 PEM 文件,或同时选择证书文件和密钥文件。</string>
     <string name="carplay_native_import_ok">已导入证书和密钥</string>
     <string name="carplay_native_import_wrong_key">该密钥不属于此证书</string>
     <string name="carplay_native_import_corrupt">文件已损坏或不完整</string>
-    <string name="carplay_native_import_wrong_format">文件需要包含证书和未加密的 PKCS#8 密钥,格式为 PEM</string>
+    <string name="carplay_native_import_wrong_format">文件需要包含 PKCS#7 证书和未加密的 PKCS#8 密钥(P-256 或 RSA),格式为 DER 或 PEM</string>
     <string name="carplay_native_import_no_picker">此设备没有文件选择器</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

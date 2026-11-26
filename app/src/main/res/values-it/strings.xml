@@ -823,15 +823,16 @@
     <string name="carplay_native_checking">Controllo di questa unità...</string>
     <string name="carplay_native_signer_chip">Firmatario: chip MFi</string>
     <string name="carplay_native_signer_file">Firmatario: file importato</string>
+    <string name="carplay_native_signer_link">Firmatario: LIVI Link</string>
     <string name="carplay_native_signer_none">Firmatario: nessuno</string>
     <string name="carplay_native_chip_candidate">Percorso MFi trovato (%1$s), chip sconosciuto</string>
     <string name="carplay_native_chip_none">Nessun percorso MFi (%1$s)</string>
     <string name="carplay_native_import">Importa certificato e chiave</string>
-    <string name="carplay_native_import_hint">Scegli un file PEM con il tuo certificato e la tua chiave privata.</string>
+    <string name="carplay_native_import_hint">Scegli un file PEM con il tuo certificato e la tua chiave, oppure scegli insieme il file del certificato e il file della chiave.</string>
     <string name="carplay_native_import_ok">Certificato e chiave importati</string>
     <string name="carplay_native_import_wrong_key">La chiave non appartiene a questo certificato</string>
     <string name="carplay_native_import_corrupt">Il file è danneggiato o troncato</string>
-    <string name="carplay_native_import_wrong_format">Il file richiede un certificato e una chiave PKCS#8 non cifrata in formato PEM</string>
+    <string name="carplay_native_import_wrong_format">I file richiedono un certificato PKCS#7 e una chiave PKCS#8 non cifrata, P-256 o RSA, in formato DER o PEM</string>
     <string name="carplay_native_import_no_picker">Questa unità non ha un selettore di file</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

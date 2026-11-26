@@ -6,12 +6,17 @@ import org.junit.Test
 
 class CarPlaySignerPolicyTest {
 
+    private fun choose(chip: Boolean, link: Boolean, file: Boolean) =
+        CarPlaySignerPolicy.choose(chipConfirmed = chip, linkReachable = link, identityFileValid = file)
+
     @Test
-    fun `chip wins then file then none`() {
-        assertEquals(Choice.CHIP, CarPlaySignerPolicy.choose(chipConfirmed = true, identityFileValid = true))
-        assertEquals(Choice.CHIP, CarPlaySignerPolicy.choose(chipConfirmed = true, identityFileValid = false))
-        assertEquals(Choice.FILE, CarPlaySignerPolicy.choose(chipConfirmed = false, identityFileValid = true))
-        assertEquals(Choice.NONE, CarPlaySignerPolicy.choose(chipConfirmed = false, identityFileValid = false))
+    fun `chip wins then link then file then none`() {
+        assertEquals(Choice.CHIP, choose(chip = true, link = true, file = true))
+        assertEquals(Choice.CHIP, choose(chip = true, link = false, file = false))
+        assertEquals(Choice.LINK, choose(chip = false, link = true, file = true))
+        assertEquals(Choice.LINK, choose(chip = false, link = true, file = false))
+        assertEquals(Choice.FILE, choose(chip = false, link = false, file = true))
+        assertEquals(Choice.NONE, choose(chip = false, link = false, file = false))
     }
 
     @Test
@@ -20,12 +25,12 @@ class CarPlaySignerPolicyTest {
             MfiChipLocationPolicy.Observation("/dev/i2c-1", true, false, MfiChipLocationPolicy.Open.OK),
         ))
         assertEquals(true, candidate is MfiChipLocationPolicy.Verdict.Candidate)
-        // No code confirms a chip yet, so the caller passes false.
-        assertEquals(Choice.FILE, CarPlaySignerPolicy.choose(chipConfirmed = false, identityFileValid = true))
+        // An openable path confirms no chip, so the caller passes false.
+        assertEquals(Choice.FILE, choose(chip = false, link = false, file = true))
     }
 
     @Test
     fun `labels are the log words`() {
-        assertEquals(listOf("chip", "file", "none"), Choice.values().map { it.label })
+        assertEquals(listOf("chip", "link", "file", "none"), Choice.values().map { it.label })
     }
 }

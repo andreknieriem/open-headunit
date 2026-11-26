@@ -790,15 +790,16 @@
     <string name="carplay_native_checking">Đang kiểm tra thiết bị này...</string>
     <string name="carplay_native_signer_chip">Bên ký: chip MFi</string>
     <string name="carplay_native_signer_file">Bên ký: tệp đã nhập</string>
+    <string name="carplay_native_signer_link">Bên ký: LIVI Link</string>
     <string name="carplay_native_signer_none">Bên ký: không có</string>
     <string name="carplay_native_chip_candidate">Tìm thấy đường dẫn MFi (%1$s), chưa rõ chip</string>
     <string name="carplay_native_chip_none">Không có đường dẫn MFi (%1$s)</string>
     <string name="carplay_native_import">Nhập chứng chỉ và khóa</string>
-    <string name="carplay_native_import_hint">Chọn tệp PEM chứa chứng chỉ và khóa riêng của bạn.</string>
+    <string name="carplay_native_import_hint">Chọn một tệp PEM chứa chứng chỉ và khóa của bạn, hoặc chọn cùng lúc tệp chứng chỉ và tệp khóa.</string>
     <string name="carplay_native_import_ok">Đã nhập chứng chỉ và khóa</string>
     <string name="carplay_native_import_wrong_key">Khóa không thuộc về chứng chỉ này</string>
     <string name="carplay_native_import_corrupt">Tệp bị hỏng hoặc bị cắt cụt</string>
-    <string name="carplay_native_import_wrong_format">Tệp cần có chứng chỉ và khóa PKCS#8 không mã hóa ở định dạng PEM</string>
+    <string name="carplay_native_import_wrong_format">Các tệp cần có chứng chỉ PKCS#7 và khóa PKCS#8 không mã hóa (P-256 hoặc RSA) ở định dạng DER hoặc PEM</string>
     <string name="carplay_native_import_no_picker">Thiết bị này không có bộ chọn tệp</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

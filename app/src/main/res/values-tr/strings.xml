@@ -790,15 +790,16 @@
     <string name="carplay_native_checking">Bu ünite kontrol ediliyor...</string>
     <string name="carplay_native_signer_chip">İmzalayıcı: MFi çipi</string>
     <string name="carplay_native_signer_file">İmzalayıcı: içe aktarılan dosya</string>
+    <string name="carplay_native_signer_link">İmzalayıcı: LIVI Link</string>
     <string name="carplay_native_signer_none">İmzalayıcı: yok</string>
     <string name="carplay_native_chip_candidate">MFi yolu bulundu (%1$s), çip bilinmiyor</string>
     <string name="carplay_native_chip_none">MFi yolu yok (%1$s)</string>
     <string name="carplay_native_import">Sertifikayı ve anahtarı içe aktar</string>
-    <string name="carplay_native_import_hint">Kendi sertifikanızı ve özel anahtarınızı içeren bir PEM dosyası seçin.</string>
+    <string name="carplay_native_import_hint">Kendi sertifikanızı ve anahtarınızı içeren tek bir PEM dosyası seçin ya da sertifika dosyasını ve anahtar dosyasını birlikte seçin.</string>
     <string name="carplay_native_import_ok">Sertifika ve anahtar içe aktarıldı</string>
     <string name="carplay_native_import_wrong_key">Anahtar bu sertifikaya ait değil</string>
     <string name="carplay_native_import_corrupt">Dosya bozuk veya yarım</string>
-    <string name="carplay_native_import_wrong_format">Dosyada bir sertifika ve PEM biçiminde şifrelenmemiş bir PKCS#8 anahtarı olmalı</string>
+    <string name="carplay_native_import_wrong_format">Dosyalarda bir PKCS#7 sertifikası ve DER veya PEM biçiminde şifrelenmemiş bir PKCS#8 anahtarı (P-256 veya RSA) olmalı</string>
     <string name="carplay_native_import_no_picker">Bu ünitede dosya seçici yok</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

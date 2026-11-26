@@ -816,15 +816,16 @@
     <string name="carplay_native_checking">Dit apparaat controleren...</string>
     <string name="carplay_native_signer_chip">Ondertekenaar: MFi-chip</string>
     <string name="carplay_native_signer_file">Ondertekenaar: geïmporteerd bestand</string>
+    <string name="carplay_native_signer_link">Ondertekenaar: LIVI Link</string>
     <string name="carplay_native_signer_none">Ondertekenaar: geen</string>
     <string name="carplay_native_chip_candidate">MFi-pad gevonden (%1$s), chip onbekend</string>
     <string name="carplay_native_chip_none">Geen MFi-pad (%1$s)</string>
     <string name="carplay_native_import">Certificaat en sleutel importeren</string>
-    <string name="carplay_native_import_hint">Kies een PEM-bestand met je eigen certificaat en privésleutel.</string>
+    <string name="carplay_native_import_hint">Kies één PEM-bestand met je eigen certificaat en sleutel, of kies het certificaatbestand en het sleutelbestand samen.</string>
     <string name="carplay_native_import_ok">Certificaat en sleutel geïmporteerd</string>
     <string name="carplay_native_import_wrong_key">De sleutel hoort niet bij dit certificaat</string>
     <string name="carplay_native_import_corrupt">Het bestand is beschadigd of afgekapt</string>
-    <string name="carplay_native_import_wrong_format">Het bestand heeft een certificaat en een niet-versleutelde PKCS#8-sleutel in PEM-indeling nodig</string>
+    <string name="carplay_native_import_wrong_format">De bestanden hebben een PKCS#7-certificaat en een niet-versleutelde PKCS#8-sleutel (P-256 of RSA) in DER- of PEM-indeling nodig</string>
     <string name="carplay_native_import_no_picker">Dit apparaat heeft geen bestandskiezer</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

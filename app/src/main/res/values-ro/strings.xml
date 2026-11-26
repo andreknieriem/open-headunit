@@ -817,15 +817,16 @@
     <string name="carplay_native_checking">Se verifică această unitate...</string>
     <string name="carplay_native_signer_chip">Semnatar: cip MFi</string>
     <string name="carplay_native_signer_file">Semnatar: fișier importat</string>
+    <string name="carplay_native_signer_link">Semnatar: LIVI Link</string>
     <string name="carplay_native_signer_none">Semnatar: niciunul</string>
     <string name="carplay_native_chip_candidate">Cale MFi găsită (%1$s), cip necunoscut</string>
     <string name="carplay_native_chip_none">Fără cale MFi (%1$s)</string>
     <string name="carplay_native_import">Importați certificatul și cheia</string>
-    <string name="carplay_native_import_hint">Alegeți un fișier PEM cu propriul certificat și cheia privată.</string>
+    <string name="carplay_native_import_hint">Alegeți un fișier PEM cu propriul certificat și propria cheie sau alegeți împreună fișierul certificatului și fișierul cheii.</string>
     <string name="carplay_native_import_ok">Certificat și cheie importate</string>
     <string name="carplay_native_import_wrong_key">Cheia nu aparține acestui certificat</string>
     <string name="carplay_native_import_corrupt">Fișierul este deteriorat sau trunchiat</string>
-    <string name="carplay_native_import_wrong_format">Fișierul necesită un certificat și o cheie PKCS#8 necriptată în format PEM</string>
+    <string name="carplay_native_import_wrong_format">Fișierele necesită un certificat PKCS#7 și o cheie PKCS#8 necriptată, P-256 sau RSA, în format DER sau PEM</string>
     <string name="carplay_native_import_no_picker">Această unitate nu are selector de fișiere</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

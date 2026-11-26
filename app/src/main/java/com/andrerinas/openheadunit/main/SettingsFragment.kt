@@ -389,8 +389,8 @@ class SettingsFragment : Fragment() {
         uri?.let { importSettingsFromUri(it) }
     }
 
-    private val identityImportLauncher = registerForActivityResult(OpenAnyFile()) { uri ->
-        uri?.let { importCarPlayIdentity(it) }
+    private val identityImportLauncher = registerForActivityResult(OpenAnyFiles()) { uris ->
+        if (uris.isNotEmpty()) importCarPlayIdentity(uris)
     }
 
     private var mfiVerdict: MfiChipLocationPolicy.Verdict? = null
@@ -3653,8 +3653,8 @@ class SettingsFragment : Fragment() {
             mfiVerdict = verdict
             carPlayIdentityValid = valid
             carPlayNativeChecked = true
-            // No code confirms a chip yet, so only the file can make a signer.
-            val signer = CarPlaySignerPolicy.choose(chipConfirmed = false, identityFileValid = valid)
+            // No code confirms a chip or reaches a Link yet, so only the file can make a signer.
+            val signer = CarPlaySignerPolicy.choose(chipConfirmed = false, linkReachable = false, identityFileValid = valid)
             AppLog.i("CarPlayNative: signer ${signer.label}")
             updateSettingsList()
         }
@@ -3666,8 +3666,10 @@ class SettingsFragment : Fragment() {
             checkCarPlayNative()
         }
         val verdict = mfiVerdict ?: return getString(R.string.carplay_native_checking)
-        val signer = when (CarPlaySignerPolicy.choose(chipConfirmed = false, identityFileValid = carPlayIdentityValid)) {
+        val choice = CarPlaySignerPolicy.choose(chipConfirmed = false, linkReachable = false, identityFileValid = carPlayIdentityValid)
+        val signer = when (choice) {
             CarPlaySignerPolicy.Choice.CHIP -> getString(R.string.carplay_native_signer_chip)
+            CarPlaySignerPolicy.Choice.LINK -> getString(R.string.carplay_native_signer_link)
             CarPlaySignerPolicy.Choice.FILE -> getString(R.string.carplay_native_signer_file)
             CarPlaySignerPolicy.Choice.NONE -> getString(R.string.carplay_native_signer_none)
         }
@@ -3686,15 +3688,15 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun importCarPlayIdentity(uri: Uri) {
+    private fun importCarPlayIdentity(uris: List<Uri>) {
         val appContext = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch {
             // The file content is never logged, only the verdict.
             val result = withContext(Dispatchers.IO) {
-                val bytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                if (bytes == null || bytes.size > 64 * 1024) CarPlayIdentityImport.Result.WrongFormat
-                else CarPlayIdentityImport.parse(bytes, androidBase64).also {
-                    if (it is CarPlayIdentityImport.Result.Ok) CarPlayIdentityFile.save(appContext, bytes)
+                val files = uris.map { uri -> appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() } }
+                if (files.any { it == null || it.size > 64 * 1024 }) CarPlayIdentityImport.Result.WrongFormat
+                else CarPlayIdentityImport.parseFiles(files.filterNotNull(), androidBase64).also {
+                    if (it is CarPlayIdentityImport.Result.Ok) CarPlayIdentityFile.save(appContext, it)
                 }
             }
             val message = when (result) {
@@ -5712,13 +5714,17 @@ class SettingsFragment : Fragment() {
     }
 }
 
-/** One picker for every API level: `OpenDocument` needs API 19 and `minSdk` is 16. */
-private class OpenAnyFile : androidx.activity.result.contract.ActivityResultContract<String, Uri?>() {
+/** One picker for every API level: `OpenDocument` needs API 19 and `minSdk` is 16. It returns one or more files. */
+private class OpenAnyFiles : androidx.activity.result.contract.ActivityResultContract<String, List<Uri>>() {
     override fun createIntent(context: Context, input: String): Intent {
         val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) Intent.ACTION_OPEN_DOCUMENT else Intent.ACTION_GET_CONTENT
-        return Intent(action).addCategory(Intent.CATEGORY_OPENABLE).setType(input)
+        return Intent(action).addCategory(Intent.CATEGORY_OPENABLE).setType(input).putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
     }
 
-    override fun parseResult(resultCode: Int, intent: Intent?): Uri? =
-        if (resultCode == android.app.Activity.RESULT_OK) intent?.data else null
+    override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
+        if (resultCode != android.app.Activity.RESULT_OK || intent == null) return emptyList()
+        val clip = intent.clipData
+        if (clip != null && clip.itemCount > 0) return (0 until clip.itemCount).mapNotNull { clip.getItemAt(it).uri }
+        return listOfNotNull(intent.data)
+    }
 }

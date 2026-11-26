@@ -817,15 +817,16 @@
     <string name="carplay_native_checking">Sprawdzanie stacji...</string>
     <string name="carplay_native_signer_chip">Podpis: chip MFi</string>
     <string name="carplay_native_signer_file">Podpis: zaimportowany plik</string>
+    <string name="carplay_native_signer_link">Podpis: LIVI Link</string>
     <string name="carplay_native_signer_none">Podpis: brak</string>
     <string name="carplay_native_chip_candidate">Znaleziono ścieżkę MFi (%1$s), chip nieznany</string>
     <string name="carplay_native_chip_none">Brak ścieżki MFi (%1$s)</string>
     <string name="carplay_native_import">Importuj certyfikat i klucz</string>
-    <string name="carplay_native_import_hint">Wybierz plik PEM z własnym certyfikatem i kluczem prywatnym.</string>
+    <string name="carplay_native_import_hint">Wybierz jeden plik PEM z własnym certyfikatem i kluczem albo wybierz razem plik certyfikatu i plik klucza.</string>
     <string name="carplay_native_import_ok">Zaimportowano certyfikat i klucz</string>
     <string name="carplay_native_import_wrong_key">Klucz nie pasuje do tego certyfikatu</string>
     <string name="carplay_native_import_corrupt">Plik jest uszkodzony lub ucięty</string>
-    <string name="carplay_native_import_wrong_format">Plik musi zawierać certyfikat i nieszyfrowany klucz PKCS#8 w formacie PEM</string>
+    <string name="carplay_native_import_wrong_format">Pliki muszą zawierać certyfikat PKCS#7 i nieszyfrowany klucz PKCS#8 (P-256 lub RSA) w formacie DER lub PEM</string>
     <string name="carplay_native_import_no_picker">Ta stacja nie ma selektora plików</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

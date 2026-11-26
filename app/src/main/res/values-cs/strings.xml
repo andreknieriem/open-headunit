@@ -816,15 +816,16 @@
     <string name="carplay_native_checking">Kontrola autorádia…</string>
     <string name="carplay_native_signer_chip">Podpis: čip MFi</string>
     <string name="carplay_native_signer_file">Podpis: importovaný soubor</string>
+    <string name="carplay_native_signer_link">Podpis: LIVI Link</string>
     <string name="carplay_native_signer_none">Podpis: žádný</string>
     <string name="carplay_native_chip_candidate">Nalezena cesta MFi (%1$s), čip neznámý</string>
     <string name="carplay_native_chip_none">Žádná cesta MFi (%1$s)</string>
     <string name="carplay_native_import">Importovat certifikát a klíč</string>
-    <string name="carplay_native_import_hint">Vyberte soubor PEM s vlastním certifikátem a soukromým klíčem.</string>
+    <string name="carplay_native_import_hint">Vyberte jeden soubor PEM s vlastním certifikátem a klíčem, nebo vyberte soubor certifikátu a soubor klíče společně.</string>
     <string name="carplay_native_import_ok">Certifikát a klíč byly importovány</string>
     <string name="carplay_native_import_wrong_key">Klíč k tomuto certifikátu nepatří</string>
     <string name="carplay_native_import_corrupt">Soubor je poškozený nebo useknutý</string>
-    <string name="carplay_native_import_wrong_format">Soubor musí obsahovat certifikát a nešifrovaný klíč PKCS#8 ve formátu PEM</string>
+    <string name="carplay_native_import_wrong_format">Soubory musí obsahovat certifikát PKCS#7 a nešifrovaný klíč PKCS#8 typu P-256 nebo RSA ve formátu DER nebo PEM</string>
     <string name="carplay_native_import_no_picker">Autorádio nemá výběr souborů</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

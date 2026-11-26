@@ -817,15 +817,16 @@
     <string name="carplay_native_checking">Перевірка цього пристрою...</string>
     <string name="carplay_native_signer_chip">Підпис: чип MFi</string>
     <string name="carplay_native_signer_file">Підпис: імпортований файл</string>
+    <string name="carplay_native_signer_link">Підпис: LIVI Link</string>
     <string name="carplay_native_signer_none">Підпис: немає</string>
     <string name="carplay_native_chip_candidate">Знайдено шлях MFi (%1$s), чип невідомий</string>
     <string name="carplay_native_chip_none">Немає шляху MFi (%1$s)</string>
     <string name="carplay_native_import">Імпортувати сертифікат і ключ</string>
-    <string name="carplay_native_import_hint">Виберіть файл PEM зі своїм сертифікатом і закритим ключем.</string>
+    <string name="carplay_native_import_hint">Виберіть один файл PEM зі своїм сертифікатом і ключем або виберіть разом файл сертифіката і файл ключа.</string>
     <string name="carplay_native_import_ok">Сертифікат і ключ імпортовано</string>
     <string name="carplay_native_import_wrong_key">Ключ не належить до цього сертифіката</string>
     <string name="carplay_native_import_corrupt">Файл пошкоджено або обрізано</string>
-    <string name="carplay_native_import_wrong_format">Потрібен файл із сертифікатом і незашифрованим ключем PKCS#8 у форматі PEM</string>
+    <string name="carplay_native_import_wrong_format">Потрібні файли із сертифікатом PKCS#7 і незашифрованим ключем PKCS#8 (P-256 або RSA) у форматі DER або PEM</string>
     <string name="carplay_native_import_no_picker">На цьому пристрої немає вибору файлів</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

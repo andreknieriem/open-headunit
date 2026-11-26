@@ -825,15 +825,16 @@
     <string name="carplay_native_checking">このユニットを確認しています...</string>
     <string name="carplay_native_signer_chip">署名者: MFiチップ</string>
     <string name="carplay_native_signer_file">署名者: インポートしたファイル</string>
+    <string name="carplay_native_signer_link">署名者: LIVI Link</string>
     <string name="carplay_native_signer_none">署名者: なし</string>
     <string name="carplay_native_chip_candidate">MFiパスが見つかりました(%1$s)。チップは不明です</string>
     <string name="carplay_native_chip_none">MFiパスなし(%1$s)</string>
     <string name="carplay_native_import">証明書と鍵をインポート</string>
-    <string name="carplay_native_import_hint">ご自身の証明書と秘密鍵を含むPEMファイルを選択してください。</string>
+    <string name="carplay_native_import_hint">ご自身の証明書と鍵を含むPEMファイルを1つ選択するか、証明書ファイルと鍵ファイルを一緒に選択してください。</string>
     <string name="carplay_native_import_ok">証明書と鍵をインポートしました</string>
     <string name="carplay_native_import_wrong_key">この鍵はこの証明書のものではありません</string>
     <string name="carplay_native_import_corrupt">ファイルが破損しているか、途中で切れています</string>
-    <string name="carplay_native_import_wrong_format">証明書と、暗号化されていないPKCS#8鍵をPEM形式で含むファイルが必要です</string>
+    <string name="carplay_native_import_wrong_format">PKCS#7証明書と、暗号化されていないPKCS#8鍵(P-256またはRSA)をDERまたはPEM形式で含むファイルが必要です</string>
     <string name="carplay_native_import_no_picker">このユニットにはファイル選択機能がありません</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

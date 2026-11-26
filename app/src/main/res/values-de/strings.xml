@@ -864,15 +864,16 @@
     <string name="carplay_native_checking">Gerät wird geprüft...</string>
     <string name="carplay_native_signer_chip">Signatur: MFi-Chip</string>
     <string name="carplay_native_signer_file">Signatur: importierte Datei</string>
+    <string name="carplay_native_signer_link">Signatur: LIVI Link</string>
     <string name="carplay_native_signer_none">Signatur: keine</string>
     <string name="carplay_native_chip_candidate">MFi-Pfad gefunden (%1$s), Chip unbekannt</string>
     <string name="carplay_native_chip_none">Kein MFi-Pfad (%1$s)</string>
     <string name="carplay_native_import">Zertifikat und Schlüssel importieren</string>
-    <string name="carplay_native_import_hint">Wähle eine PEM-Datei mit deinem eigenen Zertifikat und privaten Schlüssel.</string>
+    <string name="carplay_native_import_hint">Wähle eine PEM-Datei mit deinem eigenen Zertifikat und Schlüssel oder wähle die Zertifikatsdatei und die Schlüsseldatei zusammen aus.</string>
     <string name="carplay_native_import_ok">Zertifikat und Schlüssel importiert</string>
     <string name="carplay_native_import_wrong_key">Der Schlüssel gehört nicht zu diesem Zertifikat</string>
     <string name="carplay_native_import_corrupt">Die Datei ist beschädigt oder abgeschnitten</string>
-    <string name="carplay_native_import_wrong_format">Die Datei braucht ein Zertifikat und einen unverschlüsselten PKCS#8-Schlüssel im PEM-Format</string>
+    <string name="carplay_native_import_wrong_format">Die Dateien brauchen ein PKCS#7-Zertifikat und einen unverschlüsselten PKCS#8-Schlüssel (P-256 oder RSA) im DER- oder PEM-Format</string>
     <string name="carplay_native_import_no_picker">Dieses Gerät hat keine Dateiauswahl</string>
 
     <!-- Brightness, quick settings, key back, backup section -->

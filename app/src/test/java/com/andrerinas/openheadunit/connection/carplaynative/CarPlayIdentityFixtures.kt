@@ -89,6 +89,20 @@ AireVYQHHQ==
 -----END CERTIFICATE-----
 """
 
+    const val EC_PKCS7 = """-----BEGIN PKCS7-----
+MIIBsgYJKoZIhvcNAQcCoIIBozCCAZ8CAQExADALBgkqhkiG9w0BBwGgggGHMIIB
+gzCCASmgAwIBAgIUU875MfDqy2UAbforzV9teob/KugwCgYIKoZIzj0EAwIwFjEU
+MBIGA1UEAwwLb2h1IHRlc3QgZWMwIBcNMjYxMTE0MDIwMjE3WhgPMjEyNjEwMjEw
+MjAyMTdaMBYxFDASBgNVBAMMC29odSB0ZXN0IGVjMFkwEwYHKoZIzj0CAQYIKoZI
+zj0DAQcDQgAERaMJtcQ/zFfry1Bb1325WTdWTalPZJpF/5z+CX3nClYCgMlZJiT4
+CYepognflXH0GUkGXyg92Tc0fnCQY83nb6NTMFEwHQYDVR0OBBYEFOltgbR0VxzY
+pKfIMtXJI14KkLmCMB8GA1UdIwQYMBaAFOltgbR0VxzYpKfIMtXJI14KkLmCMA8G
+A1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwIDSAAwRQIgPm0lTKXhzXitJWeg0/Iq
+BPZMRX7PZS/gtbB6sj3TgnECIQDEUawEEN7B7tETUPbQ10eCGzyVODHeqpz4Aire
+VYQHHTEA
+-----END PKCS7-----
+"""
+
     const val EC_KEY = """-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgmKiSIfDTAxvI2ooH
 7Nnqls8M7XzjFsbO8DM/ZgTYWq2hRANCAARFowm1xD/MV+vLUFvXfblZN1ZNqU9k
@@ -126,4 +140,16 @@ DNAUqPL3ErHz3h2VZIYl9l1g6CqM9p1atw8RkUJW8f5jtFFjnSE44fK2/eytXysw
 3GaRNMpz44XL0HRqqNnSjSU=
 -----END PRIVATE KEY-----
 """
+
+    /** A P-384 key: valid PKCS#8 that the native CarPlay signer does not take. */
+    const val EC_P384_KEY = """-----BEGIN PRIVATE KEY-----
+MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBRRBcT6Jr8IHUQXg5p
+dXZgtFUvBIhjljqvoTB+SMgxe75oQ8td9MvQ4f/g4fuKoXWhZANiAATUomp7QtDu
+MAT/lyk+2GE5Sv8enwtd1wLSbOWaRTBmZ4dBABT7ZpFpwopFTzH678yPBtqksKGX
+Epyg3Q6/YXmJPmE2cGlfVZQDhz9galMnOJHcXpbtmAH4896sShZmgvo=
+-----END PRIVATE KEY-----
+"""
+
+    fun der(pem: String): ByteArray =
+        java.util.Base64.getMimeDecoder().decode(pem.lines().filter { !it.startsWith("-----") }.joinToString(""))
 }

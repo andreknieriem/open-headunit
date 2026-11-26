@@ -818,15 +818,16 @@ Open Headunit предоставляется «как есть» без каки
     <string name="carplay_native_checking">Проверка этого устройства...</string>
     <string name="carplay_native_signer_chip">Подпись: чип MFi</string>
     <string name="carplay_native_signer_file">Подпись: импортированный файл</string>
+    <string name="carplay_native_signer_link">Подпись: LIVI Link</string>
     <string name="carplay_native_signer_none">Подпись: нет</string>
     <string name="carplay_native_chip_candidate">Найден путь MFi (%1$s), чип неизвестен</string>
     <string name="carplay_native_chip_none">Нет пути MFi (%1$s)</string>
     <string name="carplay_native_import">Импортировать сертификат и ключ</string>
-    <string name="carplay_native_import_hint">Выберите файл PEM со своим сертификатом и закрытым ключом.</string>
+    <string name="carplay_native_import_hint">Выберите один файл PEM со своим сертификатом и ключом или выберите вместе файл сертификата и файл ключа.</string>
     <string name="carplay_native_import_ok">Сертификат и ключ импортированы</string>
     <string name="carplay_native_import_wrong_key">Ключ не относится к этому сертификату</string>
     <string name="carplay_native_import_corrupt">Файл повреждён или обрезан</string>
-    <string name="carplay_native_import_wrong_format">Нужен файл с сертификатом и незашифрованным ключом PKCS#8 в формате PEM</string>
+    <string name="carplay_native_import_wrong_format">Нужны файлы с сертификатом PKCS#7 и незашифрованным ключом PKCS#8 (P-256 или RSA) в формате DER или PEM</string>
     <string name="carplay_native_import_no_picker">На этом устройстве нет выбора файлов</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

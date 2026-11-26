@@ -817,15 +817,16 @@
     <string name="carplay_native_checking">Verificando esta unidade...</string>
     <string name="carplay_native_signer_chip">Assinante: chip MFi</string>
     <string name="carplay_native_signer_file">Assinante: arquivo importado</string>
+    <string name="carplay_native_signer_link">Assinante: LIVI Link</string>
     <string name="carplay_native_signer_none">Assinante: nenhum</string>
     <string name="carplay_native_chip_candidate">Caminho MFi encontrado (%1$s), chip desconhecido</string>
     <string name="carplay_native_chip_none">Nenhum caminho MFi (%1$s)</string>
     <string name="carplay_native_import">Importar certificado e chave</string>
-    <string name="carplay_native_import_hint">Escolha um arquivo PEM com seu próprio certificado e chave privada.</string>
+    <string name="carplay_native_import_hint">Escolha um arquivo PEM com seu próprio certificado e chave, ou escolha juntos o arquivo do certificado e o da chave.</string>
     <string name="carplay_native_import_ok">Certificado e chave importados</string>
     <string name="carplay_native_import_wrong_key">A chave não pertence a este certificado</string>
     <string name="carplay_native_import_corrupt">O arquivo está corrompido ou incompleto</string>
-    <string name="carplay_native_import_wrong_format">O arquivo precisa de um certificado e uma chave PKCS#8 sem criptografia no formato PEM</string>
+    <string name="carplay_native_import_wrong_format">Os arquivos precisam de um certificado PKCS#7 e uma chave PKCS#8 sem criptografia, P-256 ou RSA, no formato DER ou PEM</string>
     <string name="carplay_native_import_no_picker">Esta unidade não tem seletor de arquivos</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

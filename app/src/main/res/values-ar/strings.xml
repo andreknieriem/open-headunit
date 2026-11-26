@@ -816,15 +816,16 @@
     <string name="carplay_native_checking">جارٍ فحص هذه الوحدة...</string>
     <string name="carplay_native_signer_chip">الموقّع: شريحة MFi</string>
     <string name="carplay_native_signer_file">الموقّع: ملف مستورد</string>
+    <string name="carplay_native_signer_link">الموقّع: LIVI Link</string>
     <string name="carplay_native_signer_none">الموقّع: لا يوجد</string>
     <string name="carplay_native_chip_candidate">تم العثور على مسار MFi (%1$s)، الشريحة غير معروفة</string>
     <string name="carplay_native_chip_none">لا يوجد مسار MFi (%1$s)</string>
     <string name="carplay_native_import">استيراد الشهادة والمفتاح</string>
-    <string name="carplay_native_import_hint">اختر ملف PEM يحتوي على شهادتك ومفتاحك الخاص.</string>
+    <string name="carplay_native_import_hint">اختر ملف PEM واحدًا يحتوي على شهادتك ومفتاحك، أو اختر ملف الشهادة وملف المفتاح معًا.</string>
     <string name="carplay_native_import_ok">تم استيراد الشهادة والمفتاح</string>
     <string name="carplay_native_import_wrong_key">المفتاح لا يخص هذه الشهادة</string>
     <string name="carplay_native_import_corrupt">الملف تالف أو مقطوع</string>
-    <string name="carplay_native_import_wrong_format">يتطلب الملف شهادة ومفتاح PKCS#8 غير مشفّر بصيغة PEM</string>
+    <string name="carplay_native_import_wrong_format">يتطلب الملفان شهادة PKCS#7 ومفتاح PKCS#8 غير مشفّر من نوع P-256 أو RSA بصيغة DER أو PEM</string>
     <string name="carplay_native_import_no_picker">لا يحتوي هذا الجهاز على أداة اختيار الملفات</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->

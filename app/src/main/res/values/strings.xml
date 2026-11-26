@@ -1009,6 +1009,7 @@
     <string name="open_github_releases">Open GitHub Releases</string>
     <string name="download_apk">Download APK</string>
     <string name="about_title">About Open Headunit</string>
+    <string name="about_carplay_credit" translatable="false">CarPlay support is based on LIVI by Lasse Heitgres (https://github.com/f-io/LIVI)</string>
     <string name="copyright">© 2025-%d André Rinas</string>
 
     <!-- Safety Disclaimer -->
@@ -1615,15 +1616,16 @@
     <string name="carplay_native_checking">Checking this unit...</string>
     <string name="carplay_native_signer_chip">Signer: MFi chip</string>
     <string name="carplay_native_signer_file">Signer: imported file</string>
+    <string name="carplay_native_signer_link">Signer: LIVI Link</string>
     <string name="carplay_native_signer_none">Signer: none</string>
     <string name="carplay_native_chip_candidate">MFi path found (%1$s), chip unknown</string>
     <string name="carplay_native_chip_none">No MFi path (%1$s)</string>
     <string name="carplay_native_import">Import certificate and key</string>
-    <string name="carplay_native_import_hint">Choose a PEM file with your own certificate and private key.</string>
+    <string name="carplay_native_import_hint">Choose one PEM file with your own certificate and key, or pick the certificate file and the key file together.</string>
     <string name="carplay_native_import_ok">Certificate and key imported</string>
     <string name="carplay_native_import_wrong_key">The key does not belong to this certificate</string>
     <string name="carplay_native_import_corrupt">The file is damaged or cut</string>
-    <string name="carplay_native_import_wrong_format">The file needs a certificate and an unencrypted PKCS#8 key in PEM form</string>
+    <string name="carplay_native_import_wrong_format">The files need a PKCS#7 certificate and an unencrypted PKCS#8 key, P-256 or RSA, in DER or PEM form</string>
     <string name="carplay_native_import_no_picker">This unit has no file picker</string>
     <string name="use_libusb">Use Native USB Driver</string>
     <string name="use_libusb_description">Use libusb for communication. Disable to use Android\'s standard USB API.</string>

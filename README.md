@@ -726,6 +726,10 @@ export HEADUNIT_KEYSTORE_PASSWORD="YOUR_KEYSTORE_PASSWORD"
 export HEADUNIT_KEY_PASSWORD="YOUR_KEY_PASSWORD"
 ```
 
+## Credits
+
+CarPlay support is based on LIVI by Lasse Heitgres (https://github.com/f-io/LIVI).
+
 ## Original Headunit
 Headunit for Android Auto (tm)
 

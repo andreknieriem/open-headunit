@@ -748,7 +748,7 @@ class UsbLauncherManager(val service: AapService) {
                 AppLog.i("CarPlayBox: box $id not opened ($verdict)")
             CarPlayBoxPolicy.Attach.RefusedAaLive ->
                 AppLog.i("CarPlayBox: refused, an Android Auto session is live")
-            CarPlayBoxPolicy.Attach.AskPermission -> askBoxPermission(usbManager, device)
+            CarPlayBoxPolicy.Attach.AskPermission -> askUsbPermission(device, "CarPlayBox")
             CarPlayBoxPolicy.Attach.Open -> {
                 if (box.start(id, StandardUsbProjectionConnection(usbManager, device))) service.raiseCarPlayBox()
             }
@@ -756,18 +756,20 @@ class UsbLauncherManager(val service: AapService) {
         return true
     }
 
-    private fun askBoxPermission(usbManager: UsbManager, device: UsbDevice) {
+    /** One ask for the box and the native session, deduplicated by [UsbPermissionAsks]. [who] prefixes the log. */
+    internal fun askUsbPermission(device: UsbDevice, who: String) {
+        val usbManager = UsbDeviceCompat.usbManager(service) ?: return
         val present = usbManager.deviceList.values.map { it.deviceName }
         val token = UsbPermissionAsks.newToken()
         if (!UsbPermissionAsks.tryMark(device.deviceName, present, token)) {
-            AppLog.i("CarPlayBox: permission for ${device.deviceName} already asked")
+            AppLog.i("$who: permission for ${device.deviceName} already asked")
             return
         }
         try {
             usbManager.requestPermission(device, UsbReceiver.createPermissionPendingIntent(service, token))
         } catch (e: Exception) {
             UsbPermissionAsks.complete(device.deviceName, token)
-            AppLog.w("CarPlayBox: the permission request failed: ${e.message}")
+            AppLog.w("$who: the permission request failed: ${e.message}")
         }
     }
 

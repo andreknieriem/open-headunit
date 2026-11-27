@@ -3,7 +3,15 @@ package com.andrerinas.openheadunit.connection.carplaynative
 import android.content.Context
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.os.Build
 import android.os.SystemClock
+import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.BuildConfig
+import com.andrerinas.openheadunit.connection.carplaybox.AudioDecoderBoxSink
+import com.andrerinas.openheadunit.connection.carplaybox.VideoDecoderBoxSink
+import com.andrerinas.openheadunit.connection.carplaynative.airplay.AirPlayStorage
+import com.andrerinas.openheadunit.connection.carplaynative.usb.IphoneUsbPolicy
+import com.andrerinas.openheadunit.utils.VpnControl
 import com.andrerinas.openheadunit.connection.carplaynative.lockdown.LockdownClient
 import com.andrerinas.openheadunit.connection.carplaynative.lockdown.PairRecordStore
 import com.andrerinas.openheadunit.connection.carplaynative.usb.AndroidIphoneUsb
@@ -103,6 +111,44 @@ object TunnelAddress {
 
 /** Builds the production pieces of native CarPlay from a context. */
 object CarPlayNativeWiring {
+    private val base64: (String) -> ByteArray = { android.util.Base64.decode(it, android.util.Base64.DEFAULT) }
+
+    /**
+     * The one manager of a service, or null below API 21: nothing here is touched below the gate, and the attach
+     * path then keeps today's handling of an Apple device. [ask] is the launcher's permission request.
+     */
+    fun manager(service: Context, aaSessionLive: () -> Boolean, ask: (UsbDevice) -> Unit): CarPlayNativeManager? {
+        if (Build.VERSION.SDK_INT < IphoneUsbPolicy.API_FLOOR) return null
+        val context = service.applicationContext
+        val app = App.provide(context)
+        val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+        val metrics = context.resources.displayMetrics
+        return CarPlayNativeManager(
+            usb = AndroidIphoneUsbPort(usbManager, ask),
+            tunnel = VpnTunnelControl(context),
+            // Both hold private keys, so both live outside Android backup.
+            carkit = LockdownCarkitOpener(File(context.noBackupFilesDir, "carplay/pair")),
+            storage = AirPlayStorage(File(context.noBackupFilesDir, "carplay/airplay")),
+            video = VideoDecoderBoxSink(app.videoDecoder),
+            audio = AudioDecoderBoxSink(app.audioDecoder, app.settings),
+            gate = ArbiterBoxGate,
+            // Read at each attach, so a setting or an identity changed mid-session counts at the next one.
+            inputs = {
+                CarPlayNativeInputs(
+                    enabled = enabled(context),
+                    sdk = Build.VERSION.SDK_INT,
+                    tunAvailable = VpnControl.isCarPlayTunAvailable(),
+                    signer = CarPlayIdentityFile.signer(context, base64),
+                    aaSessionLive = aaSessionLive(),
+                )
+            },
+            product = CarPlayNativeProduct("Open Headunit", "OpenHeadunit1,1", "Open Headunit", BuildConfig.VERSION_NAME, "1.0"),
+            displaySize = { metrics.widthPixels to metrics.heightPixels },
+            densityDpi = { metrics.densityDpi },
+            bindAddress = { TunnelAddress.find() },
+        )
+    }
+
     /** The user preflight for the tunnel, over the real VPN seam. Blocking: run it off the main thread. */
     fun tunnelCheck(context: Context): CarPlayTunnelCheck =
         CarPlayTunnelCheck(VpnTunnelControl(context), ServerSocketProbeListeners, { SystemClock.elapsedRealtime() }, aaSessionLive(context))

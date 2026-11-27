@@ -128,6 +128,14 @@
             android:theme="@style/AppTheme" />
 
         <activity
+            android:name=".connection.carplaynative.CarPlayNativeActivity"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme" />
+
+        <activity
             android:name=".aap.AapProjectionActivity"
             android:allowEmbedded="true"
             android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"

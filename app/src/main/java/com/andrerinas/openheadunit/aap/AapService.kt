@@ -79,6 +79,8 @@ import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxActivity
 import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxManager
 import com.andrerinas.openheadunit.connection.carplaybox.MicRecorderBoxMic
 import com.andrerinas.openheadunit.connection.carplaybox.VideoDecoderBoxSink
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeManager
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeWiring
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -227,6 +229,17 @@ class AapService : Service() {
 
     /** The one CarPlay box session this service runs; stopped in [onDestroy]. */
     val carPlayBoxManager: CarPlayBoxManager get() = carPlayBoxLazy.value
+
+    private val carPlayNativeLazy = lazy {
+        CarPlayNativeWiring.manager(
+            this,
+            aaSessionLive = { commManager.isConnected || commManager.connectionState.value is CommManager.ConnectionState.Connecting },
+            ask = { usbLauncherManager.askUsbPermission(it, "CarPlayNative") },
+        )
+    }
+
+    /** The one native CarPlay session this service runs, or null below API 21. Stopped in [onDestroy]. */
+    val carPlayNativeManager: CarPlayNativeManager? get() = carPlayNativeLazy.value
     private val selfLauncherManager = SelfLauncherManager(this, wifiLauncherManager)
     private val carKeysManager by lazy { App.provide(this).carKeysManager }
 
@@ -3528,6 +3541,7 @@ class AapService : Service() {
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.close(this)
         if (Build.VERSION.SDK_INT >= 26) WifiScanControl.end(this)
         if (carPlayBoxLazy.isInitialized()) carPlayBoxLazy.value.stop("service ending")
+        if (carPlayNativeLazy.isInitialized()) carPlayNativeLazy.value?.stop("service ending")
         ConnectionArbiter.actions = null
         // The hold outlives this instance; the next one arms from its own onCreate.
         WirelessSleepHold.clear()

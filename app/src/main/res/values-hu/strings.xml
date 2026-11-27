@@ -852,6 +852,13 @@
     <string name="carplay_box_title">CarPlay-doboz (kísérleti)</string>
     <string name="carplay_box_description">Megnyitja a csatlakoztatott CarPlay-dobozt. Tartsa nyitva ezt az alkalmazást. iPhone-nal nem tesztelték.</string>
     <string name="carplay_native_header">Natív CarPlay (kísérleti)</string>
+    <string name="carplay_native_title">Natív CarPlay USB-n keresztül</string>
+    <string name="carplay_native_description">Kísérleti. iOS 17 és saját Apple-azonosító. Elfoglalja a VPN helyét.</string>
+    <string name="carplay_native_unavailable_api">Android 5.0 vagy újabb szükséges</string>
+    <string name="carplay_native_unavailable_tunnel">Ez a verzió nem tartalmaz VPN-alagutat a CarPlayhez</string>
+    <string name="carplay_native_unavailable_signer">Előbb importálni kell a saját Apple-azonosítót</string>
+    <string name="carplay_native_consent_denied">VPN-engedély megtagadva. A natív CarPlay kikapcsolva marad.</string>
+    <string name="carplay_native_tunnel_checking">VPN-alagút ellenőrzése...</string>
     <string name="carplay_native_status">Apple-aláíró</string>
     <string name="carplay_native_checking">Az egység ellenőrzése...</string>
     <string name="carplay_native_signer_chip">Aláíró: MFi-chip</string>

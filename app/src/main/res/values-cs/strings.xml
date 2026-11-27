@@ -812,6 +812,13 @@
     <string name="carplay_box_title">Box CarPlay (experimentální)</string>
     <string name="carplay_box_description">Otevře připojený box CarPlay. Nechte aplikaci otevřenou. Nevyzkoušeno s iPhonem.</string>
     <string name="carplay_native_header">Nativní CarPlay (experimentální)</string>
+    <string name="carplay_native_title">Nativní CarPlay přes USB</string>
+    <string name="carplay_native_description">Experimentální. iOS 17 a vaše vlastní identita Apple. Zabírá místo pro VPN.</string>
+    <string name="carplay_native_unavailable_api">Vyžaduje Android 5.0 nebo novější</string>
+    <string name="carplay_native_unavailable_tunnel">Tato verze nemá tunel VPN pro CarPlay</string>
+    <string name="carplay_native_unavailable_signer">Nejprve naimportujte vlastní identitu Apple</string>
+    <string name="carplay_native_consent_denied">Oprávnění VPN bylo zamítnuto. Nativní CarPlay zůstává vypnutý.</string>
+    <string name="carplay_native_tunnel_checking">Kontrola tunelu VPN…</string>
     <string name="carplay_native_status">Podpis Apple</string>
     <string name="carplay_native_checking">Kontrola autorádia…</string>
     <string name="carplay_native_signer_chip">Podpis: čip MFi</string>

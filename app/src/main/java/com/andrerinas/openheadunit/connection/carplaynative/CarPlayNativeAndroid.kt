@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.carplaynative
 
+import android.content.Context
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.SystemClock
@@ -97,5 +98,28 @@ object TunnelAddress {
             try { Thread.sleep(pauseMs) } catch (_: InterruptedException) { return null }
         }
         return null
+    }
+}
+
+/** Builds the production pieces of native CarPlay from a context. */
+object CarPlayNativeWiring {
+    /** The user preflight for the tunnel, over the real VPN seam. Blocking: run it off the main thread. */
+    fun tunnelCheck(context: Context): CarPlayTunnelCheck =
+        CarPlayTunnelCheck(VpnTunnelControl(context), ServerSocketProbeListeners, { SystemClock.elapsedRealtime() }, aaSessionLive(context))
+
+    /** The Android Auto test the service gives the manager, for the callers that have no service at hand. */
+    fun aaSessionLive(context: Context): () -> Boolean {
+        val comm = com.andrerinas.openheadunit.App.provide(context).commManager
+        return { comm.isConnected || comm.connectionState.value is com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Connecting }
+    }
+
+    /** The setting as every reader takes it: off while this unit cannot run native CarPlay. Cheap enough for the main thread. */
+    fun enabled(context: Context): Boolean {
+        if (!com.andrerinas.openheadunit.App.provide(context).settings.carPlayNativeEnabled) return false
+        val sdk = android.os.Build.VERSION.SDK_INT
+        // A file stat, not a parse: the session parses the identity when it starts.
+        val signer = CarPlaySignerPolicy.choose(chipConfirmed = false, linkReachable = false, identityFileValid = CarPlayIdentityFile.present(context, sdk))
+        val unavailable = CarPlayNativeAvailability.check(sdk, com.andrerinas.openheadunit.utils.VpnControl.isCarPlayTunAvailable(), signer)
+        return CarPlayNativeAvailability.effectiveEnabled(true, unavailable)
     }
 }

@@ -17,8 +17,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class SettingsPendingCopyTest {
-    private fun newSettings(): Settings {
-        val store = HashMap<String, Any?>()
+    private fun newSettings(store: HashMap<String, Any?> = HashMap()): Settings {
         val editor = mock<SharedPreferences.Editor>()
         val prefs = mock<SharedPreferences>()
         whenever(prefs.edit()).thenReturn(editor)
@@ -123,6 +122,24 @@ class SettingsPendingCopyTest {
         assertTrue(copy.differsFrom(settings))
         copy.carPlayBoxEnabled?.let { if (it != settings.carPlayBoxEnabled) settings.carPlayBoxEnabled = it }
         assertTrue(settings.carPlayBoxEnabled)
+        copy.loadFrom(settings)
+        assertFalse(copy.differsFrom(settings))
+    }
+
+    @Test fun `the native CarPlay switch is off by default and a save writes it only when changed`() {
+        val store = HashMap<String, Any?>()
+        val settings = newSettings(store)
+        assertFalse(settings.carPlayNativeEnabled)
+        val copy = SettingsPendingCopy()
+        copy.loadFrom(settings)
+        assertFalse(copy.differsFrom(settings))
+        // The Save the screen runs: an unchanged switch writes no key, so the default stays live.
+        copy.saveCarPlayNativeTo(settings)
+        assertFalse(store.containsKey("carplay-native-enabled"))
+        copy.carPlayNativeEnabled = true
+        assertTrue(copy.differsFrom(settings))
+        copy.saveCarPlayNativeTo(settings)
+        assertEquals(true, store["carplay-native-enabled"])
         copy.loadFrom(settings)
         assertFalse(copy.differsFrom(settings))
     }

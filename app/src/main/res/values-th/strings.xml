@@ -1487,6 +1487,13 @@
     <string name="carplay_box_title">กล่อง CarPlay (ทดลอง)</string>
     <string name="carplay_box_description">เปิดกล่อง CarPlay ที่เสียบอยู่ เปิดแอปนี้ค้างไว้ ยังไม่ได้ทดสอบกับ iPhone</string>
     <string name="carplay_native_header">CarPlay แบบเนทีฟ (ทดลอง)</string>
+    <string name="carplay_native_title">CarPlay แบบเนทีฟผ่าน USB</string>
+    <string name="carplay_native_description">ทดลอง ต้องใช้ iOS 17 และข้อมูลระบุตัวตน Apple ของคุณเอง ใช้ช่อง VPN</string>
+    <string name="carplay_native_unavailable_api">ต้องใช้ Android 5.0 ขึ้นไป</string>
+    <string name="carplay_native_unavailable_tunnel">บิลด์นี้ไม่มีอุโมงค์ VPN สำหรับ CarPlay</string>
+    <string name="carplay_native_unavailable_signer">นำเข้าข้อมูลระบุตัวตน Apple ของคุณเองก่อน</string>
+    <string name="carplay_native_consent_denied">ปฏิเสธสิทธิ์ VPN แล้ว CarPlay แบบเนทีฟจะปิดอยู่</string>
+    <string name="carplay_native_tunnel_checking">กำลังตรวจสอบอุโมงค์ VPN...</string>
     <string name="carplay_native_status">ผู้ลงนามของ Apple</string>
     <string name="carplay_native_checking">กำลังตรวจสอบอุปกรณ์นี้...</string>
     <string name="carplay_native_signer_chip">ผู้ลงนาม: ชิป MFi</string>

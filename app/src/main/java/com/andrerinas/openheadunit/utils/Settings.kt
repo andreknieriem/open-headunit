@@ -866,6 +866,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("carplay-box-enabled", false)
         set(value) { prefs.edit().putBoolean("carplay-box-enabled", value).apply() }
 
+    /** Opens an iPhone itself, with no box. Off until an iPhone round passes. */
+    var carPlayNativeEnabled: Boolean
+        get() = prefs.getBoolean("carplay-native-enabled", false)
+        set(value) { prefs.edit().putBoolean("carplay-native-enabled", value).apply() }
+
     /**
      * Whether this unit leaves its own WiFi network for the WiFi Direct bring-up, as a
      * [com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownMode] value. A user who

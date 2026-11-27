@@ -812,6 +812,13 @@
     <string name="carplay_box_title">CarPlay 盒(實驗性)</string>
     <string name="carplay_box_description">開啟已插入的 CarPlay 盒。請保持此應用程式開啟。尚未在 iPhone 上測試。</string>
     <string name="carplay_native_header">原生 CarPlay(實驗性)</string>
+    <string name="carplay_native_title">透過 USB 使用原生 CarPlay</string>
+    <string name="carplay_native_description">實驗性。需要 iOS 17 和你自己的 Apple 身分。會佔用 VPN。</string>
+    <string name="carplay_native_unavailable_api">需要 Android 5.0 或以上版本</string>
+    <string name="carplay_native_unavailable_tunnel">此版本沒有適用於 CarPlay 的 VPN 通道</string>
+    <string name="carplay_native_unavailable_signer">請先匯入你自己的 Apple 身分</string>
+    <string name="carplay_native_consent_denied">VPN 權限遭拒。原生 CarPlay 維持關閉。</string>
+    <string name="carplay_native_tunnel_checking">正在檢查 VPN 通道...</string>
     <string name="carplay_native_status">Apple 簽署者</string>
     <string name="carplay_native_checking">正在檢查此裝置...</string>
     <string name="carplay_native_signer_chip">簽署者:MFi 晶片</string>

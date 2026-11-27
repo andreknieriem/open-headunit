@@ -812,6 +812,13 @@
     <string name="carplay_box_title">صندوق CarPlay (تجريبي)</string>
     <string name="carplay_box_description">يفتح صندوق CarPlay الموصول. أبقِ هذا التطبيق مفتوحًا. لم يُختبر مع iPhone.</string>
     <string name="carplay_native_header">CarPlay الأصلي (تجريبي)</string>
+    <string name="carplay_native_title">CarPlay الأصلي عبر USB</string>
+    <string name="carplay_native_description">تجريبي. يتطلب iOS 17 وهوية Apple الخاصة بك. يستخدم خانة VPN.</string>
+    <string name="carplay_native_unavailable_api">يتطلب Android 5.0 أو إصدارًا أحدث</string>
+    <string name="carplay_native_unavailable_tunnel">لا يحتوي هذا الإصدار على نفق VPN لـ CarPlay</string>
+    <string name="carplay_native_unavailable_signer">استورد هوية Apple الخاصة بك أولاً</string>
+    <string name="carplay_native_consent_denied">تم رفض إذن VPN. يبقى CarPlay الأصلي متوقفًا.</string>
+    <string name="carplay_native_tunnel_checking">جارٍ فحص نفق VPN...</string>
     <string name="carplay_native_status">موقّع Apple</string>
     <string name="carplay_native_checking">جارٍ فحص هذه الوحدة...</string>
     <string name="carplay_native_signer_chip">الموقّع: شريحة MFi</string>

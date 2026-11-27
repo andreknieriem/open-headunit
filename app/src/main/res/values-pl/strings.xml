@@ -813,6 +813,13 @@
     <string name="carplay_box_title">Box CarPlay (eksperymentalne)</string>
     <string name="carplay_box_description">Otwiera podłączony box CarPlay. Pozostaw tę aplikację otwartą. Nie testowano z iPhonem.</string>
     <string name="carplay_native_header">Natywny CarPlay (eksperymentalne)</string>
+    <string name="carplay_native_title">Natywny CarPlay przez USB</string>
+    <string name="carplay_native_description">Eksperymentalne. iOS 17 i Twoja własna tożsamość Apple. Zajmuje miejsce VPN.</string>
+    <string name="carplay_native_unavailable_api">Wymaga Androida 5.0 lub nowszego</string>
+    <string name="carplay_native_unavailable_tunnel">Ta wersja nie ma tunelu VPN dla CarPlay</string>
+    <string name="carplay_native_unavailable_signer">Najpierw zaimportuj własną tożsamość Apple</string>
+    <string name="carplay_native_consent_denied">Odmówiono zgody VPN. Natywny CarPlay pozostaje wyłączony.</string>
+    <string name="carplay_native_tunnel_checking">Sprawdzanie tunelu VPN...</string>
     <string name="carplay_native_status">Podpis Apple</string>
     <string name="carplay_native_checking">Sprawdzanie stacji...</string>
     <string name="carplay_native_signer_chip">Podpis: chip MFi</string>

@@ -31,6 +31,13 @@ sealed class WppEndpointDecision {
  * Withholding is not a cure, only a way of not causing it. An endpoint the phone was given earlier
  * survives for the life of its Android Auto process and is dialled in preference to Bluetooth, so
  * every refusal says how to clear one.
+ *
+ * **A channel is part of the same question.** The request that carries the endpoint also carries the
+ * channel the group runs on, and a phone that matches no channel answers
+ * `NO_SUPPORTED_WIFI_CHANNELS(-8)` and stops: measured on an Android 7 unit, that latched the phone
+ * onto the endpoint for hours and produced 32 session ends in 40 minutes at 0–3 fps. So an endpoint
+ * is advertised only when [WppSessionChannelPolicy] resolved a real channel for the same request,
+ * and not again for a channel the phone has already refused.
  */
 object WppEndpointPolicy {
 
@@ -52,6 +59,8 @@ object WppEndpointPolicy {
         strategy: NativeStrategy,
         listeningPort: Int?,
         identity: GroupIdentityStability,
+        channel: WppSessionChannel? = null,
+        refusedChannelMhz: Int = 0,
     ): WppEndpointDecision {
         val network = if (strategy == NativeStrategy.HOTSPOT) "access point" else "WiFi Direct group"
         return when {
@@ -74,6 +83,13 @@ object WppEndpointPolicy {
                 )
             listeningPort == null ->
                 WppEndpointDecision.Withhold("the WPP TCP server is not listening", ourOwnState = true)
+            channel is WppSessionChannel.Unavailable ->
+                WppEndpointDecision.Withhold("${channel.reason}. $HOW_TO_CLEAR")
+            channel != null &&
+                WppSessionChannelPolicy.withheldAfterRefusal(channel, refusedChannelMhz) ->
+                WppEndpointDecision.Withhold(
+                    "${WppSessionChannelPolicy.refusalReason(channel)}. $HOW_TO_CLEAR"
+                )
             else -> WppEndpointDecision.Advertise(listeningPort)
         }
     }

@@ -127,6 +127,30 @@ object WifiBandCapability {
         )
     }
 
+    /** The frequency this unit's own station link is on, or 0 when it is not joined to a network. */
+    fun stationFrequencyMhz(context: Context): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return 0
+        return try {
+            val wifiManager = context.applicationContext
+                .getSystemService(Context.WIFI_SERVICE) as? WifiManager ?: return 0
+            @Suppress("DEPRECATION")
+            wifiManager.connectionInfo?.frequency ?: 0
+        } catch (e: Exception) {
+            AppLog.d("WifiBandCapability: could not read the station frequency: ${e.message}")
+            0
+        }
+    }
+
+    /** Whether the station association is complete and can be used as a group-channel proxy. */
+    fun stationAssociated(context: Context): Boolean = try {
+        val wifiManager = context.applicationContext
+            .getSystemService(Context.WIFI_SERVICE) as? WifiManager
+        wifiManager?.connectionInfo?.supplicantState == android.net.wifi.SupplicantState.COMPLETED
+    } catch (e: Exception) {
+        AppLog.d("WifiBandCapability: could not read the station state: ${e.message}")
+        false
+    }
+
     /** How the answer reads in a log line a reporter pastes into an issue. */
     fun describe(supports5Ghz: Boolean?): String = when (supports5Ghz) {
         true -> "this unit's WiFi radio reports a 5 GHz band"

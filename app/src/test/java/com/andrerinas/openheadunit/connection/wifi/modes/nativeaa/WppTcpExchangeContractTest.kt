@@ -13,6 +13,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Before
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -65,11 +66,19 @@ class WppTcpExchangeContractTest {
         override fun noteEndpointAdvertised(credentials: NativeNetworkCredentials) {}
     }
 
+    /**
+     * A channel the phone can match. Every exchange test here describes a unit whose group runs on
+     * a nameable channel; a test Context cannot answer what the real one would, and the version
+     * request is gated on that answer.
+     */
+    private val namedChannel: () -> WppSessionChannel = { WppSessionChannel.Measured(2447) }
+
     private val server = WppTcpServer(
         mock(Context::class.java), scope, callbacks,
         createServerSocket = { listener() },
         createTlsFactory = { tlsFactory },
         elapsedRealtime = { clock.get() + System.nanoTime() / 1_000_000 },
+        resolveChannel = namedChannel,
     )
 
     @Before fun initializeAndroidStatics() {
@@ -102,6 +111,26 @@ class WppTcpExchangeContractTest {
         val info = Wireless.WifiInfoResponse.parseFrom(phone.expect(WppMessageType.INFO_RESPONSE))
         assertEquals(stable.ssid, info.ssid)
         assertEquals(Wireless.AccessPointType.STATIC, info.accessPointType)
+    }
+
+    @Test fun `a unit that cannot name a channel rejects the dial instead of giving an endpoint`() = runBlocking {
+        // The measured failure: an Android 7 unit advertised an endpoint beside channels=[], the
+        // phone answered -8, and then dialled that endpoint in preference to Bluetooth for hours.
+        // With no channel to name there is no safe endpoint, and the documented route back to the
+        // working Bluetooth handshake is a rejection, not a version request without an endpoint.
+        val cannotName = WppSessionChannel.Unavailable("no group frequency and no station")
+        val gated = WppTcpServer(
+            mock(Context::class.java), scope, callbacks, { listener() }, { tlsFactory },
+            { clock.get() + System.nanoTime() / 1_000_000 }, { cannotName },
+        )
+        gated.start()
+        try {
+            val phone = dial()
+            phone.expect(WppMessageType.CONNECTION_REJECTION)
+            val refused = generateSequence { phone.frames.poll() }.map { WppFraming.decodeType(it) }.toList()
+            assertFalse("no version request may go out without a channel, sent $refused",
+                WppMessageType.VERSION_REQUEST in refused)
+        } finally { gated.stop() }
     }
 
     @Test fun `an incomplete network after Type 1 ends the whole exchange and frees the peer`() = runBlocking {
@@ -151,7 +180,7 @@ class WppTcpExchangeContractTest {
             // The first read is admission; the group is replaced right after it.
             override fun credentials() = if (reads.getAndIncrement() == 0) stable else replacement
         }
-        val raced = WppTcpServer(mock(Context::class.java), scope, swapping, { listener() }, { tlsFactory }, { clock.get() + System.nanoTime() / 1_000_000 })
+        val raced = WppTcpServer(mock(Context::class.java), scope, swapping, { listener() }, { tlsFactory }, { clock.get() + System.nanoTime() / 1_000_000 }, namedChannel)
         try {
             raced.start()
             dial().expectClosedWithout(WppMessageType.VERSION_REQUEST)

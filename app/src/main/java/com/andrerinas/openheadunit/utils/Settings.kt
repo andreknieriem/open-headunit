@@ -1095,6 +1095,17 @@ class Settings(private val context: Context) {
         }
 
     /** The WiFi Direct group an endpoint last went out on, kept apart from the identity retirement clears. */
+    /**
+     * The channel a phone once answered `NO_SUPPORTED_WIFI_CHANNELS(-8)` to, or 0 for none.
+     *
+     * No endpoint is advertised for that channel again until the group is measured on a different
+     * one. Kept as a frequency rather than a flag so a group that genuinely moves is advertised
+     * again without anyone clearing it, and so the record cannot outlive the wall it describes.
+     */
+    var wppRefusedChannelMhz: Int
+        get() = prefs.getInt("wpp-refused-channel-mhz", 0)
+        set(value) { prefs.edit().putInt("wpp-refused-channel-mhz", value).apply() }
+
     var wifiDirectAdvertisedEndpoint: SoftApAdvertisedEndpoint?
         get() {
             val ssid = prefs.getString("wifi-direct-advertised-endpoint-ssid", null) ?: return null

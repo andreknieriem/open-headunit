@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.carplaynative.airplay
 
+import com.andrerinas.openheadunit.decoder.video.ParameterSetInspector
 import java.io.ByteArrayOutputStream
 
 /**
@@ -38,6 +39,17 @@ object AnnexB {
         val ppsCount = record[at++].toInt() and 0xff
         if (ppsCount == 0 || !readSets(ppsCount)) return null
         return Avcc(lengthSize, out.toByteArray())
+    }
+
+    /** The picture size of the first SPS in [parameterSets] (start code, then the NAL). Null when it does not parse. */
+    fun firstSpsSize(parameterSets: ByteArray): Pair<Int, Int>? {
+        if (parameterSets.size <= START_CODE.size + 1 || (parameterSets[START_CODE.size].toInt() and 0x1f) != 7) return null
+        var end = parameterSets.size
+        for (i in START_CODE.size + 1..parameterSets.size - START_CODE.size) {
+            if (parameterSets[i].toInt() == 0 && parameterSets[i + 1].toInt() == 0 && parameterSets[i + 2].toInt() == 0 && parameterSets[i + 3].toInt() == 1) { end = i; break }
+        }
+        val sps = ParameterSetInspector.parseH264Sps(parameterSets, START_CODE.size, end - START_CODE.size) ?: return null
+        return sps.width to sps.height
     }
 
     /**

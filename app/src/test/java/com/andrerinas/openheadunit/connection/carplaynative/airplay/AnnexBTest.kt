@@ -103,4 +103,18 @@ class AnnexBTest {
         assertArrayEquals(start + byteArrayOf(9), AnnexB.convert(byteArrayOf(0, 0, 0, 0, 0, 0, 0, 1, 9), 4))
         assertEquals(0, AnnexB.convert(ByteArray(0), 4)!!.size)
     }
+
+    @Test
+    fun theFirstSpsGivesThePictureSize() {
+        val parsed = AnnexB.parseAvcc(H264Fixtures.avcc(H264Fixtures.sps(320, 240)))!!
+        assertEquals(320 to 240, AnnexB.firstSpsSize(parsed.parameterSets))
+        assertEquals(1280 to 720, AnnexB.firstSpsSize(AnnexB.parseAvcc(H264Fixtures.avcc(H264Fixtures.sps(1280, 720)))!!.parameterSets))
+    }
+
+    @Test
+    fun noSpsOrATruncatedOneGivesNoSize() {
+        assertNull(AnnexB.firstSpsSize(ByteArray(0)))
+        assertNull(AnnexB.firstSpsSize(start + pps))
+        assertNull(AnnexB.firstSpsSize(start + byteArrayOf(0x67, 0x42)))
+    }
 }

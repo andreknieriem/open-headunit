@@ -18,8 +18,12 @@ internal class PairingClient(val id: String = "phone-1") {
     class Setup(val reply: Map<Int, ByteArray>, val sessionKey: ByteArray?)
 
     /** Runs M1 to M6. Returns the M6 reply and the accessory proof check. */
-    fun pairSetup(server: PairSetup, code: String = "3939", announcedKey: ByteArray = publicKey): Setup {
-        val m2 = Tlv8.decode(server.handle(tlv(PairingTlv.STATE to byteArrayOf(1))))
+    fun pairSetup(server: PairSetup, code: String = "3939", announcedKey: ByteArray = publicKey): Setup =
+        pairSetup(server::handle, code, announcedKey)
+
+    /** The same exchange over any channel that carries one TLV8 body and returns the reply. */
+    fun pairSetup(handle: (ByteArray) -> ByteArray, code: String = "3939", announcedKey: ByteArray = publicKey): Setup {
+        val m2 = Tlv8.decode(handle(tlv(PairingTlv.STATE to byteArrayOf(1))))
         val serverKey = BigInteger(1, m2.getValue(PairingTlv.PUBLIC_KEY))
         val salt = m2.getValue(PairingTlv.SALT)
         val n = Srp6aServer.modulus()
@@ -37,7 +41,7 @@ internal class PairingClient(val id: String = "phone-1") {
         val m1 = CarPlayCrypto.sha512(xor, CarPlayCrypto.sha512(ascii("Pair-Setup")), salt, Srp6aServer.pad(a), Srp6aServer.pad(serverKey), key)
 
         val m4 = Tlv8.decode(
-            server.handle(tlv(PairingTlv.STATE to byteArrayOf(3), PairingTlv.PUBLIC_KEY to Srp6aServer.pad(a), PairingTlv.PROOF to m1)),
+            handle(tlv(PairingTlv.STATE to byteArrayOf(3), PairingTlv.PUBLIC_KEY to Srp6aServer.pad(a), PairingTlv.PROOF to m1)),
         )
         if (m4[PairingTlv.ERROR] != null) return Setup(m4, null)
         val encKey = CarPlayCrypto.hkdfSha512(key, ascii("Pair-Setup-Encrypt-Salt"), ascii("Pair-Setup-Encrypt-Info"))
@@ -48,7 +52,7 @@ internal class PairingClient(val id: String = "phone-1") {
             PairingTlv.SIGNATURE to CarPlayCrypto.ed25519Sign(seed, signKey + idBytes + announcedKey),
         )
         val sealed = CarPlayCrypto.chachaSeal(encKey, Nonces.label("PS-Msg05"), sub)
-        val m6 = Tlv8.decode(server.handle(tlv(PairingTlv.STATE to byteArrayOf(5), PairingTlv.ENCRYPTED_DATA to sealed)))
+        val m6 = Tlv8.decode(handle(tlv(PairingTlv.STATE to byteArrayOf(5), PairingTlv.ENCRYPTED_DATA to sealed)))
         return Setup(m6, key)
     }
 
@@ -68,9 +72,12 @@ internal class PairingClient(val id: String = "phone-1") {
     class Verified(val shared: ByteArray, val m4: Map<Int, ByteArray>, val m2Ok: Boolean)
 
     /** Runs pair-verify M1 to M4 against [server], which knows [accessoryPublicKey] for the M2 check. */
-    fun pairVerify(server: PairVerify, accessoryPublicKey: ByteArray, accessoryId: String): Verified {
+    fun pairVerify(server: PairVerify, accessoryPublicKey: ByteArray, accessoryId: String): Verified =
+        pairVerify(server::handle, accessoryPublicKey, accessoryId)
+
+    fun pairVerify(handle: (ByteArray) -> ByteArray, accessoryPublicKey: ByteArray, accessoryId: String): Verified {
         val eph = CarPlayCrypto.x25519Generate()
-        val m2 = Tlv8.decode(server.handle(tlv(PairingTlv.STATE to byteArrayOf(1), PairingTlv.PUBLIC_KEY to eph.publicKey)))
+        val m2 = Tlv8.decode(handle(tlv(PairingTlv.STATE to byteArrayOf(1), PairingTlv.PUBLIC_KEY to eph.publicKey)))
         val serverEph = m2.getValue(PairingTlv.PUBLIC_KEY)
         val shared = CarPlayCrypto.x25519Shared(eph.privateKey, serverEph)
         val key = CarPlayCrypto.hkdfSha512(shared, ascii("Pair-Verify-Encrypt-Salt"), ascii("Pair-Verify-Encrypt-Info"))
@@ -88,6 +95,6 @@ internal class PairingClient(val id: String = "phone-1") {
             PairingTlv.STATE to byteArrayOf(3),
             PairingTlv.ENCRYPTED_DATA to CarPlayCrypto.chachaSeal(key, Nonces.label("PV-Msg03"), mine),
         )
-        return Verified(shared, Tlv8.decode(server.handle(m3)), m2Ok)
+        return Verified(shared, Tlv8.decode(handle(m3)), m2Ok)
     }
 }

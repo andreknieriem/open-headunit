@@ -34,6 +34,17 @@ object AirPlayTouchReport {
         return report
     }
 
+    /**
+     * Maps contacts from a picture of [fromWidth] by [fromHeight] to the display /info declared and clamps them to it,
+     * because the touch descriptor ends at that size.
+     */
+    fun toDisplay(contacts: List<Contact>, fromWidth: Int, fromHeight: Int, toWidth: Int, toHeight: Int): List<Contact> {
+        if (fromWidth <= 0 || fromHeight <= 0 || toWidth <= 0 || toHeight <= 0) return emptyList()
+        fun scale(value: Double, from: Int, to: Int): Double =
+            if (value.isNaN()) 0.0 else (value * to / from).coerceIn(0.0, to.toDouble())
+        return contacts.map { Contact(it.id, scale(it.x, fromWidth, toWidth), scale(it.y, fromHeight, toHeight), it.down) }
+    }
+
     /** Buttons in bits 0 to 2, then x, y and the wheel as signed bytes clamped to -127..127. */
     fun knob(state: Knob): ByteArray {
         val buttons = (if (state.select) 1 else 0) or (if (state.home) 2 else 0) or (if (state.back) 4 else 0)

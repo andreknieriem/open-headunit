@@ -65,4 +65,30 @@ class AirPlayTouchReportTest {
         )
         assertArrayEquals(byteArrayOf(0, 127, 127, 0), AirPlayTouchReport.knob(Knob(x = 500.0, y = 127.4, wheel = Double.NaN)))
     }
+
+    @Test
+    fun toDisplayScalesThePictureToTheDeclaredDisplay() {
+        val mapped = AirPlayTouchReport.toDisplay(listOf(Contact(1, 160.0, 120.0, true)), 320, 240, 1280, 720)
+        assertEquals(1, mapped[0].id)
+        assertEquals(640.0, mapped[0].x, 0.0)
+        assertEquals(360.0, mapped[0].y, 0.0)
+        assertEquals(true, mapped[0].down)
+    }
+
+    @Test
+    fun toDisplayClampsToTheDeclaredSizeNotTo65535() {
+        val mapped = AirPlayTouchReport.toDisplay(
+            listOf(Contact(0, 9999.0, -5.0, true), Contact(1, Double.NaN, 240.0, true)), 320, 240, 1280, 720,
+        )
+        assertEquals(1280.0, mapped[0].x, 0.0)
+        assertEquals(0.0, mapped[0].y, 0.0)
+        assertEquals(0.0, mapped[1].x, 0.0)
+        assertEquals(720.0, mapped[1].y, 0.0)
+    }
+
+    @Test
+    fun toDisplayGivesNothingForASizeOfZero() {
+        assertEquals(emptyList<Contact>(), AirPlayTouchReport.toDisplay(listOf(Contact(0, 1.0, 1.0, true)), 0, 240, 1280, 720))
+        assertEquals(emptyList<Contact>(), AirPlayTouchReport.toDisplay(listOf(Contact(0, 1.0, 1.0, true)), 320, 240, 1280, 0))
+    }
 }

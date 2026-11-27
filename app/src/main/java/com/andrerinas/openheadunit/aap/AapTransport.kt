@@ -11,6 +11,7 @@ import android.os.HandlerThread
 import android.os.Process
 import android.os.SystemClock
 import android.view.KeyEvent
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.KeyCodeEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.MediaAck
@@ -20,6 +21,8 @@ import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import com.andrerinas.openheadunit.aap.protocol.messages.ScrollWheelEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.SensorEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
+import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
+import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
 import com.andrerinas.openheadunit.decoder.audio.MicrophonePolicy
 import com.andrerinas.openheadunit.decoder.video.FocusCycleLever
 import com.andrerinas.openheadunit.decoder.video.KeyframeCycleEscalationPolicy
@@ -107,8 +110,12 @@ class AapTransport(
     internal val aapVideo: AapVideo
     private var sendThread: HandlerThread? = null
     private var pollThread: HandlerThread? = null
-    private var videoThread: HandlerThread? = null
-    private var videoHandler: Handler? = null
+    /** The main display's video. A second display gets its own lane, never a share of this one. */
+    private val videoLane: VideoLane
+
+    /** The auxiliary display's, built on its first message because a session may not have one. */
+    @Volatile
+    private var auxVideoLane: VideoLane? = null
 
     // Only short resource publication runs under this lock; socket/TLS I/O and joins do not.
     private val lifecycleLock = Any()
@@ -131,21 +138,6 @@ class AapTransport(
     private val terminated = java.util.concurrent.CountDownLatch(1)
     private var retiringWorkers: List<Thread> = emptyList()
 
-    // Reused payload copies for the video thread. The SSL layer hands back one buffer it overwrites
-    // on the next read, so a message that outlives the read has to carry its own bytes; pooling
-    // them keeps a 50 fps stream from allocating per frame.
-    private val videoBufferPool = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
-
-    // Messages handed to the video thread and not yet processed. The park that used to hold the
-    // read thread lives here now, so this is where it can still be seen.
-    private val videoBacklog = java.util.concurrent.atomic.AtomicInteger(0)
-
-    // Messages refused because the backlog was already at its ceiling. See VIDEO_BACKLOG_LIMIT.
-    private val videoShedTotal = java.util.concurrent.atomic.AtomicLong(0)
-    // Poll-thread only. With no intervening video work the assembler still owns the same run:
-    // one loss notice suffices, unless a repair-only notice must be upgraded to discard.
-    private var lastHoleDiscard: Boolean? = null
-    private var lastHoleGeneration: Long? = null
     private val micRecorder: MicRecorder = MicRecorder(context)
     internal val bluetoothControl = AapControlBluetooth(context, send = ::sendIfCurrent)
     internal val sensorSubscriptions = GalSensorSubscriptions<SensorEvent>()
@@ -828,6 +820,7 @@ class AapTransport(
             )
         }
         aapAudio.bindPresentationController(presentationController)
+        videoLane = VideoLane(Channel.ID_VID, aapVideo, "AapTransport:Handler::Video", ::currentMediaSession, ::sendMediaAck)
 
         // A rebuilt codec resumes on a P-frame and can render nothing until an IDR arrives, which
         // the phone sends on its own ~69s cadence and which nothing in AAP can request. So this is
@@ -918,7 +911,7 @@ class AapTransport(
             closing = true
             pendingVideoFocus = null
             presentationSession.retire()
-            retiringWorkers = listOfNotNull(pollThread, sendThread, videoThread)
+            retiringWorkers = listOfNotNull(pollThread, sendThread, videoLane.thread, auxVideoLane?.thread)
             aapRead?.stop()
             val callback = onQuit
             onQuit = null
@@ -936,14 +929,16 @@ class AapTransport(
             sendHandler?.removeCallbacks(focusCycleGainRunnable)
             sendHandler?.removeCallbacks(unrepairedCheckRunnable)
             sendHandler?.removeCallbacks(keepaliveRunnable)
+            sendHandler?.removeCallbacks(auxCycleGainRunnable)
             pollThread?.quit()
             sendThread?.quit()
-            videoThread?.quit()
+            videoLane.quit()
+            auxVideoLane?.quit()
             // Unblock in-flight handshake/read/write before waiting. stop() already allowed
             // the ByeBye send its grace period; natural EOF has nothing left to send.
             cleanupStep("connection") { connection?.disconnect() }
             if (awaitHandshake) awaitUninterruptibly { handshakeFinished.await() }
-            for (worker in listOfNotNull(pollThread, sendThread, videoThread)) {
+            for (worker in retiringWorkers) {
                 if (Thread.currentThread() !== worker) awaitUninterruptibly { worker.join() }
             }
             cleanupStep("audio") { aapAudio.releaseAllFocus() }
@@ -954,18 +949,16 @@ class AapTransport(
                 if (videoDecoder.onFrameDropped === keyframeRecoveryCallback) videoDecoder.onFrameDropped = null
                 if (videoDecoder.onKeyframeObserved === keyframeObservedCallback) videoDecoder.onKeyframeObserved = null
             }
-            cleanupStep("video") { aapVideo.release() }
-            videoBufferPool.clear()
-            videoBacklog.set(0)
-            videoShedTotal.set(0)
+            cleanupStep("video") { videoLane.release() }
+            cleanupStep("aux video") { auxVideoLane?.release() }
+            cleanupStep("second screen") { SecondScreenHub.close() }
+            auxVideoLane = null
             aapRead = null
             cleanupStep("TLS") { ssl.release() }
             pollHandler = null
             sendHandler = null
-            videoHandler = null
             pollThread = null
             sendThread = null
-            videoThread = null
         } finally {
             terminated.countDown()
         }
@@ -1003,7 +996,11 @@ class AapTransport(
 
     /** Validate and start runtime ownership before publishing work that can promote pre-Start
      * output. Decoder reset and geometry changes stay ordered with DATA, off the receive thread. */
-    internal fun beginVideoSession(session: GalMediaSessions.Session): Boolean {
+    internal fun beginVideoSession(session: GalMediaSessions.Session): Boolean =
+        beginVideoSession(Channel.ID_VID, session)
+
+    /** Each display starts on its own lane; only the main display selects the announced geometry. */
+    internal fun beginVideoSession(channel: Int, session: GalMediaSessions.Session): Boolean {
         val format = (session.format as? GalMediaFormat.Video)?.value ?: return false
         val dimensions = com.andrerinas.openheadunit.utils.VideoFallbackPolicy.sizeOf(format.codecResolution)
         val fps = when (format.frameRate) {
@@ -1011,17 +1008,19 @@ class AapTransport(
             Control.Service.MediaSinkService.VideoConfiguration.VideoFrameRateType._60 -> 60
             else -> return false
         }
-        val handler = videoHandler ?: return false
+        val lane = videoLaneFor(channel)?.takeIf { it.isStarted } ?: return false
         // The worker may run before post returns. Its captured pre-Start bridge must acquire
         // an epoch from an already-active generation, not permanently adopt epoch zero.
-        startMediaRuntime(Channel.ID_VID, session)
-        return handler.post {
-            if (!closing && mediaSessions.current(Channel.ID_VID)?.generation == session.generation) {
+        startMediaRuntime(channel, session)
+        return lane.post {
+            if (!closing && mediaSessions.current(channel)?.generation == session.generation) {
                 try {
-                    com.andrerinas.openheadunit.utils.HeadUnitScreenConfig.selectAnnouncedVideo(
-                        session.configurationIndex, format)
-                    aapVideo.beginSession(session)
-                    if (!aapVideo.selectFormat(dimensions.first, dimensions.second, fps, session.configurationIndex)) quit()
+                    if (channel == Channel.ID_VID) {
+                        com.andrerinas.openheadunit.utils.HeadUnitScreenConfig.selectAnnouncedVideo(
+                            session.configurationIndex, format)
+                    }
+                    lane.video.beginSession(session)
+                    if (!lane.video.selectFormat(dimensions.first, dimensions.second, fps, session.configurationIndex)) quit()
                 } catch (e: Exception) {
                     AppLog.e("Unable to start selected GAL video format", e)
                     quit()
@@ -1030,118 +1029,135 @@ class AapTransport(
         }
     }
 
+    private fun videoLaneFor(channel: Int): VideoLane? = when (channel) {
+        Channel.ID_VID -> videoLane
+        Channel.ID_VID2 -> auxLane()
+        else -> null
+    }
+
+    private fun currentMediaSession(channel: Int): GalMediaSessions.Session? = mediaSessions.current(channel)
+
+    /** The auxiliary sink's announced codec, for the lane that is built after discovery. */
+    @Volatile private var auxAnnouncedCodec: VideoDecoder.CodecType? = null
+
+    internal fun recordAnnouncedAuxVideoCodec(codec: VideoDecoder.CodecType) {
+        auxAnnouncedCodec = codec
+    }
+
+    @Volatile private var lastAuxCycleMs = 0L
+    @Volatile private var auxCycleStopExpected = false
+
+    /** Per session, because a transport is built for each connection. */
+    @Volatile private var auxSinkConfigured = false
+
+    internal fun noteAuxSinkConfigured() { auxSinkConfigured = true }
+
+    private val auxCycleGainRunnable = Runnable {
+        send(VideoFocusEvent(gain = true, unsolicited = true, channel = Channel.ID_VID2))
+    }
+
     /**
-     * Hands a video-channel message to the video thread, and answers whether it was picture.
-     *
-     * One thread used to read the socket and decode the picture, so [VideoDecoder]'s backpressure
-     * park held the reader for up to a second and every other channel waited behind it. Measured on
-     * the rig with the park forced: the read thread blocked 132 to 145 times a window for up to
-     * 233 ms, and the audio sink underran and shed in the same windows.
-     *
-     * A false answer means control traffic on the video channel, which the caller goes on to handle
-     * exactly where it always did. The assembler still sees it, because its run state is what
-     * decides whether the next fragment is an orphan.
-     *
-     * **The media ack goes out from the video thread, after the decode.** Acking on receipt let the
-     * backlog climb 918, 1803, 2732, 3671, 4666, 5602 over six windows at 64 KiB a message and never
-     * recover. Acking behind the work costs the read thread nothing. It does not hold the queue to
-     * the window we announce, though: with the feed held, a phone told `max_unacked=12` ran the
-     * backlog to 256, so [VIDEO_BACKLOG_LIMIT] is the real ceiling.
+     * A keyframe for the second display, by a focus cycle on its own channel only. It has its own
+     * budget, so it touches nothing the driver is watching.
      */
-    internal fun dispatchVideo(message: AapMessage): Boolean {
-        val isPayload = aapVideo.isPayload(message)
-        val arrivalNs = System.nanoTime()
-        // Decode ownership uses a local generation. Wire credits retain the receipt ID and
-        // ACK mode; whether same-ID Start resets the sender's credit epoch is not established.
-        val session = mediaSessions.current(message.channel)
-        val ackSession = if (AapMessageFraming.completesMediaData(message.type, message.flags.toInt()) &&
-            session?.ackless != true) session?.id ?: 0 else null
-        val handler = videoHandler
-        // Drop pre-discovery packets at receipt, not later after the worker observes a codec.
-        if (handler == null || aapVideo.announcedCodec == null) {
-            if (ackSession != null) sendMediaAck(message.channel, ackSession)
-            return isPayload
+    @Synchronized
+    internal fun requestAuxKeyframe(
+        reason: String,
+        minIntervalMs: Long = SecondaryVideoFocusPolicy.AUX_CYCLE_MIN_INTERVAL_MS,
+    ) {
+        if (auxVideoLane == null) return
+        val handler = sendHandler ?: return
+        val now = SystemClock.elapsedRealtime()
+        val configured = auxSinkConfigured
+        if (!SecondaryVideoFocusPolicy.mayCycleAux(now, lastAuxCycleMs, configured, minIntervalMs)) {
+            if (!configured) AppLog.i("AapTransport: no auxiliary keyframe cycle before its setup ()")
+            return
         }
-        val channel = message.channel
-        if (videoBacklog.get() >= VIDEO_BACKLOG_LIMIT) {
-            // A phone that ignores its own window, or an ack we never got to send. Shed rather than
-            // allocate, and tell the assembler the run has a hole so a partial access unit is
-            // discarded instead of decoded as though it were whole. The ack still goes out, or the
-            // window closes for good and the picture never comes back.
-            if (videoShedTotal.getAndIncrement() == 0L) {
-                AppLog.w("AapTransport: the video thread is $VIDEO_BACKLOG_LIMIT messages behind, " +
-                    "shedding - see videoShed= on the transport dispatch line for how many")
-            }
-            if (isPayload) dispatchVideoRunHoled(true)
-            if (ackSession != null) sendMediaAck(channel, ackSession)
-            return isPayload
+        lastAuxCycleMs = now
+        AppLog.i("AapTransport: cycling the auxiliary display's video focus for a keyframe ($reason)")
+        auxCycleStopExpected = true
+        send(VideoFocusEvent(gain = false, unsolicited = false, channel = Channel.ID_VID2))
+        handler.removeCallbacks(auxCycleGainRunnable)
+        handler.postDelayed(auxCycleGainRunnable, SecondaryVideoFocusPolicy.AUX_CYCLE_GAP_MS)
+    }
+
+    /** Whether the auxiliary sink stop just received was the one [requestAuxKeyframe] asked for. */
+    internal fun consumeAuxCycleStop(): Boolean {
+        val expected = auxCycleStopExpected
+        auxCycleStopExpected = false
+        return expected
+    }
+
+    /**
+     * Hands a video-channel message to its lane, and answers whether it was picture. False means
+     * control traffic on the video channel, which the caller handles.
+     */
+    internal fun dispatchVideo(message: AapMessage): Boolean =
+        if (message.channel == Channel.ID_VID2) {
+            auxLane()?.dispatch(message) ?: false
+        } else {
+            videoLane.dispatch(message)
         }
-        lastHoleDiscard = null
-        val size = message.size
-        val copy = obtainVideoBuffer(size)
-        System.arraycopy(message.data, 0, copy, 0, size)
-        val queued = AapMessage(channel, message.flags, message.type, message.dataOffset, size, copy)
-        videoBacklog.incrementAndGet()
-        val posted = handler.post {
-            try {
-                // Fresh pre-Start CSD and its Setup boundary stay ahead of the immediately
-                // following Start. DATA and active-owner CSD never cross that boundary.
-                val current = mediaSessions.current(channel)
-                val preparation = queued.type == Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE ||
-                    queued.type == 1 && session?.active != true
-                if (current?.generation == session?.generation ||
-                    preparation && current?.previousGeneration == session?.generation) {
-                    aapVideo.process(queued, session, arrivalNs)
-                }
-            } catch (e: Exception) {
-                AppLog.e("Error processing video message", e)
-            } finally {
-                videoBacklog.decrementAndGet()
-                recycleVideoBuffer(copy)
-                if (ackSession != null) sendMediaAck(channel, ackSession)
-            }
+
+    /**
+     * The auxiliary lane, created on demand where one was advertised. Null means a channel we never
+     * offered or a closing transport, and the message is ignored so the main session never pays.
+     */
+    private fun auxLane(): VideoLane? {
+        auxVideoLane?.let { return it }
+        // Only a connection whose discovery offered the second sink opens its lane.
+        if (mediaSessions.codec(Channel.ID_VID2) == null) return null
+        if (closing) return null
+        val output = SecondScreenHub.announced ?: return null
+        // Opened here because only this session's service discovery says which output to open.
+        // Only the RTP push's own timed ask may cycle faster than the 5 s floor.
+        val askFloorMs = if (output == SecondScreenOutputPolicy.Output.RTP_PUSH) {
+            SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(settings.auxRtpRefreshSeconds * 1000L)
+        } else SecondaryVideoFocusPolicy.AUX_CYCLE_MIN_INTERVAL_MS
+        SecondScreenHub.open(context, settings) { requestAuxKeyframe("the second screen asked for one", askFloorMs) }
+        // Recovery cycles focus on this channel alone, so the main picture never pays for it.
+        val onCorrupted = { requestAuxKeyframe("a corrupt frame") }
+        // A forwarding output gets the stream as it arrives and no decoder is built for it.
+        val video = if (SecondScreenOutputPolicy.decodesOnHeadUnit(output)) {
+            AapVideo(App.provide(context).requireAuxVideoDecoder(), settings, onFrameCorrupted = onCorrupted)
+        } else {
+            AapVideo(null, settings, onAccessUnit = { buf, off, len -> SecondScreenHub.encoded()?.onAccessUnit(buf, off, len) },
+                onFrameCorrupted = onCorrupted)
         }
-        if (!posted) {
-            videoBacklog.decrementAndGet()
-            recycleVideoBuffer(copy)
-            if (ackSession != null) sendMediaAck(channel, ackSession)
+        // The aux sink is announced as H.264 only, so the main picture's codec does not apply.
+        auxAnnouncedCodec?.let(video::recordAnnouncedCodec)
+        val lane = VideoLane(
+            Channel.ID_VID2, video, "AapTransport:Handler::VideoAux", ::currentMediaSession, ::sendMediaAck,
+        )
+        val opened = synchronized(lifecycleLock) {
+            // quit snapshots the workers under this lock, so a lane started here is always joined.
+            if (closing) return@synchronized false
+            auxVideoLane?.let { return it }
+            lane.start()
+            auxVideoLane = lane
+            true
         }
-        return isPayload
+        if (!opened) {
+            // quit may have closed the hub before the open above; this close leaves nothing open.
+            SecondScreenHub.close()
+            return null
+        }
+        AppLog.i("AapTransport: the auxiliary display's video lane is open")
+        return lane
     }
 
     /** Video messages handed over and not yet processed. See [TransportDispatchMonitor]. */
-    internal fun videoQueueDepth(): Int = videoBacklog.get()
+    internal fun videoQueueDepth(): Int = videoLane.queueDepth()
 
     /** Video messages shed for the life of this transport, because the backlog was at its ceiling. */
-    internal fun videoShedCount(): Long = videoShedTotal.get()
+    internal fun videoShedCount(): Long = videoLane.shedCount()
 
-    /**
-     * The reader's framing audit found a run short of the bytes its first fragment declared.
-     *
-     * Posted rather than called so it lands on the video thread in front of the run's last
-     * fragment, which is the message that consumes it. See [AapVideo.onFragmentRunHoled].
-     */
-    internal fun dispatchVideoRunHoled(discardAssembledUnit: Boolean) {
-        val handler = videoHandler ?: return
-        val session = mediaSessions.current(Channel.ID_VID)
-        val saturated = videoBacklog.get() >= VIDEO_BACKLOG_LIMIT
-        if (saturated && session?.generation == lastHoleGeneration &&
-            (lastHoleDiscard == true || lastHoleDiscard == discardAssembledUnit)) return
-        if (handler.post { aapVideo.onFragmentRunHoled(discardAssembledUnit, session) }) {
-            lastHoleGeneration = session?.generation
-            lastHoleDiscard = if (saturated) discardAssembledUnit else null
+    /** The reader's audit found a run short on [channel]; each lane repairs only its own. */
+    internal fun dispatchVideoRunHoled(channel: Int, discardAssembledUnit: Boolean) {
+        when (channel) {
+            Channel.ID_VID -> videoLane.runHoled(discardAssembledUnit)
+            Channel.ID_VID2 -> auxVideoLane?.runHoled(discardAssembledUnit)
         }
-    }
-
-    private fun obtainVideoBuffer(size: Int): ByteArray {
-        while (true) {
-            val pooled = videoBufferPool.poll() ?: return ByteArray(maxOf(size, MIN_VIDEO_BUFFER_BYTES))
-            if (pooled.size >= size) return pooled
-        }
-    }
-
-    private fun recycleVideoBuffer(buffer: ByteArray) {
-        if (videoBufferPool.size < VIDEO_BUFFER_POOL_LIMIT) videoBufferPool.offer(buffer)
     }
 
     /**
@@ -1163,9 +1179,10 @@ class AapTransport(
                 resetSessionObservations()
                 resetMicrophone()
 
-                videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
-                videoThread!!.start()
-                videoHandler = Handler(videoThread!!.looper)
+                lastAuxCycleMs = 0L
+                auxCycleStopExpected = false
+
+                videoLane.start()
 
                 sendThread = HandlerThread("AapTransport:Handler::Send", Process.THREAD_PRIORITY_AUDIO)
                 sendThread!!.start()
@@ -1690,19 +1707,6 @@ class AapTransport(
         private const val MSG_SEND = 2
         private const val KEEPALIVE_INTERVAL_MS = 1_000L
 
-        /** Pooled video payload copies: enough for a fragment run and the one behind it. */
-        /**
-         * Messages the video thread may be behind before the transport sheds.
-         *
-         * The real ceiling, not a backstop: we announce 12 messages on wireless and 16 on USB, and a
-         * phone held at 200ms a frame reached 256 in under three minutes, 21x the window. Sized so
-         * the worst case is about 16 MB of copies rather than the 350 MB a run with no ceiling
-         * reached. Only that artificial hold has reached it; the same route off it sits at 2 to 5.
-         */
-        private const val VIDEO_BACKLOG_LIMIT = 256
-
-        private const val VIDEO_BUFFER_POOL_LIMIT = 8
-        private const val MIN_VIDEO_BUFFER_BYTES = 64 * 1024
         private val galVersionPolicy = GalVersionPolicy()
         // Each version exchange has its own wall-clock budget; retries do not extend it.
         private const val HANDSHAKE_TIMEOUT_MS = 10_000L

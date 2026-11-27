@@ -84,7 +84,7 @@ internal class GalMediaOffer private constructor(
                 val sink = service.mediaSinkService
                 val formats = when {
                     Channel.isAudio(service.id) -> sink.audioConfigsList.map { GalMediaFormat.Audio(it) }
-                    service.id == Channel.ID_VID -> sink.videoConfigsList.map { GalMediaFormat.Video(it) }
+                    Channel.isVideo(service.id) -> sink.videoConfigsList.map { GalMediaFormat.Video(it) }
                     else -> continue
                 }
                 require(!sinks.containsKey(service.id)) { "Duplicate media sink ${service.id}" }

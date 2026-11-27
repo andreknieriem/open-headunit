@@ -26,6 +26,10 @@ object ScreenSettingsHash {
         forcedScale: Boolean,
         normalisation: ScreenOrientationPolicy.Normalisation,
         dpiAutoLayout: String = "",
+        // Which panel the reading came from. Not the metric the note above warns about: an id names
+        // a display rather than moving with a decoration, and a canvas measured on one display says
+        // nothing about another.
+        displayId: Int = DisplayTargetPolicy.DEFAULT_DISPLAY_ID,
     ): Int {
         var hash = 17
         hash = 31 * hash + resolutionId
@@ -41,8 +45,9 @@ object ScreenSettingsHash {
         hash = 31 * hash + videoFitMode
         hash = 31 * hash + (if (forcedScale) 1 else 0)
         hash = 31 * hash + normalisation.ordinal
-        // Folded only when set, so an upgrade keeps every cached measurement.
+        // Each folded only when set, so an upgrade keeps every cached measurement.
         if (dpiAutoLayout.isNotEmpty()) hash = 31 * hash + dpiAutoLayout.hashCode()
+        if (displayId != DisplayTargetPolicy.DEFAULT_DISPLAY_ID) hash = 31 * hash + displayId
         return hash
     }
 }

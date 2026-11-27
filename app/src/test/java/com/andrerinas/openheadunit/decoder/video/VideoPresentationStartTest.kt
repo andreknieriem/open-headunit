@@ -12,6 +12,7 @@ import com.andrerinas.openheadunit.aap.GalMediaOffer
 import com.andrerinas.openheadunit.aap.GalMediaSessions
 import com.andrerinas.openheadunit.aap.GalPresentationController
 import com.andrerinas.openheadunit.aap.GalRuntimeOptions
+import com.andrerinas.openheadunit.aap.VideoLane
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.galTestContract
 import com.andrerinas.openheadunit.aap.galTestSessions
@@ -62,8 +63,16 @@ class VideoPresentationStartTest {
             video.bindPresentationController(controller)
             for ((name, value) in listOf(
                 "aapVideo" to video, "aapAudio" to audio, "mediaSessions" to sessions,
-                "presentationController" to controller, "videoHandler" to handler,
+                "presentationController" to controller,
             )) field(transport, name).set(transport, value)
+            val worker = object : VideoLane.Worker {
+                override val thread = Thread()
+                override fun post(job: Runnable): Boolean = handler.post(job)
+                override fun quit() {}
+            }
+            val lane = VideoLane(Channel.ID_VID, video, "test", { sessions.current(it) }, { _, _ -> }, { worker })
+            lane.start()
+            field(transport, "videoLane").set(transport, lane)
             whenever(handler.post(any())).thenAnswer {
                 val work = it.getArgument<Runnable>(0)
                 // Execute before Handler.post returns: the reader cannot finish Start first.

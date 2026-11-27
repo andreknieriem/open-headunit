@@ -12,7 +12,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings as SystemSettings
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -69,7 +68,9 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApBssidPol
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
+import com.andrerinas.openheadunit.main.settings.DisplaysChoices
 import com.andrerinas.openheadunit.main.settings.SettingItem
+import com.andrerinas.openheadunit.main.settings.showNumericInputDialog
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.main.settings.SettingsCategory
 import com.andrerinas.openheadunit.main.settings.SettingsFilterPolicy
@@ -171,7 +172,8 @@ class SettingsFragment : Fragment() {
         // Navigation
         "gpsNavigation",
         // Graphic
-        "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "startInFullscreenMode",
+        "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "displays",
+        "startInFullscreenMode",
         // Theming
         "loadingScreen", "customization",
         // Video
@@ -603,6 +605,20 @@ class SettingsFragment : Fragment() {
         } else {
             navigateBack()
         }
+    }
+
+    /**
+     * For a row that opens a page which saves at once: the return rebuilds this list from settings,
+     * so ask before unsaved edits here are lost.
+     */
+    private fun confirmDiscardThen(open: () -> Unit) {
+        if (hasChanges) MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.unsaved_changes)
+            .setMessage(R.string.unsaved_changes_message)
+            .setPositiveButton(R.string.discard) { _, _ -> open() }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+        else open()
     }
 
     private fun navigateBack() {
@@ -1519,17 +1535,7 @@ class SettingsFragment : Fragment() {
                 // The row title does not name Shizuku; let the settings search find it.
                 searchKeywords = "Shizuku",
                 onClick = { _ ->
-                    // The sub-screen applies immediately; do not silently lose unsaved controls
-                    // in this screen when navigation recreates its view on return.
-                    if (hasChanges) MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.unsaved_changes)
-                        .setMessage(R.string.unsaved_changes_message)
-                        .setPositiveButton(R.string.discard) { _, _ ->
-                            findNavController().navigate(R.id.wifiScanSettingsFragment)
-                        }
-                        .setNegativeButton(R.string.cancel, null)
-                        .show()
-                    else findNavController().navigate(R.id.wifiScanSettingsFragment)
+                    confirmDiscardThen { findNavController().navigate(R.id.wifiScanSettingsFragment) }
                 }
             ))
         }
@@ -1626,6 +1632,24 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        // The projection display and the second screen live on one page. Its rows save at once.
+        items.add(SettingItem.SettingEntry(
+            stableId = "displays",
+            nameResId = R.string.displays,
+            helpResId = R.string.displays_help,
+            value = DisplaysChoices.summaryText(requireContext(), settings),
+            searchKeywords = DisplaysChoices.searchKeywords(requireContext(), settings),
+            onClick = {
+                confirmDiscardThen {
+                    try {
+                        findNavController().navigate(R.id.action_settingsFragment_to_displaysSettingsFragment)
+                    } catch (e: Exception) {
+                        // Failover
+                    }
+                }
+            }
+        ))
+
         // Video fit: how a mismatched-aspect video is fitted into the panel (object-fit style).
         items.add(SettingItem.SettingEntry(
             stableId = "videoFitMode",
@@ -1679,6 +1703,7 @@ class SettingsFragment : Fragment() {
             value = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) "10000" else pendingPixelAspectRatioE4.toString(),
             onClick = { _ ->
                 showNumericInputDialog(
+                    context = requireContext(),
                     title = getString(R.string.enter_pixel_aspect_ratio_value),
                     message = null,
                     initialValue = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) 10000 else (pendingPixelAspectRatioE4 ?: 10000),
@@ -3865,6 +3890,7 @@ class SettingsFragment : Fragment() {
 
         val promptValue = { seek: android.widget.SeekBar ->
             showNumericInputDialog(
+                requireContext(),
                 getString(R.string.enter_audio_offset_value),
                 null,
                 seek.progress
@@ -4554,17 +4580,6 @@ class SettingsFragment : Fragment() {
         updateSettingsList()
     }
 
-    /**
-     * The band to ask for when this app creates the WiFi Direct group, plus what that choice costs.
-     *
-     * The mirror of [addHotspotBandSetting] on the other transport, and it replaces two toggles
-     * that asked the same question in pieces - one that forced 2.4 GHz and one that opted a pre-Q
-     * unit into asking for 5 GHz. Rendered only on the Native AA WiFi Direct arm, because
-     * WifiDirectManager.createQuietGroup() is the single place it is read.
-     *
-     * Basic rather than Advanced, like the hotspot band beside it: this is the first thing to try
-     * when a wireless session connects and shows no picture.
-     */
     /** Who carries the Bluetooth half of Native AA: the relay, a module, or this unit's radio. */
     /** Which phone, and how it is woken: the Native rows that read this unit's own Bluetooth. */
     private fun addNativeBluetoothRows(items: MutableList<SettingItem>) {
@@ -4861,6 +4876,17 @@ class SettingsFragment : Fragment() {
         return on != Esp32RelayStore(context ?: return false).enabled
     }
 
+    /**
+     * The band to ask for when this app creates the WiFi Direct group, plus what that choice costs.
+     *
+     * The mirror of [addHotspotBandSetting] on the other transport, and it replaces two toggles
+     * that asked the same question in pieces - one that forced 2.4 GHz and one that opted a pre-Q
+     * unit into asking for 5 GHz. Rendered only on the Native AA WiFi Direct arm, because
+     * WifiDirectManager.createQuietGroup() is the single place it is read.
+     *
+     * Basic rather than Advanced, like the hotspot band beside it: this is the first thing to try
+     * when a wireless session connects and shows no picture.
+     */
     private fun addWifiDirectBandSetting(items: MutableList<SettingItem>) {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "wifiDirectBand",
@@ -5008,96 +5034,6 @@ class SettingsFragment : Fragment() {
         } else {
             baseSummary
         }
-    }
-
-    private fun showNumericInputDialog(
-        title: String,
-        message: String?,
-        initialValue: Int,
-        onConfirm: (Int) -> Unit
-    ) {
-        val context = requireContext()
-        val editView = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            setText(if (initialValue == 0 && title.contains("DPI", true)) "" else initialValue.toString())
-        }
-
-        // Use a container to add padding around the EditText
-        val container = android.widget.FrameLayout(context)
-        val params = android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-        )
-        val margin = (24 * context.resources.displayMetrics.density).toInt()
-        params.setMargins(margin, 8, margin, 8)
-        container.addView(editView, params)
-
-        val dialog = MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
-            .setTitle(title)
-            .apply { if (message != null) setMessage(message) }
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                val newVal = (editView.text.toString().toIntOrNull() ?: 0).coerceAtLeast(0)
-                onConfirm(newVal)
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener {
-                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
-                        as? android.view.inputmethod.InputMethodManager
-                imm?.hideSoftInputFromWindow(editView.windowToken, 0)
-            }
-            .create()
-
-        dialog.window?.clearFlags(
-            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
-        )
-        dialog.show()
-        editView.requestFocus()
-    }
-
-    private fun showTextInputDialog(
-        context: Context,
-        titleResId: Int,
-        initialValue: String,
-        onConfirm: (String) -> Unit
-    ) {
-        val editView = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_TEXT
-            setText(initialValue)
-        }
-
-        val container = android.widget.FrameLayout(context)
-        val params = android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-        )
-        val margin = (24 * context.resources.displayMetrics.density).toInt()
-        params.setMargins(margin, 8, margin, 8)
-        container.addView(editView, params)
-
-        val dialog = MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
-            .setTitle(titleResId)
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                onConfirm(editView.text.toString())
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener {
-                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
-                        as? android.view.inputmethod.InputMethodManager
-                imm?.hideSoftInputFromWindow(editView.windowToken, 0)
-            }
-            .create()
-
-        dialog.window?.clearFlags(
-            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
-        )
-        dialog.show()
-        editView.requestFocus()
     }
 
     private fun handleNativeAaSelection() {

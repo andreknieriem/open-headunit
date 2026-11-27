@@ -82,7 +82,7 @@ class TlsVideoAccountingTest {
                         .setSessionId(1).setConfigurationIndex(0).build())!!
                 video.beginSession(session)
                 val repairs = mutableListOf<Boolean>()
-                val repair: (Boolean) -> Unit = { discard -> repairs += discard; video.onFragmentRunHoled(discard, session) }
+                val repair: (Int, Boolean) -> Unit = { _, discard -> repairs += discard; video.onFragmentRunHoled(discard, session) }
                 val handler = object : AapMessageHandler {
                     override fun handle(message: AapMessage) { video.process(message, session) }
                 }

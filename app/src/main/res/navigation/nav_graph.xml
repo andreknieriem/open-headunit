@@ -135,6 +135,13 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_settingsFragment_to_displaysSettingsFragment"
+            app:destination="@id/displaysSettingsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
             android:id="@+id/action_settingsFragment_to_esp32RelaySettingsFragment"
             app:destination="@id/esp32RelaySettingsFragment"
             app:enterAnim="@anim/slide_in_right"
@@ -310,6 +317,11 @@
         android:id="@+id/micSettingsFragment"
         android:name="com.andrerinas.openheadunit.main.MicSettingsFragment"
         android:label="@string/microphone_settings" />
+
+    <fragment
+        android:id="@+id/displaysSettingsFragment"
+        android:name="com.andrerinas.openheadunit.main.DisplaysSettingsFragment"
+        android:label="@string/displays" />
 
     <fragment
         android:id="@+id/esp32RelaySettingsFragment"

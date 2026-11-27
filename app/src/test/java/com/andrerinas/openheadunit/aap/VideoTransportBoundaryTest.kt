@@ -2,7 +2,6 @@ package com.andrerinas.openheadunit.aap
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Handler
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
@@ -10,9 +9,7 @@ import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.kotlin.*
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 class VideoTransportBoundaryTest {
     @Test fun `whole and every split preserve PPS first CSD and ignore start codes in DATA timestamps`() =
@@ -67,15 +64,11 @@ class VideoTransportBoundaryTest {
     @Test fun `delayed video completion acknowledges the session captured on the poll thread`() {
         val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
         val video = mock<AapVideo>()
-        val handler = mock<Handler>()
         val jobs = mutableListOf<Runnable>()
-        whenever(handler.post(any())).thenAnswer { jobs.add(it.arguments[0] as Runnable); true }
         fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(transport, value)
         field("aapVideo", video)
-        field("videoHandler", handler)
-        field("videoBacklog", AtomicInteger())
-        field("videoBufferPool", LinkedBlockingQueue<ByteArray>())
+        installLane(transport, video, jobs)
         whenever(video.isPayload(any())).thenReturn(true)
         whenever(video.announcedCodec).thenReturn(VideoDecoder.CodecType.H264)
         val sessions = galTestSessions()
@@ -266,15 +259,11 @@ class VideoTransportBoundaryTest {
         val video = AapVideo(decoder, settings()) { fail("complete rejected packets need no recovery") }
         video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
         val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
-        val handler = mock<Handler>()
         val jobs = mutableListOf<Runnable>()
-        whenever(handler.post(any())).thenAnswer { jobs.add(it.arguments[0] as Runnable); true }
         fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(transport, value)
         field("aapVideo", video)
-        field("videoHandler", handler)
-        field("videoBacklog", AtomicInteger())
-        field("videoBufferPool", LinkedBlockingQueue<ByteArray>())
+        installLane(transport, video, jobs)
         val sessions = galTestSessions()
         field("mediaSessions", sessions)
         startVideo(video, sessions, 101)
@@ -403,7 +392,7 @@ class VideoTransportBoundaryTest {
             boundary.shedMiddle()
             boundary.drain()
             // A repair-only finding must not erase a previous worker-loss verdict.
-            boundary.transport.dispatchVideoRunHoled(false)
+            boundary.transport.dispatchVideoRunHoled(Channel.ID_VID, false)
             boundary.drain()
             when (replacement) {
                 "whole" -> boundary.accept(11, boundary.data)
@@ -433,7 +422,7 @@ class VideoTransportBoundaryTest {
         val data = ByteArray(10) + nal
         private val jobs = mutableListOf<Runnable>()
         val queuedJobs get() = jobs.size
-        private val backlog = AtomicInteger()
+        private lateinit var backlog: AtomicInteger
         private val audit = FragmentedMessageAudit()
         private val reassembler = AapMessageReassembler(onDroppedMediaData = { channel ->
             sessions.ackSession(channel)?.let { transport.sendMediaAck(channel, it) }
@@ -447,15 +436,11 @@ class VideoTransportBoundaryTest {
                 null
             }.whenever(decoder).decode(any<ByteArray>(), any(), any(), any(), any(), anyOrNull(), any())
             video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
-            val handler = mock<Handler>()
-            whenever(handler.post(any())).thenAnswer { jobs.add(it.arguments[0] as Runnable); true }
             fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
                 .apply { isAccessible = true }.set(transport, value)
             field("aapVideo", video)
-            field("videoHandler", handler)
-            field("videoBacklog", backlog)
-            field("videoShedTotal", AtomicLong())
-            field("videoBufferPool", LinkedBlockingQueue<ByteArray>())
+            backlog = VideoLane::class.java.getDeclaredField("backlog")
+                .apply { isAccessible = true }.get(installLane(transport, video, jobs)) as AtomicInteger
             field("mediaSessions", sessions)
             if (startInitially) start(101)
             doNothing().whenever(transport).sendMediaAck(any(), any())
@@ -473,7 +458,7 @@ class VideoTransportBoundaryTest {
             if (auditReader) {
                 val result = audit.onMessage(Channel.ID_VID, flags, bytes.size, total)
                 if (result != null && AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)) {
-                    transport.dispatchVideoRunHoled(message != null &&
+                    transport.dispatchVideoRunHoled(Channel.ID_VID, message != null &&
                         AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
                 }
             }
@@ -497,6 +482,20 @@ class VideoTransportBoundaryTest {
         fun drain() {
             while (jobs.isNotEmpty()) jobs.removeAt(0).run()
         }
+    }
+
+    /** The transport's main lane, with a worker that queues into [jobs]. */
+    private fun installLane(transport: AapTransport, video: AapVideo, jobs: MutableList<Runnable>): VideoLane {
+        val worker = object : VideoLane.Worker {
+            override val thread = Thread()
+            override fun post(job: Runnable): Boolean = jobs.add(job)
+            override fun quit() {}
+        }
+        val lane = VideoLane(Channel.ID_VID, video, "test", { transport.mediaSessions.current(it) },
+            { channel, id -> transport.sendMediaAck(channel, id) }, { worker })
+        lane.start()
+        AapTransport::class.java.getDeclaredField("videoLane").apply { isAccessible = true }.set(transport, lane)
+        return lane
     }
 
     private fun startVideo(video: AapVideo, sessions: GalMediaSessions, id: Int): GalMediaSessions.Session =

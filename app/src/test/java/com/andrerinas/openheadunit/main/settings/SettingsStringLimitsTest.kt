@@ -63,6 +63,14 @@ class SettingsStringLimitsTest {
         "customization_screen_help", "loading_screen_screen_help", "gestures_help"
     )
 
+    // The Displays page help texts.
+    private val displaysHelp = listOf(
+        "displays_help", "projection_display_help", "aux_display_help", "aux_android_display_help",
+        "aux_network_size_help", "aux_network_port_help", "aux_rtp_destination_help", "aux_rtp_port_help",
+        "aux_rtp_refresh_help", "aux_ms912x_mode_help", "aux_ms912x_format_help", "aux_display_role_help",
+        "aux_display_content_help"
+    )
+
     @Test
     fun `every summary string is at most 80 characters`() {
         val summaries = defaults.filterKeys { it.endsWith("_summary") && it !in notRowSummaries }
@@ -74,8 +82,8 @@ class SettingsStringLimitsTest {
     @Test
     fun `rewritten help texts and screen help texts are at most 500 characters`() {
         val all = defaults + githubDefaults
-        val long = (rewrittenHelp + auditHelp + screenHelp).filter { (all[it]?.length ?: 0) > 500 }
-        val missing = (rewrittenHelp + auditHelp + screenHelp).filter { it !in all }
+        val long = (rewrittenHelp + auditHelp + screenHelp + displaysHelp).filter { (all[it]?.length ?: 0) > 500 }
+        val missing = (rewrittenHelp + auditHelp + screenHelp + displaysHelp).filter { it !in all }
         assertTrue("missing keys: $missing", missing.isEmpty())
         assertTrue("help texts over 500 characters: $long", long.isEmpty())
     }
@@ -149,9 +157,10 @@ class SettingsStringLimitsTest {
     fun `hint rows that moved into help are gone`() {
         val hintIds = listOf(
             "fiveGhzChannelHint", "wifiDirectBandHint", "hotspotBandHint", "nativeApTransportHint",
-            "mediaKeyRoutingHint", "playbackFocusModeHint", "autoDisconnectBtKillHint", "sunriseHelp_"
+            "mediaKeyRoutingHint", "playbackFocusModeHint", "autoDisconnectBtKillHint", "sunriseHelp_",
+            "auxDisplayHint", "auxRtpHintStream"
         )
-        val left = listOf("SettingsFragment.kt", "AutoStartFragment.kt", "DarkModeFragment.kt").flatMap { name ->
+        val left = listOf("SettingsFragment.kt", "AutoStartFragment.kt", "DarkModeFragment.kt", "DisplaysSettingsFragment.kt").flatMap { name ->
             val text = File(mainSources, name).readText()
             hintIds.filter { text.contains(it) }.map { "$name: $it" }
         }
@@ -176,6 +185,18 @@ class SettingsStringLimitsTest {
             }
         }
         assertTrue("joined help gaps (${gaps.size}): ${gaps.take(20)}", gaps.isEmpty())
+    }
+
+    @Test
+    fun `every row on the Displays page that can show help has it`() {
+        val text = File(mainSources, "DisplaysSettingsFragment.kt").readText()
+        val entries = Regex("""SettingItem\.SettingEntry\((.*?)onClick""", RegexOption.DOT_MATCHES_ALL).findAll(text).toList()
+        assertTrue("the scan found only ${entries.size} entry rows", entries.size >= 12)
+        val bare = entries.filter { !it.groupValues[1].contains("helpResId = R.string.") }
+            .map { Regex("""stableId = "(\w+)"""").find(it.groupValues[1])?.groupValues?.get(1) }
+        assertTrue("entry rows without help: $bare", bare.isEmpty())
+        val used = keysAfter("helpResId")
+        assertTrue("help keys not in the list: ${displaysHelp.filter { it !in used }}", displaysHelp.all { it in used })
     }
 
     @Test

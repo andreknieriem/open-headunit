@@ -6,14 +6,12 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctService
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
-import android.hardware.usb.UsbManager
 import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings as SystemSettings
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -70,7 +68,9 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApBssidPol
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
+import com.andrerinas.openheadunit.main.settings.DisplaysChoices
 import com.andrerinas.openheadunit.main.settings.SettingItem
+import com.andrerinas.openheadunit.main.settings.showNumericInputDialog
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.main.settings.SettingsCategory
 import com.andrerinas.openheadunit.main.settings.SettingsFilterPolicy
@@ -79,22 +79,6 @@ import com.andrerinas.openheadunit.main.settings.SettingsLayoutPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
-import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
-import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
-import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
-import com.andrerinas.openheadunit.connection.usb.UsbReceiver
-import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
-import com.andrerinas.openheadunit.secondscreen.usbdisplay.UsbDisplayProbe
-import com.andrerinas.openheadunit.secondscreen.UsbDisplayAdapterPolicy
-import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xMode
-import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
-import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xWireFormat
-import com.andrerinas.openheadunit.utils.NetworkAddresses
-import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
-import com.andrerinas.openheadunit.secondscreen.rtp.RtpDestinationPolicy
-import com.andrerinas.openheadunit.secondscreen.rtp.RtpRefreshPolicy
-import com.andrerinas.openheadunit.utils.DisplayTargetPolicy
-import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.view.PerformanceOverlayField
 import com.andrerinas.openheadunit.view.PerformanceOverlayPolicy
@@ -188,9 +172,8 @@ class SettingsFragment : Fragment() {
         // Navigation
         "gpsNavigation",
         // Graphic
-        "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
-        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxNetworkHint", "auxRtpDestination", "auxRtpPort", "auxRtpRefresh", "auxRtpHint", "auxMs912xMode", "auxMs912xFormat",
-        "auxMs912xHint", "auxUsbDisplayStatus", "auxUsbDisplayCheck", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
+        "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "displays",
+        "startInFullscreenMode",
         // Theming
         "loadingScreen", "customization",
         // Video
@@ -622,6 +605,20 @@ class SettingsFragment : Fragment() {
         } else {
             navigateBack()
         }
+    }
+
+    /**
+     * For a row that opens a page which saves at once: the return rebuilds this list from settings,
+     * so ask before unsaved edits here are lost.
+     */
+    private fun confirmDiscardThen(open: () -> Unit) {
+        if (hasChanges) MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.unsaved_changes)
+            .setMessage(R.string.unsaved_changes_message)
+            .setPositiveButton(R.string.discard) { _, _ -> open() }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+        else open()
     }
 
     private fun navigateBack() {
@@ -1538,17 +1535,7 @@ class SettingsFragment : Fragment() {
                 // The row title does not name Shizuku; let the settings search find it.
                 searchKeywords = "Shizuku",
                 onClick = { _ ->
-                    // The sub-screen applies immediately; do not silently lose unsaved controls
-                    // in this screen when navigation recreates its view on return.
-                    if (hasChanges) MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.unsaved_changes)
-                        .setMessage(R.string.unsaved_changes_message)
-                        .setPositiveButton(R.string.discard) { _, _ ->
-                            findNavController().navigate(R.id.wifiScanSettingsFragment)
-                        }
-                        .setNegativeButton(R.string.cancel, null)
-                        .show()
-                    else findNavController().navigate(R.id.wifiScanSettingsFragment)
+                    confirmDiscardThen { findNavController().navigate(R.id.wifiScanSettingsFragment) }
                 }
             ))
         }
@@ -1645,10 +1632,23 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        // Which Android display the projection uses. Saved immediately rather than pended, because
-        // it only takes effect at the next connect. Hidden where the projection cannot move.
-        if (DisplayTargets.canMoveProjection) addProjectionDisplayRow(items)
-        addAuxDisplayRows(items)
+        // The projection display and the second screen live on one page. Its rows save at once.
+        items.add(SettingItem.SettingEntry(
+            stableId = "displays",
+            nameResId = R.string.displays,
+            helpResId = R.string.displays_help,
+            value = DisplaysChoices.summaryText(requireContext(), settings),
+            searchKeywords = DisplaysChoices.searchKeywords(requireContext(), settings),
+            onClick = {
+                confirmDiscardThen {
+                    try {
+                        findNavController().navigate(R.id.action_settingsFragment_to_displaysSettingsFragment)
+                    } catch (e: Exception) {
+                        // Failover
+                    }
+                }
+            }
+        ))
 
         // Video fit: how a mismatched-aspect video is fitted into the panel (object-fit style).
         items.add(SettingItem.SettingEntry(
@@ -1703,6 +1703,7 @@ class SettingsFragment : Fragment() {
             value = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) "10000" else pendingPixelAspectRatioE4.toString(),
             onClick = { _ ->
                 showNumericInputDialog(
+                    context = requireContext(),
                     title = getString(R.string.enter_pixel_aspect_ratio_value),
                     message = null,
                     initialValue = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) 10000 else (pendingPixelAspectRatioE4 ?: 10000),
@@ -3889,6 +3890,7 @@ class SettingsFragment : Fragment() {
 
         val promptValue = { seek: android.widget.SeekBar ->
             showNumericInputDialog(
+                requireContext(),
                 getString(R.string.enter_audio_offset_value),
                 null,
                 seek.progress
@@ -4875,418 +4877,6 @@ class SettingsFragment : Fragment() {
     }
 
     /**
-     * Which Android display the projection uses. The row names each attached panel, so a unit with
-     * two external displays shows which one it picked.
-     */
-    private fun addProjectionDisplayRow(items: MutableList<SettingItem>) {
-        val attached = DisplayTargets.candidates(requireContext())
-        val mode = DisplayTargetPolicy.Mode.of(settings.preferredDisplayMode)
-        val pinnedId = settings.preferredDisplayId
-        val pinnedName = attached.firstOrNull { it.displayId == pinnedId }?.name
-
-        // A display that is not attached right now still shows, so the user can see what is stored
-        // rather than finding the row silently reset to the built-in panel.
-        val entries = mutableListOf<Pair<String, () -> Unit>>()
-        entries.add(getString(R.string.projection_display_builtin) to {
-            settings.preferredDisplayMode = DisplayTargetPolicy.Mode.DEFAULT.ordinal
-        })
-        entries.add(getString(R.string.projection_display_automatic) to {
-            settings.preferredDisplayMode = DisplayTargetPolicy.Mode.AUTO.ordinal
-        })
-        attached.forEach { display ->
-            entries.add("${display.name} (${display.widthPx}x${display.heightPx})" to {
-                settings.preferredDisplayMode = DisplayTargetPolicy.Mode.SECONDARY.ordinal
-                settings.preferredDisplayId = display.displayId
-            })
-        }
-        if (mode == DisplayTargetPolicy.Mode.SECONDARY && pinnedName == null) {
-            entries.add(getString(R.string.projection_display_missing, "display $pinnedId") to {
-                settings.preferredDisplayMode = DisplayTargetPolicy.Mode.SECONDARY.ordinal
-                settings.preferredDisplayId = pinnedId
-            })
-        }
-
-        val selectedIndex = when (mode) {
-            DisplayTargetPolicy.Mode.DEFAULT -> 0
-            DisplayTargetPolicy.Mode.AUTO -> 1
-            DisplayTargetPolicy.Mode.SECONDARY ->
-                attached.indexOfFirst { it.displayId == pinnedId }.let { if (it >= 0) it + 2 else entries.size - 1 }
-        }
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "projectionDisplay",
-            nameResId = R.string.projection_display,
-            value = entries.getOrElse(selectedIndex) { entries.first() }.first,
-            searchKeywords = entries.joinToString(" ") { it.first },
-            onClick = { _ ->
-                val labels = entries.map { it.first }.toTypedArray()
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_projection_display)
-                    .setSingleChoiceItems(labels, selectedIndex) { dialog, which ->
-                        entries.getOrNull(which)?.second?.invoke()
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-    }
-
-    /** Which Android display carries the second screen, among those attached besides the projection's. */
-    private fun addAuxAndroidDisplayRow(items: MutableList<SettingItem>) {
-        val projectionDisplayId = DisplayTargets.choose(requireContext(), settings).displayId
-        val attached = DisplayTargets.candidates(requireContext()).filter { it.displayId != projectionDisplayId }
-        val labels = attached.map { "${it.name} (${it.widthPx}x${it.heightPx})" }
-        val selected = attached.indexOfFirst { it.displayId == settings.auxDisplayId }
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxAndroidDisplay",
-            nameResId = R.string.aux_android_display,
-            value = labels.getOrNull(selected) ?: getString(R.string.aux_android_display_none),
-            searchKeywords = labels.joinToString(" "),
-            onClick = { _ ->
-                if (labels.isNotEmpty()) {
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.aux_android_display)
-                        .setSingleChoiceItems(labels.toTypedArray(), selected) { dialog, which ->
-                            attached.getOrNull(which)?.let { settings.auxDisplayId = it.displayId }
-                            settings.commit()
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
-                }
-            }
-        ))
-    }
-
-    /** The network stream's size and port, and the command that shows it on a computer. */
-    private fun addAuxNetworkRows(items: MutableList<SettingItem>) {
-        val sizes = SecondScreenOutputPolicy.NETWORK_SIZES
-        val labels = sizes.map { "${it.widthPx}x${it.heightPx}" }
-        val sizeIndex = settings.auxNetworkSize.coerceIn(0, sizes.size - 1)
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxNetworkSize",
-            nameResId = R.string.aux_network_size,
-            value = labels[sizeIndex],
-            searchKeywords = labels.joinToString(" "),
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.aux_network_size)
-                    .setSingleChoiceItems(labels.toTypedArray(), sizeIndex) { dialog, which ->
-                        settings.auxNetworkSize = which
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxNetworkPort",
-            nameResId = R.string.aux_network_port,
-            value = settings.auxNetworkPort.toString(),
-            onClick = { _ ->
-                showNumericInputDialog(getString(R.string.aux_network_port), null, settings.auxNetworkPort) {
-                    settings.auxNetworkPort = NetworkStreamPolicy.portOrDefault(it)
-                    settings.commit()
-                    updateSettingsList()
-                }
-            }
-        ))
-        val host = NetworkAddresses.stationIpv4(requireContext()) ?: "127.0.0.1"
-        items.add(SettingItem.InfoBanner(
-            stableId = "auxNetworkHint",
-            textResId = R.string.aux_network_hint,
-            text = getString(
-                R.string.aux_network_hint,
-                NetworkStreamPolicy.ffplayCommand(host, settings.auxNetworkPort),
-                settings.auxNetworkPort,
-            ),
-        ))
-    }
-
-    /** The RTP push's stream size, destination and port, and the SDP a receiver opens. */
-    private fun addAuxRtpPushRows(items: MutableList<SettingItem>) {
-        val sizes = SecondScreenOutputPolicy.NETWORK_SIZES
-        val labels = sizes.map { "${it.widthPx}x${it.heightPx}" }
-        val sizeIndex = settings.auxNetworkSize.coerceIn(0, sizes.size - 1)
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxNetworkSize",
-            nameResId = R.string.aux_network_size,
-            value = labels[sizeIndex],
-            searchKeywords = labels.joinToString(" "),
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.aux_network_size)
-                    .setSingleChoiceItems(labels.toTypedArray(), sizeIndex) { dialog, which ->
-                        if (which != settings.auxNetworkSize) settings.auxNetworkSize = which
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxRtpDestination",
-            nameResId = R.string.aux_rtp_destination,
-            value = settings.auxRtpDestination.ifEmpty { getString(R.string.aux_rtp_destination_unset) },
-            onClick = { _ ->
-                showTextInputDialog(requireContext(), R.string.aux_rtp_destination, settings.auxRtpDestination) { typed ->
-                    val text = typed.trim()
-                    if (text.isNotEmpty() && RtpDestinationPolicy.parse(text) == null) {
-                        ToastUtils.showToast(requireContext(), R.string.aux_rtp_destination_invalid, Toast.LENGTH_LONG, force = true)
-                    } else {
-                        if (text != settings.auxRtpDestination) settings.auxRtpDestination = text
-                        settings.commit()
-                        updateSettingsList()
-                    }
-                }
-            }
-        ))
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxRtpPort",
-            nameResId = R.string.aux_rtp_port,
-            value = settings.auxRtpPort.toString(),
-            onClick = { _ ->
-                showNumericInputDialog(getString(R.string.aux_rtp_port), null, settings.auxRtpPort) {
-                    val port = RtpDestinationPolicy.portOrDefault(it)
-                    if (port != settings.auxRtpPort) settings.auxRtpPort = port
-                    settings.commit()
-                    updateSettingsList()
-                }
-            }
-        ))
-        val refreshes = RtpRefreshPolicy.INTERVALS_S
-        val refreshLabels = refreshes.map {
-            if (it == 0) getString(R.string.aux_display_off) else getString(R.string.aux_rtp_refresh_seconds, it)
-        }
-        val refreshIndex = refreshes.indexOf(settings.auxRtpRefreshSeconds).coerceAtLeast(0)
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxRtpRefresh",
-            nameResId = R.string.aux_rtp_refresh,
-            value = refreshLabels[refreshIndex],
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.aux_rtp_refresh)
-                    .setSingleChoiceItems(refreshLabels.toTypedArray(), refreshIndex) { dialog, which ->
-                        if (refreshes[which] != settings.auxRtpRefreshSeconds) settings.auxRtpRefreshSeconds = refreshes[which]
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-        items.add(SettingItem.InfoBanner(
-            stableId = "auxRtpHint",
-            textResId = R.string.aux_rtp_hint,
-            text = getString(
-                R.string.aux_rtp_hint,
-                RtpDestinationPolicy.sdp(settings.auxRtpDestination, settings.auxRtpPort, settings.auxRtpStreamParameters),
-                RtpDestinationPolicy.FFPLAY_COMMAND,
-            ),
-        ))
-        if (settings.auxRtpStreamParameters.isEmpty()) {
-            items.add(SettingItem.InfoBanner(
-                stableId = "auxRtpHintStream",
-                textResId = R.string.aux_rtp_hint_stream,
-                text = getString(R.string.aux_rtp_hint_stream),
-            ))
-        }
-    }
-
-    /** The MacroSilicon adapter's mode and pixel format, and whether one is plugged in. */
-    private fun addAuxMs912xRows(items: MutableList<SettingItem>) {
-        val modes = Ms912xMode.values()
-        val modeLabels = modes.map { "${it.width}x${it.height}" }
-        val modeIndex = modes.indexOf(settings.ms912xMode)
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxMs912xMode",
-            nameResId = R.string.aux_ms912x_mode,
-            value = modeLabels[modeIndex],
-            searchKeywords = modeLabels.joinToString(" "),
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.aux_ms912x_mode)
-                    .setSingleChoiceItems(modeLabels.toTypedArray(), modeIndex) { dialog, which ->
-                        settings.ms912xMode = modes[which]
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-        val formats = Ms912xWireFormat.values()
-        val formatLabels = formats.map {
-            getString(if (it == Ms912xWireFormat.YUV422) R.string.aux_ms912x_format_yuv else R.string.aux_ms912x_format_rgb)
-        }
-        val effective = Ms912xModes.effectiveFormat(settings.ms912xMode, settings.ms912xFormat)
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxMs912xFormat",
-            nameResId = R.string.aux_ms912x_format,
-            value = formatLabels[formats.indexOf(effective)],
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.aux_ms912x_format)
-                    .setSingleChoiceItems(formatLabels.toTypedArray(), formats.indexOf(effective)) { dialog, which ->
-                        settings.ms912xFormat = formats[which]
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-        val usb = requireContext().getSystemService(Context.USB_SERVICE) as? UsbManager
-        val attached = usb?.deviceList?.values?.any {
-            UsbDisplayAdapterPolicy.kindOf(it.vendorId, it.productId, emptyList()) != null
-        } == true
-        items.add(SettingItem.InfoBanner(
-            stableId = "auxMs912xHint",
-            textResId = if (attached) R.string.aux_ms912x_hint_attached else R.string.aux_ms912x_hint_missing,
-        ))
-    }
-
-    /** Whether an Open Headunit USB display is attached, what it last said, and a way to ask it. */
-    private fun addAuxUsbDisplayRows(items: MutableList<SettingItem>) {
-        val usb = requireContext().getSystemService(Context.USB_SERVICE) as? UsbManager
-        val found = usb?.let { UsbDisplayProbe.find(it) }
-        val last = settings.usbDisplayLastTarget
-        val status = when {
-            found == null -> getString(R.string.aux_usb_display_missing)
-            last == null -> getString(R.string.aux_usb_display_unread)
-            else -> getString(R.string.aux_usb_display_ready, last.widthPx, last.heightPx, last.densityDpi)
-        }
-        items.add(SettingItem.InfoBanner(stableId = "auxUsbDisplayStatus", textResId = R.string.aux_usb_display_unread, text = status))
-        if (found == null || usb == null) return
-        items.add(SettingItem.ActionButton(
-            stableId = "auxUsbDisplayCheck",
-            textResId = R.string.aux_usb_display_check,
-            onClick = {
-                if (!usb.hasPermission(found.device)) {
-                    usb.requestPermission(found.device, UsbReceiver.createPermissionPendingIntent(requireContext(), UsbPermissionAsks.newToken()))
-                } else {
-                    SecondScreenHub.usbDisplayTarget(requireContext(), settings)
-                    updateSettingsList()
-                }
-            }
-        ))
-    }
-
-    /** The second-screen outputs this build offers, in the order the picker lists them. */
-    private val offeredAuxOutputs = listOf(
-        SecondScreenOutputPolicy.Output.ANDROID_DISPLAY,
-        SecondScreenOutputPolicy.Output.NETWORK,
-        SecondScreenOutputPolicy.Output.RTP_PUSH,
-        SecondScreenOutputPolicy.Output.MS912X,
-        SecondScreenOutputPolicy.Output.USB_DISPLAY,
-    )
-
-    private fun auxOutputLabel(output: SecondScreenOutputPolicy.Output): String = getString(when (output) {
-        SecondScreenOutputPolicy.Output.ANDROID_DISPLAY -> R.string.aux_output_android_display
-        SecondScreenOutputPolicy.Output.NETWORK -> R.string.aux_output_network
-        SecondScreenOutputPolicy.Output.MS912X -> R.string.aux_output_ms912x
-        SecondScreenOutputPolicy.Output.USB_DISPLAY -> R.string.aux_output_usb_display
-        SecondScreenOutputPolicy.Output.RTP_PUSH -> R.string.aux_output_rtp_push
-    })
-
-    /** A second Android Auto picture for a cluster or passenger screen, and the chosen output's rows. */
-    private fun addAuxDisplayRows(items: MutableList<SettingItem>) {
-        val outputLabels = listOf(getString(R.string.aux_display_off)) + offeredAuxOutputs.map { auxOutputLabel(it) }
-        val outputIndex = if (!settings.auxDisplayEnabled) 0
-        else offeredAuxOutputs.indexOf(settings.auxOutput).let { if (it >= 0) it + 1 else 0 }
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxDisplay",
-            nameResId = R.string.aux_display,
-            value = outputLabels[outputIndex],
-            searchKeywords = outputLabels.joinToString(" "),
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_aux_display)
-                    .setSingleChoiceItems(outputLabels.toTypedArray(), outputIndex) { dialog, which ->
-                        settings.auxDisplayEnabled = which > 0
-                        offeredAuxOutputs.getOrNull(which - 1)?.let { settings.auxOutput = it }
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-        items.add(SettingItem.InfoBanner(stableId = "auxDisplayHint", textResId = R.string.aux_display_hint))
-
-        if (!settings.auxDisplayEnabled) return
-        when (settings.auxOutput) {
-            SecondScreenOutputPolicy.Output.ANDROID_DISPLAY -> addAuxAndroidDisplayRow(items)
-            SecondScreenOutputPolicy.Output.NETWORK -> addAuxNetworkRows(items)
-            SecondScreenOutputPolicy.Output.RTP_PUSH -> addAuxRtpPushRows(items)
-            SecondScreenOutputPolicy.Output.MS912X -> addAuxMs912xRows(items)
-            SecondScreenOutputPolicy.Output.USB_DISPLAY -> addAuxUsbDisplayRows(items)
-            else -> {}
-        }
-
-        val roleLabels = arrayOf(
-            getString(R.string.aux_display_role_auxiliary),
-            getString(R.string.aux_display_role_cluster),
-        )
-        val roleIndex = if (settings.auxDisplayRole == AuxDisplayProfilePolicy.Role.CLUSTER) 1 else 0
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxDisplayRole",
-            nameResId = R.string.aux_display_role,
-            value = roleLabels[roleIndex],
-            searchKeywords = roleLabels.joinToString(" "),
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_aux_display_role)
-                    .setSingleChoiceItems(roleLabels, roleIndex) { dialog, which ->
-                        settings.auxDisplayRole =
-                            if (which == 1) AuxDisplayProfilePolicy.Role.CLUSTER else AuxDisplayProfilePolicy.Role.AUXILIARY
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-
-        // A cluster shows what the phone chooses, so there is nothing to pick.
-        if (!AuxDisplayProfilePolicy.announcesContent(settings.auxDisplayRole)) return
-
-        val contentLabels = arrayOf(
-            getString(R.string.aux_display_content_map),
-            getString(R.string.aux_display_content_turn_card),
-        )
-        val contentIndex =
-            if (AuxDisplayProfilePolicy.contentKeycodeOrDefault(settings.auxDisplayContent) ==
-                AuxDisplayProfilePolicy.KEYCODE_TURN_CARD
-            ) 1 else 0
-        items.add(SettingItem.SettingEntry(
-            stableId = "auxDisplayContent",
-            nameResId = R.string.aux_display_content,
-            value = contentLabels[contentIndex],
-            searchKeywords = contentLabels.joinToString(" "),
-            onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_aux_display_content)
-                    .setSingleChoiceItems(contentLabels, contentIndex) { dialog, which ->
-                        settings.auxDisplayContent = if (which == 1) {
-                            AuxDisplayProfilePolicy.KEYCODE_TURN_CARD
-                        } else {
-                            AuxDisplayProfilePolicy.KEYCODE_NAVIGATION
-                        }
-                        settings.commit()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-    }
-
-    /**
      * The band to ask for when this app creates the WiFi Direct group, plus what that choice costs.
      *
      * The mirror of [addHotspotBandSetting] on the other transport, and it replaces two toggles
@@ -5444,96 +5034,6 @@ class SettingsFragment : Fragment() {
         } else {
             baseSummary
         }
-    }
-
-    private fun showNumericInputDialog(
-        title: String,
-        message: String?,
-        initialValue: Int,
-        onConfirm: (Int) -> Unit
-    ) {
-        val context = requireContext()
-        val editView = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            setText(if (initialValue == 0 && title.contains("DPI", true)) "" else initialValue.toString())
-        }
-
-        // Use a container to add padding around the EditText
-        val container = android.widget.FrameLayout(context)
-        val params = android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-        )
-        val margin = (24 * context.resources.displayMetrics.density).toInt()
-        params.setMargins(margin, 8, margin, 8)
-        container.addView(editView, params)
-
-        val dialog = MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
-            .setTitle(title)
-            .apply { if (message != null) setMessage(message) }
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                val newVal = (editView.text.toString().toIntOrNull() ?: 0).coerceAtLeast(0)
-                onConfirm(newVal)
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener {
-                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
-                        as? android.view.inputmethod.InputMethodManager
-                imm?.hideSoftInputFromWindow(editView.windowToken, 0)
-            }
-            .create()
-
-        dialog.window?.clearFlags(
-            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
-        )
-        dialog.show()
-        editView.requestFocus()
-    }
-
-    private fun showTextInputDialog(
-        context: Context,
-        titleResId: Int,
-        initialValue: String,
-        onConfirm: (String) -> Unit
-    ) {
-        val editView = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_TEXT
-            setText(initialValue)
-        }
-
-        val container = android.widget.FrameLayout(context)
-        val params = android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-        )
-        val margin = (24 * context.resources.displayMetrics.density).toInt()
-        params.setMargins(margin, 8, margin, 8)
-        container.addView(editView, params)
-
-        val dialog = MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
-            .setTitle(titleResId)
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                onConfirm(editView.text.toString())
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener {
-                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
-                        as? android.view.inputmethod.InputMethodManager
-                imm?.hideSoftInputFromWindow(editView.windowToken, 0)
-            }
-            .create()
-
-        dialog.window?.clearFlags(
-            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
-        )
-        dialog.show()
-        editView.requestFocus()
     }
 
     private fun handleNativeAaSelection() {

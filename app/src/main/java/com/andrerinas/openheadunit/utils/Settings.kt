@@ -494,6 +494,20 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("dpi-floor-override", false)
         set(value) { prefs.edit().putBoolean("dpi-floor-override", value).apply() }
 
+    /** One DPI value per panel, see [PanelDensityPolicy]; empty until a Save on a unit with two panels. */
+    var dpiPanelValues: String
+        get() = prefs.getString("dpi-panel-values", "") ?: ""
+        set(value) { prefs.edit().putString("dpi-panel-values", value).apply() }
+
+    /** The first panel key read; with [dpiPanelsActive] it is the latch, kept out of backups. */
+    var dpiPanelFirstKey: String?
+        get() = prefs.getString("dpi-panel-first", null)
+        set(value) { prefs.edit().putString("dpi-panel-first", value).apply() }
+
+    var dpiPanelsActive: Boolean
+        get() = prefs.getBoolean("dpi-panels-active", false)
+        set(value) { prefs.edit().putBoolean("dpi-panels-active", value).apply() }
+
     /** The wizard's screen size, a [SystemOptimizer.DisplaySizePreset] name; null until picked. */
     var displaySizePreset: String?
         get() = prefs.getString("display-size-preset", null)

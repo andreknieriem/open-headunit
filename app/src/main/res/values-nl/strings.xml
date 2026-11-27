@@ -1143,6 +1143,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI voor dit scherm (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Pixelverhouding</string>
     <string name="pixel_aspect_ratio_help">Wijzig dit alleen als cirkels op dit scherm als ovalen worden weergegeven. Dat gebeurt als de pixels van het paneel niet vierkant zijn. 10000 betekent vierkante pixels.</string>

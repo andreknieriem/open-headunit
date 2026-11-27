@@ -110,7 +110,7 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
                         geometry.width - phoneWidthMargin,
                         geometry.height - phoneHeightMargin,
                         geometry.pixelAspectRatioE4
-                    ))
+                    ) + (geometry.panelKey?.let { " for panel $it" } ?: ""))
                     AppLog.i("[ServiceDiscovery] Layout is: " + com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.describeLayout(
                         densityDecision,
                         geometry.width - phoneWidthMargin,

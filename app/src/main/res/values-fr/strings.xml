@@ -200,6 +200,7 @@
     <string name="dpi_row_clamped_format">%1$d, envoyé comme %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto exige une zone d\'au moins 748x450 dp. Les %1$d DPI sont donc envoyés comme %2$d.</string>
     <string name="dpi_floor_override_note">Les %1$d DPI sont envoyés tels que choisis. Au-delà de %2$d DPI, la zone est plus petite que les 748x450 dp requis par Android Auto, et l\'affichage peut être réduit.</string>
+    <string name="dpi_for_this_screen">DPI de cet écran (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
 

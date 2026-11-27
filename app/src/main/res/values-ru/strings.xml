@@ -1142,6 +1142,7 @@ Open Headunit предоставляется «как есть» без каки
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI для этого экрана (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Соотношение сторон пикселя</string>
     <string name="pixel_aspect_ratio_help">Измените это только в том случае, если круги на этом экране выглядят как овалы. Так бывает, когда пиксели панели не квадратные. Значение 10000 означает квадратные пиксели.</string>

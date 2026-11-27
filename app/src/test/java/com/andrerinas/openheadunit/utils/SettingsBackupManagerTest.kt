@@ -283,4 +283,26 @@ class SettingsBackupManagerTest {
         assertTrue(SettingsBackupManager.requiresProjectionRestart(setOf("dpi-auto-layout")))
         assertEquals(1, JSONObject(json).getJSONObject("settings").length())
     }
+
+    @Test fun `export carries the panel map and leaves the latch out`() {
+        val panelPrefs = mapOf<String, Any?>(
+            "dpi-panel-values" to "2376x968=175",
+            "dpi-panel-first" to "2376x968",
+            "dpi-panels-active" to true
+        )
+        val settings = JSONObject(SettingsBackupManager.exportToJson(panelPrefs, "1", 1)).getJSONObject("settings")
+        assertEquals("2376x968=175", settings.getString("dpi-panel-values"))
+        assertFalse(settings.has("dpi-panel-first"))
+        assertFalse(settings.has("dpi-panels-active"))
+    }
+
+    @Test fun `import skips the latch keys`() {
+        val json = """{"format":"${SettingsBackupManager.FORMAT}","settings":{"dpi-panel-values":"2376x968=175","dpi-panel-first":"1x1","dpi-panels-active":true}}"""
+        val data = SettingsBackupManager.parseImportJson(json)
+        assertEquals(setOf("dpi-panel-values"), data.values.keys)
+    }
+
+    @Test fun `a changed panel map needs a projection restart`() {
+        assertTrue(SettingsBackupManager.requiresProjectionRestart(setOf("dpi-panel-values")))
+    }
 }

@@ -1142,6 +1142,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">이 화면의 DPI(%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">픽셀 종횡비</string>
     <string name="pixel_aspect_ratio_help">이 화면에서 원이 타원으로 보일 때만 변경하세요. 패널의 픽셀이 정사각형이 아닐 때 발생합니다. 10000은 정사각형 픽셀을 뜻합니다.</string>

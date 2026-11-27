@@ -1146,6 +1146,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI для цього екрана (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Співвідношення сторін пікселя</string>
     <string name="pixel_aspect_ratio_help">Змінюйте це, лише якщо кола на цьому екрані виглядають як овали. Так буває, коли пікселі панелі не квадратні. Значення 10000 означає квадратні пікселі.</string>

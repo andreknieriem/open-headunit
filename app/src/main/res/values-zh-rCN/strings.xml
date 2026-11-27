@@ -1141,6 +1141,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">此屏幕的 DPI（%1$s）</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">像素宽高比</string>
     <string name="pixel_aspect_ratio_help">仅当此屏幕上的圆形看起来像椭圆时才更改。这是因为面板像素不是正方形。10000 表示正方形像素。</string>

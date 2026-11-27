@@ -198,6 +198,7 @@
     <string name="dpi_row_clamped_format">%1$d, %2$d के रूप में भेजा गया (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto को कम से कम 748x450 dp का कैनवास चाहिए, इसलिए %1$d DPI को %2$d के रूप में भेजा जाता है।</string>
     <string name="dpi_floor_override_note">%1$d DPI को चुने गए मान के अनुसार भेजा जाता है। %2$d DPI से ऊपर कैनवास उस 748x450 dp से छोटा हो जाता है जो Android Auto को चाहिए, और सीमित लेआउट दिख सकता है।</string>
+    <string name="dpi_for_this_screen">इस स्क्रीन के लिए DPI (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
 

@@ -1651,6 +1651,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "dpiPixelDensity",
             nameResId = R.string.dpi,
+            nameOverride = panelRowKey()?.let { getString(R.string.dpi_for_this_screen, it) },
             helpResId = R.string.dpi_screen_help,
             value = dpiRowValue(),
             onClick = {
@@ -3341,7 +3342,14 @@ class SettingsFragment : Fragment() {
 
     /** The row shows what Android Auto receives and its dp canvas, after the margins. */
     private fun dpiRowValue(): String {
-        val stored = pendingDpi ?: 0
+        val global = com.andrerinas.openheadunit.utils.PanelDensityPolicy.Entry(
+            pendingDpi ?: 0, settings.dpiFloorOverride, settings.dpiAutoLayout
+        )
+        val entry = com.andrerinas.openheadunit.utils.PanelDensityPolicy.resolve(
+            com.andrerinas.openheadunit.utils.PanelDensityPolicy.parse(settings.dpiPanelValues),
+            panelRowKey(), settings.dpiPanelsActive, global
+        )
+        val stored = entry.dpi
         val chosen = Settings.Resolution.fromId(pendingResolution ?: settings.resolutionId)
         val (pw, ph) = realPanelResolution()
         val res = if (chosen == null || chosen == Settings.Resolution.AUTO) {
@@ -3360,7 +3368,7 @@ class SettingsFragment : Fragment() {
             fit, ow, oh, res.width, res.height, pendingPixelAspectRatioE4 ?: settings.pixelAspectRatioE4
         )
         val d = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.decide(
-            stored, preset, vw, vh, par, settings.dpiFloorOverride, ow, oh, settings.dpiAutoLayoutPane
+            stored, preset, vw, vh, par, entry.floorOverride, ow, oh, entry.pane
         )
         val (sw, sh) = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.phoneCanvas(vw, vh, par)
         val cw = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.canvasDp(sw, d.announced)
@@ -3376,6 +3384,10 @@ class SettingsFragment : Fragment() {
         ).let { com.andrerinas.openheadunit.view.DpiLayoutPickerView.describe(requireContext(), it) }
         return if (name == null) value else getString(R.string.dpi_row_named_format, value, name)
     }
+
+    /** The panel key when this unit has read two panels, else null: the row then keeps its plain label. */
+    private fun panelRowKey(): String? =
+        if (settings.dpiPanelsActive) com.andrerinas.openheadunit.utils.PanelKeyReader.read(requireActivity(), settings) else null
 
     private fun realPanelResolution(): Pair<Int, Int> {
         val m = android.util.DisplayMetrics()

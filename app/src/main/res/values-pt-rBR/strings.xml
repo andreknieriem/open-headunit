@@ -1145,6 +1145,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI desta tela (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Proporção de pixel</string>
     <string name="pixel_aspect_ratio_help">Altere isto apenas se os círculos parecerem ovais nesta tela. Isso acontece quando os pixels do painel não são quadrados. 10000 significa pixels quadrados.</string>

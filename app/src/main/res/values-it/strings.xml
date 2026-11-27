@@ -1147,6 +1147,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI per questo schermo (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Proporzioni dei pixel</string>
     <string name="pixel_aspect_ratio_help">Cambia questa impostazione solo se i cerchi appaiono come ovali su questo schermo. Succede quando i pixel del pannello non sono quadrati. 10000 indica pixel quadrati.</string>

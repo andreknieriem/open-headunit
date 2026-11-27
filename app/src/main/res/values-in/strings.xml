@@ -198,6 +198,7 @@
     <string name="dpi_row_clamped_format">%1$d, dikirim sebagai %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto membutuhkan kanvas minimal 748x450 dp, sehingga %1$d DPI dikirim sebagai %2$d.</string>
     <string name="dpi_floor_override_note">%1$d DPI dikirim sesuai pilihan. Di atas %2$d DPI, kanvas menjadi lebih kecil dari 748x450 dp yang dibutuhkan Android Auto, dan tata letak yang ditampilkan bisa lebih sederhana.</string>
+    <string name="dpi_for_this_screen">DPI untuk layar ini (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
 

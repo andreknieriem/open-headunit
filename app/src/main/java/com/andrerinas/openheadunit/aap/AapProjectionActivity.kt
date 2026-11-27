@@ -1144,6 +1144,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // ensures the window manager has correctly resolved the display's physical orientation
         // before we lock it.
         applyOrientationSettings()
+        refreshPanelKey()
 
         // In onCreate and not onStart: the whole point is to hear a call while the activity is
         // stopped behind the phone's call screen.
@@ -1267,6 +1268,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                             // If not, onSurfaceChanged() will call startReading() when the surface
                             // becomes available.
                             if (isSurfaceSet) {
+                                refreshPanelKey()
                                 commManager.startReading()
                             }
                         }
@@ -2638,6 +2640,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             is CommManager.ConnectionState.HandshakeComplete -> {
                 // Handshake already done before surface was ready — start reading now.
+                refreshPanelKey()
                 lifecycleScope.launch { commManager.startReading() }
             }
             is CommManager.ConnectionState.TransportStarted -> {
@@ -3131,6 +3134,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             honorKillOnDisconnect = false,
             reason = CommManager.DisconnectReason.SETTINGS_RESTART,
         )
+    }
+
+    /** Read on the main thread before a connect, so announceGeometry resolves the DPI of this panel. */
+    private fun refreshPanelKey() {
+        HeadUnitScreenConfig.setPanelKey(com.andrerinas.openheadunit.utils.PanelKeyReader.read(this, settings))
     }
 
     private fun applyOrientationSettings() {

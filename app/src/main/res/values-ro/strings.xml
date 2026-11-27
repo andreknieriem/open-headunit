@@ -1141,6 +1141,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI pentru acest ecran (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Raport de aspect al pixelilor</string>
     <string name="pixel_aspect_ratio_help">Modifică această setare doar dacă cercurile arată ca niște ovale pe acest ecran. Asta se întâmplă când pixelii panoului nu sunt pătrați. 10000 înseamnă pixeli pătrați.</string>

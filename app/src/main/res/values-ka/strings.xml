@@ -1066,6 +1066,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI ამ ეკრანისთვის (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">პიქსელის თანაფარდობა</string>
     <string name="pixel_aspect_ratio_help">შეცვალეთ მხოლოდ მაშინ, თუ ამ ეკრანზე წრეები ოვალებივით ჩანს. ეს ხდება, როცა პანელის პიქსელები კვადრატული არ არის. 10000 კვადრატულ პიქსელებს ნიშნავს.</string>

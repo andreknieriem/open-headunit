@@ -1228,6 +1228,7 @@
 <string name="onb_ready_extras_title">Bevor du fertig bist, kannst du noch einrichten:</string>
     <string name="onb_extra_loading_desc">Ein eigenes Bild, das beim Verbinden mit dem Auto angezeigt wird.</string>
     <string name="onb_vehicle_help_sideload">Wenn du eine echte Automarke wählst, erscheint ihr Logo auch auf der Beenden-Schaltfläche von Android Auto. Android Auto blendet dann jedoch Apps aus, die du nicht aus dem Play Store installiert hast. Behalte „Google“ oder „Open Headunit“, wenn du solche Apps nutzt.</string>
+    <string name="dpi_for_this_screen">DPI für dieses Display (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
 
     <string-array name="vehicle_brands">

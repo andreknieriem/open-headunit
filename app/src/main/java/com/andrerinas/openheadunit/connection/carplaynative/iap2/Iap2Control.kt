@@ -83,7 +83,7 @@ class Iap2Control(
         Iap2Messages.IDENTIFICATION_ACCEPTED -> {
             stage = Stage.Authenticating
             deadlineMs = nowMs + AUTHENTICATE_TIMEOUT_MS
-            listOf(Action.Log("CarPlayNative: iAP2 identification accepted"))
+            listOf(Action.Log(IDENTIFICATION_ACCEPTED_LINE))
         }
         Iap2Messages.IDENTIFICATION_REJECTED -> rejected(frame)
         else -> unexpected(frame, "identification")
@@ -186,6 +186,7 @@ class Iap2Control(
     }
 
     companion object {
+        const val IDENTIFICATION_ACCEPTED_LINE = "CarPlayNative: iAP2 identification accepted"
         const val IDENTIFY_TIMEOUT_MS = 10_000L
         const val AUTHENTICATE_TIMEOUT_MS = 30_000L
         const val MAX_AVAILABILITY_REPLIES = 3

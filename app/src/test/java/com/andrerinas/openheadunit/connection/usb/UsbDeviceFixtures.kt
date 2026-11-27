@@ -93,4 +93,20 @@ internal object UsbDeviceFixtures {
             Interface(0x0A, 0x00, 0x01),
         ),
     )
+
+    /** The stock CCPA box as the owner's spec describes it: class `EF`, one `FF/F0/00` bulk pair, PID 1520. */
+    val boxStock1520 = Device(
+        vendorId = 0x1314, productId = 0x1520, deviceClass = 0xEF,
+        deviceSubclass = 0x02, deviceProtocol = 0x01,
+        interfaces = listOf(Interface(0xFF, 0xF0, 0x00, hasBulkIn = true, hasBulkOut = true)),
+    )
+
+    /** The same shape on PID 1521, the stock default. */
+    val boxStock1521 = boxStock1520.copy(productId = 0x1521)
+
+    /** A bare `FF/FF/00` bulk pair on 1521: the shape that can pose as an Android Auto phone. */
+    val box1521Bare = Device(
+        vendorId = 0x1314, productId = 0x1521, deviceClass = 0x00,
+        interfaces = listOf(vendorClass(null)),
+    )
 }

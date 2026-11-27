@@ -810,6 +810,31 @@
     <string name="hotspot_qr_description">Wireless Helper 配置二维码</string>
     <string name="scan_with_wireless_helper">请使用手机上 Wireless Helper 的二维码扫描器扫描此二维码。</string>
     <string name="share_hotspot_qr_error">无法获取当前的 Wi-Fi 热点凭据。请确保热点已开启，且已启用位置信息。</string>
+    <string name="carplay_box_title">CarPlay 盒子(实验性)</string>
+    <string name="carplay_box_description">打开已插入的 CarPlay 盒子。请保持此应用开启。尚未在 iPhone 上测试。</string>
+    <string name="carplay_native_header">原生 CarPlay(实验性)</string>
+    <string name="carplay_native_title">通过 USB 使用原生 CarPlay</string>
+    <string name="carplay_native_description">实验性。需要 iOS 17 和你自己的 Apple 身份。会占用 VPN。</string>
+    <string name="carplay_native_unavailable_api">需要 Android 5.0 或更高版本</string>
+    <string name="carplay_native_unavailable_tunnel">此版本没有适用于 CarPlay 的 VPN 隧道</string>
+    <string name="carplay_native_unavailable_signer">请先导入你自己的 Apple 身份</string>
+    <string name="carplay_native_consent_denied">VPN 权限被拒绝。原生 CarPlay 保持关闭。</string>
+    <string name="carplay_native_tunnel_checking">正在检查 VPN 隧道...</string>
+    <string name="carplay_native_status">Apple 签名方</string>
+    <string name="carplay_native_checking">正在检查此设备...</string>
+    <string name="carplay_native_signer_chip">签名方:MFi 芯片</string>
+    <string name="carplay_native_signer_file">签名方:已导入的文件</string>
+    <string name="carplay_native_signer_link">签名方:LIVI Link</string>
+    <string name="carplay_native_signer_none">签名方:无</string>
+    <string name="carplay_native_chip_candidate">找到 MFi 路径(%1$s),芯片未知</string>
+    <string name="carplay_native_chip_none">无 MFi 路径(%1$s)</string>
+    <string name="carplay_native_import">导入证书和密钥</string>
+    <string name="carplay_native_import_hint">请选择一个包含您自己的证书和密钥的 PEM 文件,或同时选择证书文件和密钥文件。</string>
+    <string name="carplay_native_import_ok">已导入证书和密钥</string>
+    <string name="carplay_native_import_wrong_key">该密钥不属于此证书</string>
+    <string name="carplay_native_import_corrupt">文件已损坏或不完整</string>
+    <string name="carplay_native_import_wrong_format">文件需要包含 PKCS#7 证书和未加密的 PKCS#8 密钥(P-256 或 RSA),格式为 DER 或 PEM</string>
+    <string name="carplay_native_import_no_picker">此设备没有文件选择器</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">当前亮度：%d / 255</string>

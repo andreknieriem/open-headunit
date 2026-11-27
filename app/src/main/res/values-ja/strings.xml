@@ -819,6 +819,31 @@
     <string name="hotspot_qr_description">Wireless Helper 設定用QRコード</string>
     <string name="scan_with_wireless_helper">スマートフォンの Wireless Helper にあるQRスキャナーを使用して、このQRコードをスキャンしてください。</string>
     <string name="share_hotspot_qr_error">有効な Wi-Fi アクセス ポイントの認証情報を取得できませんでした。アクセス ポイントがオンで、位置情報が有効になっていることを確認してください。</string>
+    <string name="carplay_box_title">CarPlayボックス(試験運用)</string>
+    <string name="carplay_box_description">接続されているCarPlayボックスを開きます。このアプリを開いたままにしてください。iPhoneでは未検証です。</string>
+    <string name="carplay_native_header">ネイティブCarPlay(試験運用)</string>
+    <string name="carplay_native_title">USB経由のネイティブCarPlay</string>
+    <string name="carplay_native_description">試験運用。iOS 17と自分のApple識別情報が必要です。VPNの枠を使います。</string>
+    <string name="carplay_native_unavailable_api">Android 5.0以降が必要です</string>
+    <string name="carplay_native_unavailable_tunnel">このビルドにはCarPlay用のVPNトンネルがありません</string>
+    <string name="carplay_native_unavailable_signer">先に自分のApple識別情報をインポートしてください</string>
+    <string name="carplay_native_consent_denied">VPNの権限が拒否されました。ネイティブCarPlayはオフのままです。</string>
+    <string name="carplay_native_tunnel_checking">VPNトンネルを確認しています...</string>
+    <string name="carplay_native_status">Appleの署名者</string>
+    <string name="carplay_native_checking">このユニットを確認しています...</string>
+    <string name="carplay_native_signer_chip">署名者: MFiチップ</string>
+    <string name="carplay_native_signer_file">署名者: インポートしたファイル</string>
+    <string name="carplay_native_signer_link">署名者: LIVI Link</string>
+    <string name="carplay_native_signer_none">署名者: なし</string>
+    <string name="carplay_native_chip_candidate">MFiパスが見つかりました(%1$s)。チップは不明です</string>
+    <string name="carplay_native_chip_none">MFiパスなし(%1$s)</string>
+    <string name="carplay_native_import">証明書と鍵をインポート</string>
+    <string name="carplay_native_import_hint">ご自身の証明書と鍵を含むPEMファイルを1つ選択するか、証明書ファイルと鍵ファイルを一緒に選択してください。</string>
+    <string name="carplay_native_import_ok">証明書と鍵をインポートしました</string>
+    <string name="carplay_native_import_wrong_key">この鍵はこの証明書のものではありません</string>
+    <string name="carplay_native_import_corrupt">ファイルが破損しているか、途中で切れています</string>
+    <string name="carplay_native_import_wrong_format">PKCS#7証明書と、暗号化されていないPKCS#8鍵(P-256またはRSA)をDERまたはPEM形式で含むファイルが必要です</string>
+    <string name="carplay_native_import_no_picker">このユニットにはファイル選択機能がありません</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">現在の明るさ: %d / 255</string>

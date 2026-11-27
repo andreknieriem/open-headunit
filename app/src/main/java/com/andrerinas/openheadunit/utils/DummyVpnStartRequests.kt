@@ -12,19 +12,31 @@ import java.util.UUID
 internal class DummyVpnStartRequests {
     private var current: String? = null
 
+    // The issued start whose command has not run yet: it holds the VPN slot as a live tun does.
+    @Volatile private var pending: String? = null
+
+    val isPending: Boolean get() = pending != null
+
     @Synchronized
-    fun issue(): String = UUID.randomUUID().toString().also { current = it }
+    fun issue(): String = UUID.randomUUID().toString().also { current = it; pending = it }
 
     @Synchronized
     fun runIfCurrent(token: String?, start: () -> Unit): Boolean {
         if (token == null || current != token) return false
-        start()
+        try { start() } finally { if (pending == token) pending = null }
         return true
+    }
+
+    /** The start command for [token] will not arrive. */
+    @Synchronized
+    fun abandon(token: String) {
+        if (pending == token) pending = null
     }
 
     @Synchronized
     fun stop(close: () -> Unit) {
         current = null
+        pending = null
         close()
     }
 }

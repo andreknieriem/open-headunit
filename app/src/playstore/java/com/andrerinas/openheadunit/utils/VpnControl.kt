@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.utils
 
 import android.content.Context
 import android.content.Intent
+import android.os.ParcelFileDescriptor
 import androidx.annotation.StringRes
 
 /**
@@ -30,6 +31,17 @@ object VpnControl {
     fun isSelfModeRunning(): Boolean = false
 
     fun isVpnAvailable(): Boolean = false
+
+    fun isCarPlayTunAvailable(): Boolean = false
+
+    fun startCarPlayTun(context: Context, onReady: (ParcelFileDescriptor) -> Unit, onFailed: (String) -> Unit) =
+        onFailed("no CarPlay tunnel in the Play Store build")
+
+    fun stopCarPlayTun(context: Context) = Unit
+
+    fun isCarPlayTunRunning(): Boolean = false
+
+    fun isDummyVpnUp(): Boolean = false
 
     /**
      * No copy, because the strings live in the github flavor's resources and this build has none.

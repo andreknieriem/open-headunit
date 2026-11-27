@@ -3,8 +3,11 @@ package com.andrerinas.openheadunit.utils
 import android.content.Context
 import android.content.Intent
 import android.net.VpnService
+import android.os.Build
+import android.os.ParcelFileDescriptor
 import androidx.annotation.StringRes
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.aap.CarPlayTunService
 import com.andrerinas.openheadunit.aap.DummyVpnService
 
 /**
@@ -24,6 +27,10 @@ object VpnControl {
      * is that `activeNetwork` is non-null *for our own process*.
      */
     fun startVpn(context: Context, excludeSelf: Boolean = false) {
+        if (isCarPlayTunRunning()) {
+            AppLog.i("VpnControl: CarPlay holds the VPN slot; not starting DummyVpnService")
+            return
+        }
         AppLog.i("VpnControl: Starting DummyVpnService (GitHub Build, excludeSelf=$excludeSelf)")
         val request = startRequests.issue()
         try {
@@ -38,6 +45,7 @@ object VpnControl {
             // exception it was rather than swallowing it, because the tun silently not coming up
             // looks identical to the VPN having no effect.
             AppLog.w("VpnControl: Failed to start VPN (${e.javaClass.simpleName}: ${e.message})")
+            startRequests.abandon(request)
         }
     }
 
@@ -78,6 +86,20 @@ object VpnControl {
     fun isSelfModeRunning(): Boolean = DummyVpnService.isSelfModeRunning()
 
     fun isVpnAvailable(): Boolean = true
+
+    /** The tunnel Builder calls are API 21. */
+    fun isCarPlayTunAvailable(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+
+    /** Brings up the CarPlay tunnel and hands over its descriptor on the main thread. The caller closes it. Ask [isPrepared] first. */
+    fun startCarPlayTun(context: Context, onReady: (ParcelFileDescriptor) -> Unit, onFailed: (String) -> Unit) =
+        CarPlayTunService.start(context, onReady, onFailed)
+
+    fun stopCarPlayTun(context: Context) = CarPlayTunService.stop(context)
+
+    fun isCarPlayTunRunning(): Boolean = CarPlayTunService.isRunning()
+
+    /** True while DummyVpnService holds any descriptor, Self Mode or session, or a start is pending. The one VPN slot is then taken. */
+    fun isDummyVpnUp(): Boolean = DummyVpnService.isUp() || startRequests.isPending
 
     /**
      * The settings toggle's copy, which lives in `app/src/github/res/values/strings.xml`.

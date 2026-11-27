@@ -4,6 +4,7 @@ import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Verdict
+import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxExclusionPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 
 /**
@@ -38,6 +39,9 @@ object ConnectionArbiter {
     private var usbOwed = false
     private var owedAfterSession = false
 
+    /** True while a CarPlay box session holds the bus; it is outside the holder and tier rules. */
+    private var boxSessionLive = false
+
     /** Bumped by every claim, so a scheduled give-back can tell it was overtaken. */
     private var generation = 0L
     private var quietPending = false
@@ -53,6 +57,10 @@ object ConnectionArbiter {
         val spent: Boolean
         var episodeToWatch = -1L
         synchronized(this) {
+            if (CarPlayBoxExclusionPolicy.refusesAa(boxSessionLive)) {
+                AppLog.i("ConnectionArbiter: $what ($tier) refused while a CarPlay box session is live")
+                return null
+            }
             // Recovery transfers an existing attempt to a physical open. Checking and
             // replacing the holder together prevents an old job from stealing a newer claim.
             if (expectedHolder != null && holder !== expectedHolder) return null
@@ -198,6 +206,11 @@ object ConnectionArbiter {
      * the attempt holding the arbiter ends, or when USB stays quiet between its tries.
      */
     fun refusesBackground(userRequested: Boolean): Boolean {
+        val boxLive = synchronized(this) { boxSessionLive.also { if (it) wirelessOwed = true } }
+        if (boxLive) {
+            AppLog.i("ConnectionArbiter: wireless bring-up refused while a CarPlay box session is live; it comes back when that ends")
+            return true
+        }
         val reason: String
         synchronized(this) {
             if (userRequested) return false
@@ -233,6 +246,10 @@ object ConnectionArbiter {
     fun yieldToUser(what: String) {
         val loser: Claim?
         synchronized(this) {
+            if (boxSessionLive) {
+                AppLog.i("ConnectionArbiter: $what ignored while a CarPlay box session is live")
+                return
+            }
             loser = holder?.takeIf { ConnectionPriorityPolicy.standsDownWireless(it.owner) }
             if (loser != null) holder = null
             generation++
@@ -244,6 +261,46 @@ object ConnectionArbiter {
             AppLog.i("ConnectionArbiter: $what preempts $loser")
             actions?.preempt(loser)
         }
+    }
+
+    /**
+     * Starts a CarPlay box session. False when one is live, an Android Auto session is live
+     * ([aaSessionLive]), or a fresh attempt holds the arbiter. Otherwise it stands wireless down.
+     */
+    fun beginBoxSession(what: String, aaSessionLive: Boolean): Boolean {
+        val now = clock()
+        synchronized(this) {
+            val refusal = CarPlayBoxExclusionPolicy.boxRefusal(
+                boxSessionLive, aaSessionLive, holder?.let { now - it.sinceMs },
+            )
+            if (refusal != null) {
+                AppLog.i("ConnectionArbiter: CarPlay box $what refused ($refusal)")
+                return false
+            }
+            boxSessionLive = true
+        }
+        // The flag is set first, so no wireless bring-up slips in while the stack stops.
+        val stood = actions?.standDownWireless(Claim(Tier.USB, Owner.USB, what, now)) == true
+        if (stood) synchronized(this) { wirelessOwed = true }
+        AppLog.i(
+            if (stood) "ConnectionArbiter: CarPlay box $what began; wireless stack stood down"
+            else "ConnectionArbiter: CarPlay box $what began; nothing to stand down"
+        )
+        return true
+    }
+
+    /** Ends the box session and gives back what it stood down, or what a refusal recorded. Idempotent. */
+    fun endBoxSession() {
+        val wireless: Boolean
+        synchronized(this) {
+            if (!boxSessionLive) return
+            boxSessionLive = false
+            wireless = wirelessOwed
+            wirelessOwed = false
+            if (!usbOwed) owedAfterSession = false
+        }
+        AppLog.i("ConnectionArbiter: CarPlay box session ended" + if (wireless) "; wireless comes back" else "")
+        if (wireless) actions?.giveBack(wireless = true, usb = false)
     }
 
     private fun endUsbEpisode() {
@@ -267,6 +324,7 @@ object ConnectionArbiter {
     /** Tests only. */
     internal fun reset() = synchronized(this) {
         holder = null
+        boxSessionLive = false
         generation = 0L
         quietPending = false
         clearDebts()

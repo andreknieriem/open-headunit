@@ -67,6 +67,12 @@ class DummyVpnService : VpnService() {
                 }
             }
 
+            // The CarPlay tunnel may have been asked for after this start was queued, and the VPN slot is single.
+            if (VpnControl.isCarPlayTunRunning()) {
+                AppLog.i("DummyVpnService: CarPlay holds the VPN slot; not establishing")
+                if (vpnInterface == null) stopSelf()
+                return
+            }
             val previous = vpnInterface
             // establish() replaces the active interface, so build the new one before closing the
             // old descriptor.
@@ -138,6 +144,12 @@ class DummyVpnService : VpnService() {
             return synchronized(live) {
                 live.vpnInterface != null && live.establishedExcludingSelf == false
             }
+        }
+
+        /** Whether the dummy VPN holds any descriptor, Self Mode or session, which is the one VPN slot. */
+        fun isUp(): Boolean {
+            val live = instance ?: return false
+            return synchronized(live) { live.vpnInterface != null }
         }
 
         /** Closes the tun on the running instance. False means there was nothing running. */

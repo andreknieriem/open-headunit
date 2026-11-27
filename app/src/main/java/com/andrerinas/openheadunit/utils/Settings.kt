@@ -878,6 +878,16 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("keep-dummy-vpn-during-session", false)
         set(value) { prefs.edit().putBoolean("keep-dummy-vpn-during-session", value).apply() }
 
+    /** Opens a plugged-in CarPlay box instead of ignoring it. Off until a real box and iPhone pass. */
+    var carPlayBoxEnabled: Boolean
+        get() = prefs.getBoolean("carplay-box-enabled", false)
+        set(value) { prefs.edit().putBoolean("carplay-box-enabled", value).apply() }
+
+    /** Opens an iPhone itself, with no box. Off until an iPhone round passes. */
+    var carPlayNativeEnabled: Boolean
+        get() = prefs.getBoolean("carplay-native-enabled", false)
+        set(value) { prefs.edit().putBoolean("carplay-native-enabled", value).apply() }
+
     /**
      * Whether this unit leaves its own WiFi network for the WiFi Direct bring-up, as a
      * [com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownMode] value. A user who

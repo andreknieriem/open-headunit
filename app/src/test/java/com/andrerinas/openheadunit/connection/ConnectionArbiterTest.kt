@@ -7,6 +7,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -185,5 +186,102 @@ class ConnectionArbiterTest {
         ConnectionArbiter.release(first, sessionFormed = false)
         advance(60_000)
         assertEquals(listOf(false to true), givenBack)
+    }
+
+    private fun beginBox(aaLive: Boolean = false) = ConnectionArbiter.beginBoxSession("box", aaLive)
+
+    @Test
+    fun `every Android Auto claim site is refused while a box session is live`() {
+        val old = must(ConnectionArbiter.claim(Tier.USB, Owner.USB, "old USB"))
+        advance(ConnectionPriorityPolicy.STALE_CLAIM_MS + 1)
+        assertTrue(beginBox())
+        val sites = listOf(
+            Triple(Tier.USB, Owner.USB, "UsbAttachedActivity"),
+            Triple(Tier.USER, Owner.USB, "UsbAttachedActivity user"),
+            Triple(Tier.USB, Owner.USB, "UsbLauncherManager.beginAttempt"),
+            Triple(Tier.USER, Owner.USB, "CommManager.claimUsb"),
+            Triple(Tier.USER, Owner.WIRELESS_STACK, "CommManager.claimSocket"),
+            Triple(Tier.USER, Owner.MANUAL, "CommManager.claimSocket manual"),
+            Triple(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "NativeAaHandshakeManager.handleHandshake"),
+        )
+        for ((tier, owner, what) in sites) assertNull(what, ConnectionArbiter.claim(tier, owner, what))
+        assertNull(ConnectionArbiter.claim(Tier.USB, Owner.USB, "CommManager.reconnectUsb", expectedHolder = old))
+        ConnectionArbiter.endBoxSession()
+        for ((tier, owner, what) in sites) {
+            val claim = must(ConnectionArbiter.claim(tier, owner, what))
+            ConnectionArbiter.release(claim, sessionFormed = false)
+        }
+    }
+
+    @Test
+    fun `a box session older than 90 seconds still refuses claims`() {
+        assertTrue(beginBox())
+        advance(120_000)
+        assertNull(ConnectionArbiter.claim(Tier.USER, Owner.USB, "USB"))
+    }
+
+    @Test
+    fun `a refused claim during a box session records no USB debt`() {
+        assertTrue(beginBox())
+        assertNull(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB"))
+        ConnectionArbiter.endBoxSession()
+        advance(60_000)
+        assertFalse(givenBack.any { it.second })
+    }
+
+    @Test
+    fun `a user request does not bring wireless back during a box session`() {
+        assertTrue(beginBox())
+        assertTrue(ConnectionArbiter.refusesBackground(userRequested = true))
+        assertTrue(ConnectionArbiter.refusesBackground(userRequested = false))
+        assertFalse(ConnectionArbiter.tryRearmWireless())
+    }
+
+    @Test
+    fun `yield to user ends nothing during a box session`() {
+        assertTrue(beginBox())
+        ConnectionArbiter.yieldToUser("WiFi button")
+        ConnectionArbiter.endBoxSession()
+        assertEquals(listOf(true to false), givenBack)
+    }
+
+    @Test
+    fun `a box session is refused beside a live Android Auto session`() {
+        assertFalse(beginBox(aaLive = true))
+        assertTrue(wirelessUp)
+    }
+
+    @Test
+    fun `a second box session while one is live is refused and stands nothing down`() {
+        assertTrue(beginBox())
+        wirelessUp = true
+        assertFalse(beginBox())
+        assertTrue(wirelessUp)
+    }
+
+    @Test
+    fun `a box session is refused beside a fresh holder and accepted beside a stale one`() {
+        val usb = must(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB"))
+        assertFalse(beginBox())
+        advance(ConnectionPriorityPolicy.STALE_CLAIM_MS)
+        assertTrue(beginBox())
+        ConnectionArbiter.release(usb, sessionFormed = false)
+    }
+
+    @Test
+    fun `ending a box session that stood wireless down gives it back once`() {
+        assertTrue(beginBox())
+        assertFalse(wirelessUp)
+        ConnectionArbiter.endBoxSession()
+        ConnectionArbiter.endBoxSession()
+        assertEquals(listOf(true to false), givenBack)
+    }
+
+    @Test
+    fun `ending a box session that stood nothing down gives nothing back`() {
+        wirelessUp = false
+        assertTrue(beginBox())
+        ConnectionArbiter.endBoxSession()
+        assertTrue(givenBack.isEmpty())
     }
 }

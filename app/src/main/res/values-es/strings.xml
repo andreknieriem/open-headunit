@@ -811,6 +811,31 @@
     <string name="hotspot_qr_description">Código QR de configuración de Wireless Helper</string>
     <string name="scan_with_wireless_helper">Escanea este código QR usando el escáner QR en Wireless Helper en tu teléfono.</string>
     <string name="share_hotspot_qr_error">No se pudieron obtener las credenciales del punto de acceso Wi-Fi activo. Comprueba que esté activado y que la ubicación esté habilitada.</string>
+    <string name="carplay_box_title">Caja CarPlay (experimental)</string>
+    <string name="carplay_box_description">Abre una caja CarPlay conectada. Mantén abierta esta app. No se probó con un iPhone.</string>
+    <string name="carplay_native_header">CarPlay nativo (experimental)</string>
+    <string name="carplay_native_title">CarPlay nativo por USB</string>
+    <string name="carplay_native_description">Experimental. iOS 17 y tu propia identidad de Apple. Ocupa el lugar de la VPN.</string>
+    <string name="carplay_native_unavailable_api">Requiere Android 5.0 o posterior</string>
+    <string name="carplay_native_unavailable_tunnel">Esta versión no incluye un túnel VPN para CarPlay</string>
+    <string name="carplay_native_unavailable_signer">Primero importa tu propia identidad de Apple</string>
+    <string name="carplay_native_consent_denied">Permiso de VPN denegado. CarPlay nativo sigue desactivado.</string>
+    <string name="carplay_native_tunnel_checking">Comprobando el túnel VPN...</string>
+    <string name="carplay_native_status">Firmante de Apple</string>
+    <string name="carplay_native_checking">Comprobando esta unidad...</string>
+    <string name="carplay_native_signer_chip">Firmante: chip MFi</string>
+    <string name="carplay_native_signer_file">Firmante: archivo importado</string>
+    <string name="carplay_native_signer_link">Firmante: LIVI Link</string>
+    <string name="carplay_native_signer_none">Firmante: ninguno</string>
+    <string name="carplay_native_chip_candidate">Ruta MFi encontrada (%1$s), chip desconocido</string>
+    <string name="carplay_native_chip_none">Sin ruta MFi (%1$s)</string>
+    <string name="carplay_native_import">Importar certificado y clave</string>
+    <string name="carplay_native_import_hint">Elige un archivo PEM con tu propio certificado y clave, o elige juntos el archivo del certificado y el de la clave.</string>
+    <string name="carplay_native_import_ok">Certificado y clave importados</string>
+    <string name="carplay_native_import_wrong_key">La clave no pertenece a este certificado</string>
+    <string name="carplay_native_import_corrupt">El archivo está dañado o cortado</string>
+    <string name="carplay_native_import_wrong_format">Los archivos necesitan un certificado PKCS#7 y una clave PKCS#8 sin cifrar, P-256 o RSA, en formato DER o PEM</string>
+    <string name="carplay_native_import_no_picker">Esta unidad no tiene selector de archivos</string>
 
     <!-- Brightness reading (night mode) -->
     <string name="current_brightness_reading">Brillo actual: %d / 255</string>

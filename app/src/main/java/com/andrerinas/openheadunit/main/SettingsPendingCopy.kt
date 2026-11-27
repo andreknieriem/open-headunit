@@ -61,6 +61,8 @@ class SettingsPendingCopy {
     var debugVideoLowLatency: Boolean? = null
     var allowExternalConfiguration: Boolean? = null
     var keepDummyVpnDuringSession: Boolean? = null
+    var carPlayBoxEnabled: Boolean? = null
+    var carPlayNativeEnabled: Boolean? = null
     var wifiConnectionMode: WifiLauncherMode? = null
     var helperConnectionStrategy: HelperStrategy? = null
     var autoEnableHotspot: Boolean? = null
@@ -163,6 +165,8 @@ class SettingsPendingCopy {
         debugVideoLowLatency = settings.debugVideoLowLatency
         allowExternalConfiguration = settings.allowExternalConfiguration
         keepDummyVpnDuringSession = settings.keepDummyVpnDuringSession
+        carPlayBoxEnabled = settings.carPlayBoxEnabled
+        carPlayNativeEnabled = settings.carPlayNativeEnabled
         wifiConnectionMode = settings.wifiConnectionMode
         helperConnectionStrategy = settings.helperConnectionStrategy
         autoEnableHotspot = settings.autoEnableHotspot
@@ -221,6 +225,11 @@ class SettingsPendingCopy {
         hideClock = settings.hideClock
     }
 
+    /** Writes the native CarPlay switch only when the user changed it, so the default stays live (ADR 0001). */
+    fun saveCarPlayNativeTo(settings: Settings) {
+        carPlayNativeEnabled?.let { if (it != settings.carPlayNativeEnabled) settings.carPlayNativeEnabled = it }
+    }
+
     fun differsFrom(settings: Settings): Boolean =
         useGps != settings.useGpsForNavigation ||
         showNavigationNotifications != settings.showNavigationNotifications ||
@@ -266,6 +275,8 @@ class SettingsPendingCopy {
         debugVideoLowLatency != settings.debugVideoLowLatency ||
         allowExternalConfiguration != settings.allowExternalConfiguration ||
         keepDummyVpnDuringSession != settings.keepDummyVpnDuringSession ||
+        carPlayBoxEnabled != settings.carPlayBoxEnabled ||
+        carPlayNativeEnabled != settings.carPlayNativeEnabled ||
         wifiConnectionMode != settings.wifiConnectionMode ||
         helperConnectionStrategy != settings.helperConnectionStrategy ||
         autoEnableHotspot != settings.autoEnableHotspot ||

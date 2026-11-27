@@ -2,6 +2,7 @@ package vpnconfig
 object Build { object VERSION { var SDK_INT = 16 }; object VERSION_CODES { const val LOLLIPOP = 21 } }
 object AppLog { fun i(s: String) {}; fun w(s: String) {}; fun e(s: String, e: Exception) {} }
 object PackageManager { class NameNotFoundException : Exception() }
+object VpnControl { var carPlayRunning = false; fun isCarPlayTunRunning() = carPlayRunning }
 class Descriptor { var closed = false; fun close() { closed = true } }
 class Service {
     var vpnInterface: Descriptor? = null
@@ -44,5 +45,11 @@ fun main() {
             check(denied.established == 0 && denied.vpnInterface == null && denied.stops == 1)
         }
     }
+    // The CarPlay tunnel took the slot after the start was queued: nothing is established.
+    VpnControl.carPlayRunning = true
+    val late = Service()
+    late.start(false)
+    check(late.established == 0 && late.vpnInterface == null && late.stops == 1)
+    VpnControl.carPlayRunning = false
     println("PASS VPN configuration: API 16-36, legacy Self, session exclusion, refusal and replacement")
 }

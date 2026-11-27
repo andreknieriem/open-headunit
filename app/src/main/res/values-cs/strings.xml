@@ -810,6 +810,31 @@
     <string name="hotspot_qr_description">Konfigurační QR kód Wireless Helper</string>
     <string name="scan_with_wireless_helper">Naskenujte tento QR kód pomocí QR skeneru v aplikaci Wireless Helper na vašem telefonu.</string>
     <string name="share_hotspot_qr_error">Nepodařilo se načíst přihlašovací údaje k aktivnímu hotspotu Wi-Fi. Ujistěte se, že je hotspot zapnutý a jsou povoleny služby určování polohy.</string>
+    <string name="carplay_box_title">Box CarPlay (experimentální)</string>
+    <string name="carplay_box_description">Otevře připojený box CarPlay. Nechte aplikaci otevřenou. Nevyzkoušeno s iPhonem.</string>
+    <string name="carplay_native_header">Nativní CarPlay (experimentální)</string>
+    <string name="carplay_native_title">Nativní CarPlay přes USB</string>
+    <string name="carplay_native_description">Experimentální. iOS 17 a vaše vlastní identita Apple. Zabírá místo pro VPN.</string>
+    <string name="carplay_native_unavailable_api">Vyžaduje Android 5.0 nebo novější</string>
+    <string name="carplay_native_unavailable_tunnel">Tato verze nemá tunel VPN pro CarPlay</string>
+    <string name="carplay_native_unavailable_signer">Nejprve naimportujte vlastní identitu Apple</string>
+    <string name="carplay_native_consent_denied">Oprávnění VPN bylo zamítnuto. Nativní CarPlay zůstává vypnutý.</string>
+    <string name="carplay_native_tunnel_checking">Kontrola tunelu VPN…</string>
+    <string name="carplay_native_status">Podpis Apple</string>
+    <string name="carplay_native_checking">Kontrola autorádia…</string>
+    <string name="carplay_native_signer_chip">Podpis: čip MFi</string>
+    <string name="carplay_native_signer_file">Podpis: importovaný soubor</string>
+    <string name="carplay_native_signer_link">Podpis: LIVI Link</string>
+    <string name="carplay_native_signer_none">Podpis: žádný</string>
+    <string name="carplay_native_chip_candidate">Nalezena cesta MFi (%1$s), čip neznámý</string>
+    <string name="carplay_native_chip_none">Žádná cesta MFi (%1$s)</string>
+    <string name="carplay_native_import">Importovat certifikát a klíč</string>
+    <string name="carplay_native_import_hint">Vyberte jeden soubor PEM s vlastním certifikátem a klíčem, nebo vyberte soubor certifikátu a soubor klíče společně.</string>
+    <string name="carplay_native_import_ok">Certifikát a klíč byly importovány</string>
+    <string name="carplay_native_import_wrong_key">Klíč k tomuto certifikátu nepatří</string>
+    <string name="carplay_native_import_corrupt">Soubor je poškozený nebo useknutý</string>
+    <string name="carplay_native_import_wrong_format">Soubory musí obsahovat certifikát PKCS#7 a nešifrovaný klíč PKCS#8 typu P-256 nebo RSA ve formátu DER nebo PEM</string>
+    <string name="carplay_native_import_no_picker">Autorádio nemá výběr souborů</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Aktuální jas: %d / 255</string>

@@ -54,4 +54,25 @@ class DummyVpnStartRequestsTest {
         assertFalse(starter.isAlive || stopper.isAlive)
         assertFalse(tunnel)
     }
+
+    @Test fun anIssuedStartHoldsTheSlotUntilItsCommandRunsOrIsAbandonedOrStopped() {
+        val requests = DummyVpnStartRequests()
+        assertFalse(requests.isPending)
+        val first = requests.issue()
+        assertTrue(requests.isPending)
+        assertTrue(requests.runIfCurrent(first) { assertTrue("pending while it establishes", requests.isPending) })
+        assertFalse(requests.isPending)
+        val lost = requests.issue()
+        requests.abandon(lost)
+        assertFalse(requests.isPending)
+        val stale = requests.issue()
+        val fresh = requests.issue()
+        assertFalse(requests.runIfCurrent(stale) {})
+        assertTrue("a stale command leaves the newer start pending", requests.isPending)
+        requests.abandon(stale)
+        assertTrue(requests.isPending)
+        requests.stop {}
+        assertFalse(requests.isPending)
+        assertFalse(requests.runIfCurrent(fresh) {})
+    }
 }

@@ -94,6 +94,13 @@ import com.andrerinas.openheadunit.utils.ProjectionSetupQrDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.activity.result.contract.ActivityResultContracts
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayIdentityFile
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayIdentityImport
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeAvailability
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeWiring
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlaySignerPolicy
+import com.andrerinas.openheadunit.connection.carplaynative.MfiChipLocationPolicy
+import com.andrerinas.openheadunit.connection.carplaynative.MfiChipProbe
 import android.content.pm.PackageManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
@@ -232,6 +239,8 @@ class SettingsFragment : Fragment() {
     private var pendingDebugVideoLowLatency by pending::debugVideoLowLatency
     private var pendingAllowExternalConfiguration by pending::allowExternalConfiguration
     private var pendingKeepDummyVpnDuringSession by pending::keepDummyVpnDuringSession
+    private var pendingCarPlayBoxEnabled by pending::carPlayBoxEnabled
+    private var pendingCarPlayNativeEnabled by pending::carPlayNativeEnabled
 
     private var pendingWifiConnectionMode by pending::wifiConnectionMode
     private var pendingHelperConnectionStrategy by pending::helperConnectionStrategy
@@ -339,6 +348,14 @@ class SettingsFragment : Fragment() {
     private var vpnConsentRequested = false
     private val vpnConsentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val granted = result.resultCode == android.app.Activity.RESULT_OK
+        if (carPlayConsentRequested) {
+            carPlayConsentRequested = false
+            if (granted) enableCarPlayNative()
+            else ToastUtils.showToast(requireContext(), R.string.carplay_native_consent_denied, Toast.LENGTH_LONG, force = true)
+            // The CarPlay ask owns this result: the dummy VPN's toast below would replace its own.
+            updateSettingsList()
+            return@registerForActivityResult
+        }
         if (vpnConsentRequested) {
             pendingKeepDummyVpnDuringSession = granted
             checkChanges()
@@ -378,6 +395,18 @@ class SettingsFragment : Fragment() {
     private val legacyImportSettingsLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { importSettingsFromUri(it) }
     }
+
+    private val identityImportLauncher = registerForActivityResult(OpenAnyFiles()) { uris ->
+        if (uris.isNotEmpty()) importCarPlayIdentity(uris)
+    }
+
+    private var mfiVerdict: MfiChipLocationPolicy.Verdict? = null
+    private var carPlayIdentityValid = false
+    private var carPlayNativeChecked = false
+    private var carPlayTunnelStatus: String? = null
+    private var carPlayConsentRequested = false
+
+    private val androidBase64: (String) -> ByteArray = { android.util.Base64.decode(it, android.util.Base64.DEFAULT) }
 
     // Re-running the onboarding wizard can change restart-sensitive display settings;
     // reload pending state and recreate on return, mirroring the old SetupWizard callback.
@@ -727,6 +756,8 @@ class SettingsFragment : Fragment() {
         pendingDebugVideoLowLatency?.let { if (it != settings.debugVideoLowLatency) settings.debugVideoLowLatency = it }
         pendingAllowExternalConfiguration?.let { if (it != settings.allowExternalConfiguration) settings.allowExternalConfiguration = it }
         pendingKeepDummyVpnDuringSession?.let { if (it != settings.keepDummyVpnDuringSession) settings.keepDummyVpnDuringSession = it }
+        pendingCarPlayBoxEnabled?.let { if (it != settings.carPlayBoxEnabled) settings.carPlayBoxEnabled = it }
+        pending.saveCarPlayNativeTo(settings)
 
         val wirelessConfigBefore = wirelessRearmConfig()
         pendingWifiConnectionMode?.let { if (it != settings.wifiConnectionMode) settings.wifiConnectionMode = it }
@@ -2702,6 +2733,67 @@ class SettingsFragment : Fragment() {
             ))
         }
 
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "carPlayBoxEnabled",
+            nameResId = R.string.carplay_box_title,
+            descriptionResId = R.string.carplay_box_description,
+            isChecked = pendingCarPlayBoxEnabled ?: false,
+            searchKeywords = "carplay apple iphone box carlinkit dongle",
+            onCheckedChanged = { isChecked ->
+                pendingCarPlayBoxEnabled = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        items.add(SettingItem.SubHeader("carPlayNative", R.string.carplay_native_header))
+        val nativeUnavailable = carPlayNativeUnavailable()
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "carPlayNativeEnabled",
+            nameResId = R.string.carplay_native_title,
+            descriptionResId = R.string.carplay_native_description,
+            descriptionOverride = nativeUnavailable?.let { getString(carPlayNativeUnavailableRes(it)) },
+            // A stored true this unit cannot run shows as off and acts as off, but the row stays live so the user can clear it.
+            isChecked = CarPlayNativeAvailability.effectiveEnabled(pendingCarPlayNativeEnabled ?: false, nativeUnavailable),
+            isEnabled = nativeUnavailable == null || pendingCarPlayNativeEnabled == true,
+            searchKeywords = "carplay apple iphone native usb vpn tunnel",
+            onCheckedChanged = { isChecked ->
+                if (!isChecked || nativeUnavailable != null) {
+                    pendingCarPlayNativeEnabled = false
+                    carPlayTunnelStatus = null
+                    checkChanges()
+                    updateSettingsList()
+                } else {
+                    // Null once this app is the prepared VPN app, as for the dummy VPN toggle.
+                    val consent = VpnControl.consentIntent(requireContext())
+                    if (consent == null) {
+                        enableCarPlayNative()
+                    } else {
+                        carPlayConsentRequested = true
+                        vpnConsentLauncher.launch(consent)
+                    }
+                }
+            }
+        ))
+        items.add(SettingItem.SettingEntry(
+            stableId = "carPlayNativeStatus",
+            nameResId = R.string.carplay_native_status,
+            value = carPlayNativeStatusText(),
+            searchKeywords = "carplay apple iphone mfi chip signer certificate native",
+            onClick = { _ -> checkCarPlayNative() }
+        ))
+        items.add(SettingItem.SettingEntry(
+            stableId = "carPlayIdentityImport",
+            nameResId = R.string.carplay_native_import,
+            // Below API 21 no folder keeps the key out of backup, so nothing is imported there.
+            value = getString(
+                if (CarPlayIdentityFile.storable(Build.VERSION.SDK_INT)) R.string.carplay_native_import_hint else R.string.carplay_native_unavailable_api,
+            ),
+            isEnabled = CarPlayIdentityFile.storable(Build.VERSION.SDK_INT),
+            searchKeywords = "carplay apple certificate key pem import identity",
+            onClick = { _ -> if (CarPlayIdentityFile.storable(Build.VERSION.SDK_INT)) launchCarPlayIdentityPicker() }
+        ))
+
         items.add(SettingItem.SettingEntry(
             stableId = "oemAppManagement",
             nameResId = R.string.oem_app_management,
@@ -3633,6 +3725,101 @@ class SettingsFragment : Fragment() {
 
         if (recreate) {
             activity?.recreate()
+        }
+    }
+
+    /** Probes the MFi paths and the imported file off the main thread, then redraws the status row. */
+    private fun checkCarPlayNative() {
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (verdict, valid) = withContext(Dispatchers.IO) {
+                MfiChipProbe.probe() to CarPlayIdentityFile.isValid(appContext, androidBase64)
+            }
+            mfiVerdict = verdict
+            carPlayIdentityValid = valid
+            carPlayNativeChecked = true
+            // No code confirms a chip or reaches a Link yet, so only the file can make a signer.
+            val signer = CarPlaySignerPolicy.choose(chipConfirmed = false, linkReachable = false, identityFileValid = valid)
+            AppLog.i("CarPlayNative: signer ${signer.label}")
+            updateSettingsList()
+        }
+    }
+
+    /** The first reason this unit cannot run native CarPlay, or null. The attach path asks the same rule. */
+    private fun carPlayNativeUnavailable(): CarPlayNativeAvailability.Unavailable? = CarPlayNativeAvailability.check(
+        sdk = Build.VERSION.SDK_INT,
+        tunAvailable = VpnControl.isCarPlayTunAvailable(),
+        signerChoice = CarPlaySignerPolicy.choose(chipConfirmed = false, linkReachable = false, identityFileValid = carPlayIdentityValid),
+    )
+
+    private fun carPlayNativeUnavailableRes(reason: CarPlayNativeAvailability.Unavailable): Int = when (reason) {
+        CarPlayNativeAvailability.Unavailable.BelowApiFloor -> R.string.carplay_native_unavailable_api
+        CarPlayNativeAvailability.Unavailable.NoTunnel -> R.string.carplay_native_unavailable_tunnel
+        CarPlayNativeAvailability.Unavailable.NoSigner -> R.string.carplay_native_unavailable_signer
+    }
+
+    /** VPN consent is given: turn the switch on, then run the tunnel check off the main thread and show its line. */
+    private fun enableCarPlayNative() {
+        pendingCarPlayNativeEnabled = true
+        carPlayTunnelStatus = getString(R.string.carplay_native_tunnel_checking)
+        checkChanges()
+        updateSettingsList()
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { CarPlayNativeWiring.tunnelCheck(appContext).run() }
+            carPlayTunnelStatus = result.line.removePrefix("CarPlayNative: ")
+            updateSettingsList()
+        }
+    }
+
+    private fun carPlayNativeStatusText(): String {
+        if (!carPlayNativeChecked) {
+            carPlayNativeChecked = true
+            checkCarPlayNative()
+        }
+        val verdict = mfiVerdict ?: return getString(R.string.carplay_native_checking)
+        val choice = CarPlaySignerPolicy.choose(chipConfirmed = false, linkReachable = false, identityFileValid = carPlayIdentityValid)
+        val signer = when (choice) {
+            CarPlaySignerPolicy.Choice.CHIP -> getString(R.string.carplay_native_signer_chip)
+            CarPlaySignerPolicy.Choice.LINK -> getString(R.string.carplay_native_signer_link)
+            CarPlaySignerPolicy.Choice.FILE -> getString(R.string.carplay_native_signer_file)
+            CarPlaySignerPolicy.Choice.NONE -> getString(R.string.carplay_native_signer_none)
+        }
+        val chip = when (verdict) {
+            is MfiChipLocationPolicy.Verdict.Candidate -> getString(R.string.carplay_native_chip_candidate, verdict.path)
+            is MfiChipLocationPolicy.Verdict.None -> getString(R.string.carplay_native_chip_none, verdict.reason)
+        }
+        return listOfNotNull("$signer. $chip", carPlayTunnelStatus).joinToString(". ")
+    }
+
+    private fun launchCarPlayIdentityPicker() {
+        try {
+            identityImportLauncher.launch("*/*")
+        } catch (e: ActivityNotFoundException) {
+            ToastUtils.showToast(requireContext(), getString(R.string.carplay_native_import_no_picker), Toast.LENGTH_LONG, force = true)
+        }
+    }
+
+    private fun importCarPlayIdentity(uris: List<Uri>) {
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            // The file content is never logged, only the verdict.
+            val result = withContext(Dispatchers.IO) {
+                val files = uris.map { uri -> appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() } }
+                if (files.any { it == null || it.size > 64 * 1024 }) CarPlayIdentityImport.Result.WrongFormat
+                else CarPlayIdentityImport.parseFiles(files.filterNotNull(), androidBase64).also {
+                    if (it is CarPlayIdentityImport.Result.Ok) CarPlayIdentityFile.save(appContext, it)
+                }
+            }
+            val message = when (result) {
+                is CarPlayIdentityImport.Result.Ok -> R.string.carplay_native_import_ok
+                CarPlayIdentityImport.Result.WrongKey -> R.string.carplay_native_import_wrong_key
+                CarPlayIdentityImport.Result.Corrupt -> R.string.carplay_native_import_corrupt
+                CarPlayIdentityImport.Result.WrongFormat -> R.string.carplay_native_import_wrong_format
+            }
+            AppLog.i("CarPlayNative: identity import ${result::class.java.simpleName}")
+            ToastUtils.showToast(requireContext(), message, Toast.LENGTH_LONG, force = true)
+            checkCarPlayNative()
         }
     }
 
@@ -5620,5 +5807,20 @@ class SettingsFragment : Fragment() {
                 }
             )
         }
+    }
+}
+
+/** One picker for every API level: `OpenDocument` needs API 19 and `minSdk` is 16. It returns one or more files. */
+private class OpenAnyFiles : androidx.activity.result.contract.ActivityResultContract<String, List<Uri>>() {
+    override fun createIntent(context: Context, input: String): Intent {
+        val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) Intent.ACTION_OPEN_DOCUMENT else Intent.ACTION_GET_CONTENT
+        return Intent(action).addCategory(Intent.CATEGORY_OPENABLE).setType(input).putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+    }
+
+    override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
+        if (resultCode != android.app.Activity.RESULT_OK || intent == null) return emptyList()
+        val clip = intent.clipData
+        if (clip != null && clip.itemCount > 0) return (0 until clip.itemCount).mapNotNull { clip.getItemAt(it).uri }
+        return listOfNotNull(intent.data)
     }
 }

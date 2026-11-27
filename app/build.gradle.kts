@@ -271,6 +271,8 @@ dependencies {
     // Conscrypt (Flavor specific: 2.6.1 for Playstore 16KB alignment; 2.5.3 for Github minSdk 16)
     "playstoreImplementation"("org.conscrypt:conscrypt-android:2.6.1")
     "githubImplementation"("org.conscrypt:conscrypt-android:2.5.3")
+    // Native CarPlay: X25519, Ed25519, HKDF and ChaCha20-Poly1305. Both flavors, so shared code compiles.
+    implementation("org.bouncycastle:bcprov-jdk18on:1.79")
 
     implementation("com.google.protobuf:protobuf-java:3.25.5")
     implementation("androidx.activity:activity-ktx:1.8.2")

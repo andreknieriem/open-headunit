@@ -812,6 +812,31 @@ Open Headunit предоставляется «как есть» без каки
     <string name="hotspot_qr_description">QR-код конфигурации Wireless Helper</string>
     <string name="scan_with_wireless_helper">Отсканируйте этот QR-код с помощью сканера в приложении Wireless Helper на вашем телефоне.</string>
     <string name="share_hotspot_qr_error">Не удалось получить данные активной точки доступа Wi-Fi. Убедитесь, что точка доступа включена и геолокация разрешена.</string>
+    <string name="carplay_box_title">Блок CarPlay (экспериментально)</string>
+    <string name="carplay_box_description">Открывает подключённый блок CarPlay. Не закрывайте это приложение. Не проверено с iPhone.</string>
+    <string name="carplay_native_header">Нативный CarPlay (экспериментально)</string>
+    <string name="carplay_native_title">Нативный CarPlay через USB</string>
+    <string name="carplay_native_description">Экспериментально. iOS 17 и ваш идентификатор Apple. Занимает слот VPN.</string>
+    <string name="carplay_native_unavailable_api">Требуется Android 5.0 или новее</string>
+    <string name="carplay_native_unavailable_tunnel">В этой сборке нет туннеля VPN для CarPlay</string>
+    <string name="carplay_native_unavailable_signer">Сначала импортируйте собственный идентификатор Apple</string>
+    <string name="carplay_native_consent_denied">Доступ к VPN запрещён. Нативный CarPlay остаётся выключенным.</string>
+    <string name="carplay_native_tunnel_checking">Проверка туннеля VPN...</string>
+    <string name="carplay_native_status">Подпись Apple</string>
+    <string name="carplay_native_checking">Проверка этого устройства...</string>
+    <string name="carplay_native_signer_chip">Подпись: чип MFi</string>
+    <string name="carplay_native_signer_file">Подпись: импортированный файл</string>
+    <string name="carplay_native_signer_link">Подпись: LIVI Link</string>
+    <string name="carplay_native_signer_none">Подпись: нет</string>
+    <string name="carplay_native_chip_candidate">Найден путь MFi (%1$s), чип неизвестен</string>
+    <string name="carplay_native_chip_none">Нет пути MFi (%1$s)</string>
+    <string name="carplay_native_import">Импортировать сертификат и ключ</string>
+    <string name="carplay_native_import_hint">Выберите один файл PEM со своим сертификатом и ключом или выберите вместе файл сертификата и файл ключа.</string>
+    <string name="carplay_native_import_ok">Сертификат и ключ импортированы</string>
+    <string name="carplay_native_import_wrong_key">Ключ не относится к этому сертификату</string>
+    <string name="carplay_native_import_corrupt">Файл повреждён или обрезан</string>
+    <string name="carplay_native_import_wrong_format">Нужны файлы с сертификатом PKCS#7 и незашифрованным ключом PKCS#8 (P-256 или RSA) в формате DER или PEM</string>
+    <string name="carplay_native_import_no_picker">На этом устройстве нет выбора файлов</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Текущая яркость: %d / 255</string>

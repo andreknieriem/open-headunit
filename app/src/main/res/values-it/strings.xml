@@ -817,6 +817,31 @@
     <string name="hotspot_qr_description">Codice QR di configurazione di Wireless Helper</string>
     <string name="scan_with_wireless_helper">Scansiona questo codice QR usando lo scanner QR in Wireless Helper sul tuo telefono.</string>
     <string name="share_hotspot_qr_error">Impossibile recuperare le credenziali dell\'hotspot Wi-Fi attivo. Assicurati che l\'hotspot e la posizione siano attivi.</string>
+    <string name="carplay_box_title">Box CarPlay (sperimentale)</string>
+    <string name="carplay_box_description">Apre un box CarPlay collegato. Tieni aperta questa app. Non testato con un iPhone.</string>
+    <string name="carplay_native_header">CarPlay nativo (sperimentale)</string>
+    <string name="carplay_native_title">CarPlay nativo via USB</string>
+    <string name="carplay_native_description">Sperimentale. iOS 17 e la tua identità Apple. Occupa lo slot VPN.</string>
+    <string name="carplay_native_unavailable_api">Richiede Android 5.0 o versioni successive</string>
+    <string name="carplay_native_unavailable_tunnel">Questa build non ha un tunnel VPN per CarPlay</string>
+    <string name="carplay_native_unavailable_signer">Importa prima la tua identità Apple</string>
+    <string name="carplay_native_consent_denied">Autorizzazione VPN negata. CarPlay nativo resta disattivato.</string>
+    <string name="carplay_native_tunnel_checking">Controllo del tunnel VPN...</string>
+    <string name="carplay_native_status">Firmatario Apple</string>
+    <string name="carplay_native_checking">Controllo di questa unità...</string>
+    <string name="carplay_native_signer_chip">Firmatario: chip MFi</string>
+    <string name="carplay_native_signer_file">Firmatario: file importato</string>
+    <string name="carplay_native_signer_link">Firmatario: LIVI Link</string>
+    <string name="carplay_native_signer_none">Firmatario: nessuno</string>
+    <string name="carplay_native_chip_candidate">Percorso MFi trovato (%1$s), chip sconosciuto</string>
+    <string name="carplay_native_chip_none">Nessun percorso MFi (%1$s)</string>
+    <string name="carplay_native_import">Importa certificato e chiave</string>
+    <string name="carplay_native_import_hint">Scegli un file PEM con il tuo certificato e la tua chiave, oppure scegli insieme il file del certificato e il file della chiave.</string>
+    <string name="carplay_native_import_ok">Certificato e chiave importati</string>
+    <string name="carplay_native_import_wrong_key">La chiave non appartiene a questo certificato</string>
+    <string name="carplay_native_import_corrupt">Il file è danneggiato o troncato</string>
+    <string name="carplay_native_import_wrong_format">I file richiedono un certificato PKCS#7 e una chiave PKCS#8 non cifrata, P-256 o RSA, in formato DER o PEM</string>
+    <string name="carplay_native_import_no_picker">Questa unità non ha un selettore di file</string>
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">Luminosità attuale: %d / 255</string>

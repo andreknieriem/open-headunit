@@ -18,6 +18,11 @@ import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxPolicy
+import com.andrerinas.openheadunit.connection.carplaynative.AndroidIphoneDevice
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeWiring
+import com.andrerinas.openheadunit.connection.carplaynative.usb.IphoneUsbPolicy
+import com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -719,6 +724,85 @@ class UsbLauncherManager(val service: AapService) {
      * @param trigger What started the scan. A plug-in switches a normal-mode phone only when
      *                [UsbPlugInPolicy] allows it; an accessory identity is always connected.
      */
+    /**
+     * Opens, asks for or refuses a CarPlay box. False when [device] is not a box, or the setting
+     * is off and the device falls through to the Android Auto rules.
+     */
+    internal fun handleCarPlayBox(device: UsbDevice): Boolean {
+        if (!CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(device))) return false
+        val settings = App.provide(service).settings
+        val id = CarPlayBoxPolicy.label(device.vendorId, device.productId)
+        AppLog.i("CarPlayBox: box $id attached; setting ${if (settings.carPlayBoxEnabled) "on" else "off"}")
+        val usbManager = UsbDeviceCompat.usbManager(service) ?: return false
+        val box = service.carPlayBoxManager
+        val commManager = App.provide(service).commManager
+        val verdict = CarPlayBoxPolicy.attach(
+            isBox = true,
+            enabled = settings.carPlayBoxEnabled,
+            boxSessionLive = box.isLive,
+            boxUserExited = box.boxUserExited,
+            aaSessionLive = commManager.isConnected ||
+                commManager.connectionState.value is CommManager.ConnectionState.Connecting,
+            hasPermission = usbManager.hasPermission(device),
+        )
+        when (verdict) {
+            CarPlayBoxPolicy.Attach.NotABox, CarPlayBoxPolicy.Attach.Disabled -> return false
+            CarPlayBoxPolicy.Attach.AlreadyLive, CarPlayBoxPolicy.Attach.UserExited ->
+                AppLog.i("CarPlayBox: box $id not opened ($verdict)")
+            CarPlayBoxPolicy.Attach.RefusedAaLive ->
+                AppLog.i("CarPlayBox: refused, an Android Auto session is live")
+            CarPlayBoxPolicy.Attach.AskPermission -> askUsbPermission(device, "CarPlayBox")
+            CarPlayBoxPolicy.Attach.Open -> {
+                if (box.start(id, StandardUsbProjectionConnection(usbManager, device))) service.raiseCarPlayBox()
+            }
+        }
+        return true
+    }
+
+    /**
+     * Hands an iPhone to the native CarPlay session. False when it is no iPhone, or when the setting is off or this unit
+     * cannot run native CarPlay (below API 21, no tunnel, no identity), so the device keeps today's handling.
+     */
+    internal fun handleCarPlayNative(device: UsbDevice): Boolean {
+        if (!IphoneUsbPolicy.isIphone(device.vendorId, device.productId, null)) return false
+        // The setting comes first: with it off, or unable to run here, no manager is made and nothing of native CarPlay runs.
+        if (!CarPlayNativeWiring.enabled(service)) return false
+        val native = service.carPlayNativeManager ?: return false
+        return native.onAttach(AndroidIphoneDevice(device))
+    }
+
+    /** An iPhone's permission answer goes to the native session while the setting is on. False leaves it to the old rules. */
+    internal fun handleCarPlayNativePermission(device: UsbDevice, granted: Boolean): Boolean {
+        if (!IphoneUsbPolicy.isIphone(device.vendorId, device.productId, null)) return false
+        if (!CarPlayNativeWiring.enabled(service)) return false
+        val native = service.carPlayNativeManager ?: return false
+        native.onPermissionResult(AndroidIphoneDevice(device), granted)
+        return true
+    }
+
+    /** Only a manager that already exists hears a detach: a detach never makes one, and with none it prints nothing. */
+    internal fun handleCarPlayNativeDetach(device: UsbDevice) {
+        if (!IphoneUsbPolicy.isIphone(device.vendorId, device.productId, null)) return
+        service.carPlayNativeManagerIfMade?.onDetach(AndroidIphoneDevice(device))
+    }
+
+    /** One ask for the box and the native session, deduplicated by [UsbPermissionAsks]. [who] prefixes the log. */
+    internal fun askUsbPermission(device: UsbDevice, who: String) {
+        val usbManager = UsbDeviceCompat.usbManager(service) ?: return
+        val present = usbManager.deviceList.values.map { it.deviceName }
+        val token = UsbPermissionAsks.newToken()
+        if (!UsbPermissionAsks.tryMark(device.deviceName, present, token)) {
+            AppLog.i("$who: permission for ${device.deviceName} already asked")
+            return
+        }
+        try {
+            usbManager.requestPermission(device, UsbReceiver.createPermissionPendingIntent(service, token))
+        } catch (e: Exception) {
+            UsbPermissionAsks.complete(device.deviceName, token)
+            AppLog.w("$who: the permission request failed: ${e.message}")
+        }
+    }
+
     fun checkAlreadyConnected(
         force: Boolean = false,
         userRequested: Boolean = false,
@@ -729,6 +813,20 @@ class UsbLauncherManager(val service: AapService) {
         val settings = App.provide(service).settings
         val commManager = App.provide(service).commManager
         if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
+        // A box is asked for before the AA gates: they would all reject it.
+        if (settings.carPlayBoxEnabled) {
+            UsbDeviceCompat.usbManager(service)?.deviceList?.values
+                ?.filter { CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(it)) }
+                ?.forEach { handleCarPlayBox(it) }
+            if (service.carPlayBoxManager.isLive) return
+        }
+        // An iPhone too: some firmware sends its attach to its own app only, so the list is scanned as well.
+        if (CarPlayNativeWiring.enabled(service)) {
+            UsbDeviceCompat.usbManager(service)?.deviceList?.values
+                ?.filter { it.vendorId == IphoneUsbPolicy.APPLE_VENDOR_ID }
+                ?.forEach { handleCarPlayNative(it) }
+            if (service.carPlayNativeManager?.isLive == true) return
+        }
         val lastSession = settings.autoConnectLastSession
         val singleUsb = settings.autoConnectSingleUsbDevice
         val usbAutoStart = settings.effectiveAutoStartOnUsb

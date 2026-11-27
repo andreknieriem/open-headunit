@@ -240,6 +240,8 @@ object SettingsBackupManager {
         "auto-start-wifi-ssid" to ValueType.STRING,
         "listen-for-usb-devices" to ValueType.BOOLEAN,
         "usb-wireless-dongle" to ValueType.BOOLEAN,
+        "carplay-box-enabled" to ValueType.BOOLEAN,
+        "carplay-native-enabled" to ValueType.BOOLEAN,
         "reopen-on-reconnection" to ValueType.BOOLEAN,
         "auto-connect-priority-order" to ValueType.STRING,
         "auto-start-bt-macs" to ValueType.STRING_SET,

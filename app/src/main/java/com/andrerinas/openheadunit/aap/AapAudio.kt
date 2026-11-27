@@ -26,7 +26,9 @@ import java.util.concurrent.ConcurrentHashMap
 internal class AapAudio(
         private val audioDecoder: AudioDecoder,
         private val audioManager: AudioManager,
-        private val settings: Settings) {
+        private val settings: Settings,
+        /** Self Mode. A lambda, not a flag: the session is not connected when this is constructed. */
+        private val isLoopbackSession: () -> Boolean = { false }) {
 
     internal val sessionConfig = AudioSessionConfig.from(settings)
     private val staticAudioFocus = sessionConfig.staticFocus
@@ -179,6 +181,8 @@ internal class AapAudio(
 
     /** Which of the gates said no, so a reporter log names it instead of leaving it to be inferred. */
     private fun declineReason(): String = when {
+        // First, because Self Mode outranks every other answer including the mode override.
+        isLoopbackSession() -> "the player is on this device (Self Mode)"
         staticAudioFocus -> "static audio focus holds it instead"
         !enableAudioSink -> "the audio sink is off"
         // The mode is asked first because only AUTO consults the latch. Asking the latch first read
@@ -215,7 +219,8 @@ internal class AapAudio(
                 staticAudioFocus = staticAudioFocus,
                 audioSinkEnabled = enableAudioSink,
                 isAudioChannel = true,
-                selfDefeatingLatched = selfDefeatingLatched)
+                selfDefeatingLatched = selfDefeatingLatched,
+                isLoopbackSession = isLoopbackSession())
 
         if (!honour) {
             AppLog.i("AapAudio: phone asked for audio focus - leaving system audio focus alone " +
@@ -304,7 +309,7 @@ internal class AapAudio(
     private fun retainPlaybackFocusBeforeProtocolRelease() {
         releaseDrainedPlaybackFocus(SystemClock.elapsedRealtime())
         if (playbackLease.snapshot().isEmpty() || !PlaybackFocusPolicy.shouldAcquire(
-                playbackFocusMode, staticAudioFocus, enableAudioSink, true, selfDefeatingLatched)) return
+                playbackFocusMode, staticAudioFocus, enableAudioSink, true, selfDefeatingLatched, isLoopbackSession())) return
         // A protocol permanent GAIN removes the separate playback client from Android's stack.
         // Refresh it before abandoning protocol focus so pending PCM has no focus-free interval.
         // holdingPlaybackFocus cannot prove that the client survived that permanent GAIN.
@@ -539,7 +544,7 @@ internal class AapAudio(
         mainHandler.post {
             if (!playbackLease.accepts(request)) return@post
             val acquire = PlaybackFocusPolicy.shouldAcquire(playbackFocusMode, staticAudioFocus,
-                enableAudioSink, true, selfDefeatingLatched)
+                enableAudioSink, true, selfDefeatingLatched, isLoopbackSession())
             var granted = false
             if (acquire) {
                 // A new lease can invalidate a queued sleep release while the system focus

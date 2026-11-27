@@ -2944,8 +2944,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             return super.dispatchKeyEvent(event)
         }
 
-        // 2. Funnel all other keys to CommManager
-        commManager.sendKey(event.keyCode, event.action == KeyEvent.ACTION_DOWN, event.downTime, "projection")
+        // 2. Funnel all other keys to CommManager. A media key it leaves to another consumer falls
+        // through to the system, which routes it to the media session actually playing - without
+        // this, holding a key back here only means the button does nothing at all.
+        if (!commManager.sendKey(event.keyCode, event.action == KeyEvent.ACTION_DOWN, event.downTime, "projection")) {
+            return super.dispatchKeyEvent(event)
+        }
         return true
     }
 

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.media.AudioManager
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.DrivingStatusEvent
+import com.andrerinas.openheadunit.aap.protocol.messages.LocationSourceAnnouncementPolicy
 import com.andrerinas.openheadunit.aap.protocol.messages.LocationUpdateEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.ServiceDiscoveryResponse
 import com.andrerinas.openheadunit.aap.protocol.proto.Common
@@ -361,7 +362,10 @@ internal class AapControlSensor(
             context.sendBroadcast(intent)
         }
 
-        if (request.type == Sensors.SensorType.LOCATION && settings.useGpsForNavigation) {
+        if (request.type == Sensors.SensorType.LOCATION &&
+            LocationSourceAnnouncementPolicy.announcesLocation(
+                settings.useGpsForNavigation,
+                App.provide(context).commManager.isLoopbackSession)) {
             // The phone only accepts LOCATION events once this request has been answered, which
             // can land well after TransportStarted (CommManager's own post-handshake flush can
             // race this and lose). This is the actual earliest point sending can succeed.

@@ -1913,4 +1913,6 @@
     <string name="home_hotspot_not_found">Wi-Fiに接続できませんでした。スマートフォンのテザリングはオンですか？</string>
     <string name="home_wifi_hotspot_hint">スマートフォンのテザリングはオンですか？</string>
     <string name="home_wifi_off_hint">接続するにはオンにしてください</string>
+    <string name="maps_audio_only_summary">ナビ案内のみ：このユニットでは音楽も通話も再生しません。</string>
+    <string name="maps_audio_only_description">案内とシステム音のチャンネルを通知し、メディアチャンネルは通知しません。そのためスマートフォンは音楽を送信せず、メディアアプリはこのユニットで再生できません。ハンズフリーのアドレスも通知しないため、Android Auto は通話機能を無効のままにし、通話はスマートフォン側に残ります。アシスタントの応答は案内チャンネルを共有するため、引き続き聞こえます。</string>
 </resources>

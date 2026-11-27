@@ -1952,4 +1952,6 @@
     <string name="home_hotspot_not_found">Aucun Wi-Fi connecté. Le point d’accès du téléphone est-il activé ?</string>
     <string name="home_wifi_hotspot_hint">Point d’accès du téléphone activé ?</string>
     <string name="home_wifi_off_hint">Activez-le pour vous connecter</string>
+    <string name="maps_audio_only_summary">Guidage uniquement : pas de musique ni d\'appels sur cet appareil.</string>
+    <string name="maps_audio_only_description">Annonce les canaux de guidage et de sons système, mais pas le canal multimédia : le téléphone n\'envoie donc aucune musique et aucune application média ne peut lire sur cet appareil. L\'adresse mains libres n\'est pas annoncée non plus, donc Android Auto laisse la téléphonie désactivée et les appels restent sur le téléphone. Les réponses de l\'assistant utilisent le canal de guidage et restent audibles.</string>
 </resources>

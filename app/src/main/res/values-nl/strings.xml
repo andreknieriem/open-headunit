@@ -1911,4 +1911,6 @@
     <string name="home_hotspot_not_found">Geen wifi verbonden. Staat de hotspot van de telefoon aan?</string>
     <string name="home_wifi_hotspot_hint">Staat de hotspot van de telefoon aan?</string>
     <string name="home_wifi_off_hint">Zet het aan om te verbinden</string>
+    <string name="maps_audio_only_summary">Alleen navigatie-instructies: geen muziek of gesprekken op dit apparaat.</string>
+    <string name="maps_audio_only_description">Meldt de kanalen voor instructies en systeemgeluiden aan, maar niet het mediakanaal. De telefoon stuurt dus geen muziek en geen enkele media-app kan op dit apparaat afspelen. Ook wordt het handsfree-adres niet gemeld, waardoor Android Auto telefonie uitgeschakeld laat en gesprekken op de telefoon blijven. Antwoorden van de assistent gebruiken hetzelfde instructiekanaal en zijn nog steeds hoorbaar.</string>
 </resources>

@@ -219,7 +219,12 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
             // the launchers run and a failed launch left it set, so a Native AA session announced
             // system sounds only and had no audio at all. See AudioSinkAnnouncementPolicy.
             val isSelfModeSession = App.provide(context).commManager.isLoopbackSession
-            if (AudioSinkAnnouncementPolicy.announcesMediaAndSpeech(audioConfig.enabled, isSelfModeSession)) {
+            val announcements = AudioSinkAnnouncementPolicy.announce(
+                sinkEnabled = audioConfig.enabled,
+                isSelfModeSession = isSelfModeSession,
+                mapsAudioOnly = audioConfig.mapsAudioOnly,
+            )
+            if (announcements.speech) {
                 val audio1 = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_AU1
                     service.mediaSinkService = Control.Service.MediaSinkService.newBuilder().also {
@@ -229,7 +234,8 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
                     }.build()
                 }.build()
                 services.add(audio1)
-
+            }
+            if (announcements.media) {
                 val audio0 = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_AUD
                     service.mediaSinkService = Control.Service.MediaSinkService.newBuilder().also {
@@ -239,6 +245,13 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
                     }.build()
                 }.build()
                 services.add(audio0)
+            } else if (announcements.speech) {
+                // Speech is still offered, so this is the maps-only case rather than a muted head
+                // unit. Say which sink is missing and what still works: a silently absent media
+                // channel is otherwise indistinguishable from a broken announcement.
+                AppLog.i("Maps audio only is on in Settings, so the media audio channel is not " +
+                        "announced: the phone sends no music. Navigation guidance and system " +
+                        "sounds still play")
             } else if (!audioConfig.enabled) {
                 // Without this line a muted head unit is indistinguishable from a broken one. The
                 // channels are never declared, so the phone never opens them, so nothing about the
@@ -287,7 +300,7 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
             // Bluetooth Service
             val btAnnounce = BluetoothAnnouncePolicy.decide(
                 settings.bluetoothAnnounceMode, settings.bluetoothAddress,
-                App.provide(context).commManager.isUsbSession)
+                App.provide(context).commManager.isUsbSession, audioConfig.mapsAudioOnly)
             if (btAnnounce.carAddress != null) {
                 val bluetooth = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_BTH
@@ -309,6 +322,11 @@ internal class ServiceDiscoveryResponse private constructor(proto: Control.Servi
                     AppLog.i("bt-announce=skip applies to USB sessions only, so this session " +
                         "announces the real address")
                 }
+            } else if (btAnnounce.withheldForMapsAudioOnly) {
+                // The omission is the feature, not a misconfiguration: name it so a reader does not
+                // go looking for a blank address, and state the consequence they will observe.
+                AppLog.i("Maps audio only is on in Settings, so no Bluetooth service is announced: " +
+                        "Android Auto keeps telephony disabled and calls stay on the phone")
             } else {
                 // What the omission costs, in the user's terms. Android Auto keeps telephony
                 // disabled until a hands-free link is up, and this is the message that tells the

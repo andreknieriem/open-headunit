@@ -208,6 +208,7 @@ class SettingsFragment : Fragment() {
     private var pendingBluetoothAddress by pending::bluetoothAddress
     private var pendingBluetoothAnnounceSkip by pending::bluetoothAnnounceSkip
     private var pendingEnableAudioSink by pending::enableAudioSink
+    private var pendingMapsAudioOnly by pending::mapsAudioOnly
     private var pendingStaticAudioFocus by pending::staticAudioFocus
     private var pendingPlaybackFocusMode by pending::playbackFocusMode
     private var pendingUseAacAudio by pending::useAacAudio
@@ -657,6 +658,7 @@ class SettingsFragment : Fragment() {
             }
         }
         pendingEnableAudioSink?.let { if (it != settings.enableAudioSink) settings.enableAudioSink = it }
+        pendingMapsAudioOnly?.let { if (it != settings.mapsAudioOnly) settings.mapsAudioOnly = it }
         pendingStaticAudioFocus?.let { if (it != settings.staticAudioFocus) settings.staticAudioFocus = it }
         // Re-picking the focus mode is the way back from a wrong verdict: AUTO learns that taking
         // system audio focus stops the phone's own playback and then stops asking for it, and two
@@ -840,6 +842,7 @@ class SettingsFragment : Fragment() {
                           pendingSoftwareVideoDecoder != settings.softwareVideoDecoder ||
                           pendingEnableRotary != settings.enableRotary ||
                           pendingEnableAudioSink != settings.enableAudioSink ||
+                          pendingMapsAudioOnly != settings.mapsAudioOnly ||
                           pendingStaticAudioFocus != settings.staticAudioFocus ||
                           pendingPlaybackFocusMode != settings.playbackFocusMode ||
                           pendingUseAacAudio != settings.useAacAudio ||
@@ -1899,6 +1902,23 @@ class SettingsFragment : Fragment() {
         ))
 
         if (pendingEnableAudioSink == true) {
+            // The owner's request: keep the map's voice, drop music and calls. Under Audio Sink
+            // because it narrows what that setting announces; a maps-only session with the sink
+            // off would simply be the sink-off session, so it is not offered there.
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "mapsAudioOnly",
+                nameResId = R.string.maps_audio_only,
+                descriptionResId = R.string.maps_audio_only_summary,
+                helpResId = R.string.maps_audio_only_description,
+                isChecked = pendingMapsAudioOnly ?: settings.mapsAudioOnly,
+                searchKeywords = "maps navigation guidance only no music no calls phone telephony media",
+                onCheckedChanged = { isChecked ->
+                    pendingMapsAudioOnly = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "staticAudioFocus",
                 nameResId = R.string.static_audio_focus,

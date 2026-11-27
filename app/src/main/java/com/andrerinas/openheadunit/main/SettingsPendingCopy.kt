@@ -37,6 +37,7 @@ class SettingsPendingCopy {
     var bluetoothAddress: String? = null
     var bluetoothAnnounceSkip: Boolean? = null
     var enableAudioSink: Boolean? = null
+    var mapsAudioOnly: Boolean? = null
     var staticAudioFocus: Boolean? = null
     var playbackFocusMode: PlaybackFocusPolicy.Mode? = null
     var useAacAudio: Boolean? = null
@@ -139,6 +140,7 @@ class SettingsPendingCopy {
         bluetoothAddress = settings.bluetoothAddress
         bluetoothAnnounceSkip = BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode)
         enableAudioSink = settings.enableAudioSink
+        mapsAudioOnly = settings.mapsAudioOnly
         staticAudioFocus = settings.staticAudioFocus
         playbackFocusMode = settings.playbackFocusMode
         useAacAudio = settings.useAacAudio
@@ -242,6 +244,7 @@ class SettingsPendingCopy {
         bluetoothAddress != settings.bluetoothAddress ||
         bluetoothAnnounceSkip != BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode) ||
         enableAudioSink != settings.enableAudioSink ||
+        mapsAudioOnly != settings.mapsAudioOnly ||
         staticAudioFocus != settings.staticAudioFocus ||
         playbackFocusMode != settings.playbackFocusMode ||
         useAacAudio != settings.useAacAudio ||

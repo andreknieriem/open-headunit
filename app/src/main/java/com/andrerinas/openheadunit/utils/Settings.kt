@@ -1435,6 +1435,15 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("enable-audio-sink", true)
         set(value) { prefs.edit().putBoolean("enable-audio-sink", value).apply() }
 
+    // Make a session a map screen: keep guidance (and the system sounds Android Auto requires),
+    // drop the media sink so no music is sent, and withhold the hands-free address so Android Auto
+    // keeps telephony disabled and calls stay on the phone. Off leaves service discovery exactly
+    // as it was before this setting existed. See AudioSinkAnnouncementPolicy and
+    // BluetoothAnnouncePolicy for the two halves.
+    var mapsAudioOnly: Boolean
+        get() = prefs.getBoolean("maps-audio-only", false)
+        set(value) { prefs.edit().putBoolean("maps-audio-only", value).apply() }
+
     var staticAudioFocus: Boolean
         get() = prefs.getBoolean("static-audio-focus", false)
         set(value) { prefs.edit().putBoolean("static-audio-focus", value).apply() }

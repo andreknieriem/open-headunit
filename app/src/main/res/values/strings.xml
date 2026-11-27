@@ -779,6 +779,9 @@
     <string name="enable_audio_sink">Audio Sink</string>
     <string name="enable_audio_sink_description">Plays Android Auto sound through this unit. Turn it off to keep the sound on the phone, for example when the phone already feeds the car\'s speakers. The unit then shows the picture only. Calls never use this audio: they play on the Bluetooth hands-free device connected to the phone (car, intercom or headset), or on the phone itself.</string>
     <string name="enable_audio_sink_summary">Play Android Auto sound on this unit. Off: the phone plays it.</string>
+    <string name="maps_audio_only">Maps Audio Only</string>
+    <string name="maps_audio_only_summary">Navigation guidance only: no music, no phone calls on this unit.</string>
+    <string name="maps_audio_only_description">Announces the guidance and system-sound channels but not the media channel, so the phone sends no music and no media app can play through this unit. It also withholds the hands-free address, so Android Auto keeps telephony disabled and calls stay on the phone. Assistant replies share the guidance channel, so an assistant answer will still be heard.</string>
     <string name="static_audio_focus">Static Audio Focus</string>
     <string name="static_audio_focus_description">Tells the phone that audio focus is always held. This stops the sound dropping out on generic head units that report focus wrongly. It also lowers the music volume by software during spoken navigation. Leave it off unless the sound drops out.</string>
     <string name="static_audio_focus_summary">Tell the phone audio focus is always held, to stop audio routing losses.</string>

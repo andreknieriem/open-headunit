@@ -104,4 +104,28 @@ class BluetoothAnnouncePolicyTest {
     fun `isSkip is false when nothing is stored`() {
         assertFalse(BluetoothAnnouncePolicy.isSkip(null))
     }
+
+    /** Maps-only withholds a real, configured address: the omission is the feature. */
+    @Test
+    fun `maps audio only withholds the hands-free address`() {
+        val a = BluetoothAnnouncePolicy.decide("real", mac, false, mapsAudioOnly = true)
+        assertNull(a.carAddress)
+        assertTrue(a.withheldForMapsAudioOnly)
+    }
+
+    /** Maps-only beats the skip mode: neither value of the announcement survives it. */
+    @Test
+    fun `maps audio only beats skip`() {
+        val a = BluetoothAnnouncePolicy.decide("skip", mac, true, mapsAudioOnly = true)
+        assertNull(a.carAddress)
+        assertTrue(a.withheldForMapsAudioOnly)
+    }
+
+    /** Off keeps every existing case's output byte-for-byte, including the reason field. */
+    @Test
+    fun `maps audio only off never raises the withheld flag`() {
+        assertFalse(BluetoothAnnouncePolicy.decide("real", mac, false).withheldForMapsAudioOnly)
+        assertFalse(BluetoothAnnouncePolicy.decide("skip", mac, true).withheldForMapsAudioOnly)
+        assertFalse(BluetoothAnnouncePolicy.decide(null, "", true).withheldForMapsAudioOnly)
+    }
 }

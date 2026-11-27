@@ -201,6 +201,7 @@ object SettingsBackupManager {
         "auto-connect-last-session" to ValueType.BOOLEAN,
         "auto-connect-single-usb" to ValueType.BOOLEAN,
         "enable-audio-sink" to ValueType.BOOLEAN,
+        "maps-audio-only" to ValueType.BOOLEAN,
         "static-audio-focus" to ValueType.BOOLEAN,
         // Enum-backed, but INT is safe: Settings.playbackFocusMode reads it through
         // PlaybackFocusPolicy.Mode.fromInt, which falls back to AUTO for anything out of range.
@@ -354,6 +355,7 @@ object SettingsBackupManager {
         "software-video-decoder",
         "enable-rotary",
         "enable-audio-sink",
+        "maps-audio-only",
         "use-head-unit-microphone",
         "static-audio-focus",
         "playback-focus-mode",

@@ -1909,4 +1909,6 @@
     <string name="home_hotspot_not_found">未连接 WLAN。手机热点已开启吗？</string>
     <string name="home_wifi_hotspot_hint">手机热点已开启吗？</string>
     <string name="home_wifi_off_hint">开启后即可连接</string>
+    <string name="maps_audio_only_summary">仅导航语音：此设备不播放音乐，也不接听电话。</string>
+    <string name="maps_audio_only_description">播报导航提示音和系统提示音通道，但不播报媒体通道，因此手机不会发送音乐，任何媒体应用都无法在此设备上播放。同时不播报免提地址，Android Auto 会保持电话功能关闭，通话留在手机上。助手回复使用同一提示音通道，仍可听到。</string>
 </resources>

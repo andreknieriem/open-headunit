@@ -1913,4 +1913,6 @@
     <string name="home_hotspot_not_found">Chưa kết nối WiFi. Điểm phát của điện thoại đã bật chưa?</string>
     <string name="home_wifi_hotspot_hint">Điểm phát của điện thoại đã bật chưa?</string>
     <string name="home_wifi_off_hint">Bật lên để kết nối</string>
+    <string name="maps_audio_only_summary">Chỉ dẫn đường: không nhạc và không cuộc gọi trên thiết bị này.</string>
+    <string name="maps_audio_only_description">Công bố kênh chỉ dẫn và âm thanh hệ thống, nhưng không công bố kênh media, nên điện thoại không gửi nhạc và không ứng dụng media nào phát trên thiết bị này. Địa chỉ rảnh tay cũng không được công bố, vì vậy Android Auto để chức năng điện thoại tắt và cuộc gọi ở lại trên điện thoại. Câu trả lời của trợ lý dùng chung kênh chỉ dẫn nên vẫn nghe được.</string>
 </resources>

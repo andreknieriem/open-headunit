@@ -1905,4 +1905,6 @@
     <string name="home_hotspot_not_found">연결된 Wi-Fi가 없습니다. 휴대폰 핫스팟이 켜져 있나요?</string>
     <string name="home_wifi_hotspot_hint">휴대폰 핫스팟이 켜져 있나요?</string>
     <string name="home_wifi_off_hint">연결하려면 켜세요</string>
+    <string name="maps_audio_only_summary">내비게이션 안내만: 이 기기에서 음악과 통화를 재생하지 않습니다.</string>
+    <string name="maps_audio_only_description">안내 및 시스템 소리 채널은 알리지만 미디어 채널은 알리지 않으므로 휴대전화가 음악을 보내지 않고 어떤 미디어 앱도 이 기기에서 재생할 수 없습니다. 핸즈프리 주소도 알리지 않아 Android Auto가 통화 기능을 비활성화한 채로 두므로 통화는 휴대전화에 남습니다. 어시스턴트 응답은 안내 채널을 공유하므로 계속 들립니다.</string>
 </resources>

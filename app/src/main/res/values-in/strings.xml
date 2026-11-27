@@ -1958,4 +1958,6 @@
     <string name="home_hotspot_not_found">Tidak ada WiFi tersambung. Apakah hotspot ponsel menyala?</string>
     <string name="home_wifi_hotspot_hint">Apakah hotspot ponsel menyala?</string>
     <string name="home_wifi_off_hint">Nyalakan untuk terhubung</string>
+    <string name="maps_audio_only_summary">Hanya panduan navigasi: tanpa musik dan tanpa panggilan di unit ini.</string>
+    <string name="maps_audio_only_description">Mengumumkan kanal panduan dan suara sistem, tetapi bukan kanal media, sehingga ponsel tidak mengirim musik dan aplikasi media tidak dapat memutar di unit ini. Alamat hands-free juga tidak diumumkan, jadi Android Auto membiarkan teleponi nonaktif dan panggilan tetap di ponsel. Jawaban asisten memakai kanal panduan yang sama, jadi tetap terdengar.</string>
 </resources>

@@ -11,14 +11,38 @@ object BluetoothAnnouncePolicy {
 
     enum class Mode { REAL, SKIP }
 
-    /** [carAddress] null means the Bluetooth service is left out. */
-    data class Announce(val mode: Mode, val carAddress: String?, val skipNotApplied: Boolean)
+    /**
+     * [carAddress] null means the Bluetooth service is left out.
+     *
+     * [withheldForMapsAudioOnly] separates the two reasons for an omission so the log can say which
+     * one happened: an unconfigured address, or the owner's navigation-only choice. Without it the
+     * only visible symptom of either is a session with no hands-free link.
+     */
+    data class Announce(
+        val mode: Mode,
+        val carAddress: String?,
+        val skipNotApplied: Boolean,
+        val withheldForMapsAudioOnly: Boolean = false,
+    )
 
     fun isSkip(stored: String?): Boolean = stored?.trim()?.lowercase() == STORED_SKIP
 
     fun storedValue(skip: Boolean): String = if (skip) STORED_SKIP else STORED_REAL
 
-    fun decide(stored: String?, bluetoothAddress: String, usbSession: Boolean): Announce {
+    /**
+     * Maps-only wins over everything, including a configured address and the skip mode: the point
+     * of that setting is that Android Auto keeps telephony disabled, so there is no hands-free
+     * address to announce.
+     */
+    fun decide(
+        stored: String?,
+        bluetoothAddress: String,
+        usbSession: Boolean,
+        mapsAudioOnly: Boolean = false,
+    ): Announce {
+        if (mapsAudioOnly) {
+            return Announce(Mode.REAL, null, false, withheldForMapsAudioOnly = true)
+        }
         val real = bluetoothAddress.ifEmpty { null }
         if (!isSkip(stored)) return Announce(Mode.REAL, real, false)
         if (!usbSession) return Announce(Mode.REAL, real, true)

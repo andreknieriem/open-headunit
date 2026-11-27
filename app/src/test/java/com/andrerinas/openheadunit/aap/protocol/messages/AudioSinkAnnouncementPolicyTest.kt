@@ -12,39 +12,64 @@ class AudioSinkAnnouncementPolicyTest {
      */
     @Test
     fun `a session that is not Self Mode announces both sinks when the setting is on`() {
-        assertTrue(
-            AudioSinkAnnouncementPolicy.announcesMediaAndSpeech(
-                sinkEnabled = true,
-                isSelfModeSession = false
-            )
+        val a = AudioSinkAnnouncementPolicy.announce(
+            sinkEnabled = true,
+            isSelfModeSession = false,
+            mapsAudioOnly = false,
         )
+        assertTrue(a.speech)
+        assertTrue(a.media)
     }
 
     /** Self Mode's own session keeps today's behaviour; whether it should is a separate question. */
     @Test
     fun `a Self Mode session still drops both sinks`() {
-        assertFalse(
-            AudioSinkAnnouncementPolicy.announcesMediaAndSpeech(
-                sinkEnabled = true,
-                isSelfModeSession = true
-            )
+        val a = AudioSinkAnnouncementPolicy.announce(
+            sinkEnabled = true,
+            isSelfModeSession = true,
+            mapsAudioOnly = false,
         )
+        assertFalse(a.speech)
+        assertFalse(a.media)
+    }
+
+    /** Self Mode cannot be narrowed further; maps-only must not resurrect a sink it dropped. */
+    @Test
+    fun `maps audio only changes nothing in Self Mode`() {
+        val a = AudioSinkAnnouncementPolicy.announce(
+            sinkEnabled = true,
+            isSelfModeSession = true,
+            mapsAudioOnly = true,
+        )
+        assertFalse(a.speech)
+        assertFalse(a.media)
     }
 
     /** The setting wins over the transport: off means off on every session. */
     @Test
     fun `the sink setting being off drops both sinks whatever the session is`() {
-        assertFalse(
-            AudioSinkAnnouncementPolicy.announcesMediaAndSpeech(
-                sinkEnabled = false,
-                isSelfModeSession = false
-            )
+        for (selfMode in listOf(false, true)) {
+            for (mapsOnly in listOf(false, true)) {
+                val a = AudioSinkAnnouncementPolicy.announce(
+                    sinkEnabled = false,
+                    isSelfModeSession = selfMode,
+                    mapsAudioOnly = mapsOnly,
+                )
+                assertFalse(a.speech)
+                assertFalse(a.media)
+            }
+        }
+    }
+
+    /** The owner's request: the map keeps its voice, the media channel is never offered. */
+    @Test
+    fun `maps audio only keeps speech and drops media`() {
+        val a = AudioSinkAnnouncementPolicy.announce(
+            sinkEnabled = true,
+            isSelfModeSession = false,
+            mapsAudioOnly = true,
         )
-        assertFalse(
-            AudioSinkAnnouncementPolicy.announcesMediaAndSpeech(
-                sinkEnabled = false,
-                isSelfModeSession = true
-            )
-        )
+        assertTrue(a.speech)
+        assertFalse(a.media)
     }
 }

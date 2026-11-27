@@ -29,6 +29,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         // Android raises its own dialog only now, so a later scan for this path knows it may be up.
         UsbPermissionAsks.stampAttach(device.deviceName)
         if (manager.handleCarPlayBox(device)) return
+        if (manager.handleCarPlayNative(device)) return
         if (!UsbDeviceCompat.isConnectable(service, device)) {
             AppLog.i("Ignoring USB device attached in service (${Settings.formatUsbVidPidDisplay(device.vendorId, device.productId)}): ${UsbDeviceCompat.connectableReason(service, device)}")
             return
@@ -76,6 +77,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
     override fun onUsbDetach(device: UsbDevice) {
         manager.noteRecoveryDeviceDetached(device)
+        manager.handleCarPlayNativeDetach(device)
         val commManager = App.provide(service).commManager
 
         if (CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(device))) {
@@ -117,6 +119,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
     }
 
     override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) {
+        if (manager.handleCarPlayNativePermission(device, granted)) return
         if (CarPlayBoxPolicy.isBox(UsbDeviceCompat.describe(device)) &&
             App.provide(service).settings.carPlayBoxEnabled) {
             if (granted) manager.handleCarPlayBox(device)

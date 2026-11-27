@@ -32,6 +32,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.core.content.PermissionChecker
 import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.BuildConfig
 import com.andrerinas.openheadunit.device.DeviceHackManager
 import com.andrerinas.openheadunit.device.DeviceProfiles
 import com.andrerinas.openheadunit.device.DeviceSpecificHeadUnitSettings
@@ -79,7 +80,10 @@ import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxActivity
 import com.andrerinas.openheadunit.connection.carplaybox.CarPlayBoxManager
 import com.andrerinas.openheadunit.connection.carplaybox.MicRecorderBoxMic
 import com.andrerinas.openheadunit.connection.carplaybox.VideoDecoderBoxSink
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeActivity
 import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeManager
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeScreenPolicy
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayTunnelHoldPolicy
 import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeWiring
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
@@ -100,6 +104,7 @@ import com.andrerinas.openheadunit.utils.LogExporter
 import com.andrerinas.openheadunit.utils.NightModeManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -210,18 +215,23 @@ class AapService : Service() {
     }
 
     /** Brings the box screen up the way the AA raise does: directly, over other apps, or by notification. */
-    fun raiseCarPlayBox() {
-        val intent = CarPlayBoxActivity.intent(this).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+    fun raiseCarPlayBox() = raiseCarPlayScreen(CarPlayBoxActivity.intent(this), "CarPlay box")
+
+    /** Brings the native CarPlay screen up the same way. */
+    fun raiseCarPlayNative() = raiseCarPlayScreen(CarPlayNativeActivity.intent(this), "CarPlay native")
+
+    private fun raiseCarPlayScreen(base: Intent, what: String) {
+        val intent = base.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         val strategy = ActivityLaunchPolicy.chooseLaunchStrategy(
             Build.VERSION.SDK_INT, AppPermissions.isOverlayGranted(this), App.hasStartedActivity
         )
-        AppLog.i("AapService: raising the CarPlay box screen by $strategy")
+        AppLog.i("AapService: raising the $what screen by $strategy")
         when (strategy) {
             ActivityLaunchPolicy.LaunchStrategy.DIRECT ->
-                try { startActivity(intent) } catch (e: Exception) { AppLog.e("CarPlay box launch failed: ${e.message}") }
+                try { startActivity(intent) } catch (e: Exception) { AppLog.e("$what launch failed: ${e.message}") }
             ActivityLaunchPolicy.LaunchStrategy.OVERLAY ->
                 if (!launchViaOverlayTrampoline(intent)) {
-                    try { startActivity(intent) } catch (e: Exception) { AppLog.e("CarPlay box launch failed: ${e.message}") }
+                    try { startActivity(intent) } catch (e: Exception) { AppLog.e("$what launch failed: ${e.message}") }
                 }
             ActivityLaunchPolicy.LaunchStrategy.NOTIFICATION -> launchProjectionViaNotification(intent)
         }
@@ -235,11 +245,45 @@ class AapService : Service() {
             this,
             aaSessionLive = { commManager.isConnected || commManager.connectionState.value is CommManager.ConnectionState.Connecting },
             ask = { usbLauncherManager.askUsbPermission(it, "CarPlayNative") },
-        )
+        )?.also { watchCarPlayNative(it) }
+    }
+
+    /** Raises the native screen once per session. The end counter tells a new session from the old one, as phases can merge. */
+    private fun watchCarPlayNative(native: CarPlayNativeManager) {
+        serviceScope.launch(Dispatchers.Main) {
+            var raisedAt: Int? = null
+            combine(native.phase, native.ends) { phase, ends -> phase to ends }.collect { (phase, ends) ->
+                if (CarPlayNativeScreenPolicy.raise(phase, native.isLive, ends, raisedAt)) {
+                    raisedAt = ends
+                    raiseCarPlayNative()
+                }
+            }
+        }
+    }
+
+    /** Debug builds only: runs the tunnel check and holds the tunnel, so a rig run can reach the dummy VPN refusal. */
+    private val carPlayTunnelHoldReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != CarPlayTunnelHoldPolicy.ACTION) return
+            val decision = CarPlayTunnelHoldPolicy.decide(
+                intent.getIntExtra(CarPlayTunnelHoldPolicy.EXTRA_SECONDS, 0),
+                aaSessionLive = CarPlayNativeWiring.aaSessionLive(applicationContext)(),
+                nativeLive = carPlayNativeManagerIfMade?.isLive == true,
+            )
+            val seconds = when (decision) {
+                is CarPlayTunnelHoldPolicy.Decision.Refused -> return AppLog.w(decision.line)
+                is CarPlayTunnelHoldPolicy.Decision.Hold -> decision.seconds
+            }
+            Thread({ CarPlayNativeWiring.tunnelCheck(applicationContext).run(seconds, { !serviceScope.isActive }) }, "carplay-tunnel-hold")
+                .apply { isDaemon = true; start() }
+        }
     }
 
     /** The one native CarPlay session this service runs, or null below API 21. Stopped in [onDestroy]. */
     val carPlayNativeManager: CarPlayNativeManager? get() = carPlayNativeLazy.value
+
+    /** The manager if one was made, without making it: for a path that must not start native CarPlay. */
+    val carPlayNativeManagerIfMade: CarPlayNativeManager? get() = if (carPlayNativeLazy.isInitialized()) carPlayNativeLazy.value else null
     private val selfLauncherManager = SelfLauncherManager(this, wifiLauncherManager)
     private val carKeysManager by lazy { App.provide(this).carKeysManager }
 
@@ -2456,6 +2500,13 @@ class AapService : Service() {
         ConnectionArbiter.actions = arbiterActions
         usbLauncherManager.register()
         stationScanMonitor.start(this)
+        if (BuildConfig.DEBUG) {
+            // Exported for the shell, and the DUMP permission keeps every app out: only `adb shell am broadcast` reaches it.
+            ContextCompat.registerReceiver(
+                this, carPlayTunnelHoldReceiver, IntentFilter(CarPlayTunnelHoldPolicy.ACTION),
+                CarPlayTunnelHoldPolicy.SENDER_PERMISSION, null, ContextCompat.RECEIVER_EXPORTED,
+            )
+        }
         ContextCompat.registerReceiver(
             this, nightModeUpdateReceiver,
             IntentFilter(ACTION_REQUEST_NIGHT_MODE_UPDATE),
@@ -3615,6 +3666,7 @@ class AapService : Service() {
         } catch (_: Exception) {}
         usbLauncherManager.unregister()
         try { unregisterReceiver(mediaButtonReceiver) } catch (_: Exception) {}
+        try { unregisterReceiver(carPlayTunnelHoldReceiver) } catch (_: Exception) {}
         try { unregisterReceiver(wakeDetectReceiver) } catch (_: Exception) {}
         sleepReplayJob?.cancel()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {

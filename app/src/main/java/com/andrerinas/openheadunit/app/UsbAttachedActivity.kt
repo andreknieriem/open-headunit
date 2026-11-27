@@ -19,6 +19,8 @@ import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.carplaynative.CarPlayNativeWiring
+import com.andrerinas.openheadunit.connection.carplaynative.usb.IphoneUsbPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbAttachActivityPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
@@ -87,6 +89,10 @@ class UsbAttachedActivity : Activity() {
         AppLog.i("USB Intent: $intent")
 
         val device = resolveUsbDevice(intent)
+        if (device != null && handOffIphoneToService(device)) {
+            finish()
+            return
+        }
         if (device == null || !UsbDeviceCompat.isAndroidDevice(device)) {
             if (device != null) {
                 AppLog.i("Ignoring non-Android USB device in onCreate (VID: ${device.vendorId}): ${device.deviceName}")
@@ -256,6 +262,18 @@ class UsbAttachedActivity : Activity() {
         }.start()
     }
 
+    /** With native CarPlay on, an iPhone is the service's to open. True when it was handed over. */
+    private fun handOffIphoneToService(device: UsbDevice): Boolean {
+        if (!IphoneUsbPolicy.isIphone(device.vendorId, device.productId, null)) return false
+        val unlocked = Build.VERSION.SDK_INT < Build.VERSION_CODES.N ||
+            (getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+        // The same rule as the service: a stored true that this unit cannot run starts nothing.
+        if (!unlocked || !CarPlayNativeWiring.enabled(this)) return false
+        AppLog.i("UsbAttachedActivity: handing the iPhone to the service for native CarPlay")
+        handOffToService()
+        return true
+    }
+
     /**
      * Ask [AapService] to look at what is plugged in. Used wherever this activity declines to act
      * itself: the system delivered the attach to us and nobody else will hear about it otherwise.
@@ -294,6 +312,10 @@ class UsbAttachedActivity : Activity() {
         super.onNewIntent(intent)
 
         val device = resolveUsbDevice(intent)
+        if (device != null && handOffIphoneToService(device)) {
+            finish()
+            return
+        }
         if (device == null || !UsbDeviceCompat.isAndroidDevice(device)) {
             if (device != null) {
                 AppLog.i("Ignoring non-Android USB device in onNewIntent (VID: ${device.vendorId}): ${device.deviceName}")

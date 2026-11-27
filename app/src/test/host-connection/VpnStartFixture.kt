@@ -15,6 +15,8 @@ class Context {
 object AppLog { fun i(text: String) {}; fun w(text: String) {} }
 object VpnControl {
     internal val startRequests = DummyVpnStartRequests()
+    var carPlayRunning = false
+    fun isCarPlayTunRunning() = carPlayRunning
     // START
     // STOP
 }
@@ -33,9 +35,16 @@ class DummyVpnService {
 fun main() {
     val context = Context()
     val bound = DummyVpnService()
+    // The one VPN slot: while the CarPlay tunnel runs, no dummy VPN start is queued.
+    VpnControl.carPlayRunning = true
     VpnControl.startVpn(context, excludeSelf = true)
+    check(context.queued.isEmpty() && !VpnControl.startRequests.isPending)
+    VpnControl.carPlayRunning = false
+    VpnControl.startVpn(context, excludeSelf = true)
+    // A queued start holds the VPN slot until its command runs.
+    check(VpnControl.startRequests.isPending)
     bound.onStartCommand(context.queued.removeAt(0), 0, 1)
-    check(DummyVpnService.tunnel)
+    check(DummyVpnService.tunnel && !VpnControl.startRequests.isPending)
     VpnControl.startVpn(context, excludeSelf = false)
     val delayed = context.queued.removeAt(0)
     VpnControl.stopVpn(context)
@@ -49,5 +58,5 @@ fun main() {
     VpnControl.stopVpn(context)
     bound.onStartCommand(null, 0, 5)
     check(!DummyVpnService.tunnel)
-    println("PASS actual VPN command delivery: stop rejects delayed reconfiguration and stale commands cannot replace a fresh start")
+    println("PASS actual VPN command delivery: stop rejects delayed reconfiguration, stale commands cannot replace a fresh start, a queued start holds the slot")
 }
